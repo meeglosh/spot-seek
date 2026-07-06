@@ -4,4 +4,6 @@ interface Env {
   DATABASE_URL: string;
   // Optional — when set, reminders use Resend for email.
   RESEND_API_KEY?: string;
+  // Admin secret for host verification endpoint. Set via `wrangler secret put ADMIN_SECRET`.
+  ADMIN_SECRET?: string;
 }

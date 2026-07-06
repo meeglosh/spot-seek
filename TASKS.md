@@ -50,7 +50,7 @@ Follow docs/DATA_MODEL.md exactly. Host owns event; venue is an event attribute.
 - [x] 2.1 Attendee profiles + following
 - [x] 2.2 Event chat / comments (realtime stack choice -> BLOCKED.md)
 - [x] 2.3 Recurring events
-- [ ] 2.4 Host verification
+- [x] 2.4 Host verification
 
 ## Phase 3 — the business (do not start without human go-ahead)
 - [ ] 3.1 Sponsor accounts
