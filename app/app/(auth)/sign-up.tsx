@@ -27,8 +27,8 @@ export default function SignUpScreen() {
     try {
       await signUp(name, email, password);
       router.replace('/(tabs)/discover');
-    } catch {
-      setError('Something went wrong. Try a different email.');
+    } catch (err) {
+      setError((err as Error).message || 'Something went wrong.');
     } finally {
       setLoading(false);
     }

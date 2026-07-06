@@ -20,7 +20,6 @@ type AuthCtx = AuthState & {
 const Ctx = createContext<AuthCtx | null>(null);
 
 function extractCookie(res: Response): string {
-  // React Native doesn't auto-manage cookies — extract the token manually.
   const setCookie = res.headers.get('set-cookie') ?? '';
   const match = setCookie.match(/better-auth\.session_token=[^;]+/);
   return match ? match[0] : '';
@@ -35,14 +34,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
     });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({})) as { message?: string };
-      throw new Error(body.message ?? 'Sign up failed');
-    }
-    const { user } = await res.json() as { user: AuthUser };
 
-    // Sign in immediately to get a session cookie.
-    await signIn(email, password);
+    const body = await res.json().catch(() => null) as Record<string, unknown> | null;
+
+    if (!res.ok) {
+      // Surface the real server message so we can see it.
+      const msg =
+        (body?.message as string) ||
+        (body?.error as string) ||
+        `Sign up failed (HTTP ${res.status})`;
+      console.error('[auth] sign-up error:', res.status, body);
+      throw new Error(msg);
+    }
+
+    // Better Auth sets a session cookie on sign-up — extract it directly.
+    // No need for a separate sign-in call.
+    const cookie = extractCookie(res);
+    if (cookie) setSessionCookie(cookie);
+
+    const user = (body?.user ?? body) as AuthUser;
     setState({ status: 'authenticated', user });
   }
 
@@ -52,11 +62,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error('Invalid email or password');
+
+    const body = await res.json().catch(() => null) as Record<string, unknown> | null;
+
+    if (!res.ok) {
+      const msg =
+        (body?.message as string) ||
+        (body?.error as string) ||
+        `Sign in failed (HTTP ${res.status})`;
+      console.error('[auth] sign-in error:', res.status, body);
+      throw new Error(msg);
+    }
+
     const cookie = extractCookie(res);
     if (cookie) setSessionCookie(cookie);
 
-    const { user } = await res.json() as { user: AuthUser };
+    const user = (body?.user ?? body) as AuthUser;
     setState({ status: 'authenticated', user });
   }
 

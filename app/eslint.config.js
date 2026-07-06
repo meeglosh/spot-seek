@@ -4,9 +4,12 @@ const reactPlugin = require('eslint-plugin-react');
 const reactHooksPlugin = require('eslint-plugin-react-hooks');
 
 module.exports = [
+  // Global ignores — must be a standalone object with only `ignores`.
+  {
+    ignores: ['node_modules/**', 'dist/**', '.expo/**', '**/*.d.ts'],
+  },
   {
     files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['node_modules/**', 'dist/**', '.expo/**'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -23,7 +26,7 @@ module.exports = [
       ...reactPlugin.configs.recommended.rules,
       ...reactHooksPlugin.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
-      'react-hooks/set-state-in-effect': 'off', // standard async data-fetching pattern
+      'react-hooks/set-state-in-effect': 'off',
     },
     settings: {
       react: { version: 'detect' },

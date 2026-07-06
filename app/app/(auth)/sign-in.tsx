@@ -26,8 +26,8 @@ export default function SignInScreen() {
     try {
       await signIn(email, password);
       router.replace('/(tabs)/discover');
-    } catch {
-      setError('Invalid email or password.');
+    } catch (err) {
+      setError((err as Error).message || 'Invalid email or password.');
     } finally {
       setLoading(false);
     }
