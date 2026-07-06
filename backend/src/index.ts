@@ -14,7 +14,7 @@ import { sponsorsRouter } from './sponsors';
 const app = new Hono<{ Bindings: Env }>();
 
 app.all('/api/auth/*', (c) => {
-  const auth = createAuth(neon(c.env.DATABASE_URL));
+  const auth = createAuth(neon(c.env.DATABASE_URL), { baseURL: c.env.BETTER_AUTH_URL });
   return auth.handler(c.req.raw);
 });
 

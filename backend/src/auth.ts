@@ -6,7 +6,7 @@ import * as appSchema from './schema';
 import * as authSchema from './auth-schema';
 
 // Any change to cookie/session config beyond defaults -> BLOCKED.md.
-export function createAuth(sql: NeonQueryFunction<false, false>) {
+export function createAuth(sql: NeonQueryFunction<false, false>, opts?: { baseURL?: string }) {
   // Pass only table objects — spreading the full schema includes pgEnum objects
   // which confuse Better Auth's Drizzle adapter.
   const db = drizzle(sql, {
@@ -24,6 +24,19 @@ export function createAuth(sql: NeonQueryFunction<false, false>) {
   });
 
   return betterAuth({
+    // baseURL silences the "Base URL is not set" warning and anchors
+    // cookie domains. Set BETTER_AUTH_URL in .dev.vars (dev) or
+    // `wrangler secret put BETTER_AUTH_URL` (production).
+    ...(opts?.baseURL ? { baseURL: opts.baseURL } : {}),
+
+    // Native mobile clients (React Native) do not send an Origin header —
+    // they are not browser contexts and cannot be CSRF-attacked via iframes.
+    // Disabling the origin check is the correct posture for mobile API traffic.
+    // Re-evaluate if a web front-end is added (add trustedOrigins instead).
+    advanced: {
+      disableOriginCheck: true,
+    },
+
     database: drizzleAdapter(db, {
       provider: 'pg',
       schema: {

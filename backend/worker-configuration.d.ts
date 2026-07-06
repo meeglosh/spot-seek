@@ -2,6 +2,7 @@
 // Run `npm run cf-typegen` after adding bindings to wrangler.jsonc.
 interface Env {
   DATABASE_URL: string;
+  BETTER_AUTH_URL?: string;
   RESEND_API_KEY?: string;
   ADMIN_SECRET?: string;
   CHAT_ROOMS: DurableObjectNamespace;
