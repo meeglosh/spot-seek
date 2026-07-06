@@ -18,6 +18,30 @@ rsvpsRouter.use('*', async (c, next) => {
   await next();
 });
 
+// GET /api/rsvps/mine — current user's RSVPs with event details.
+rsvpsRouter.get('/mine', async (c) => {
+  const userId = c.get('userId');
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+
+  const rsvps = await db.query.rsvps.findMany({
+    where: eq(schema.rsvps.userId, userId),
+    orderBy: schema.rsvps.createdAt,
+  });
+
+  // Attach event data for each RSVP in one query.
+  const eventIds = [...new Set(rsvps.map((r) => r.eventId))];
+  const events =
+    eventIds.length > 0
+      ? await db.query.events.findMany({
+          where: (t, { inArray }) => inArray(t.id, eventIds),
+        })
+      : [];
+  const eventsById = new Map(events.map((e) => [e.id, e]));
+
+  const result = rsvps.map((r) => ({ ...r, event: eventsById.get(r.eventId) ?? null }));
+  return c.json({ rsvps: result });
+});
+
 // POST /api/rsvps — attendee RSVPs to an event.
 // Enforces capacity (overflow -> waitlisted) and one-rsvp-per-user.
 rsvpsRouter.post('/', async (c) => {

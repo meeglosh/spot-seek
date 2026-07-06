@@ -1,20 +1,25 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, useColorScheme } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, ScrollView, Pressable, StyleSheet, useColorScheme,
+  ActivityIndicator, RefreshControl,
+} from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../lib/auth';
+import { fetchFollowCounts, fetchMyRsvps, type ApiRsvp } from '../../../lib/api';
 import { light, dark, fonts, spacing, radius, palette } from '../../../lib/theme';
-
-const MOCK_RSVPS = [
-  { id: '1', title: 'Arsenal v Spurs', broadcastSubject: 'Premier League', state: 'going', date: 'Sun 12 Jan' },
-  { id: '2', title: 'NFL Sunday RedZone', broadcastSubject: 'NFL', state: 'going', date: 'Mon 13 Jan' },
-];
 
 const STATE_COLOR: Record<string, string> = {
   going:      palette.green,
   waitlisted: palette.amber,
   interested: palette.gray400,
   cancelled:  palette.red,
+};
+
+type ProfileData = {
+  followers: number;
+  following: number;
+  rsvps: ApiRsvp[];
 };
 
 export default function ProfileScreen() {
@@ -24,81 +29,156 @@ export default function ProfileScreen() {
   const c = scheme === 'dark' ? dark : light;
   const auth = useAuth();
 
-  const isAuth = auth.status === 'authenticated';
-  const user = isAuth ? auth.user : null;
+  const [data, setData] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  if (!isAuth) {
+  async function load() {
+    if (auth.status !== 'authenticated') { setLoading(false); return; }
+    try {
+      const [counts, rsvps] = await Promise.all([
+        fetchFollowCounts(auth.user.id),
+        fetchMyRsvps(),
+      ]);
+      setData({ followers: counts.followers, following: counts.following, rsvps });
+    } catch {
+      // non-fatal — show what we have
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }
+
+  useFocusEffect(useCallback(() => { load(); }, [auth.status]));
+  const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [auth.status]);
+
+  // ── Not signed in ──────────────────────────────────────────────────────────
+  if (auth.status !== 'authenticated') {
     return (
       <View style={[s.container, { backgroundColor: c.bg, justifyContent: 'center', alignItems: 'center', paddingTop: insets.top }]}>
         <Text style={[s.unauthTitle, { color: c.textPrimary, fontFamily: fonts.display }]}>Your profile</Text>
         <Text style={[s.unauthBody, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
           Sign in to track your RSVPs and host events.
         </Text>
-        <Pressable
-          style={[s.signInBtn, { backgroundColor: c.fill }]}
-          onPress={() => router.push('/(auth)/sign-in')}
-        >
+        <Pressable style={[s.signInBtn, { backgroundColor: c.fill }]} onPress={() => router.push('/(auth)/sign-in')}>
           <Text style={[{ color: c.fillText, fontFamily: fonts.sansSemiBold, fontSize: 15 }]}>Sign in</Text>
         </Pressable>
       </View>
     );
   }
 
+  const { user } = auth;
+  const activeRsvps = data?.rsvps.filter((r) => r.state !== 'cancelled') ?? [];
+  const upcomingRsvps = activeRsvps.filter((r) => {
+    if (!r.event?.startsAt) return true;
+    return new Date(r.event.startsAt) >= new Date();
+  });
+
   return (
     <ScrollView
       style={[s.container, { backgroundColor: c.bg }]}
       contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
       showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.textTertiary} />}
     >
       {/* Avatar + name */}
       <View style={[s.profileHeader, { paddingTop: insets.top + spacing.lg }]}>
         <View style={[s.avatar, { backgroundColor: c.bgSubtle, borderColor: c.cardBorder }]}>
           <Text style={[s.avatarInitial, { color: c.textPrimary, fontFamily: fonts.display }]}>
-            {user?.name.charAt(0).toUpperCase()}
+            {user.name.charAt(0).toUpperCase()}
           </Text>
         </View>
-        <Text style={[s.name, { color: c.textPrimary, fontFamily: fonts.display }]}>{user?.name}</Text>
-        <Text style={[s.email, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>{user?.email}</Text>
+        <Text style={[s.name, { color: c.textPrimary, fontFamily: fonts.display }]}>{user.name}</Text>
+        <Text style={[s.email, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>{user.email}</Text>
 
         {/* Social stats */}
-        <View style={s.stats}>
-          {[{ label: 'Following', val: 4 }, { label: 'Followers', val: 12 }].map(({ label, val }) => (
-            <View key={label} style={s.stat}>
-              <Text style={[s.statVal, { color: c.textPrimary, fontFamily: fonts.sansBold }]}>{val}</Text>
-              <Text style={[s.statLabel, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>{label}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* My RSVPs */}
-      <View style={[s.section, { paddingHorizontal: spacing.xl }]}>
-        <Text style={[s.sectionTitle, { color: c.textPrimary, fontFamily: fonts.sansSemiBold }]}>My RSVPs</Text>
-        {MOCK_RSVPS.length === 0 ? (
-          <Text style={[s.emptyText, { color: c.textTertiary, fontFamily: fonts.sansRegular }]}>
-            No upcoming RSVPs. Browse events to get started.
-          </Text>
+        {loading ? (
+          <ActivityIndicator color={c.textTertiary} style={{ marginTop: spacing.md }} />
         ) : (
-          <View style={s.rsvpList}>
-            {MOCK_RSVPS.map((r) => (
-              <View key={r.id} style={[s.rsvpCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
-                <View style={s.rsvpInfo}>
-                  <Text style={[s.rsvpSubject, { color: c.textTertiary, fontFamily: fonts.sansMedium }]}>
-                    {r.broadcastSubject}
-                  </Text>
-                  <Text style={[s.rsvpTitle, { color: c.textPrimary, fontFamily: fonts.sansSemiBold }]} numberOfLines={1}>
-                    {r.title}
-                  </Text>
-                  <Text style={[s.rsvpDate, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>{r.date}</Text>
-                </View>
-                <View style={[s.statePill, { backgroundColor: STATE_COLOR[r.state] + '20' }]}>
-                  <Text style={[s.stateText, { color: STATE_COLOR[r.state], fontFamily: fonts.sansMedium }]}>{r.state}</Text>
-                </View>
+          <View style={s.stats}>
+            {[
+              { label: 'Following', val: data?.following ?? 0 },
+              { label: 'Followers', val: data?.followers ?? 0 },
+            ].map(({ label, val }) => (
+              <View key={label} style={s.stat}>
+                <Text style={[s.statVal, { color: c.textPrimary, fontFamily: fonts.sansBold }]}>{val}</Text>
+                <Text style={[s.statLabel, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>{label}</Text>
               </View>
             ))}
           </View>
         )}
       </View>
+
+      {/* My RSVPs */}
+      <View style={[s.section, { paddingHorizontal: spacing.xl }]}>
+        <View style={s.sectionHeader}>
+          <Text style={[s.sectionTitle, { color: c.textPrimary, fontFamily: fonts.sansSemiBold }]}>
+            Upcoming RSVPs
+          </Text>
+          <Text style={[s.sectionCount, { color: c.textTertiary, fontFamily: fonts.sansRegular }]}>
+            {upcomingRsvps.length}
+          </Text>
+        </View>
+
+        {loading ? (
+          <ActivityIndicator color={c.textTertiary} />
+        ) : upcomingRsvps.length === 0 ? (
+          <Pressable
+            style={[s.emptyCard, { backgroundColor: c.bgSubtle, borderColor: c.cardBorder }]}
+            onPress={() => router.push('/(tabs)/discover')}
+          >
+            <Text style={[s.emptyCardText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
+              No upcoming RSVPs. Browse events →
+            </Text>
+          </Pressable>
+        ) : (
+          <View style={s.rsvpList}>
+            {upcomingRsvps.map((r) => {
+              const event = r.event;
+              const dateStr = event?.startsAt
+                ? new Date(event.startsAt).toLocaleDateString('en-GB', {
+                    weekday: 'short', day: 'numeric', month: 'short',
+                  })
+                : null;
+              return (
+                <Pressable
+                  key={r.id}
+                  style={[s.rsvpCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}
+                  onPress={() => event && router.push({ pathname: '/(tabs)/discover/[id]', params: { id: event.id } })}
+                >
+                  <View style={s.rsvpInfo}>
+                    {event?.broadcastSubject && (
+                      <Text style={[s.rsvpSubject, { color: c.textTertiary, fontFamily: fonts.sansMedium }]}>
+                        {event.broadcastSubject}
+                      </Text>
+                    )}
+                    <Text style={[s.rsvpTitle, { color: c.textPrimary, fontFamily: fonts.sansSemiBold }]} numberOfLines={1}>
+                      {event?.title ?? 'Unknown event'}
+                    </Text>
+                    {dateStr && (
+                      <Text style={[s.rsvpDate, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>{dateStr}</Text>
+                    )}
+                  </View>
+                  <View style={[s.statePill, { backgroundColor: (STATE_COLOR[r.state] ?? palette.gray400) + '20' }]}>
+                    <Text style={[s.stateText, { color: STATE_COLOR[r.state] ?? palette.gray400, fontFamily: fonts.sansMedium }]}>
+                      {r.state}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+      </View>
+
+      {/* Past RSVPs toggle */}
+      {!loading && data && data.rsvps.length > upcomingRsvps.length && (
+        <View style={[s.section, { paddingHorizontal: spacing.xl }]}>
+          <Text style={[s.sectionTitle, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>
+            {data.rsvps.length - upcomingRsvps.length} past or cancelled
+          </Text>
+        </View>
+      )}
 
       {/* Sign out */}
       <View style={[s.section, { paddingHorizontal: spacing.xl }]}>
@@ -128,8 +208,14 @@ const s = StyleSheet.create({
   statVal: { fontSize: 20 },
   statLabel: { fontSize: 12 },
   section: { gap: spacing.md, marginBottom: spacing.xl },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionTitle: { fontSize: 15 },
-  emptyText: { fontSize: 14 },
+  sectionCount: { fontSize: 13 },
+  emptyCard: {
+    borderRadius: radius.lg, borderWidth: 1, padding: spacing.lg,
+    alignItems: 'center',
+  },
+  emptyCardText: { fontSize: 14 },
   rsvpList: { gap: spacing.sm },
   rsvpCard: {
     flexDirection: 'row', alignItems: 'center', padding: spacing.md,

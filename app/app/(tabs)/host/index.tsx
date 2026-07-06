@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, useColorScheme } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, FlatList, Pressable, StyleSheet, useColorScheme,
+  RefreshControl, ActivityIndicator,
+} from 'react-native';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../../lib/auth';
+import { fetchDashboard, type ApiDashboardEvent } from '../../../lib/api';
 import { light, dark, fonts, spacing, radius, palette } from '../../../lib/theme';
-
-const MOCK_HOST_EVENTS = [
-  { id: '1', title: 'Arsenal v Spurs', broadcastSubject: 'Premier League', status: 'published', startsAt: new Date(Date.now() + 3600000 * 24).toISOString(), going: 24, waitlisted: 2, interested: 5 },
-  { id: '6', title: 'Cycling: Tour de France Stage 12', broadcastSubject: 'Cycling', status: 'draft', startsAt: new Date(Date.now() + 3600000 * 168).toISOString(), going: 0, waitlisted: 0, interested: 0 },
-];
 
 const STATUS_COLOR: Record<string, string> = {
   published: palette.green,
@@ -21,6 +21,49 @@ export default function HostDashboard() {
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
   const c = scheme === 'dark' ? dark : light;
+  const auth = useAuth();
+
+  const [events, setEvents] = useState<ApiDashboardEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
+
+  async function load(silent = false) {
+    if (auth.status !== 'authenticated') {
+      setLoading(false);
+      return;
+    }
+    if (!silent) setError('');
+    try {
+      const data = await fetchDashboard();
+      setEvents(data);
+    } catch (err) {
+      if (!silent) setError((err as Error).message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }
+
+  // Reload when this tab comes into focus (so newly created events appear).
+  useFocusEffect(useCallback(() => { load(); }, [auth.status]));
+
+  const onRefresh = useCallback(() => { setRefreshing(true); load(true); }, [auth.status]);
+
+  // ── Not signed in ──────────────────────────────────────────────────────────
+  if (auth.status !== 'authenticated') {
+    return (
+      <View style={[s.container, { backgroundColor: c.bg, justifyContent: 'center', alignItems: 'center', paddingTop: insets.top }]}>
+        <Text style={[s.emptyTitle, { color: c.textPrimary, fontFamily: fonts.display }]}>Host an event</Text>
+        <Text style={[s.emptyBody, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
+          Sign in to create and manage your watch parties.
+        </Text>
+        <Pressable style={[s.primaryBtn, { backgroundColor: c.fill }]} onPress={() => router.push('/(auth)/sign-in')}>
+          <Text style={[{ color: c.fillText, fontFamily: fonts.sansSemiBold, fontSize: 15 }]}>Sign in</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View style={[s.container, { backgroundColor: c.bg }]}>
@@ -35,14 +78,26 @@ export default function HostDashboard() {
         </Pressable>
       </View>
 
-      {MOCK_HOST_EVENTS.length === 0 ? (
-        <View style={s.empty}>
+      {/* Loading */}
+      {loading && !refreshing ? (
+        <View style={s.center}>
+          <ActivityIndicator color={c.textSecondary} />
+        </View>
+      ) : error ? (
+        <View style={s.center}>
+          <Text style={[{ color: c.textSecondary, fontFamily: fonts.sansRegular, fontSize: 15 }]}>{error}</Text>
+          <Pressable style={[s.retryBtn, { backgroundColor: c.fillSubtle }]} onPress={() => load()}>
+            <Text style={[{ color: c.fillSubtleText, fontFamily: fonts.sansMedium, fontSize: 14 }]}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : events.length === 0 ? (
+        <View style={s.center}>
           <Text style={[s.emptyTitle, { color: c.textPrimary, fontFamily: fonts.display }]}>Host your first event</Text>
           <Text style={[s.emptyBody, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
             Create a watch party and invite people to join.
           </Text>
           <Pressable
-            style={[s.emptyBtn, { backgroundColor: c.fill }]}
+            style={[s.primaryBtn, { backgroundColor: c.fill }]}
             onPress={() => router.push('/(tabs)/host/create')}
           >
             <Text style={[{ color: c.fillText, fontFamily: fonts.sansSemiBold, fontSize: 15 }]}>Create an event</Text>
@@ -50,31 +105,31 @@ export default function HostDashboard() {
         </View>
       ) : (
         <FlatList
-          data={MOCK_HOST_EVENTS}
+          data={events}
           keyExtractor={(e) => e.id}
           contentContainerStyle={[s.list, { paddingBottom: insets.bottom + spacing.xl }]}
           ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
-          renderItem={({ item }) => {
-            const dateStr = new Date(item.startsAt).toLocaleDateString('en-GB', {
-              weekday: 'short', day: 'numeric', month: 'short',
-            });
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.textTertiary} />}
+          renderItem={({ item: e }) => {
+            const dateStr = e.startsAt
+              ? new Date(e.startsAt).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+              : 'No date set';
+            const { going, waitlisted, interested } = e.rsvpCounts;
             return (
               <View style={[s.eventCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
                 <View style={s.cardTop}>
                   <View style={s.cardMeta}>
                     <Text style={[s.cardSubject, { color: c.textTertiary, fontFamily: fonts.sansMedium }]}>
-                      {item.broadcastSubject}
+                      {e.broadcastSubject}
                     </Text>
-                    <Text style={[s.cardTitle, { color: c.textPrimary, fontFamily: fonts.display }]}>
-                      {item.title}
+                    <Text style={[s.cardTitle, { color: c.textPrimary, fontFamily: fonts.display }]} numberOfLines={2}>
+                      {e.title}
                     </Text>
-                    <Text style={[s.cardDate, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
-                      {dateStr}
-                    </Text>
+                    <Text style={[s.cardDate, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>{dateStr}</Text>
                   </View>
-                  <View style={[s.statusPill, { backgroundColor: STATUS_COLOR[item.status] + '20' }]}>
-                    <Text style={[s.statusText, { color: STATUS_COLOR[item.status], fontFamily: fonts.sansMedium }]}>
-                      {item.status}
+                  <View style={[s.statusPill, { backgroundColor: (STATUS_COLOR[e.status] ?? palette.gray400) + '20' }]}>
+                    <Text style={[s.statusText, { color: STATUS_COLOR[e.status] ?? palette.gray400, fontFamily: fonts.sansMedium }]}>
+                      {e.status}
                     </Text>
                   </View>
                 </View>
@@ -82,9 +137,9 @@ export default function HostDashboard() {
                 {/* RSVP stats */}
                 <View style={[s.statsRow, { borderTopColor: c.separator }]}>
                   {[
-                    { label: 'Going', val: item.going, color: palette.green },
-                    { label: 'Waitlisted', val: item.waitlisted, color: palette.amber },
-                    { label: 'Interested', val: item.interested, color: c.textSecondary },
+                    { label: 'Going',      val: going,      color: palette.green },
+                    { label: 'Waitlisted', val: waitlisted, color: palette.amber },
+                    { label: 'Interested', val: interested, color: c.textSecondary },
                   ].map(({ label, val, color }) => (
                     <View key={label} style={s.stat}>
                       <Text style={[s.statVal, { color, fontFamily: fonts.sansBold }]}>{val}</Text>
@@ -123,8 +178,9 @@ const s = StyleSheet.create({
   stat: { flex: 1, alignItems: 'center', gap: 2 },
   statVal: { fontSize: 22 },
   statLabel: { fontSize: 11 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'], gap: spacing.lg },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['3xl'], gap: spacing.lg },
   emptyTitle: { fontSize: 28, textAlign: 'center' },
-  emptyBody: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
-  emptyBtn: { paddingHorizontal: spacing['2xl'], paddingVertical: spacing.md, borderRadius: radius.md },
+  emptyBody: { fontSize: 15, textAlign: 'center', lineHeight: 22, maxWidth: 280 },
+  primaryBtn: { paddingHorizontal: spacing['3xl'], paddingVertical: spacing.md, borderRadius: radius.md },
+  retryBtn: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.md },
 });

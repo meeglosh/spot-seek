@@ -68,6 +68,35 @@ export type ApiRsvp = {
   state: 'going' | 'interested' | 'waitlisted' | 'cancelled';
   createdAt: string;
   updatedAt: string;
+  event?: ApiEvent | null;
+};
+
+export type ApiDashboardEvent = ApiEvent & {
+  rsvpCounts: { going: number; interested: number; waitlisted: number; cancelled: number };
+};
+
+export type ApiProfile = {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  isVerified: boolean;
+  createdAt: string;
+};
+
+export type CreateEventInput = {
+  title: string;
+  broadcastSubject: string;
+  description?: string;
+  capacity?: number;
+  status?: 'draft' | 'published';
+  venueName?: string;
+  venueAddress?: string;
+  venueLat?: number;
+  venueLng?: number;
+  isPrivateLocation?: boolean;
+  recurrenceRule?: string;
+  startsAt?: string;
+  endsAt?: string;
 };
 
 export async function fetchFeed(params?: {
@@ -115,4 +144,49 @@ export async function cancelRsvp(rsvpId: string): Promise<void> {
     method: 'PATCH',
     body: JSON.stringify({ state: 'cancelled' }),
   });
+}
+
+export async function createEvent(input: CreateEventInput): Promise<ApiEvent> {
+  const res = await apiFetch('/api/events', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? `Create failed: ${res.status}`);
+  }
+  const { event } = await res.json() as { event: ApiEvent };
+  return event;
+}
+
+export async function fetchDashboard(): Promise<ApiDashboardEvent[]> {
+  const res = await apiFetch('/api/dashboard');
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) throw new Error(`Dashboard fetch failed: ${res.status}`);
+  const { events } = await res.json() as { events: ApiDashboardEvent[] };
+  return events;
+}
+
+export async function fetchMyRsvps(): Promise<ApiRsvp[]> {
+  const res = await apiFetch('/api/rsvps/mine');
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) throw new Error(`RSVPs fetch failed: ${res.status}`);
+  const { rsvps } = await res.json() as { rsvps: ApiRsvp[] };
+  return rsvps;
+}
+
+export async function fetchProfile(id: string): Promise<ApiProfile> {
+  const res = await apiFetch(`/api/profiles/${id}`);
+  if (!res.ok) throw new Error(`Profile fetch failed: ${res.status}`);
+  const { user } = await res.json() as { user: ApiProfile };
+  return user;
+}
+
+export async function fetchFollowCounts(id: string): Promise<{ followers: number; following: number }> {
+  const [frs, fing] = await Promise.all([
+    apiFetch(`/api/profiles/${id}/followers`).then((r) => r.json() as Promise<{ followers: unknown[] }>),
+    apiFetch(`/api/profiles/${id}/following`).then((r) => r.json() as Promise<{ following: unknown[] }>),
+  ]);
+  return { followers: frs.followers.length, following: fing.following.length };
 }
