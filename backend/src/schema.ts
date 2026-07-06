@@ -29,9 +29,11 @@ export const rsvpStateEnum = pgEnum('rsvp_state', [
 // ─── users ────────────────────────────────────────────────────────────────────
 // Auth fields (sessions, passwords, OAuth tokens) are managed by Better Auth
 // in its own tables. Do not add session/password columns here.
+// id is text (not uuid) because Better Auth generates non-UUID IDs like
+// "D5ErO6BollVi3hk4pRdlE4hRWhSQytZb". Our users.id mirrors the BA user.id.
 
 export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   displayName: text('display_name').notNull(),
   avatarUrl: text('avatar_url'),
@@ -46,7 +48,8 @@ export const users = pgTable('users', {
 export const events = pgTable('events', {
   id: uuid('id').primaryKey().defaultRandom(),
   // Ownership lives here — always host_id, never venue_id.
-  hostId: uuid('host_id')
+  // text FK to users.id (text) which mirrors Better Auth's user ID.
+  hostId: text('host_id')
     .notNull()
     .references(() => users.id),
   title: text('title').notNull(),
@@ -80,7 +83,8 @@ export const rsvps = pgTable(
     eventId: uuid('event_id')
       .notNull()
       .references(() => events.id),
-    userId: uuid('user_id')
+    // text FK to users.id (text) which mirrors Better Auth's user ID.
+    userId: text('user_id')
       .notNull()
       .references(() => users.id),
     state: rsvpStateEnum('state').notNull(),

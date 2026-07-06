@@ -1,15 +1,17 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { createAuth } from './auth';
+import { eventsRouter } from './events';
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Mount Better Auth at /api/auth/*
 app.on(['GET', 'POST'], '/api/auth/**', (c) => {
-  const sql = neon(c.env.DATABASE_URL);
-  const auth = createAuth(sql);
+  const auth = createAuth(neon(c.env.DATABASE_URL));
   return auth.handler(c.req.raw);
 });
+
+// Hono's app.route() strips /api/events from the path before the sub-router sees it.
+app.route('/api/events', eventsRouter);
 
 app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 

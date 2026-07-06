@@ -22,5 +22,24 @@ export function createAuth(sql: NeonQueryFunction<false, false>) {
     emailAndPassword: {
       enabled: true,
     },
+    databaseHooks: {
+      user: {
+        create: {
+          // Mirror the Better Auth user into our app users table so that
+          // events.host_id can reference users.id.
+          after: async (user) => {
+            await db
+              .insert(appSchema.users)
+              .values({
+                id: user.id,
+                email: user.email,
+                displayName: user.name,
+                ...(user.image ? { avatarUrl: user.image } : {}),
+              })
+              .onConflictDoNothing();
+          },
+        },
+      },
+    },
   });
 }

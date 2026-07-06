@@ -31,7 +31,7 @@ Follow docs/DATA_MODEL.md exactly. Host owns event; venue is an event attribute.
       behavior -> BLOCKED.md, do not choose silently.
 - [x] 1.2 Auth flow: sign up, sign in, sign out via Better Auth. Session
       persistence. Any cookie/session config change beyond defaults -> BLOCKED.md.
-- [ ] 1.3 Event creation: host creates an event (title, broadcast_subject, time,
+- [x] 1.3 Event creation: host creates an event (title, broadcast_subject, time,
       capacity, optional venue fields). Persist. Tests for the host_id invariant.
 - [ ] 1.4 Event edit: host edits their own event, including changing venue_*
       fields. Test that venue change never alters host_id. Authorization test:
