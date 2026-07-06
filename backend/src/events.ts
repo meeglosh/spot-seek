@@ -6,25 +6,25 @@ import * as schema from './schema';
 import { createAuth } from './auth';
 import { parseRRule, generateOccurrences } from './recurrence';
 
-type AppEnv = { Bindings: Env; Variables: { hostId: string } };
+type AppEnv = { Bindings: Env; Variables: { hostId?: string } };
 
 export const eventsRouter = new Hono<AppEnv>();
 
-// Require auth on all event routes — sets hostId from the session.
+// Optional auth — attaches hostId when a session exists.
+// GET routes are public; POST/PATCH enforce auth inline.
 eventsRouter.use('*', async (c, next) => {
-  const sql = neon(c.env.DATABASE_URL);
-  const auth = createAuth(sql);
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  if (!session?.user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-  c.set('hostId', session.user.id);
+  try {
+    const auth = createAuth(neon(c.env.DATABASE_URL));
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    if (session?.user) c.set('hostId', session.user.id);
+  } catch { /* unauthenticated reads are fine */ }
   await next();
 });
 
 // POST / — host creates an event.
 eventsRouter.post('/', async (c) => {
   const hostId = c.get('hostId');
+  if (!hostId) return c.json({ error: 'Unauthorized' }, 401);
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
   const body = await c.req.json<Record<string, unknown>>();
 
@@ -76,6 +76,7 @@ eventsRouter.get('/:id', async (c) => {
 // Venue fields may change freely; host_id is immutable.
 eventsRouter.patch('/:id', async (c) => {
   const callerId = c.get('hostId');
+  if (!callerId) return c.json({ error: 'Unauthorized' }, 401);
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
   const id = c.req.param('id');
 

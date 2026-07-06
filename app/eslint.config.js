@@ -23,6 +23,7 @@ module.exports = [
       ...reactPlugin.configs.recommended.rules,
       ...reactHooksPlugin.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
+      'react-hooks/set-state-in-effect': 'off', // standard async data-fetching pattern
     },
     settings: {
       react: { version: 'detect' },

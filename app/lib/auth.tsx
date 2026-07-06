@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { API_BASE, apiFetch, setSessionCookie, clearSessionCookie } from './api';
 
 export type AuthUser = {
   id: string;
@@ -18,37 +19,50 @@ type AuthCtx = AuthState & {
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-const API = 'http://localhost:8787';
+function extractCookie(res: Response): string {
+  // React Native doesn't auto-manage cookies — extract the token manually.
+  const setCookie = res.headers.get('set-cookie') ?? '';
+  const match = setCookie.match(/better-auth\.session_token=[^;]+/);
+  return match ? match[0] : '';
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'unauthenticated' });
 
   async function signUp(name: string, email: string, password: string) {
-    const res = await fetch(`${API}/api/auth/sign-up/email`, {
+    const res = await fetch(`${API_BASE}/api/auth/sign-up/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ name, email, password }),
     });
-    if (!res.ok) throw new Error('Sign up failed');
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as { message?: string };
+      throw new Error(body.message ?? 'Sign up failed');
+    }
     const { user } = await res.json() as { user: AuthUser };
+
+    // Sign in immediately to get a session cookie.
+    await signIn(email, password);
     setState({ status: 'authenticated', user });
   }
 
   async function signIn(email: string, password: string) {
-    const res = await fetch(`${API}/api/auth/sign-in/email`, {
+    const res = await fetch(`${API_BASE}/api/auth/sign-in/email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({ email, password }),
     });
-    if (!res.ok) throw new Error('Sign in failed');
+    if (!res.ok) throw new Error('Invalid email or password');
+    const cookie = extractCookie(res);
+    if (cookie) setSessionCookie(cookie);
+
     const { user } = await res.json() as { user: AuthUser };
     setState({ status: 'authenticated', user });
   }
 
   function signOut() {
-    fetch(`${API}/api/auth/sign-out`, { method: 'POST', credentials: 'include' });
+    apiFetch('/api/auth/sign-out', { method: 'POST' });
+    clearSessionCookie();
     setState({ status: 'unauthenticated' });
   }
 
