@@ -10,6 +10,19 @@ The agents write here instead of guessing. Read this each morning. Empty is good
 - Real final error (verbatim, if any): 
 -->
 
+## 3.1-3.4 — Payment processor for sponsor transactions needs a human decision
+
+- What it needs: a payment provider (Stripe recommended), test-mode API keys
+  (`STRIPE_SECRET_KEY=sk_test_...`), and a decision on fee collection timing
+  (collect at bid acceptance vs event completion).
+- Why blocked: CLAUDE.md hard stop — all payment/money work uses test-mode keys only;
+  anything touching real funds -> BLOCKED.md. No live credentials in codebase.
+- What was built: full auction mechanics (bids, acceptance, fee calculation) with
+  amount_cents stored in DB. The payment provider call is a stubbed placeholder that
+  returns mock results. Wire in Stripe with `wrangler secret put STRIPE_SECRET_KEY`.
+- Recommendation: Stripe — test-mode keys free, excellent DX, supports marketplace
+  transfers for platform fee distribution.
+
 ## 2.2 — RESOLVED: Cloudflare Durable Objects WebSocket chat
 
 - Decision: Cloudflare Durable Objects with Hibernation API.

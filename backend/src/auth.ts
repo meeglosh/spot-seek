@@ -7,7 +7,21 @@ import * as authSchema from './auth-schema';
 
 // Any change to cookie/session config beyond defaults -> BLOCKED.md.
 export function createAuth(sql: NeonQueryFunction<false, false>) {
-  const db = drizzle(sql, { schema: { ...appSchema, ...authSchema } });
+  // Pass only table objects — spreading the full schema includes pgEnum objects
+  // which confuse Better Auth's Drizzle adapter.
+  const db = drizzle(sql, {
+    schema: {
+      users: appSchema.users,
+      events: appSchema.events,
+      rsvps: appSchema.rsvps,
+      follows: appSchema.follows,
+      comments: appSchema.comments,
+      sponsorProfiles: appSchema.sponsorProfiles,
+      sponsorships: appSchema.sponsorships,
+      sponsorOffers: appSchema.sponsorOffers,
+      ...authSchema,
+    },
+  });
 
   return betterAuth({
     database: drizzleAdapter(db, {

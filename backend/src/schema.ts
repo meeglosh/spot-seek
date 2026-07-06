@@ -99,6 +99,66 @@ export const rsvps = pgTable(
   (table) => [unique('rsvps_event_user_unique').on(table.eventId, table.userId)],
 );
 
+// ─── Phase 3: sponsor tables ──────────────────────────────────────────────────
+
+export const sponsorshipStatusEnum = pgEnum('sponsorship_status', [
+  'pending',   // bid placed, awaiting host review
+  'active',    // host accepted the bid
+  'rejected',  // host rejected
+  'cancelled', // sponsor cancelled
+  'completed', // event completed, payment settled
+]);
+
+// Sponsor profile — a user opts in as a sponsor.
+export const sponsorProfiles = pgTable('sponsor_profiles', {
+  id: text('id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  companyName: text('company_name').notNull(),
+  website: text('website'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Sponsorship bid on an event.
+// amount_cents is what the sponsor pays; platform_fee_cents (15%) is the platform cut.
+// Payment processing is stubbed — see BLOCKED.md.
+export const sponsorships = pgTable('sponsorships', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  eventId: uuid('event_id')
+    .notNull()
+    .references(() => events.id, { onDelete: 'cascade' }),
+  sponsorId: text('sponsor_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  amountCents: integer('amount_cents').notNull(),
+  platformFeeCents: integer('platform_fee_cents').notNull(),
+  status: sponsorshipStatusEnum('status').notNull().default('pending'),
+  note: text('note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Promo offer attached to a sponsorship — shown to event attendees.
+export const sponsorOffers = pgTable('sponsor_offers', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sponsorshipId: uuid('sponsorship_id')
+    .notNull()
+    .references(() => sponsorships.id, { onDelete: 'cascade' }),
+  eventId: uuid('event_id')
+    .notNull()
+    .references(() => events.id, { onDelete: 'cascade' }),
+  description: text('description').notNull(),
+  promoCode: text('promo_code'),
+  discountCents: integer('discount_cents'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type SponsorProfile = typeof sponsorProfiles.$inferSelect;
+export type Sponsorship = typeof sponsorships.$inferSelect;
+export type NewSponsorship = typeof sponsorships.$inferInsert;
+export type SponsorOffer = typeof sponsorOffers.$inferSelect;
+export type NewSponsorOffer = typeof sponsorOffers.$inferInsert;
+export type SponsorshipStatus = (typeof sponsorshipStatusEnum.enumValues)[number];
+
 // ─── comments ─────────────────────────────────────────────────────────────────
 // HTTP polling baseline for event chat. Realtime transport -> BLOCKED.md (2.2).
 

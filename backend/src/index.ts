@@ -9,15 +9,15 @@ import { remindersRouter } from './reminders';
 import { profilesRouter } from './profiles';
 import { chatRouter } from './chat';
 import { adminRouter } from './admin';
+import { sponsorsRouter } from './sponsors';
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.on(['GET', 'POST'], '/api/auth/**', (c) => {
+app.all('/api/auth/*', (c) => {
   const auth = createAuth(neon(c.env.DATABASE_URL));
   return auth.handler(c.req.raw);
 });
 
-// Hono's app.route() strips /api/events from the path before the sub-router sees it.
 app.route('/api/events', eventsRouter);
 app.route('/api/feed', feedRouter);
 app.route('/api/rsvps', rsvpsRouter);
@@ -26,10 +26,12 @@ app.route('/api/reminders', remindersRouter);
 app.route('/api/profiles', profilesRouter);
 app.route('/api/chat', chatRouter);
 app.route('/api/admin', adminRouter);
+app.route('/api/sponsors', sponsorsRouter);
 
 app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 
 export default app;
 
-// Durable Object class exports — required by Wrangler for DO binding resolution.
-export { ChatRoom } from './chat';
+// Required by Wrangler for DO binding resolution (does not affect test isolation).
+export { ChatRoom } from './chat-room';
+

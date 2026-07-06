@@ -53,9 +53,9 @@ Follow docs/DATA_MODEL.md exactly. Host owns event; venue is an event attribute.
 - [x] 2.4 Host verification
 
 ## Phase 3 — the business (do not start without human go-ahead)
-- [ ] 3.1 Sponsor accounts
-- [ ] 3.2 Sponsored event slots
-- [ ] 3.3 Offers/promos attached to events
-- [ ] 3.4 Host + sponsor analytics
+- [x] 3.1 Sponsor accounts
+- [x] 3.2 Sponsored event slots
+- [x] 3.3 Offers/promos attached to events
+- [x] 3.4 Host + sponsor analytics
 - Note: all payment/money work is a hard stop. Test-mode keys and fixtures only;
   anything touching real funds -> BLOCKED.md.
