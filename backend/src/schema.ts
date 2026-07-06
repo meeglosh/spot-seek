@@ -61,6 +61,9 @@ export const events = pgTable('events', {
   capacity: integer('capacity'),
   status: eventStatusEnum('status').notNull().default('draft'),
   coverImageUrl: text('cover_image_url'),
+  // RRULE string (e.g. "FREQ=WEEKLY;BYDAY=SU") for recurring events.
+  // null = one-off event.
+  recurrenceRule: text('recurrence_rule'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 

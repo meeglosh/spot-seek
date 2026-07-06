@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { eq } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
+import { parseRRule, generateOccurrences } from './recurrence';
 
 type AppEnv = { Bindings: Env; Variables: { hostId: string } };
 
@@ -54,6 +55,7 @@ eventsRouter.post('/', async (c) => {
       venueLat: typeof body.venueLat === 'number' ? body.venueLat : null,
       venueLng: typeof body.venueLng === 'number' ? body.venueLng : null,
       isPrivateLocation: body.isPrivateLocation === true,
+      recurrenceRule: typeof body.recurrenceRule === 'string' ? body.recurrenceRule : null,
     })
     .returning();
 
@@ -105,6 +107,7 @@ eventsRouter.patch('/:id', async (c) => {
   if (typeof body.venueLat === 'number') patch.venueLat = body.venueLat;
   if (typeof body.venueLng === 'number') patch.venueLng = body.venueLng;
   if (typeof body.isPrivateLocation === 'boolean') patch.isPrivateLocation = body.isPrivateLocation;
+  if (typeof body.recurrenceRule === 'string') patch.recurrenceRule = body.recurrenceRule;
 
   if (Object.keys(patch).length === 0) return c.json({ error: 'No editable fields provided' }, 400);
 
@@ -115,4 +118,24 @@ eventsRouter.patch('/:id', async (c) => {
     .returning();
 
   return c.json({ event: updated });
+});
+
+// GET /:id/occurrences — list upcoming occurrence start times for a recurring event.
+eventsRouter.get('/:id/occurrences', async (c) => {
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const event = await db.query.events.findFirst({
+    where: eq(schema.events.id, c.req.param('id')),
+  });
+  if (!event) return c.json({ error: 'Not found' }, 404);
+  if (!event.recurrenceRule) return c.json({ occurrences: [] });
+  if (!event.startsAt) return c.json({ error: 'Event has no startsAt' }, 400);
+
+  try {
+    const rule = parseRRule(event.recurrenceRule);
+    const max = Math.min(parseInt(c.req.query('max') ?? '52', 10), 365);
+    const occurrences = generateOccurrences(event.startsAt, rule, max);
+    return c.json({ occurrences: occurrences.map((d) => d.toISOString()) });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 400);
+  }
 });

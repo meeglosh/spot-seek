@@ -49,7 +49,7 @@ Follow docs/DATA_MODEL.md exactly. Host owns event; venue is an event attribute.
 ## Phase 2 — stickiness (do not start without human go-ahead)
 - [x] 2.1 Attendee profiles + following
 - [x] 2.2 Event chat / comments (realtime stack choice -> BLOCKED.md)
-- [ ] 2.3 Recurring events
+- [x] 2.3 Recurring events
 - [ ] 2.4 Host verification
 
 ## Phase 3 — the business (do not start without human go-ahead)
