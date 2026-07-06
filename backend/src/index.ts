@@ -3,6 +3,7 @@ import { neon } from '@neondatabase/serverless';
 import { createAuth } from './auth';
 import { eventsRouter } from './events';
 import { feedRouter } from './feed';
+import { rsvpsRouter } from './rsvps';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -14,6 +15,7 @@ app.on(['GET', 'POST'], '/api/auth/**', (c) => {
 // Hono's app.route() strips /api/events from the path before the sub-router sees it.
 app.route('/api/events', eventsRouter);
 app.route('/api/feed', feedRouter);
+app.route('/api/rsvps', rsvpsRouter);
 
 app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 

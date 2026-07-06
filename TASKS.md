@@ -39,7 +39,7 @@ Follow docs/DATA_MODEL.md exactly. Host owns event; venue is an event attribute.
 - [x] 1.5 Discovery feed: list published events, filter by time and by location
       (venue_lat/lng radius). Private-location events appear but obscure exact
       address until RSVP. Tests for filter correctness.
-- [ ] 1.6 RSVP: attendee RSVPs to an event. Enforce capacity (overflow ->
+- [x] 1.6 RSVP: attendee RSVPs to an event. Enforce capacity (overflow ->
       waitlisted) and one-rsvp-per-user uniqueness. Tests for both.
 - [ ] 1.7 Host dashboard: a host sees their events and RSVP counts.
 - [ ] 1.8 Reminders scaffolding: schedule a reminder for RSVP'd attendees before
