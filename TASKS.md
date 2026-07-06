@@ -42,7 +42,7 @@ Follow docs/DATA_MODEL.md exactly. Host owns event; venue is an event attribute.
 - [x] 1.6 RSVP: attendee RSVPs to an event. Enforce capacity (overflow ->
       waitlisted) and one-rsvp-per-user uniqueness. Tests for both.
 - [x] 1.7 Host dashboard: a host sees their events and RSVP counts.
-- [ ] 1.8 Reminders scaffolding: schedule a reminder for RSVP'd attendees before
+- [x] 1.8 Reminders scaffolding: schedule a reminder for RSVP'd attendees before
       start. Sending via a real email/push provider with real credentials ->
       BLOCKED.md. Build the scheduling + a fake/dev sender only.
 

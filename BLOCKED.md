@@ -10,6 +10,13 @@ The agents write here instead of guessing. Read this each morning. Empty is good
 - Real final error (verbatim, if any): 
 -->
 
+## 1.8 — Real email/push sender for reminders needs a human decision
+
+- What it needs: a provider choice (Resend, Postmark, SendGrid, Expo push, etc.), real API keys, and a decision on whether to use Cloudflare Queues or Cron Triggers for scheduling.
+- Why it is blocked: CLAUDE.md hard stop — "Sending via a real email/push provider with real credentials -> BLOCKED.md."
+- What was tried: n/a — flagged before implementing, per rules.
+- Real final error (verbatim, if any): n/a
+
 ## 1.1 — Cascade-on-user-delete behavior needs a human decision
 
 - What it needs: A chosen cascade strategy for `DELETE FROM users` when that user has events or RSVPs.
