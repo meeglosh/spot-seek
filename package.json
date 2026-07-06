@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "app"
+    "app",
+    "backend"
   ],
   "scripts": {
     "test": "npm -w app test",

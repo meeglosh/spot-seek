@@ -18,7 +18,7 @@ Work top to bottom. Do not skip ahead unless a task is blocked.
 - [x] 0.4 Configure ESLint + the `npm run lint` script. Confirm clean.
 - [x] 0.5 Add `npm run check:bundle` — an Expo export/bundle dry run that fails on
       Metro resolution or native-module errors. Confirm it passes on the empty app.
-- [ ] 0.6 Wire backend scaffolding: Cloudflare Workers project, Neon connection
+- [x] 0.6 Wire backend scaffolding: Cloudflare Workers project, Neon connection
       (dev branch), Better Auth installed but NOT configured beyond defaults.
       Anything beyond default auth config -> BLOCKED.md.
 
