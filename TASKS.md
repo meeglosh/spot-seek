@@ -33,7 +33,7 @@ Follow docs/DATA_MODEL.md exactly. Host owns event; venue is an event attribute.
       persistence. Any cookie/session config change beyond defaults -> BLOCKED.md.
 - [x] 1.3 Event creation: host creates an event (title, broadcast_subject, time,
       capacity, optional venue fields). Persist. Tests for the host_id invariant.
-- [ ] 1.4 Event edit: host edits their own event, including changing venue_*
+- [x] 1.4 Event edit: host edits their own event, including changing venue_*
       fields. Test that venue change never alters host_id. Authorization test:
       a non-host cannot edit.
 - [ ] 1.5 Discovery feed: list published events, filter by time and by location

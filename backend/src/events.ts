@@ -69,3 +69,50 @@ eventsRouter.get('/:id', async (c) => {
   if (!event) return c.json({ error: 'Not found' }, 404);
   return c.json({ event });
 });
+
+// PATCH /:id — host edits their own event.
+// Venue fields may change freely; host_id is immutable.
+eventsRouter.patch('/:id', async (c) => {
+  const callerId = c.get('hostId');
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const id = c.req.param('id');
+
+  const existing = await db.query.events.findFirst({
+    where: eq(schema.events.id, id),
+  });
+  if (!existing) return c.json({ error: 'Not found' }, 404);
+  // Authorization: only the host may edit their own event.
+  if (existing.hostId !== callerId) return c.json({ error: 'Forbidden' }, 403);
+
+  const body = await c.req.json<Record<string, unknown>>();
+
+  // Build the update payload from only whitelisted editable fields.
+  // host_id is explicitly excluded — it is never part of an edit.
+  const patch: Partial<schema.NewEvent> = {};
+  if (typeof body.title === 'string') patch.title = body.title;
+  if (typeof body.broadcastSubject === 'string') patch.broadcastSubject = body.broadcastSubject;
+  if (typeof body.description === 'string') patch.description = body.description;
+  if (typeof body.capacity === 'number') patch.capacity = body.capacity;
+  if (
+    body.status === 'draft' ||
+    body.status === 'published' ||
+    body.status === 'cancelled' ||
+    body.status === 'completed'
+  )
+    patch.status = body.status;
+  if (typeof body.venueName === 'string') patch.venueName = body.venueName;
+  if (typeof body.venueAddress === 'string') patch.venueAddress = body.venueAddress;
+  if (typeof body.venueLat === 'number') patch.venueLat = body.venueLat;
+  if (typeof body.venueLng === 'number') patch.venueLng = body.venueLng;
+  if (typeof body.isPrivateLocation === 'boolean') patch.isPrivateLocation = body.isPrivateLocation;
+
+  if (Object.keys(patch).length === 0) return c.json({ error: 'No editable fields provided' }, 400);
+
+  const [updated] = await db
+    .update(schema.events)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(schema.events.id, id))
+    .returning();
+
+  return c.json({ event: updated });
+});
