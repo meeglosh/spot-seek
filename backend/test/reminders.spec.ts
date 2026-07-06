@@ -67,8 +67,9 @@ describe('reminders scaffolding', () => {
       body: JSON.stringify({ eventId }),
     });
     expect(res.status).toBe(200);
-    const body = await res.json() as { sent: number; note: string };
+    const body = await res.json() as { sent: number; sender: string };
     expect(body.sent).toBe(1);
-    expect(body.note).toContain('dev-sender-only');
+    // In test env RESEND_API_KEY is not set, so dev-console sender is used.
+    expect(body.sender).toBe('dev-console');
   });
 });

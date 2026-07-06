@@ -10,16 +10,16 @@ The agents write here instead of guessing. Read this each morning. Empty is good
 - Real final error (verbatim, if any): 
 -->
 
-## 1.8 — Real email/push sender for reminders needs a human decision
+## 1.8 — RESOLVED: Resend + Expo Push, Cloudflare Queues for scheduling
 
-- What it needs: a provider choice (Resend, Postmark, SendGrid, Expo push, etc.), real API keys, and a decision on whether to use Cloudflare Queues or Cron Triggers for scheduling.
-- Why it is blocked: CLAUDE.md hard stop — "Sending via a real email/push provider with real credentials -> BLOCKED.md."
-- What was tried: n/a — flagged before implementing, per rules.
-- Real final error (verbatim, if any): n/a
+- Decision: Email via Resend (RESEND_API_KEY wrangler secret), push via Expo Push API
+  (direct fetch, tokens stored per-device in Phase 2.1), Cloudflare Queues for scheduling.
+- `wrangler secret put RESEND_API_KEY` to enable real sending. Dev-console fallback
+  when key is absent. Queue binding to be added in wrangler.jsonc once queue is created.
 
-## 1.1 — Cascade-on-user-delete behavior needs a human decision
+## 1.1 — RESOLVED: events.host_id RESTRICT, rsvps.user_id CASCADE
 
-- What it needs: A chosen cascade strategy for `DELETE FROM users` when that user has events or RSVPs.
-- Why it is blocked: CLAUDE.md and DATA_MODEL.md both require this decision be made explicitly by a human. The options are: (a) RESTRICT — block user deletion if they own any event or have any RSVP; (b) CASCADE — delete all owned events (and their RSVPs) and the user's RSVP rows; (c) SET NULL — null out host_id on events (violates the NOT NULL invariant, so this option is invalid). The schema currently has no ON DELETE clause on the FKs while we wait for this decision.
-- What was tried: n/a — flagged before implementing, per CLAUDE.md rules.
-- Real final error (verbatim, if any): n/a
+- Decision: `events.host_id` ON DELETE RESTRICT — a host cannot delete their account
+  while they own events (protects attendees). `rsvps.user_id` ON DELETE CASCADE —
+  deleting a user removes their RSVP rows (they were an attendee, not the owner).
+- Applied via scripts/migrate-cascade.ts against the Neon dev branch.

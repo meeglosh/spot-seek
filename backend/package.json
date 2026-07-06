@@ -26,6 +26,8 @@
 	"dependencies": {
 		"@neondatabase/serverless": "^1.1.0",
 		"better-auth": "^1.6.23",
-		"hono": "^4.12.28"
+		"expo-server-sdk": "^6.1.0",
+		"hono": "^4.12.28",
+		"resend": "^6.17.1"
 	}
 }

@@ -2,4 +2,6 @@
 // Run `npm run cf-typegen` after adding bindings to wrangler.jsonc.
 interface Env {
   DATABASE_URL: string;
+  // Optional — when set, reminders use Resend for email.
+  RESEND_API_KEY?: string;
 }

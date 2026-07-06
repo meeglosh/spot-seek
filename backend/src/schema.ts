@@ -48,10 +48,10 @@ export const users = pgTable('users', {
 export const events = pgTable('events', {
   id: uuid('id').primaryKey().defaultRandom(),
   // Ownership lives here — always host_id, never venue_id.
-  // text FK to users.id (text) which mirrors Better Auth's user ID.
+  // RESTRICT: a host cannot delete their account while they own events.
   hostId: text('host_id')
     .notNull()
-    .references(() => users.id),
+    .references(() => users.id, { onDelete: 'restrict' }),
   title: text('title').notNull(),
   description: text('description'),
   broadcastSubject: text('broadcast_subject').notNull(),
@@ -83,10 +83,10 @@ export const rsvps = pgTable(
     eventId: uuid('event_id')
       .notNull()
       .references(() => events.id),
-    // text FK to users.id (text) which mirrors Better Auth's user ID.
+    // CASCADE: deleting a user removes their RSVPs (they were an attendee, not the owner).
     userId: text('user_id')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade' }),
     state: rsvpStateEnum('state').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
