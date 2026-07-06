@@ -1,0 +1,16 @@
+{
+  "name": "spot-seek",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "app"
+  ],
+  "scripts": {
+    "test": "npm -w app test",
+    "lint": "npm -w app run lint",
+    "check:bundle": "npm -w app run check:bundle"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3"
+  }
+}

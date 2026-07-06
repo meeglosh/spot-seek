@@ -1,0 +1,19 @@
+.env
+.env.local
+.env*.local
+
+# Dependencies
+node_modules/
+app/node_modules/
+
+# Expo
+app/.expo/
+app/dist/
+app/web-build/
+
+# Native
+app/android/
+app/ios/
+
+# Build artifacts
+app/.bundle/
