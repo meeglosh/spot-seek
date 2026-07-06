@@ -9,6 +9,7 @@ import {
   doublePrecision,
   unique,
 } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
@@ -93,6 +94,33 @@ export const rsvps = pgTable(
   },
   (table) => [unique('rsvps_event_user_unique').on(table.eventId, table.userId)],
 );
+
+// ─── follows ──────────────────────────────────────────────────────────────────
+// Directed follow graph: follower → following.
+// Used by the discovery feed to surface events from followed hosts.
+
+export const follows = pgTable(
+  'follows',
+  {
+    followerId: text('follower_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    followingId: text('following_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique('follows_unique').on(table.followerId, table.followingId)],
+);
+
+export type Follow = typeof follows.$inferSelect;
+
+// ─── Relations (for Drizzle query builder `with:` syntax) ────────────────────
+
+export const followsRelations = relations(follows, ({ one }) => ({
+  follower: one(users, { fields: [follows.followerId], references: [users.id] }),
+  following: one(users, { fields: [follows.followingId], references: [users.id] }),
+}));
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -47,7 +47,7 @@ Follow docs/DATA_MODEL.md exactly. Host owns event; venue is an event attribute.
       BLOCKED.md. Build the scheduling + a fake/dev sender only.
 
 ## Phase 2 — stickiness (do not start without human go-ahead)
-- [ ] 2.1 Attendee profiles + following
+- [x] 2.1 Attendee profiles + following
 - [ ] 2.2 Event chat / comments (realtime stack choice -> BLOCKED.md)
 - [ ] 2.3 Recurring events
 - [ ] 2.4 Host verification
