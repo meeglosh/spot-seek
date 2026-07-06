@@ -7,11 +7,18 @@
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"test": "vitest",
-		"cf-typegen": "wrangler types"
+		"cf-typegen": "wrangler types",
+		"lint": "tsc --noEmit",
+		"check:bundle": "wrangler deploy --dry-run --outdir /tmp/spot-seek-worker-check",
+		"db:generate": "drizzle-kit generate",
+		"db:push": "drizzle-kit push",
+		"db:migrate": "drizzle-kit migrate"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.12.4",
 		"@cloudflare/workers-types": "^4.20260702.1",
+		"drizzle-kit": "^0.31.10",
+		"drizzle-orm": "^0.45.2",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
 		"wrangler": "^3.101.0"

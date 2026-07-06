@@ -26,7 +26,7 @@ Work top to bottom. Do not skip ahead unless a task is blocked.
 
 Follow docs/DATA_MODEL.md exactly. Host owns event; venue is an event attribute.
 
-- [ ] 1.1 Schema + migrations for users, events, rsvps on the Neon dev branch.
+- [x] 1.1 Schema + migrations for users, events, rsvps on the Neon dev branch.
       Assert the invariants from DATA_MODEL.md in tests. Cascade-on-user-delete
       behavior -> BLOCKED.md, do not choose silently.
 - [ ] 1.2 Auth flow: sign up, sign in, sign out via Better Auth. Session
