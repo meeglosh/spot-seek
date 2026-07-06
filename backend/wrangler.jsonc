@@ -2,7 +2,16 @@
 	"name": "spot-seek-api",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-01-01",
+	"compatibility_flags": ["nodejs_compat"],
 	"observability": {
 		"enabled": true,
 	},
+	"durable_objects": {
+		"bindings": [
+			{ "name": "CHAT_ROOMS", "class_name": "ChatRoom" }
+		]
+	},
+	"migrations": [
+		{ "tag": "v1", "new_sqlite_classes": ["ChatRoom"] }
+	],
 }

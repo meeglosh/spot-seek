@@ -10,7 +10,14 @@ The agents write here instead of guessing. Read this each morning. Empty is good
 - Real final error (verbatim, if any): 
 -->
 
-## 2.2 — Realtime chat transport needs a human decision
+## 2.2 — RESOLVED: Cloudflare Durable Objects WebSocket chat
+
+- Decision: Cloudflare Durable Objects with Hibernation API.
+- ChatRoom DO keyed by eventId; one instance per event.
+- WebSocket upgrade at GET /api/chat/:eventId/ws; broadcasts via DO, persists to comments table.
+- wrangler.jsonc: CHAT_ROOMS DO binding + v1 migration declared.
+
+## 2.2 — Realtime chat transport was blocked (now resolved above)
 
 - What it needs: a choice of realtime stack for event chat (WebSocket transport).
   Options: (a) Cloudflare Durable Objects + WebSockets — native to Workers, no extra cost

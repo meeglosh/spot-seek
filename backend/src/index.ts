@@ -30,3 +30,6 @@ app.route('/api/admin', adminRouter);
 app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 
 export default app;
+
+// Durable Object class exports — required by Wrangler for DO binding resolution.
+export { ChatRoom } from './chat';

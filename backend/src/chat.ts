@@ -10,6 +10,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { and, eq, asc } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
+export { ChatRoom } from './chat-room';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
 
@@ -62,6 +63,25 @@ chatRouter.post('/:eventId', async (c) => {
     .returning();
 
   return c.json({ comment }, 201);
+});
+
+// GET /api/chat/:eventId/ws — WebSocket upgrade, forwarded to ChatRoom DO.
+chatRouter.get('/:eventId/ws', async (c) => {
+  const eventId = c.req.param('eventId');
+  // Resolve authenticated userId from session (anonymous allowed as fallback).
+  let userId = 'anonymous';
+  try {
+    const auth = createAuth(neon(c.env.DATABASE_URL));
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    if (session?.user) userId = session.user.id;
+  } catch { /* anonymous */ }
+
+  const id = c.env.CHAT_ROOMS.idFromName(eventId);
+  const stub = c.env.CHAT_ROOMS.get(id);
+  const url = new URL(c.req.url);
+  url.searchParams.set('eventId', eventId);
+  url.searchParams.set('userId', userId);
+  return stub.fetch(new Request(url.toString(), c.req.raw));
 });
 
 // DELETE /api/chat/:eventId/:commentId — delete own comment or host deletes any.
