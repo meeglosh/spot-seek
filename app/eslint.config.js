@@ -27,6 +27,7 @@ module.exports = [
       ...reactHooksPlugin.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/refs': 'off', // Animated.Value lives in a ref by RN convention
     },
     settings: {
       react: { version: 'detect' },

@@ -15,6 +15,8 @@ export type EventItem = {
   status: string;
   hostName?: string;
   goingCount?: number;
+  venueLat?: number | null;
+  venueLng?: number | null;
 };
 
 export function EventCard({ event, compact = false }: { event: EventItem; compact?: boolean }) {
