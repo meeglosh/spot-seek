@@ -27,7 +27,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint . --ext .ts,.tsx",
+    "check:bundle": "expo export --platform all --output-dir /tmp/spot-seek-bundle-check --clear"
   },
   "private": true
 }

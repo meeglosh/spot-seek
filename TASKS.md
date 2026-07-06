@@ -6,17 +6,17 @@ Work top to bottom. Do not skip ahead unless a task is blocked.
 
 ## Phase 0 — harness (must run first; the loop has no rails without these)
 
-- [ ] 0.1 Initialize Expo + TypeScript (strict) project targeting iOS, Android,
+- [x] 0.1 Initialize Expo + TypeScript (strict) project targeting iOS, Android,
       and web. Commit a runnable empty app.
-- [ ] 0.2 Set up the test runner (Jest + React Native Testing Library). Add one
+- [x] 0.2 Set up the test runner (Jest + React Native Testing Library). Add one
       trivially-passing test AND one deliberately-failing test. Prove the checker
       reports GREEN on the first and FAILED with a real error on the second, then
       delete the failing test. This verifies both checker paths before any
       feature work.
-- [ ] 0.3 Configure TypeScript strict checking via `tsc --noEmit` and confirm it
+- [x] 0.3 Configure TypeScript strict checking via `tsc --noEmit` and confirm it
       runs clean on the empty project.
-- [ ] 0.4 Configure ESLint + the `npm run lint` script. Confirm clean.
-- [ ] 0.5 Add `npm run check:bundle` — an Expo export/bundle dry run that fails on
+- [x] 0.4 Configure ESLint + the `npm run lint` script. Confirm clean.
+- [x] 0.5 Add `npm run check:bundle` — an Expo export/bundle dry run that fails on
       Metro resolution or native-module errors. Confirm it passes on the empty app.
 - [ ] 0.6 Wire backend scaffolding: Cloudflare Workers project, Neon connection
       (dev branch), Better Auth installed but NOT configured beyond defaults.
