@@ -1,18 +1,16 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import { Hono } from 'hono';
+import { neon } from '@neondatabase/serverless';
+import { createAuth } from './auth';
 
-export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		return new Response("Hello World!");
-	},
-} satisfies ExportedHandler<Env>;
+const app = new Hono<{ Bindings: Env }>();
+
+// Mount Better Auth at /api/auth/*
+app.on(['GET', 'POST'], '/api/auth/**', (c) => {
+  const sql = neon(c.env.DATABASE_URL);
+  const auth = createAuth(sql);
+  return auth.handler(c.req.raw);
+});
+
+app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
+
+export default app;
