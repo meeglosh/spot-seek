@@ -4,6 +4,7 @@ import { createAuth } from './auth';
 import { eventsRouter } from './events';
 import { feedRouter } from './feed';
 import { rsvpsRouter } from './rsvps';
+import { dashboardRouter } from './dashboard';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -16,6 +17,7 @@ app.on(['GET', 'POST'], '/api/auth/**', (c) => {
 app.route('/api/events', eventsRouter);
 app.route('/api/feed', feedRouter);
 app.route('/api/rsvps', rsvpsRouter);
+app.route('/api/dashboard', dashboardRouter);
 
 app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 
