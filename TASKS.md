@@ -36,7 +36,7 @@ Follow docs/DATA_MODEL.md exactly. Host owns event; venue is an event attribute.
 - [x] 1.4 Event edit: host edits their own event, including changing venue_*
       fields. Test that venue change never alters host_id. Authorization test:
       a non-host cannot edit.
-- [ ] 1.5 Discovery feed: list published events, filter by time and by location
+- [x] 1.5 Discovery feed: list published events, filter by time and by location
       (venue_lat/lng radius). Private-location events appear but obscure exact
       address until RSVP. Tests for filter correctness.
 - [ ] 1.6 RSVP: attendee RSVPs to an event. Enforce capacity (overflow ->

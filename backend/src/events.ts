@@ -39,8 +39,8 @@ eventsRouter.post('/', async (c) => {
       title: body.title,
       broadcastSubject: body.broadcastSubject,
       description: typeof body.description === 'string' ? body.description : null,
-      startsAt: body.startsAt instanceof Date ? body.startsAt : null,
-      endsAt: body.endsAt instanceof Date ? body.endsAt : null,
+      startsAt: body.startsAt ? new Date(body.startsAt as string) : null,
+      endsAt: body.endsAt ? new Date(body.endsAt as string) : null,
       capacity: typeof body.capacity === 'number' ? body.capacity : null,
       status:
         body.status === 'draft' ||
