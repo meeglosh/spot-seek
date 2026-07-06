@@ -7,6 +7,7 @@ import { rsvpsRouter } from './rsvps';
 import { dashboardRouter } from './dashboard';
 import { remindersRouter } from './reminders';
 import { profilesRouter } from './profiles';
+import { chatRouter } from './chat';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -22,6 +23,7 @@ app.route('/api/rsvps', rsvpsRouter);
 app.route('/api/dashboard', dashboardRouter);
 app.route('/api/reminders', remindersRouter);
 app.route('/api/profiles', profilesRouter);
+app.route('/api/chat', chatRouter);
 
 app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 

@@ -95,6 +95,25 @@ export const rsvps = pgTable(
   (table) => [unique('rsvps_event_user_unique').on(table.eventId, table.userId)],
 );
 
+// ─── comments ─────────────────────────────────────────────────────────────────
+// HTTP polling baseline for event chat. Realtime transport -> BLOCKED.md (2.2).
+
+export const comments = pgTable('comments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  eventId: uuid('event_id')
+    .notNull()
+    .references(() => events.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type Comment = typeof comments.$inferSelect;
+export type NewComment = typeof comments.$inferInsert;
+
 // ─── follows ──────────────────────────────────────────────────────────────────
 // Directed follow graph: follower → following.
 // Used by the discovery feed to surface events from followed hosts.

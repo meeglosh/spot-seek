@@ -10,6 +10,19 @@ The agents write here instead of guessing. Read this each morning. Empty is good
 - Real final error (verbatim, if any): 
 -->
 
+## 2.2 — Realtime chat transport needs a human decision
+
+- What it needs: a choice of realtime stack for event chat (WebSocket transport).
+  Options: (a) Cloudflare Durable Objects + WebSockets — native to Workers, no extra cost
+  at low scale, complex at high scale; (b) Partykit — managed Durable Objects, simpler
+  DX; (c) Pusher/Ably — managed hosted pubsub, per-message pricing.
+  Recommendation: Cloudflare Durable Objects (stays on Workers platform, no external
+  dependency, aligns with existing stack).
+- Why blocked: task 2.2 says "realtime stack choice -> BLOCKED.md."
+- What was built: comment CRUD (HTTP polling baseline) is implemented and tested.
+  The realtime layer sits on top — adding it does not break the REST endpoints.
+- Real final error (verbatim, if any): n/a
+
 ## 1.8 — RESOLVED: Resend + Expo Push, Cloudflare Queues for scheduling
 
 - Decision: Email via Resend (RESEND_API_KEY wrangler secret), push via Expo Push API
