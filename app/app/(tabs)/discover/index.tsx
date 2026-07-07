@@ -4,11 +4,13 @@ import {
   useColorScheme, TextInput, ActivityIndicator, Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
 import { light, dark, fonts, spacing, radius } from '../../../lib/theme';
-import { fetchFeed, type ApiEvent } from '../../../lib/api';
+import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
+import { useDiscoverFilters, activeFilterCount } from '../../../lib/discover-filters';
 
 const FILTERS = ['All', 'Today', 'This week', 'Near me'] as const;
 type Filter = typeof FILTERS[number];
@@ -48,9 +50,13 @@ function filterByTime(events: EventItem[], filter: Filter): EventItem[] {
 }
 
 export default function DiscoverScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
   const c = scheme === 'dark' ? dark : light;
+  const { filters } = useDiscoverFilters();
+  const filterCount = activeFilterCount(filters);
+  const [favourites, setFavourites] = useState<ApiFavourite[]>([]);
 
   const [allEvents, setAllEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,9 +93,12 @@ export default function DiscoverScreen() {
   async function loadFeed(coords?: { latitude: number; longitude: number } | null) {
     setError('');
     try {
-      const params = coords
-        ? { lat: coords.latitude, lng: coords.longitude, radiusKm: 25 }
-        : undefined;
+      const f = filters;
+      const params: Parameters<typeof fetchFeed>[0] = {};
+      if (coords) { params.lat = coords.latitude; params.lng = coords.longitude; params.radiusKm = 25; }
+      if (f.sport) params.sport = f.sport;
+      if (f.after) params.after = f.after;
+      if (f.before) params.before = f.before;
       const events = await fetchFeed(params);
       setAllEvents(events.map(apiEventToItem));
     } catch (err) {
@@ -102,6 +111,12 @@ export default function DiscoverScreen() {
   }
 
   useEffect(() => { loadFeed(); }, []);
+
+  // Reload when filters change (filter screen sets them and navigates back)
+  useFocusEffect(useCallback(() => {
+    loadFeed(filter === 'Near me' ? userLocation : null);
+    fetchFavourites().then(setFavourites).catch(() => {});
+  }, [filters, filter, userLocation]));
 
   async function handleFilterPress(f: Filter) {
     setFilter(f);
@@ -131,11 +146,21 @@ export default function DiscoverScreen() {
     loadFeed(filter === 'Near me' ? userLocation : null);
   }, [filter, userLocation]);
 
-  const displayed = filterByTime(allEvents, filter).filter((e) =>
-    !search ||
-    e.title.toLowerCase().includes(search.toLowerCase()) ||
-    e.broadcastSubject.toLowerCase().includes(search.toLowerCase())
-  );
+  // Client-side: apply venue filter + team filter (server already applied sport/date)
+  const favTeams = favourites.filter((f) => f.type === 'team').map((f) => f.value);
+  const displayed = filterByTime(allEvents, filter).filter((e) => {
+    if (search && !e.title.toLowerCase().includes(search.toLowerCase()) && !e.broadcastSubject.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filters.venue && !e.venueName?.toLowerCase().includes(filters.venue.toLowerCase())) return false;
+    if (filters.teams && filters.teams.length > 0) {
+      const haystack = `${e.title} ${e.broadcastSubject}`.toLowerCase();
+      if (!filters.teams.some((t) => haystack.includes(t.toLowerCase()))) return false;
+    }
+    if (filters.useFavourites && favTeams.length > 0) {
+      const haystack = `${e.title} ${e.broadcastSubject}`.toLowerCase();
+      if (!favTeams.some((t) => haystack.includes(t.toLowerCase()))) return false;
+    }
+    return true;
+  });
 
   // Toggle pill slide animation
   const pillTranslate = toggleAnim.interpolate({
@@ -149,6 +174,17 @@ export default function DiscoverScreen() {
       <View style={[s.header, { paddingTop: insets.top + spacing.md }]}>
         <View style={s.titleRow}>
           <Text style={[s.wordmark, { color: c.textPrimary, fontFamily: fonts.display }]}>SpotSeek</Text>
+
+          <View style={s.titleActions}>
+            {/* Filter button */}
+            <Pressable
+              style={[s.filterBtn, { backgroundColor: filterCount > 0 ? c.fill : c.bgSubtle, borderColor: filterCount > 0 ? c.fill : c.cardBorder }]}
+              onPress={() => router.push('/(tabs)/discover/filter')}
+            >
+              <Text style={[s.filterBtnText, { color: filterCount > 0 ? c.fillText : c.textSecondary, fontFamily: fonts.sansMedium }]}>
+                {filterCount > 0 ? `Filters · ${filterCount}` : 'Filters'}
+              </Text>
+            </Pressable>
 
           {/* List / Map toggle */}
           <Pressable
@@ -170,6 +206,7 @@ export default function DiscoverScreen() {
               <Text style={[s.toggleIcon, { opacity: viewMode === 'map' ? 1 : 0.45 }]}>◎</Text>
             </View>
           </Pressable>
+          </View>
         </View>
 
         {/* Search — list mode only */}
@@ -187,6 +224,37 @@ export default function DiscoverScreen() {
               <Pressable onPress={() => setSearch('')}>
                 <Text style={{ color: c.textTertiary, fontSize: 14, paddingRight: spacing.xs }}>✕</Text>
               </Pressable>
+            )}
+          </View>
+        )}
+
+        {/* Active filter summary chips */}
+        {filterCount > 0 && (
+          <View style={s.activeFilters}>
+            {filters.sport && (
+              <View style={[s.activeFChip, { backgroundColor: c.fill }]}>
+                <Text style={[s.activeFChipText, { color: c.fillText, fontFamily: fonts.sansMedium }]}>⚽ {filters.sport}</Text>
+              </View>
+            )}
+            {filters.teams?.slice(0, 2).map((t) => (
+              <View key={t} style={[s.activeFChip, { backgroundColor: c.fill }]}>
+                <Text style={[s.activeFChipText, { color: c.fillText, fontFamily: fonts.sansMedium }]}>{t}</Text>
+              </View>
+            ))}
+            {(filters.teams?.length ?? 0) > 2 && (
+              <View style={[s.activeFChip, { backgroundColor: c.fill }]}>
+                <Text style={[s.activeFChipText, { color: c.fillText, fontFamily: fonts.sansMedium }]}>+{(filters.teams?.length ?? 0) - 2} teams</Text>
+              </View>
+            )}
+            {filters.venue && (
+              <View style={[s.activeFChip, { backgroundColor: c.fill }]}>
+                <Text style={[s.activeFChipText, { color: c.fillText, fontFamily: fonts.sansMedium }]}>📍 {filters.venue}</Text>
+              </View>
+            )}
+            {filters.useFavourites && (
+              <View style={[s.activeFChip, { backgroundColor: c.fill }]}>
+                <Text style={[s.activeFChipText, { color: c.fillText, fontFamily: fonts.sansMedium }]}>⭐ Your teams</Text>
+              </View>
             )}
           </View>
         )}
@@ -278,6 +346,12 @@ const s = StyleSheet.create({
   header: { paddingHorizontal: spacing.xl, gap: spacing.md, paddingBottom: spacing.md },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   wordmark: { fontSize: 28 },
+  titleActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  filterBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full, borderWidth: 1 },
+  filterBtnText: { fontSize: 13 },
+  activeFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  activeFChip: { paddingHorizontal: spacing.sm + 2, paddingVertical: spacing.xs, borderRadius: radius.full },
+  activeFChipText: { fontSize: 12 },
 
   // Toggle
   toggle: {

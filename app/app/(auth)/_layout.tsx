@@ -6,6 +6,7 @@ export default function AuthLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="sign-in" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="sign-up" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="interests" options={{ animation: 'fade', gestureEnabled: false }} />
     </Stack>
   );
 }

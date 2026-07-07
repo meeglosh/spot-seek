@@ -6,7 +6,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../lib/auth';
-import { fetchFollowCounts, fetchMyRsvps, type ApiRsvp } from '../../../lib/api';
+import { fetchFollowCounts, fetchMyRsvps, fetchFavourites, type ApiRsvp, type ApiFavourite } from '../../../lib/api';
 import { light, dark, fonts, spacing, radius, palette } from '../../../lib/theme';
 
 const STATE_COLOR: Record<string, string> = {
@@ -20,6 +20,7 @@ type ProfileData = {
   followers: number;
   following: number;
   rsvps: ApiRsvp[];
+  favourites: ApiFavourite[];
 };
 
 export default function ProfileScreen() {
@@ -36,11 +37,12 @@ export default function ProfileScreen() {
   async function load() {
     if (auth.status !== 'authenticated') { setLoading(false); return; }
     try {
-      const [counts, rsvps] = await Promise.all([
+      const [counts, rsvps, favourites] = await Promise.all([
         fetchFollowCounts(auth.user.id),
         fetchMyRsvps(),
+        fetchFavourites(),
       ]);
-      setData({ followers: counts.followers, following: counts.following, rsvps });
+      setData({ followers: counts.followers, following: counts.following, rsvps, favourites });
     } catch {
       // non-fatal — show what we have
     } finally {
@@ -180,6 +182,45 @@ export default function ProfileScreen() {
         </View>
       )}
 
+      {/* Interests */}
+      {!loading && (
+        <View style={[s.section, { paddingHorizontal: spacing.xl }]}>
+          <View style={s.sectionHeader}>
+            <Text style={[s.sectionTitle, { color: c.textPrimary, fontFamily: fonts.sansSemiBold }]}>Interests</Text>
+            <Pressable onPress={() => router.push('/(auth)/interests')}>
+              <Text style={[{ color: c.textSecondary, fontFamily: fonts.sansMedium, fontSize: 13 }]}>Edit</Text>
+            </Pressable>
+          </View>
+          {(data?.favourites ?? []).length === 0 ? (
+            <Pressable
+              style={[s.emptyCard, { backgroundColor: c.bgSubtle, borderColor: c.cardBorder }]}
+              onPress={() => router.push('/(auth)/interests')}
+            >
+              <Text style={[s.emptyCardText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
+                Add your favourite sports and teams →
+              </Text>
+            </Pressable>
+          ) : (
+            <View style={s.interestChips}>
+              {(data?.favourites ?? []).slice(0, 12).map((f) => (
+                <View key={f.id} style={[s.interestChip, { backgroundColor: c.bgSubtle, borderColor: c.cardBorder }]}>
+                  <Text style={[s.interestChipText, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>
+                    {f.type === 'sport' ? '⚽ ' : ''}{f.value}
+                  </Text>
+                </View>
+              ))}
+              {(data?.favourites ?? []).length > 12 && (
+                <View style={[s.interestChip, { backgroundColor: c.bgSubtle, borderColor: c.cardBorder }]}>
+                  <Text style={[s.interestChipText, { color: c.textTertiary, fontFamily: fonts.sansRegular }]}>
+                    +{(data?.favourites ?? []).length - 12} more
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Sign out */}
       <View style={[s.section, { paddingHorizontal: spacing.xl }]}>
         <Pressable
@@ -227,6 +268,9 @@ const s = StyleSheet.create({
   rsvpDate: { fontSize: 12 },
   statePill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.full },
   stateText: { fontSize: 11 },
+  interestChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  interestChip: { paddingHorizontal: spacing.sm + 2, paddingVertical: spacing.xs + 2, borderRadius: radius.full, borderWidth: 1 },
+  interestChipText: { fontSize: 12 },
   signOutBtn: {
     height: 48, borderRadius: radius.md, borderWidth: 1,
     alignItems: 'center', justifyContent: 'center',

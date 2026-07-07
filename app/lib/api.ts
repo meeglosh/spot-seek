@@ -108,6 +108,8 @@ export async function fetchFeed(params?: {
   lat?: number;
   lng?: number;
   radiusKm?: number;
+  q?: string;
+  sport?: string;
 }): Promise<ApiEvent[]> {
   const q = new URLSearchParams();
   if (params?.after) q.set('after', params.after);
@@ -115,6 +117,8 @@ export async function fetchFeed(params?: {
   if (params?.lat != null) q.set('lat', String(params.lat));
   if (params?.lng != null) q.set('lng', String(params.lng));
   if (params?.radiusKm != null) q.set('radiusKm', String(params.radiusKm));
+  if (params?.q) q.set('q', params.q);
+  if (params?.sport) q.set('sport', params.sport);
 
   const qs = q.toString();
   const res = await apiFetch(`/api/feed${qs ? `?${qs}` : ''}`);
@@ -211,6 +215,51 @@ export async function uploadEventCover(eventId: string, uri: string, mimeType: s
   if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
   const { event } = await res.json() as { event: ApiEvent };
   return event;
+}
+
+// ─── Favourites ───────────────────────────────────────────────────────────────
+
+export type ApiFavourite = {
+  id: string;
+  userId: string;
+  type: 'sport' | 'team' | 'venue';
+  value: string;
+  sport: string | null;
+  createdAt: string;
+};
+
+export async function fetchFavourites(): Promise<ApiFavourite[]> {
+  const res = await apiFetch('/api/favourites');
+  if (res.status === 401) return [];
+  if (!res.ok) throw new Error(`Favourites fetch failed: ${res.status}`);
+  const { favourites } = await res.json() as { favourites: ApiFavourite[] };
+  return favourites;
+}
+
+export async function addFavourite(type: string, value: string, sport?: string): Promise<void> {
+  await apiFetch('/api/favourites', {
+    method: 'POST',
+    body: JSON.stringify({ type, value, sport }),
+  });
+}
+
+export async function removeFavourite(type: string, value: string): Promise<void> {
+  await apiFetch('/api/favourites', {
+    method: 'DELETE',
+    body: JSON.stringify({ type, value }),
+  });
+}
+
+export async function saveFavouritesBulk(
+  favourites: Array<{ type: string; value: string; sport?: string }>,
+): Promise<ApiFavourite[]> {
+  const res = await apiFetch('/api/favourites/bulk', {
+    method: 'PUT',
+    body: JSON.stringify({ favourites }),
+  });
+  if (!res.ok) throw new Error(`Bulk save failed: ${res.status}`);
+  const { favourites: saved } = await res.json() as { favourites: ApiFavourite[] };
+  return saved;
 }
 
 export async function fetchFollowCounts(id: string): Promise<{ followers: number; following: number }> {

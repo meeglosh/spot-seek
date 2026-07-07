@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, eq, gte, lte, isNull, or, sql } from 'drizzle-orm';
+import { and, eq, gte, lte, isNull, or, sql, ilike } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 
@@ -48,12 +48,32 @@ feedRouter.get('/', async (c) => {
     // Unauthenticated browsing is allowed; private-location addresses stay masked.
   }
 
-  const { after, before, lat, lng, radiusKm } = c.req.query();
+  const { after, before, lat, lng, radiusKm, q, sport } = c.req.query();
 
   const conditions = [eq(schema.events.status, 'published')];
 
   if (after) conditions.push(gte(schema.events.startsAt, new Date(after)));
   if (before) conditions.push(lte(schema.events.startsAt, new Date(before)));
+
+  // Text search: matches title OR broadcastSubject (case-insensitive).
+  if (q) {
+    conditions.push(
+      or(
+        ilike(schema.events.title, `%${q}%`),
+        ilike(schema.events.broadcastSubject, `%${q}%`),
+      ) ?? eq(schema.events.status, 'published'),
+    );
+  }
+
+  // Sport filter: exact match on broadcastSubject or substring of title.
+  if (sport) {
+    conditions.push(
+      or(
+        ilike(schema.events.broadcastSubject, `%${sport}%`),
+        ilike(schema.events.title, `%${sport}%`),
+      ) ?? eq(schema.events.status, 'published'),
+    );
+  }
 
   // Radius filter — only apply when lat+lng are provided AND venue coords exist.
   const radius = radiusKm ? parseFloat(radiusKm) : 50;

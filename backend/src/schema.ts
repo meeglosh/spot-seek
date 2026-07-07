@@ -159,6 +159,30 @@ export type SponsorOffer = typeof sponsorOffers.$inferSelect;
 export type NewSponsorOffer = typeof sponsorOffers.$inferInsert;
 export type SponsorshipStatus = (typeof sponsorshipStatusEnum.enumValues)[number];
 
+// ─── user_favourites ─────────────────────────────────────────────────────────
+// Stores sports, teams, and venues a user wants to quick-filter by.
+// type: 'sport' | 'team' | 'venue'
+// value: the display name (e.g. "Arsenal", "Premier League", "The Red Lion")
+// sport: for type='team', the parent sport name (e.g. "Soccer")
+
+export const userFavourites = pgTable(
+  'user_favourites',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    value: text('value').notNull(),
+    sport: text('sport'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique('user_favourites_unique').on(table.userId, table.type, table.value)],
+);
+
+export type UserFavourite = typeof userFavourites.$inferSelect;
+export type NewUserFavourite = typeof userFavourites.$inferInsert;
+
 // ─── comments ─────────────────────────────────────────────────────────────────
 // HTTP polling baseline for event chat. Realtime transport -> BLOCKED.md (2.2).
 

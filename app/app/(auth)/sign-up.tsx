@@ -26,7 +26,8 @@ export default function SignUpScreen() {
     setError('');
     try {
       await signUp(name, email, password);
-      router.replace('/(tabs)/discover');
+      // Route through interests onboarding before landing on Discover.
+      router.replace('/(auth)/interests');
     } catch (err) {
       setError((err as Error).message || 'Something went wrong.');
     } finally {
