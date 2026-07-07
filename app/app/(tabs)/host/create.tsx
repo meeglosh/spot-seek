@@ -10,7 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
 import { createEvent, fetchEvent, type ApiEvent } from '../../../lib/api';
 import { apiFetch, uploadEventCover, deleteEvent } from '../../../lib/api';
-import { BroadcastSubjectPicker } from '../../../components/BroadcastSubjectPicker';
+import { BroadcastSubjectInput } from '../../../components/BroadcastSubjectInput';
 import { DateTimePicker } from '../../../components/DateTimePicker';
 import { light, dark, fonts, spacing, radius, palette, type Colors } from '../../../lib/theme';
 
@@ -220,7 +220,7 @@ export default function CreateEventScreen() {
           </Field>
 
           <Field label="What is being watched" required c={c}>
-            <BroadcastSubjectPicker
+            <BroadcastSubjectInput
               value={broadcastSubject}
               onChange={setBroadcastSubject}
             />
