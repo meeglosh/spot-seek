@@ -121,6 +121,53 @@ eventsRouter.patch('/:id', async (c) => {
   return c.json({ event: updated });
 });
 
+// DELETE /:id — host deletes their own event (cascades RSVPs and comments).
+eventsRouter.delete('/:id', async (c) => {
+  const hostId = c.get('hostId');
+  if (!hostId) return c.json({ error: 'Unauthorized' }, 401);
+
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const existing = await db.query.events.findFirst({ where: eq(schema.events.id, c.req.param('id')) });
+  if (!existing) return c.json({ error: 'Not found' }, 404);
+  if (existing.hostId !== hostId) return c.json({ error: 'Forbidden' }, 403);
+
+  await db.delete(schema.events).where(eq(schema.events.id, c.req.param('id')));
+  return c.json({ deleted: true });
+});
+
+// POST /:id/cover — upload a cover image to R2; updates cover_image_url on the event.
+eventsRouter.post('/:id/cover', async (c) => {
+  const hostId = c.get('hostId');
+  if (!hostId) return c.json({ error: 'Unauthorized' }, 401);
+
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const event = await db.query.events.findFirst({ where: eq(schema.events.id, c.req.param('id')) });
+  if (!event) return c.json({ error: 'Not found' }, 404);
+  if (event.hostId !== hostId) return c.json({ error: 'Forbidden' }, 403);
+
+  const formData = await c.req.formData();
+  const file = formData.get('image') as File | null;
+  if (!file) return c.json({ error: 'image field required' }, 400);
+
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const key = `events/${c.req.param('id')}/cover.${ext}`;
+
+  await c.env.SPOTSEEK_IMAGES.put(key, file.stream(), {
+    httpMetadata: { contentType: file.type || 'image/jpeg' },
+  });
+
+  // Serve through the Worker so we don't need a public R2 domain yet.
+  const imageUrl = `/api/images/${key}`;
+
+  const [updated] = await db
+    .update(schema.events)
+    .set({ coverImageUrl: imageUrl, updatedAt: new Date() })
+    .where(eq(schema.events.id, c.req.param('id')))
+    .returning();
+
+  return c.json({ event: updated });
+});
+
 // GET /:id/occurrences — list upcoming occurrence start times for a recurring event.
 eventsRouter.get('/:id/occurrences', async (c) => {
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });

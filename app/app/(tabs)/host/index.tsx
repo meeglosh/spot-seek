@@ -116,7 +116,10 @@ export default function HostDashboard() {
               : 'No date set';
             const { going, waitlisted, interested } = e.rsvpCounts;
             return (
-              <View style={[s.eventCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
+              <Pressable
+                style={[s.eventCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}
+                onPress={() => router.push({ pathname: '/(tabs)/host/create', params: { eventId: e.id } })}
+              >
                 <View style={s.cardTop}>
                   <View style={s.cardMeta}>
                     <Text style={[s.cardSubject, { color: c.textTertiary, fontFamily: fonts.sansMedium }]}>
@@ -127,10 +130,13 @@ export default function HostDashboard() {
                     </Text>
                     <Text style={[s.cardDate, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>{dateStr}</Text>
                   </View>
-                  <View style={[s.statusPill, { backgroundColor: (STATUS_COLOR[e.status] ?? palette.gray400) + '20' }]}>
-                    <Text style={[s.statusText, { color: STATUS_COLOR[e.status] ?? palette.gray400, fontFamily: fonts.sansMedium }]}>
-                      {e.status}
-                    </Text>
+                  <View style={s.cardRight}>
+                    <View style={[s.statusPill, { backgroundColor: (STATUS_COLOR[e.status] ?? palette.gray400) + '20' }]}>
+                      <Text style={[s.statusText, { color: STATUS_COLOR[e.status] ?? palette.gray400, fontFamily: fonts.sansMedium }]}>
+                        {e.status}
+                      </Text>
+                    </View>
+                    <Text style={[s.editHint, { color: c.textTertiary, fontFamily: fonts.sansRegular }]}>Edit →</Text>
                   </View>
                 </View>
 
@@ -147,7 +153,7 @@ export default function HostDashboard() {
                     </View>
                   ))}
                 </View>
-              </View>
+              </Pressable>
             );
           }}
         />
@@ -172,8 +178,10 @@ const s = StyleSheet.create({
   cardSubject: { fontSize: 11, letterSpacing: 0.4, textTransform: 'uppercase' },
   cardTitle: { fontSize: 20, lineHeight: 24 },
   cardDate: { fontSize: 13 },
-  statusPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.full, alignSelf: 'flex-start' },
+  cardRight: { alignItems: 'flex-end', gap: spacing.xs },
+  statusPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.full },
   statusText: { fontSize: 11 },
+  editHint: { fontSize: 11 },
   statsRow: { flexDirection: 'row', borderTopWidth: 1, paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   stat: { flex: 1, alignItems: 'center', gap: 2 },
   statVal: { fontSize: 22 },

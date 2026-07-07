@@ -28,6 +28,16 @@ app.route('/api/chat', chatRouter);
 app.route('/api/admin', adminRouter);
 app.route('/api/sponsors', sponsorsRouter);
 
+// GET /api/images/:key — serve R2 images through the Worker.
+// Replace with a public R2 domain once the bucket has one configured.
+app.get('/api/images/*', async (c) => {
+  const key = c.req.path.replace('/api/images/', '');
+  const obj = await c.env.SPOTSEEK_IMAGES.get(key);
+  if (!obj) return c.json({ error: 'Not found' }, 404);
+  const contentType = obj.httpMetadata?.contentType ?? 'image/jpeg';
+  return new Response(obj.body, { headers: { 'Content-Type': contentType, 'Cache-Control': 'public, max-age=31536000' } });
+});
+
 app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 
 export default app;

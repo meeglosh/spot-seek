@@ -6,4 +6,5 @@ interface Env {
   RESEND_API_KEY?: string;
   ADMIN_SECRET?: string;
   CHAT_ROOMS: DurableObjectNamespace;
+  SPOTSEEK_IMAGES: R2Bucket;
 }

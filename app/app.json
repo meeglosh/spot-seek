@@ -16,7 +16,10 @@
     },
     "android": {
       "package": "com.spotseek.app",
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBIKafD1yK1Z5ZD8tmTD_r9kp54ZUteaqM"
@@ -37,11 +40,19 @@
     "plugins": [
       "expo-router",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "SpotSeek uses your photo library to add cover images to events.",
+          "cameraPermission": "SpotSeek uses your camera to take event cover photos."
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "SpotSeek uses your location to show watch parties near you."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

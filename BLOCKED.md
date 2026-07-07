@@ -10,6 +10,17 @@ The agents write here instead of guessing. Read this each morning. Empty is good
 - Real final error (verbatim, if any): 
 -->
 
+## R2 image storage — bucket must be created before deploying
+
+- What it needs: an R2 bucket named `spotseek-images` in your Cloudflare account.
+  Run: `npx wrangler r2 bucket create spotseek-images`
+  Or create it in the Cloudflare dashboard under R2 → Create bucket.
+- Why noted: wrangler local dev simulates R2 in memory (no bucket needed to test
+  locally). The binding in wrangler.jsonc is wired. Deployment needs the real bucket.
+- Public image URLs: for production, attach a custom domain to the R2 bucket in
+  the Cloudflare dashboard. Until then, images are served through the Worker at
+  GET /api/images/:key.
+
 ## 3.1-3.4 — Payment processor for sponsor transactions needs a human decision
 
 - What it needs: a payment provider (Stripe recommended), test-mode API keys

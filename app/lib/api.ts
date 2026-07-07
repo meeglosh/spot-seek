@@ -186,6 +186,33 @@ export async function fetchProfile(id: string): Promise<ApiProfile> {
   return user;
 }
 
+export async function deleteEvent(id: string): Promise<void> {
+  const res = await apiFetch(`/api/events/${id}`, { method: 'DELETE' });
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
+}
+
+export async function uploadEventCover(eventId: string, uri: string, mimeType: string): Promise<ApiEvent> {
+  const formData = new FormData();
+  const filename = uri.split('/').pop() ?? 'cover.jpg';
+  // React Native FormData accepts this shape for file uploads
+  formData.append('image', { uri, name: filename, type: mimeType } as unknown as Blob);
+
+  const token = getBearerToken();
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/api/events/${eventId}/cover`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+  const { event } = await res.json() as { event: ApiEvent };
+  return event;
+}
+
 export async function fetchFollowCounts(id: string): Promise<{ followers: number; following: number }> {
   const [frs, fing] = await Promise.all([
     apiFetch(`/api/profiles/${id}/followers`).then((r) => r.json() as Promise<{ followers: unknown[] }>),

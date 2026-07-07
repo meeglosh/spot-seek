@@ -14,4 +14,11 @@
 	"migrations": [
 		{ "tag": "v1", "new_sqlite_classes": ["ChatRoom"] }
 	],
+	"r2_buckets": [
+		{
+			"binding": "SPOTSEEK_IMAGES",
+			"bucket_name": "spotseek-images",
+			"preview_bucket_name": "spotseek-images-preview"
+		}
+	],
 }

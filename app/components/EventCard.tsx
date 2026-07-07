@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, Pressable, StyleSheet, useColorScheme, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { light, dark, fonts, spacing, radius, palette } from '../lib/theme';
+
+import { API_BASE } from '../lib/api';
 
 export type EventItem = {
   id: string;
@@ -17,6 +19,7 @@ export type EventItem = {
   goingCount?: number;
   venueLat?: number | null;
   venueLng?: number | null;
+  coverImageUrl?: string | null;
 };
 
 export function EventCard({ event, compact = false }: { event: EventItem; compact?: boolean }) {
@@ -31,11 +34,21 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
     ? new Date(event.startsAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
     : null;
 
+  const coverSrc = event.coverImageUrl
+    ? { uri: event.coverImageUrl.startsWith('/') ? `${API_BASE}${event.coverImageUrl}` : event.coverImageUrl }
+    : null;
+
   return (
     <Pressable
       style={[s.card, { backgroundColor: c.card, borderColor: c.cardBorder }]}
       onPress={() => router.push({ pathname: '/(tabs)/discover/[id]', params: { id: event.id } })}
     >
+      {/* Cover image */}
+      {coverSrc && !compact && (
+        <Image source={coverSrc} style={s.cover} resizeMode="cover" />
+      )}
+
+      <View style={[s.body, compact && s.bodyCompact]}>
       {/* Subject tag */}
       <View style={[s.subjectRow]}>
         <View style={[s.subjectTag, { backgroundColor: c.bgSubtle }]}>
@@ -87,17 +100,21 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
           </View>
         )}
       </View>
+      </View>
     </Pressable>
   );
 }
 
 const s = StyleSheet.create({
   card: {
-    borderRadius: radius.lg, borderWidth: 1, padding: spacing.lg,
-    gap: spacing.sm,
+    borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden',
+    gap: spacing.sm, paddingBottom: spacing.lg,
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
   },
+  cover: { width: '100%', height: 140 },
+  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.sm },
+  bodyCompact: { paddingTop: spacing.sm },
   subjectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   subjectTag: {
     paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
