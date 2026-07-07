@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
 import { createEvent, fetchEvent, type ApiEvent } from '../../../lib/api';
 import { apiFetch, uploadEventCover, deleteEvent } from '../../../lib/api';
+import { BroadcastSubjectPicker } from '../../../components/BroadcastSubjectPicker';
 import { DateTimePicker } from '../../../components/DateTimePicker';
 import { light, dark, fonts, spacing, radius, palette, type Colors } from '../../../lib/theme';
 
@@ -219,12 +220,9 @@ export default function CreateEventScreen() {
           </Field>
 
           <Field label="What is being watched" required c={c}>
-            <TextInput
-              style={[s.input, { backgroundColor: c.bgSubtle, color: c.textPrimary, borderColor: broadcastSubject ? c.fill : c.cardBorder, fontFamily: fonts.sansRegular }]}
-              placeholder="e.g. Premier League, NFL, F1…"
-              placeholderTextColor={c.textTertiary}
+            <BroadcastSubjectPicker
               value={broadcastSubject}
-              onChangeText={setBroadcastSubject}
+              onChange={setBroadcastSubject}
             />
           </Field>
 
