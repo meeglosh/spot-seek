@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { API_BASE, apiFetch, setSessionCookie, clearSessionCookie } from './api';
+import { API_BASE, apiFetch, setBearerToken, clearBearerToken } from './api';
 
 export type AuthUser = {
   id: string;
@@ -19,10 +19,11 @@ type AuthCtx = AuthState & {
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-function extractCookie(res: Response): string {
-  const setCookie = res.headers.get('set-cookie') ?? '';
-  const match = setCookie.match(/better-auth\.session_token=[^;]+/);
-  return match ? match[0] : '';
+// Better Auth's bearer plugin returns the session token directly in the
+// response body as `body.token`. This is the correct approach for React Native
+// because RN's fetch does not expose Set-Cookie response headers.
+function extractToken(body: Record<string, unknown> | null): string {
+  return (body?.token as string) ?? '';
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -38,7 +39,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const body = await res.json().catch(() => null) as Record<string, unknown> | null;
 
     if (!res.ok) {
-      // Surface the real server message so we can see it.
       const msg =
         (body?.message as string) ||
         (body?.error as string) ||
@@ -47,12 +47,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(msg);
     }
 
-    // Better Auth sets a session cookie on sign-up — extract it directly.
-    // No need for a separate sign-in call.
-    const cookie = extractCookie(res);
-    if (cookie) setSessionCookie(cookie);
+    const token = extractToken(body);
+    if (token) {
+      setBearerToken(token);
+    } else {
+      // No token in sign-up body — sign in immediately to get one.
+      await signIn(name, password);
+      return;
+    }
 
-    const user = (body?.user ?? body) as AuthUser;
+    const user = body?.user as AuthUser;
     setState({ status: 'authenticated', user });
   }
 
@@ -74,16 +78,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(msg);
     }
 
-    const cookie = extractCookie(res);
-    if (cookie) setSessionCookie(cookie);
+    const token = extractToken(body);
+    if (token) setBearerToken(token);
 
-    const user = (body?.user ?? body) as AuthUser;
+    const user = body?.user as AuthUser;
     setState({ status: 'authenticated', user });
   }
 
   function signOut() {
     apiFetch('/api/auth/sign-out', { method: 'POST' });
-    clearSessionCookie();
+    clearBearerToken();
     setState({ status: 'unauthenticated' });
   }
 

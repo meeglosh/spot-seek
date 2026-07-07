@@ -1,26 +1,29 @@
 import { Platform } from 'react-native';
 
-// In dev: iOS Simulator uses localhost; Android Emulator uses 10.0.2.2 to reach host.
-// In production: replace with your deployed Workers URL.
 export const API_BASE = __DEV__
   ? Platform.OS === 'android'
     ? 'http://10.0.2.2:8787'
     : 'http://localhost:8787'
   : 'https://spot-seek-api.YOUR_SUBDOMAIN.workers.dev';
 
-// In-memory session cookie — updated by auth.tsx after sign-in/sign-up.
+// In-memory bearer token — set after sign-in/sign-up.
 // Upgrade to expo-secure-store for persistence across app restarts.
-let _sessionCookie = '';
+let _bearerToken = '';
 
-export function setSessionCookie(cookie: string) {
-  _sessionCookie = cookie;
+export function setBearerToken(token: string) {
+  _bearerToken = token;
 }
-export function clearSessionCookie() {
-  _sessionCookie = '';
+export function clearBearerToken() {
+  _bearerToken = '';
 }
-export function getSessionCookie() {
-  return _sessionCookie;
+export function getBearerToken() {
+  return _bearerToken;
 }
+
+// Keep old names as aliases so auth.tsx compiles without changes.
+export const setSessionCookie = setBearerToken;
+export const clearSessionCookie = clearBearerToken;
+export const getSessionCookie = getBearerToken;
 
 type FetchOptions = RequestInit & { skipAuth?: boolean };
 
@@ -28,8 +31,8 @@ export async function apiFetch(path: string, opts: FetchOptions = {}): Promise<R
   const { skipAuth, ...rest } = opts;
   const headers = new Headers(rest.headers as Record<string, string> | undefined);
 
-  if (!skipAuth && _sessionCookie) {
-    headers.set('Cookie', _sessionCookie);
+  if (!skipAuth && _bearerToken) {
+    headers.set('Authorization', `Bearer ${_bearerToken}`);
   }
   if (!headers.has('Content-Type') && rest.body) {
     headers.set('Content-Type', 'application/json');
@@ -38,7 +41,7 @@ export async function apiFetch(path: string, opts: FetchOptions = {}): Promise<R
   return fetch(`${API_BASE}${path}`, { ...rest, headers });
 }
 
-// ─── Typed wrappers ────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ApiEvent = {
   id: string;
@@ -114,7 +117,7 @@ export async function fetchFeed(params?: {
   if (params?.radiusKm != null) q.set('radiusKm', String(params.radiusKm));
 
   const qs = q.toString();
-  const res = await apiFetch(`/api/feed${qs ? `?${qs}` : ''}`, { skipAuth: false });
+  const res = await apiFetch(`/api/feed${qs ? `?${qs}` : ''}`);
   if (!res.ok) throw new Error(`Feed fetch failed: ${res.status}`);
   const { events } = await res.json() as { events: ApiEvent[] };
   return events;

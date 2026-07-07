@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { bearer } from 'better-auth/plugins/bearer';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import type { NeonQueryFunction } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
@@ -49,6 +50,10 @@ export function createAuth(sql: NeonQueryFunction<false, false>, opts?: { baseUR
     emailAndPassword: {
       enabled: true,
     },
+    // bearer plugin: returns the session token in the response body so React
+    // Native clients can store and send it as Authorization: Bearer <token>.
+    // Native apps can't read Set-Cookie headers, so this is the correct approach.
+    plugins: [bearer()],
     databaseHooks: {
       user: {
         create: {
