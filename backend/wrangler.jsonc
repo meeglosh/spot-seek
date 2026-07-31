@@ -6,6 +6,10 @@
 	"observability": {
 		"enabled": true,
 	},
+	"vars": {
+		// Dev/preview deployment URL — anchors Better Auth's baseURL.
+		"BETTER_AUTH_URL": "https://spot-seek-api.dry-base-037d.workers.dev"
+	},
 	"durable_objects": {
 		"bindings": [
 			{ "name": "CHAT_ROOMS", "class_name": "ChatRoom" }
