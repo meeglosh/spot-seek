@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, palette, spacing, type as t } from '../../lib/theme';
@@ -27,11 +27,14 @@ export default function WelcomeScreen() {
       <View style={s.panel}>
         <Btn label="Create account →" onPress={() => router.push('/(auth)/sign-up')} />
         <Btn label="Sign in" variant="secondary" onPress={() => router.push('/(auth)/sign-in')} />
-        <Btn
-          label="Skip — explore as guest"
-          variant="ghost"
+        <Pressable
           onPress={() => router.replace('/(tabs)/discover')}
-        />
+          hitSlop={8}
+          style={s.skipLink}
+          accessibilityLabel="Skip for now"
+        >
+          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>Skip for now</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -45,7 +48,7 @@ const s = StyleSheet.create({
     color: palette.white,
     textAlign: 'center',
     fontSize: 56,
-    lineHeight: 60,
+    lineHeight: 70,
     // Hard orange offset shadow — no blur (comic-book pop per the design).
     textShadowColor: palette.secondary,
     textShadowOffset: { width: 4, height: 4 },
@@ -61,4 +64,5 @@ const s = StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.md,
   },
+  skipLink: { alignItems: 'center', paddingTop: spacing.sm },
 });
