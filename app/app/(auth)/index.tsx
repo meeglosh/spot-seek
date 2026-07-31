@@ -16,7 +16,7 @@ export default function WelcomeScreen() {
 
       {/* Hero */}
       <View style={s.hero}>
-        <Badge label="Secure connection" tone="live" />
+        <Badge label="Secure connection" tone="live" style={s.badge} />
         <Text style={[t.displayXl, s.heroTitle]}>Join the{'\n'}action</Text>
         <Text style={[t.bodyLg, s.tagline]}>
           Discover watch parties around your favourite broadcasts. Host your own. Bring everyone together.
@@ -44,6 +44,9 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.xl },
   brand: { color: colors.accent, textAlign: 'center' },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
+  // Badge defaults to alignSelf: 'flex-start' (correct for left-aligned
+  // headers elsewhere) — center it here to match this screen's centered hero.
+  badge: { alignSelf: 'center' },
   heroTitle: {
     color: palette.white,
     textAlign: 'center',

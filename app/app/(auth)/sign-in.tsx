@@ -102,6 +102,14 @@ export default function SignInScreen() {
               <Text style={s.switchLink}>Sign up</Text>
             </Text>
           </Pressable>
+          <Pressable
+            onPress={() => router.replace(target as never)}
+            hitSlop={8}
+            style={s.skipLink}
+            accessibilityLabel="Skip for now"
+          >
+            <Text style={[t.labelCaps, { color: colors.textSecondary }]}>Skip for now</Text>
+          </Pressable>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -127,4 +135,5 @@ const s = StyleSheet.create({
   footer: { gap: spacing.lg },
   switchText: { color: colors.textSecondary, textAlign: 'center' },
   switchLink: { color: colors.accent, fontFamily: fonts.sansBold },
+  skipLink: { alignItems: 'center', paddingTop: spacing.sm },
 });

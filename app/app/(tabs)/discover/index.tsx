@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, Pressable, StyleSheet, RefreshControl,
-  TextInput, ActivityIndicator, ScrollView,
+  TextInput, ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
@@ -14,7 +15,8 @@ import { colors, fonts, palette, spacing, type as t } from '../../../lib/theme';
 import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
 import { useDiscoverFilters, activeFilterCount } from '../../../lib/discover-filters';
 
-const FILTERS = ['All', 'Today', 'This week', 'Near me'] as const;
+// 'Today' first — it's the default; 'All' last since it's the least-used option.
+const FILTERS = ['Today', 'This week', 'Near me', 'All'] as const;
 type Filter = typeof FILTERS[number];
 
 function apiEventToItem(e: ApiEvent): EventItem {
@@ -62,7 +64,7 @@ export default function DiscoverScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<Filter>('All');
+  const [filter, setFilter] = useState<Filter>('Today');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -154,14 +156,6 @@ export default function DiscoverScreen() {
 
   const openFilters = () => router.push('/(tabs)/discover/filter');
 
-  // Dropdown-style category buttons that route to the full filter screen.
-  const categoryBtns: Array<{ label: string; active: boolean }> = [
-    { label: 'Sport', active: !!filters.sport },
-    { label: 'Teams', active: (filters.teams?.length ?? 0) > 0 },
-    { label: 'Date', active: !!filters.after || !!filters.before },
-    { label: 'Venue', active: !!filters.venue },
-  ];
-
   return (
     <View style={s.container}>
       <AppHeader />
@@ -207,27 +201,21 @@ export default function DiscoverScreen() {
               )}
             </View>
           )}
-        </View>
 
-        {/* Category filter buttons — route to the full filter screen */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.categoryRow}>
-          {categoryBtns.map((cat) => (
-            <Pressable
-              key={cat.label}
-              style={[s.categoryBtn, cat.active && s.categoryBtnActive]}
-              onPress={openFilters}
-            >
-              <Text style={[t.labelCapsSm, { color: cat.active ? colors.accent : colors.textSecondary }]}>
-                {cat.label} ▾
-              </Text>
-            </Pressable>
-          ))}
-          {filterCount > 0 && (
-            <Pressable style={[s.categoryBtn, s.categoryBtnActive]} onPress={openFilters}>
-              <Text style={[t.labelCapsSm, { color: colors.accent }]}>{filterCount} active</Text>
-            </Pressable>
-          )}
-        </ScrollView>
+          {/* Single filters entry point — opens the full filter half-sheet */}
+          <Pressable
+            style={[s.filterIconBtn, filterCount > 0 && s.filterIconBtnActive]}
+            onPress={openFilters}
+            accessibilityLabel="Filters"
+          >
+            <Ionicons name="filter" size={18} color={filterCount > 0 ? colors.accent : colors.textSecondary} />
+            {filterCount > 0 && (
+              <View style={s.filterBadge}>
+                <Text style={s.filterBadgeText}>{filterCount}</Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
 
         {/* Active filter summary chips */}
         {filterCount > 0 && (
@@ -361,19 +349,33 @@ const s = StyleSheet.create({
   },
   clearGlyph: { color: colors.textTertiary, fontSize: 14 },
 
-  // Category buttons (SPORT ▾ / TEAMS ▾ / …)
-  categoryRow: { flexDirection: 'row', gap: spacing.sm },
-  categoryBtn: {
+  // Single filters entry point — replaces the old Sport/Teams/Date/Venue row
+  filterIconBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: palette.surfaceMid,
     borderWidth: 1,
     borderColor: palette.surfaceHighest,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
   },
-  categoryBtnActive: {
+  filterIconBtnActive: {
     backgroundColor: `${colors.accent}20`,
     borderColor: `${colors.accent}80`,
   },
+  filterBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: colors.live,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadgeText: { color: palette.black, fontSize: 11, fontFamily: fonts.labelBold },
 
   activeFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 

@@ -87,16 +87,17 @@ export function Chip({
 // ─── Badge: LIVE / HOT MATCH / status marker with pulsing-dot look ───────────
 
 export function Badge({
-  label, tone = 'live', dot = true,
+  label, tone = 'live', dot = true, style,
 }: {
   label: string;
   tone?: 'live' | 'accent' | 'volt' | 'neutral';
   dot?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   const toneColor =
     tone === 'accent' ? colors.accent : tone === 'volt' ? colors.volt : tone === 'neutral' ? colors.textSecondary : colors.live;
   return (
-    <View style={[s.badge, { backgroundColor: palette.surfaceHigh }]}>
+    <View style={[s.badge, { backgroundColor: palette.surfaceHigh }, style]}>
       {dot && <View style={[s.badgeDot, { backgroundColor: toneColor }]} />}
       <Text style={[t.labelCapsSm, { color: tone === 'neutral' ? colors.textPrimary : toneColor }]}>{label}</Text>
     </View>

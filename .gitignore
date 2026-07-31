@@ -21,3 +21,6 @@ app/.bundle/
 
 # Design reference packages
 *.zip
+
+# macOS
+.DS_Store
