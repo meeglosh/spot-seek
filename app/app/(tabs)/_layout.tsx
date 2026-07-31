@@ -56,8 +56,9 @@ export default function TabsLayout() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
-          height: 64,
-          paddingBottom: 8,
+          height: 82,
+          paddingTop: 10,
+          paddingBottom: 14,
         },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textTertiary,
@@ -95,11 +96,11 @@ export default function TabsLayout() {
 
 const s = StyleSheet.create({
   iconWrap: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
   },
   iconWrapActive: { backgroundColor: `${palette.primary}1f` },
-  icon: { width: 22, height: 22 },
-  tabLabel: { fontSize: 10, marginTop: 2, letterSpacing: 0.6, textTransform: 'uppercase' },
+  icon: { width: 17, height: 17 },
+  tabLabel: { fontSize: 11, marginTop: 4, letterSpacing: 0.6, textTransform: 'uppercase' },
 });
