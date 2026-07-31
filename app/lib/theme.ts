@@ -1,69 +1,95 @@
-import { Platform } from 'react-native';
+// SpotSeek "High-Energy Action" design system.
+// Cyber-brutalist: near-black surfaces, electric cyan / neon orange / voltage
+// lime accents, sharp 0px corners, Anton display type. Dark-only by design.
 
 export const palette = {
-  black:   '#0A0A0A',
-  gray900: '#141414',
-  gray800: '#1F1F1F',
-  gray700: '#2C2C2C',
-  gray600: '#3D3D3D',
-  gray500: '#666666',
-  gray400: '#888888',
-  gray300: '#B0B0B0',
-  gray200: '#D4D4D4',
-  gray100: '#E8E8E8',
-  gray50:  '#F5F5F5',
-  white:   '#FAFAFA',
-  pureWhite: '#FFFFFF',
+  // Surfaces (darkest → lightest)
+  bg:            '#0F0F12',
+  surfaceLowest: '#0e0e11',
+  surface:       '#131316',
+  surfaceLow:    '#1b1b1e',
+  surfaceMid:    '#1f1f22',
+  surfaceHigh:   '#2a2a2d',
+  surfaceHighest:'#353438',
 
-  // Semantic accents — used sparingly
-  green:  '#16A34A',   // going / confirmed
-  amber:  '#D97706',   // waitlisted
-  red:    '#DC2626',   // cancelled
+  // Text
+  onSurface:        '#e4e1e6',
+  onSurfaceVariant: '#bac9cc',
+  outline:          '#849396',
+  outlineVariant:   '#3b494c',
+
+  // Electric Blue — primary actions, active states
+  primary:            '#00e5ff',
+  primaryBright:      '#c3f5ff',
+  primaryDim:         '#00daf3',
+  onPrimary:          '#00363d',
+  primaryContainerOn: '#00626e',
+
+  // Neon Orange — live indicators, urgency, highlights
+  secondary:       '#ff5e07',
+  secondaryBright: '#ffb59a',
+  onSecondary:     '#5a1b00',
+
+  // Voltage Green — success / VIP / sponsored
+  tertiary:       '#b4e100',
+  tertiaryBright: '#cdff13',
+  onTertiary:     '#283500',
+
+  // Error
+  error:       '#ffb4ab',
+  errorDim:    '#93000a',
+  onErrorDim:  '#ffdad6',
+
+  black: '#000000',
+  white: '#ffffff',
+
+  // Semantic status colours (going / waitlisted / cancelled), mapped onto the
+  // HEA accents. Names kept from the previous theme for continuity.
+  green:   '#b4e100',
+  amber:   '#ff5e07',
+  red:     '#ffb4ab',
+  gray400: '#849396',
 } as const;
 
-export const light = {
-  bg:          palette.pureWhite,
-  bgSubtle:    palette.gray50,
-  card:        palette.pureWhite,
-  cardBorder:  palette.gray100,
-  textPrimary: palette.black,
-  textSecondary: palette.gray500,
-  textTertiary:  palette.gray400,
-  separator:   palette.gray100,
-  tabBar:      palette.pureWhite,
-  tabBarBorder: palette.gray100,
-  fill:        palette.black,       // primary button bg
-  fillText:    palette.pureWhite,   // primary button text
-  fillSubtle:  palette.gray100,     // secondary button bg
-  fillSubtleText: palette.black,
-  overlay:     'rgba(10,10,10,0.5)',
+// Semantic colour roles used by every screen.
+export const colors = {
+  bg:            palette.bg,
+  bgSubtle:      palette.surfaceLow,
+  card:          palette.surfaceLow,
+  cardBorder:    palette.surfaceHighest,
+  textPrimary:   palette.onSurface,
+  textSecondary: palette.onSurfaceVariant,
+  textTertiary:  palette.outline,
+  separator:     palette.surfaceHigh,
+  tabBar:        palette.surfaceLowest,
+  tabBarBorder:  palette.surfaceHigh,
+
+  // Primary CTA: electric blue block w/ black text
+  fill:          palette.primary,
+  fillText:      palette.black,
+  fillSubtle:    palette.surfaceHigh,
+  fillSubtleText: palette.onSurface,
+
+  overlay: 'rgba(10,10,12,0.72)',
+
+  // Accents
+  accent:        palette.primary,        // electric blue
+  accentDim:     palette.primaryDim,
+  accentBright:  palette.primaryBright,
+  live:          palette.secondary,      // neon orange — LIVE / urgent
+  liveBright:    palette.secondaryBright,
+  volt:          palette.tertiary,       // lime — success / sponsored
+  voltBright:    palette.tertiaryBright,
+  danger:        palette.error,
+  dangerDim:     palette.errorDim,
 } as const;
 
-export const dark = {
-  bg:          palette.black,
-  bgSubtle:    palette.gray900,
-  card:        palette.gray900,
-  cardBorder:  palette.gray800,
-  textPrimary: palette.white,
-  textSecondary: palette.gray400,
-  textTertiary:  palette.gray500,
-  separator:   palette.gray800,
-  tabBar:      palette.gray900,
-  tabBarBorder: palette.gray800,
-  fill:        palette.white,
-  fillText:    palette.black,
-  fillSubtle:  palette.gray800,
-  fillSubtleText: palette.white,
-  overlay:     'rgba(10,10,10,0.7)',
-} as const;
+export type Colors = typeof colors;
 
-export type Colors = {
-  bg: string; bgSubtle: string; card: string; cardBorder: string;
-  textPrimary: string; textSecondary: string; textTertiary: string;
-  separator: string; tabBar: string; tabBarBorder: string;
-  fill: string; fillText: string; fillSubtle: string; fillSubtleText: string;
-  overlay: string;
-};
+// Dark-only: both scheme exports point at the same palette so any legacy
+// `scheme === 'dark' ? dark : light` picks identical values.
+export const dark: Colors = colors;
+export const light: Colors = colors;
 
 export const spacing = {
   xs: 4,
@@ -76,19 +102,51 @@ export const spacing = {
   '4xl': 64,
 } as const;
 
+// Sharp and aggressive: 0px corners across all primary components.
+// `full` is kept for the rare dot/avatar that must stay circular.
 export const radius = {
-  sm: 6,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  sm: 0,
+  md: 0,
+  lg: 0,
+  xl: 0,
   full: 999,
 } as const;
 
-// Font family references — loaded in root _layout.tsx
+// Font family references — loaded in root _layout.tsx.
+// display  = Anton (headlines, ALL CAPS)
+// body     = Archivo Narrow (content, stats, tickers)
+// label    = Space Grotesk (functional labels, caps w/ letterspacing)
 export const fonts = {
-  display: Platform.select({ ios: 'DMSerifDisplay_400Regular', android: 'DMSerifDisplay_400Regular', default: 'DMSerifDisplay_400Regular' }),
-  sansRegular: 'DMSans_400Regular',
-  sansMedium:  'DMSans_500Medium',
-  sansSemiBold: 'DMSans_600SemiBold',
-  sansBold:    'DMSans_700Bold',
+  display:      'Anton_400Regular',
+  sansRegular:  'ArchivoNarrow_400Regular',
+  sansMedium:   'ArchivoNarrow_500Medium',
+  sansSemiBold: 'ArchivoNarrow_600SemiBold',
+  sansBold:     'ArchivoNarrow_700Bold',
+  label:        'SpaceGrotesk_500Medium',
+  labelBold:    'SpaceGrotesk_700Bold',
 } as const;
+
+// Typography presets matching the design spec.
+export const type = {
+  displayXl:  { fontFamily: fonts.display, fontSize: 44, lineHeight: 46, letterSpacing: -0.5, textTransform: 'uppercase' as const },
+  headlineLg: { fontFamily: fonts.display, fontSize: 32, lineHeight: 34, textTransform: 'uppercase' as const },
+  headlineMd: { fontFamily: fonts.display, fontSize: 24, lineHeight: 27, textTransform: 'uppercase' as const },
+  headlineSm: { fontFamily: fonts.display, fontSize: 18, lineHeight: 21, textTransform: 'uppercase' as const },
+  bodyLg:     { fontFamily: fonts.sansMedium, fontSize: 18, lineHeight: 26 },
+  bodyMd:     { fontFamily: fonts.sansRegular, fontSize: 16, lineHeight: 24 },
+  bodySm:     { fontFamily: fonts.sansRegular, fontSize: 14, lineHeight: 20 },
+  labelCaps:  { fontFamily: fonts.labelBold, fontSize: 12, lineHeight: 16, letterSpacing: 1.2, textTransform: 'uppercase' as const },
+  labelCapsSm:{ fontFamily: fonts.labelBold, fontSize: 10, lineHeight: 14, letterSpacing: 1, textTransform: 'uppercase' as const },
+  monoData:   { fontFamily: fonts.label, fontSize: 14, lineHeight: 20 },
+} as const;
+
+// Hard drop shadow — 100% opacity, 4px offset, no blur (comic-book pop).
+export function hardShadow(color: string = palette.secondary, offset = 4) {
+  return {
+    shadowColor: color,
+    shadowOffset: { width: offset, height: offset },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 4,
+  } as const;
+}
