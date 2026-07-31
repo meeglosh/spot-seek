@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, Modal, Platform, useColorScheme,
+  View, Text, Pressable, StyleSheet, Modal, Platform,
 } from 'react-native';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
-import { light, dark, fonts, spacing, radius } from '../lib/theme';
+import { colors, fonts, palette, spacing, type as t } from '../lib/theme';
 
 type Props = {
   value: Date | null;
@@ -13,10 +13,6 @@ type Props = {
 };
 
 export function DateTimePicker({ value, onChange, placeholder = 'Set date & time', minimumDate }: Props) {
-  const scheme = useColorScheme();
-  const c = scheme === 'dark' ? dark : light;
-  const isDark = scheme === 'dark';
-
   const [showPicker, setShowPicker] = useState(false);
   const [mode, setMode] = useState<'date' | 'time'>('date');
   // Staging date so we confirm date then time in two steps on Android
@@ -64,16 +60,22 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
 
   return (
     <>
+      {/* Underline trigger — orange bottom border while the picker is open */}
       <Pressable
-        style={[s.trigger, { backgroundColor: c.bgSubtle, borderColor: value ? c.fill : c.cardBorder }]}
+        style={[s.trigger, showPicker && { borderBottomColor: colors.live }]}
         onPress={openPicker}
       >
-        <Text style={[s.triggerText, { color: value ? c.textPrimary : c.textTertiary, fontFamily: fonts.sansRegular }]}>
+        <Text
+          style={[
+            s.triggerText,
+            { color: value ? colors.textPrimary : colors.textTertiary },
+          ]}
+        >
           {formatted ?? placeholder}
         </Text>
         {value && (
           <Pressable onPress={clear} hitSlop={12}>
-            <Text style={[{ color: c.textTertiary, fontSize: 16 }]}>✕</Text>
+            <Text style={s.clearGlyph}>✕</Text>
           </Pressable>
         )}
       </Pressable>
@@ -93,14 +95,14 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
       {Platform.OS === 'ios' && showPicker && (
         <Modal transparent animationType="slide">
           <Pressable style={s.backdrop} onPress={() => setShowPicker(false)} />
-          <View style={[s.sheet, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
+          <View style={s.sheet}>
             <View style={s.sheetHeader}>
               <Pressable onPress={clear}>
-                <Text style={[{ color: c.textSecondary, fontFamily: fonts.sansRegular, fontSize: 15 }]}>Clear</Text>
+                <Text style={[t.labelCaps, { color: colors.textSecondary }]}>Clear</Text>
               </Pressable>
-              <Text style={[{ color: c.textPrimary, fontFamily: fonts.sansSemiBold, fontSize: 15 }]}>Date & Time</Text>
+              <Text style={[t.labelCaps, { color: colors.textPrimary }]}>Date & Time</Text>
               <Pressable onPress={confirmIOS}>
-                <Text style={[{ color: c.textPrimary, fontFamily: fonts.sansSemiBold, fontSize: 15 }]}>Done</Text>
+                <Text style={[t.labelCaps, { color: colors.accent }]}>Done</Text>
               </Pressable>
             </View>
             <RNDateTimePicker
@@ -109,7 +111,7 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
               display="spinner"
               onChange={handleChange}
               minimumDate={minimumDate}
-              themeVariant={isDark ? 'dark' : 'light'}
+              themeVariant="dark"
               style={{ height: 200 }}
             />
           </View>
@@ -121,19 +123,31 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
 
 const s = StyleSheet.create({
   trigger: {
-    height: 52, borderRadius: radius.md, borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: palette.surfaceMid,
+    borderBottomWidth: 2,
+    borderBottomColor: palette.outlineVariant,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
-  triggerText: { fontSize: 16, flex: 1 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  triggerText: { flex: 1, fontFamily: fonts.sansMedium, fontSize: 16 },
+  clearGlyph: { color: colors.textTertiary, fontSize: 16 },
+
+  backdrop: { flex: 1, backgroundColor: colors.overlay },
   sheet: {
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1,
+    backgroundColor: palette.surfaceLow,
+    borderTopWidth: 2,
+    borderTopColor: colors.accent,
     paddingBottom: spacing['3xl'],
   },
   sheetHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: spacing.xl, paddingBottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.xl,
+    paddingBottom: spacing.md,
   },
 });

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, useColorScheme, Image } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { light, dark, fonts, spacing, radius, palette } from '../lib/theme';
+import { colors, palette, spacing, type as t } from '../lib/theme';
+import { Badge, Btn } from './ui';
 
 import { API_BASE } from '../lib/api';
 
@@ -22,10 +23,19 @@ export type EventItem = {
   coverImageUrl?: string | null;
 };
 
+function startsToday(startsAt?: string | null): boolean {
+  if (!startsAt) return false;
+  const d = new Date(startsAt);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
 export function EventCard({ event, compact = false }: { event: EventItem; compact?: boolean }) {
   const router = useRouter();
-  const scheme = useColorScheme();
-  const c = scheme === 'dark' ? dark : light;
 
   const dateStr = event.startsAt
     ? new Date(event.startsAt).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -38,68 +48,71 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
     ? { uri: event.coverImageUrl.startsWith('/') ? `${API_BASE}${event.coverImageUrl}` : event.coverImageUrl }
     : null;
 
+  const today = startsToday(event.startsAt);
+  const goTo = () => router.push({ pathname: '/(tabs)/discover/[id]', params: { id: event.id } });
+
+  const badges = (
+    <View style={s.badgeRow}>
+      {today && <Badge label="Today" tone="live" />}
+      <Badge label={event.broadcastSubject} tone="accent" dot={false} />
+    </View>
+  );
+
   return (
-    <Pressable
-      style={[s.card, { backgroundColor: c.card, borderColor: c.cardBorder }]}
-      onPress={() => router.push({ pathname: '/(tabs)/discover/[id]', params: { id: event.id } })}
-    >
-      {/* Cover image */}
+    <Pressable style={s.card} onPress={goTo}>
+      {/* Full-bleed cover with dark duotone treatment */}
       {coverSrc && !compact && (
-        <Image source={coverSrc} style={s.cover} resizeMode="cover" />
+        <View style={s.coverWrap}>
+          <Image source={coverSrc} style={s.cover} resizeMode="cover" />
+          <View style={[StyleSheet.absoluteFill, s.duoDark]} />
+          <View style={[StyleSheet.absoluteFill, s.duoBlue]} />
+          <View style={s.coverBadges}>{badges}</View>
+        </View>
       )}
 
       <View style={[s.body, compact && s.bodyCompact]}>
-      {/* Subject tag */}
-      <View style={[s.subjectRow]}>
-        <View style={[s.subjectTag, { backgroundColor: c.bgSubtle }]}>
-          <Text style={[s.subjectText, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>
-            {event.broadcastSubject}
-          </Text>
-        </View>
-        {event.status === 'published' && (
-          <View style={[s.liveDot, { backgroundColor: palette.green }]} />
-        )}
-      </View>
+        {(!coverSrc || compact) && badges}
 
-      {/* Title */}
-      <Text
-        style={[s.title, { color: c.textPrimary, fontFamily: fonts.display }, compact && s.titleCompact]}
-        numberOfLines={2}
-      >
-        {event.title}
-      </Text>
+        {/* Title */}
+        <Text
+          style={[compact ? t.headlineSm : t.headlineMd, { color: colors.textPrimary }]}
+          numberOfLines={2}
+        >
+          {event.title}
+        </Text>
 
-      {/* Venue + time */}
-      {!compact && (
-        <View style={s.meta}>
-          {(dateStr || timeStr) && (
-            <Text style={[s.metaText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
-              {[dateStr, timeStr].filter(Boolean).join(' · ')}
-            </Text>
-          )}
-          {event.venueName && (
-            <Text style={[s.metaText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]} numberOfLines={1}>
-              {event.isPrivateLocation ? `📍 ${event.venueName} (private)` : `📍 ${event.venueName}`}
-            </Text>
-          )}
-        </View>
-      )}
-
-      {/* Footer */}
-      <View style={s.footer}>
-        {event.hostName && (
-          <Text style={[s.hostText, { color: c.textTertiary, fontFamily: fonts.sansRegular }]}>
-            Hosted by {event.hostName}
-          </Text>
-        )}
-        {typeof event.goingCount === 'number' && (
-          <View style={[s.goingPill, { backgroundColor: c.bgSubtle }]}>
-            <Text style={[s.goingText, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>
-              {event.goingCount} going
-            </Text>
+        {/* Venue + time */}
+        {!compact && (
+          <View style={s.meta}>
+            {event.venueName && (
+              <Text style={[t.monoData, s.venueText]} numberOfLines={1}>
+                {event.isPrivateLocation ? `${event.venueName} — private` : event.venueName}
+              </Text>
+            )}
+            {(dateStr || timeStr) && (
+              <Text style={[t.monoData, { color: colors.textSecondary }]}>
+                {[dateStr, timeStr].filter(Boolean).join(' · ')}
+              </Text>
+            )}
           </View>
         )}
-      </View>
+
+        {/* Footer */}
+        <View style={s.footer}>
+          <View style={s.footerLeft}>
+            {typeof event.goingCount === 'number' && (
+              <Text style={[t.labelCaps, { color: colors.textPrimary }]}>
+                {event.goingCount} going
+              </Text>
+            )}
+            {event.hostName && (
+              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]} numberOfLines={1}>
+                Hosted by {event.hostName}
+              </Text>
+            )}
+          </View>
+          <Btn label="Join" variant="secondary" small onPress={goTo} />
+        </View>
       </View>
     </Pressable>
   );
@@ -107,30 +120,31 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
 
 const s = StyleSheet.create({
   card: {
-    borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden',
-    gap: spacing.sm, paddingBottom: spacing.lg,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04, shadowRadius: 4, elevation: 2,
+    backgroundColor: palette.surfaceLow,
+    borderWidth: 1,
+    borderColor: palette.outlineVariant,
+    borderTopWidth: 2,
+    borderTopColor: colors.accent,
+    overflow: 'hidden',
   },
-  cover: { width: '100%', height: 140 },
-  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: spacing.sm },
-  bodyCompact: { paddingTop: spacing.sm },
-  subjectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  subjectTag: {
-    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-  },
-  subjectText: { fontSize: 11, letterSpacing: 0.4, textTransform: 'uppercase' },
-  liveDot: { width: 7, height: 7, borderRadius: 4 },
-  title: { fontSize: 22, lineHeight: 26 },
-  titleCompact: { fontSize: 18, lineHeight: 22 },
+  coverWrap: { width: '100%', height: 160 },
+  cover: { width: '100%', height: '100%' },
+  duoDark: { backgroundColor: 'rgba(15,15,18,0.45)' },
+  duoBlue: { backgroundColor: 'rgba(0,101,117,0.18)' },
+  coverBadges: { position: 'absolute', top: spacing.md, left: spacing.md },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
+  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm },
+  bodyCompact: { paddingTop: spacing.md },
+  venueText: { color: colors.accent, textTransform: 'uppercase' },
   meta: { gap: 2 },
-  metaText: { fontSize: 13, lineHeight: 20 },
-  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.xs },
-  hostText: { fontSize: 12 },
-  goingPill: {
-    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
-    borderRadius: radius.full,
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.separator,
   },
-  goingText: { fontSize: 12 },
+  footerLeft: { flex: 1, gap: 2, paddingRight: spacing.md },
 });

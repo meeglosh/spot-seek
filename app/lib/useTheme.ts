@@ -1,8 +1,6 @@
-import { useColorScheme } from 'react-native';
-import { light, dark, type Colors } from './theme';
+import { colors, type Colors } from './theme';
 
+// SpotSeek is dark-only ("High-Energy Action" design system).
 export function useTheme(): { colors: Colors; isDark: boolean } {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-  return { colors: isDark ? dark : light, isDark };
+  return { colors, isDark: true };
 }

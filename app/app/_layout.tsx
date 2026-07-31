@@ -1,34 +1,36 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useColorScheme } from 'react-native';
+import { useFonts } from 'expo-font';
+import { Anton_400Regular } from '@expo-google-fonts/anton';
 import {
-  useFonts,
-  DMSans_400Regular,
-  DMSans_500Medium,
-  DMSans_600SemiBold,
-  DMSans_700Bold,
-} from '@expo-google-fonts/dm-sans';
-import { DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
+  ArchivoNarrow_400Regular,
+  ArchivoNarrow_500Medium,
+  ArchivoNarrow_600SemiBold,
+  ArchivoNarrow_700Bold,
+} from '@expo-google-fonts/archivo-narrow';
+import { SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { AuthProvider } from '../lib/auth';
+import { colors } from '../lib/theme';
 
 export default function RootLayout() {
   const [loaded] = useFonts({
-    DMSans_400Regular,
-    DMSans_500Medium,
-    DMSans_600SemiBold,
-    DMSans_700Bold,
-    DMSerifDisplay_400Regular,
+    Anton_400Regular,
+    ArchivoNarrow_400Regular,
+    ArchivoNarrow_500Medium,
+    ArchivoNarrow_600SemiBold,
+    ArchivoNarrow_700Bold,
+    SpaceGrotesk_500Medium,
+    SpaceGrotesk_700Bold,
   });
-
-  const scheme = useColorScheme();
 
   if (!loaded) return null;
 
   return (
     <AuthProvider>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }}>
+      {/* Dark-only design system — light status bar text everywhere */}
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>

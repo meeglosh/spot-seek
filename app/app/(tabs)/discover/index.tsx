@@ -1,14 +1,16 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, Pressable, StyleSheet, RefreshControl,
-  useColorScheme, TextInput, ActivityIndicator, Animated,
+  TextInput, ActivityIndicator, ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
-import { light, dark, fonts, spacing, radius } from '../../../lib/theme';
+import { AppHeader } from '../../../components/AppHeader';
+import { Btn, Chip } from '../../../components/ui';
+import { colors, fonts, palette, spacing, type as t } from '../../../lib/theme';
 import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
 import { useDiscoverFilters, activeFilterCount } from '../../../lib/discover-filters';
 
@@ -52,8 +54,6 @@ function filterByTime(events: EventItem[], filter: Filter): EventItem[] {
 export default function DiscoverScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const scheme = useColorScheme();
-  const c = scheme === 'dark' ? dark : light;
   const { filters } = useDiscoverFilters();
   const filterCount = activeFilterCount(filters);
   const [favourites, setFavourites] = useState<ApiFavourite[]>([]);
@@ -67,9 +67,6 @@ export default function DiscoverScreen() {
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
-
-  // Animate the toggle pill indicator
-  const toggleAnim = useRef(new Animated.Value(0)).current;
 
   async function requestLocation() {
     setLocationLoading(true);
@@ -126,15 +123,8 @@ export default function DiscoverScreen() {
     }
   }
 
-  async function handleMapToggle() {
-    const next = viewMode === 'list' ? 'map' : 'list';
+  async function handleModePress(next: 'list' | 'map') {
     setViewMode(next);
-    Animated.spring(toggleAnim, {
-      toValue: next === 'map' ? 1 : 0,
-      useNativeDriver: true,
-      tension: 120,
-      friction: 10,
-    }).start();
     // Auto-grab location when switching to map mode
     if (next === 'map' && !userLocation) {
       await requestLocation();
@@ -153,128 +143,116 @@ export default function DiscoverScreen() {
     if (filters.venue && !e.venueName?.toLowerCase().includes(filters.venue.toLowerCase())) return false;
     if (filters.teams && filters.teams.length > 0) {
       const haystack = `${e.title} ${e.broadcastSubject}`.toLowerCase();
-      if (!filters.teams.some((t) => haystack.includes(t.toLowerCase()))) return false;
+      if (!filters.teams.some((tm) => haystack.includes(tm.toLowerCase()))) return false;
     }
     if (filters.useFavourites && favTeams.length > 0) {
       const haystack = `${e.title} ${e.broadcastSubject}`.toLowerCase();
-      if (!favTeams.some((t) => haystack.includes(t.toLowerCase()))) return false;
+      if (!favTeams.some((tm) => haystack.includes(tm.toLowerCase()))) return false;
     }
     return true;
   });
 
-  // Toggle pill slide animation
-  const pillTranslate = toggleAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [2, 34],
-  });
+  const openFilters = () => router.push('/(tabs)/discover/filter');
+
+  // Dropdown-style category buttons that route to the full filter screen.
+  const categoryBtns: Array<{ label: string; active: boolean }> = [
+    { label: 'Sport', active: !!filters.sport },
+    { label: 'Teams', active: (filters.teams?.length ?? 0) > 0 },
+    { label: 'Date', active: !!filters.after || !!filters.before },
+    { label: 'Venue', active: !!filters.venue },
+  ];
 
   return (
-    <View style={[s.container, { backgroundColor: c.bg }]}>
+    <View style={s.container}>
+      <AppHeader />
+
       {/* Header */}
-      <View style={[s.header, { paddingTop: insets.top + spacing.md }]}>
-        <View style={s.titleRow}>
-          <Text style={[s.wordmark, { color: c.textPrimary, fontFamily: fonts.display }]}>SpotSeek</Text>
+      <View style={s.header}>
+        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>Discovery Feed</Text>
 
-          <View style={s.titleActions}>
-            {/* Filter button */}
-            <Pressable
-              style={[s.filterBtn, { backgroundColor: filterCount > 0 ? c.fill : c.bgSubtle, borderColor: filterCount > 0 ? c.fill : c.cardBorder }]}
-              onPress={() => router.push('/(tabs)/discover/filter')}
-            >
-              <Text style={[s.filterBtnText, { color: filterCount > 0 ? c.fillText : c.textSecondary, fontFamily: fonts.sansMedium }]}>
-                {filterCount > 0 ? `Filters · ${filterCount}` : 'Filters'}
-              </Text>
-            </Pressable>
-
-          {/* List / Map toggle */}
-          <Pressable
-            style={[s.toggle, { backgroundColor: c.bgSubtle, borderColor: c.cardBorder }]}
-            onPress={handleMapToggle}
-            accessibilityLabel={viewMode === 'list' ? 'Switch to map view' : 'Switch to list view'}
-          >
-            <Animated.View
-              style={[
-                s.togglePill,
-                { backgroundColor: c.fill },
-                { transform: [{ translateX: pillTranslate }] },
-              ]}
-            />
-            <View style={s.toggleOption}>
-              <Text style={[s.toggleIcon, { opacity: viewMode === 'list' ? 1 : 0.45 }]}>☰</Text>
-            </View>
-            <View style={s.toggleOption}>
-              <Text style={[s.toggleIcon, { opacity: viewMode === 'map' ? 1 : 0.45 }]}>◎</Text>
-            </View>
-          </Pressable>
+        {/* LIST | MAP toggle + search */}
+        <View style={s.controlsRow}>
+          <View style={s.segmented}>
+            {(['list', 'map'] as const).map((mode) => {
+              const on = viewMode === mode;
+              return (
+                <Pressable
+                  key={mode}
+                  style={[s.segmentBtn, on && s.segmentBtnActive]}
+                  onPress={() => handleModePress(mode)}
+                  accessibilityLabel={mode === 'list' ? 'Switch to list view' : 'Switch to map view'}
+                >
+                  <Text style={[t.labelCaps, { color: on ? colors.fillText : colors.textSecondary }]}>
+                    {mode}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
+
+          {viewMode === 'list' && (
+            <View style={s.searchRow}>
+              <Text style={s.searchGlyph}>⌕</Text>
+              <TextInput
+                style={s.searchInput}
+                placeholder="SEARCH EVENTS..."
+                placeholderTextColor={colors.textTertiary}
+                value={search}
+                onChangeText={setSearch}
+              />
+              {search.length > 0 && (
+                <Pressable onPress={() => setSearch('')} hitSlop={8}>
+                  <Text style={s.clearGlyph}>✕</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
         </View>
 
-        {/* Search — list mode only */}
-        {viewMode === 'list' && (
-          <View style={[s.searchRow, { backgroundColor: c.bgSubtle, borderColor: c.cardBorder }]}>
-            <Text style={[s.searchIcon, { color: c.textTertiary }]}>🔍</Text>
-            <TextInput
-              style={[s.searchInput, { color: c.textPrimary, fontFamily: fonts.sansRegular }]}
-              placeholder="Search events or sports…"
-              placeholderTextColor={c.textTertiary}
-              value={search}
-              onChangeText={setSearch}
-            />
-            {search.length > 0 && (
-              <Pressable onPress={() => setSearch('')}>
-                <Text style={{ color: c.textTertiary, fontSize: 14, paddingRight: spacing.xs }}>✕</Text>
-              </Pressable>
-            )}
-          </View>
-        )}
+        {/* Category filter buttons — route to the full filter screen */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.categoryRow}>
+          {categoryBtns.map((cat) => (
+            <Pressable
+              key={cat.label}
+              style={[s.categoryBtn, cat.active && s.categoryBtnActive]}
+              onPress={openFilters}
+            >
+              <Text style={[t.labelCapsSm, { color: cat.active ? colors.accent : colors.textSecondary }]}>
+                {cat.label} ▾
+              </Text>
+            </Pressable>
+          ))}
+          {filterCount > 0 && (
+            <Pressable style={[s.categoryBtn, s.categoryBtnActive]} onPress={openFilters}>
+              <Text style={[t.labelCapsSm, { color: colors.accent }]}>{filterCount} active</Text>
+            </Pressable>
+          )}
+        </ScrollView>
 
         {/* Active filter summary chips */}
         {filterCount > 0 && (
           <View style={s.activeFilters}>
-            {filters.sport && (
-              <View style={[s.activeFChip, { backgroundColor: c.fill }]}>
-                <Text style={[s.activeFChipText, { color: c.fillText, fontFamily: fonts.sansMedium }]}>⚽ {filters.sport}</Text>
-              </View>
-            )}
-            {filters.teams?.slice(0, 2).map((t) => (
-              <View key={t} style={[s.activeFChip, { backgroundColor: c.fill }]}>
-                <Text style={[s.activeFChipText, { color: c.fillText, fontFamily: fonts.sansMedium }]}>{t}</Text>
-              </View>
+            {filters.sport && <Chip label={filters.sport} active onPress={openFilters} />}
+            {filters.teams?.slice(0, 2).map((tm) => (
+              <Chip key={tm} label={tm} active onPress={openFilters} />
             ))}
             {(filters.teams?.length ?? 0) > 2 && (
-              <View style={[s.activeFChip, { backgroundColor: c.fill }]}>
-                <Text style={[s.activeFChipText, { color: c.fillText, fontFamily: fonts.sansMedium }]}>+{(filters.teams?.length ?? 0) - 2} teams</Text>
-              </View>
+              <Chip label={`+${(filters.teams?.length ?? 0) - 2} teams`} active onPress={openFilters} />
             )}
-            {filters.venue && (
-              <View style={[s.activeFChip, { backgroundColor: c.fill }]}>
-                <Text style={[s.activeFChipText, { color: c.fillText, fontFamily: fonts.sansMedium }]}>📍 {filters.venue}</Text>
-              </View>
-            )}
-            {filters.useFavourites && (
-              <View style={[s.activeFChip, { backgroundColor: c.fill }]}>
-                <Text style={[s.activeFChipText, { color: c.fillText, fontFamily: fonts.sansMedium }]}>⭐ Your teams</Text>
-              </View>
-            )}
+            {filters.venue && <Chip label={filters.venue} active onPress={openFilters} />}
+            {filters.useFavourites && <Chip label="Your teams" active tone="volt" onPress={openFilters} />}
           </View>
         )}
 
-        {/* Filter pills */}
+        {/* Quick time filters */}
         <View style={s.filters}>
           {FILTERS.map((f) => (
-            <Pressable
+            <Chip
               key={f}
-              style={[s.filterPill, { backgroundColor: filter === f ? c.fill : c.bgSubtle, borderColor: c.cardBorder }]}
+              label={f === 'Near me' && locationLoading ? 'Locating…' : f}
+              active={filter === f}
               onPress={() => handleFilterPress(f)}
-            >
-              {f === 'Near me' && locationLoading ? (
-                <ActivityIndicator size="small" color={filter === f ? c.fillText : c.textSecondary} style={{ width: 16, height: 16 }} />
-              ) : (
-                <Text style={[s.filterText, { color: filter === f ? c.fillText : c.textSecondary, fontFamily: fonts.sansMedium }]}>
-                  {f === 'Near me' ? `📍 ${f}` : f}
-                </Text>
-              )}
-            </Pressable>
+            />
           ))}
         </View>
       </View>
@@ -283,7 +261,7 @@ export default function DiscoverScreen() {
       {viewMode === 'map' && (
         loading ? (
           <View style={s.center}>
-            <ActivityIndicator color={c.textSecondary} />
+            <ActivityIndicator color={colors.accent} />
           </View>
         ) : (
           <EventMapView
@@ -297,29 +275,27 @@ export default function DiscoverScreen() {
       {viewMode === 'list' && (
         loading && !refreshing ? (
           <View style={s.center}>
-            <ActivityIndicator color={c.textSecondary} />
-            <Text style={[s.stateText, { color: c.textTertiary, fontFamily: fonts.sansRegular }]}>
+            <ActivityIndicator color={colors.accent} />
+            <Text style={[t.bodySm, { color: colors.textTertiary }]}>
               Loading events…
             </Text>
           </View>
         ) : error ? (
           <View style={s.center}>
-            <Text style={[s.stateText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>{error}</Text>
-            <Pressable style={[s.retryBtn, { backgroundColor: c.fillSubtle }]} onPress={() => loadFeed()}>
-              <Text style={[{ color: c.fillSubtleText, fontFamily: fonts.sansMedium, fontSize: 14 }]}>Retry</Text>
-            </Pressable>
+            <Text style={[t.bodySm, s.stateText]}>{error}</Text>
+            <Btn label="Retry" variant="ghost" small onPress={() => loadFeed()} />
           </View>
         ) : (
           <FlatList
             data={displayed}
             keyExtractor={(e) => e.id}
             contentContainerStyle={[s.list, { paddingBottom: insets.bottom + spacing.xl }]}
-            ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+            ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.textTertiary} />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
             }
             ListHeaderComponent={
-              <Text style={[s.sectionLabel, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>
+              <Text style={[t.labelCaps, s.sectionLabel]}>
                 {displayed.length === 0
                   ? 'No events found'
                   : `${displayed.length} upcoming event${displayed.length === 1 ? '' : 's'}`}
@@ -327,7 +303,7 @@ export default function DiscoverScreen() {
             }
             ListEmptyComponent={
               <View style={s.center}>
-                <Text style={[s.stateText, { color: c.textTertiary, fontFamily: fonts.sansRegular }]}>
+                <Text style={[t.bodySm, { color: colors.textTertiary, textAlign: 'center' }]}>
                   {search ? 'No events match your search.' : 'No published events yet.'}
                 </Text>
               </View>
@@ -342,51 +318,73 @@ export default function DiscoverScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingHorizontal: spacing.xl, gap: spacing.md, paddingBottom: spacing.md },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  wordmark: { fontSize: 28 },
-  titleActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  filterBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full, borderWidth: 1 },
-  filterBtnText: { fontSize: 13 },
-  activeFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  activeFChip: { paddingHorizontal: spacing.sm + 2, paddingVertical: spacing.xs, borderRadius: radius.full },
-  activeFChipText: { fontSize: 12 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  header: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md },
 
-  // Toggle
-  toggle: {
-    flexDirection: 'row', width: 70, height: 32,
-    borderRadius: radius.full, borderWidth: 1,
-    alignItems: 'center', position: 'relative', overflow: 'hidden',
-  },
-  togglePill: {
-    position: 'absolute', width: 32, height: 28,
-    borderRadius: radius.full,
-  },
-  toggleOption: {
-    flex: 1, alignItems: 'center', justifyContent: 'center', zIndex: 1,
-  },
-  toggleIcon: { fontSize: 14 },
+  controlsRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
 
-  // Search
+  // Sharp segmented LIST | MAP toggle
+  segmented: {
+    flexDirection: 'row',
+    backgroundColor: palette.surfaceMid,
+    borderWidth: 1,
+    borderColor: palette.surfaceHighest,
+    padding: 2,
+  },
+  segmentBtn: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  segmentBtnActive: { backgroundColor: colors.fill },
+
+  // Underlined search input
   searchRow: {
-    flexDirection: 'row', alignItems: 'center', borderRadius: radius.lg,
-    borderWidth: 1, paddingHorizontal: spacing.md, height: 44, gap: spacing.sm,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: palette.surfaceMid,
+    borderBottomWidth: 2,
+    borderBottomColor: palette.outlineVariant,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
-  searchIcon: { fontSize: 14 },
-  searchInput: { flex: 1, fontSize: 15 },
+  searchGlyph: { color: colors.textTertiary, fontSize: 18 },
+  searchInput: {
+    flex: 1,
+    color: colors.textPrimary,
+    fontFamily: fonts.label,
+    fontSize: 13,
+    letterSpacing: 0.5,
+    paddingVertical: spacing.sm,
+  },
+  clearGlyph: { color: colors.textTertiary, fontSize: 14 },
 
-  // Filters
-  filters: { flexDirection: 'row', gap: spacing.sm },
-  filterPill: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full, borderWidth: 1 },
-  filterText: { fontSize: 13 },
+  // Category buttons (SPORT ▾ / TEAMS ▾ / …)
+  categoryRow: { flexDirection: 'row', gap: spacing.sm },
+  categoryBtn: {
+    backgroundColor: palette.surfaceMid,
+    borderWidth: 1,
+    borderColor: palette.surfaceHighest,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  categoryBtnActive: {
+    backgroundColor: `${colors.accent}20`,
+    borderColor: `${colors.accent}80`,
+  },
+
+  activeFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+
+  // Quick filters
+  filters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 
   // List
-  list: { paddingHorizontal: spacing.xl, paddingTop: spacing.md },
-  sectionLabel: { fontSize: 12, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: spacing.md },
+  list: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+  sectionLabel: { color: colors.textSecondary, marginBottom: spacing.md },
 
   // States
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['2xl'], gap: spacing.lg },
-  stateText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
-  retryBtn: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.md },
+  stateText: { color: colors.textSecondary, textAlign: 'center' },
 });

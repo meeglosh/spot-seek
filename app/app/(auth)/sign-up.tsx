@@ -1,24 +1,24 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, useColorScheme,
+  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../lib/auth';
-import { light, dark, fonts, spacing, radius, palette } from '../../lib/theme';
+import { colors, fonts, palette, spacing, type as t } from '../../lib/theme';
+import { Badge, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
 
 export default function SignUpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signUp } = useAuth();
-  const scheme = useColorScheme();
-  const c = scheme === 'dark' ? dark : light;
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [focused, setFocused] = useState<string | null>(null);
 
   async function handleSignUp() {
     if (!name || !email || !password) return;
@@ -37,64 +37,59 @@ export default function SignUpScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[s.container, { backgroundColor: c.bg }]}
+      style={s.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView
         contentContainerStyle={[s.inner, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable onPress={() => router.back()} style={s.back}>
-          <Text style={[s.backText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>← Back</Text>
+        <Pressable onPress={() => router.back()} style={s.back} hitSlop={8}>
+          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>← Back</Text>
         </Pressable>
 
-        <Text style={[s.title, { color: c.textPrimary, fontFamily: fonts.display }]}>
-          Join SpotSeek.
-        </Text>
-        <Text style={[s.subtitle, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
-          Create an account to host or discover watch parties.
-        </Text>
+        <Badge label="Secure connection" tone="live" />
+        <Text style={[t.headlineLg, s.title]}>Join the{'\n'}action</Text>
+        <Text style={[t.bodyMd, s.subtitle]}>Create an account to host or discover watch parties.</Text>
 
         <View style={s.form}>
           {([
             { label: 'Name', value: name, setter: setName, placeholder: 'Your name', type: 'name', secure: false },
-            { label: 'Email', value: email, setter: setEmail, placeholder: 'you@example.com', type: 'email', secure: false },
+            { label: 'Email address', value: email, setter: setEmail, placeholder: 'you@example.com', type: 'email', secure: false },
             { label: 'Password', value: password, setter: setPassword, placeholder: '8+ characters', type: 'password', secure: true },
           ] as const).map(({ label, value, setter, placeholder, secure }) => (
             <View key={label} style={s.field}>
-              <Text style={[s.label, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>{label}</Text>
+              <FieldLabel>{label}</FieldLabel>
               <TextInput
-                style={[s.input, { backgroundColor: c.bgSubtle, color: c.textPrimary, borderColor: c.cardBorder, fontFamily: fonts.sansRegular }]}
+                style={[inputStyle, focused === label && inputFocusedStyle]}
                 placeholder={placeholder}
-                placeholderTextColor={c.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 value={value}
                 onChangeText={setter}
+                onFocus={() => setFocused(label)}
+                onBlur={() => setFocused(null)}
                 secureTextEntry={secure}
                 autoCapitalize={label === 'Name' ? 'words' : 'none'}
-                keyboardType={label === 'Email' ? 'email-address' : 'default'}
+                keyboardType={label === 'Email address' ? 'email-address' : 'default'}
               />
             </View>
           ))}
 
           {!!error && (
-            <Text style={[s.errorText, { fontFamily: fonts.sansRegular }]}>{error}</Text>
+            <Text style={[t.bodySm, s.errorText]}>{error}</Text>
           )}
         </View>
 
         <View style={s.footer}>
-          <Pressable
-            style={[s.primaryBtn, { backgroundColor: c.fill, opacity: loading ? 0.6 : 1 }]}
+          <Btn
+            label={loading ? 'Creating account…' : 'Create account →'}
             onPress={handleSignUp}
             disabled={loading}
-          >
-            <Text style={[s.primaryBtnText, { color: c.fillText, fontFamily: fonts.sansSemiBold }]}>
-              {loading ? 'Creating account…' : 'Create account'}
-            </Text>
-          </Pressable>
-          <Pressable onPress={() => router.push('/(auth)/sign-in')}>
-            <Text style={[s.switchText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
+          />
+          <Pressable onPress={() => router.push('/(auth)/sign-in')} hitSlop={8}>
+            <Text style={[t.bodySm, s.switchText]}>
               Already have an account?{' '}
-              <Text style={{ color: c.textPrimary, fontFamily: fonts.sansSemiBold }}>Sign in</Text>
+              <Text style={s.switchLink}>Sign in</Text>
             </Text>
           </Pressable>
         </View>
@@ -104,24 +99,22 @@ export default function SignUpScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: colors.bg },
   inner: { flexGrow: 1, paddingHorizontal: spacing.xl },
-  back: { marginBottom: spacing['2xl'] },
-  backText: { fontSize: 16 },
-  title: { fontSize: 40, lineHeight: 44, marginBottom: spacing.sm },
-  subtitle: { fontSize: 16, lineHeight: 24, marginBottom: spacing['3xl'] },
-  form: { gap: spacing.lg, marginBottom: spacing['2xl'] },
-  field: { gap: spacing.sm },
-  label: { fontSize: 13, letterSpacing: 0.3 },
-  input: {
-    height: 52, borderRadius: radius.md, paddingHorizontal: spacing.lg,
-    fontSize: 16, borderWidth: 1,
+  back: { marginBottom: spacing['2xl'], alignSelf: 'flex-start' },
+  title: {
+    color: palette.white,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    textShadowColor: palette.secondary,
+    textShadowOffset: { width: 3, height: 3 },
+    textShadowRadius: 0,
   },
-  errorText: { fontSize: 14, color: palette.red },
-  footer: { gap: spacing.md },
-  primaryBtn: {
-    height: 52, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
-  },
-  primaryBtnText: { fontSize: 16 },
-  switchText: { fontSize: 14, textAlign: 'center' },
+  subtitle: { color: colors.textSecondary, marginBottom: spacing['3xl'] },
+  form: { gap: spacing.xl, marginBottom: spacing['2xl'], flexGrow: 1 },
+  field: { gap: 0 },
+  errorText: { color: colors.danger },
+  footer: { gap: spacing.lg },
+  switchText: { color: colors.textSecondary, textAlign: 'center' },
+  switchLink: { color: colors.accent, fontFamily: fonts.sansBold },
 });

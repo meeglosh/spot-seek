@@ -1,78 +1,81 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { useColorScheme, View, Text, StyleSheet } from 'react-native';
-import { light, dark, fonts, type Colors } from '../../lib/theme';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors, fonts, palette } from '../../lib/theme';
 
-type IconProps = { focused: boolean; label: string; emoji: string; c: Colors };
-
-function TabIcon({ focused, emoji, c }: IconProps) {
+function TabIcon({ focused, glyph }: { focused: boolean; glyph: string }) {
   return (
-    <View style={[s.iconWrap, focused && { borderBottomWidth: 2, borderColor: c.textPrimary }]}>
-      <Text style={s.emoji}>{emoji}</Text>
+    <View style={[s.iconWrap, focused && s.iconWrapActive]}>
+      <Text style={[s.glyph, { color: focused ? colors.accent : colors.textTertiary }]}>{glyph}</Text>
     </View>
   );
 }
 
-function TabLabel({ label, focused, c }: { label: string; focused: boolean; c: Colors }) {
+function TabLabel({ label, focused }: { label: string; focused: boolean }) {
   return (
-    <Text style={[
-      s.tabLabel,
-      { color: focused ? c.textPrimary : c.textTertiary, fontFamily: focused ? fonts.sansSemiBold : fonts.sansRegular },
-    ]}>
+    <Text
+      style={[
+        s.tabLabel,
+        {
+          color: focused ? colors.accent : colors.textTertiary,
+          fontFamily: focused ? fonts.labelBold : fonts.label,
+        },
+      ]}
+    >
       {label}
     </Text>
   );
 }
 
 export default function TabsLayout() {
-  const scheme = useColorScheme();
-  const c = scheme === 'dark' ? dark : light;
-
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: c.tabBar,
-          borderTopColor: c.tabBarBorder,
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
-          height: 60,
+          height: 64,
           paddingBottom: 8,
         },
-        tabBarActiveTintColor: c.textPrimary,
-        tabBarInactiveTintColor: c.textTertiary,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textTertiary,
       }}
     >
       <Tabs.Screen
         name="discover"
         options={{
           title: 'Discover',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} label="Discover" emoji="🔍" c={c} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="Discover" focused={focused} c={c} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} glyph="◎" />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Discover" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="host"
+        name="parties"
         options={{
-          title: 'Host',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} label="Host" emoji="📅" c={c} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="Host" focused={focused} c={c} />,
+          title: 'My Parties',
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} glyph="⚑" />,
+          tabBarLabel: ({ focused }) => <TabLabel label="My Parties" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} label="Profile" emoji="👤" c={c} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="Profile" focused={focused} c={c} />,
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} glyph="◈" />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Profile" focused={focused} />,
         }}
       />
+      {/* Sponsorship screens live behind the drawer, not the tab bar */}
+      <Tabs.Screen name="sponsorship" options={{ href: null }} />
     </Tabs>
   );
 }
 
 const s = StyleSheet.create({
-  iconWrap: { paddingBottom: 2 },
-  emoji: { fontSize: 20 },
-  tabLabel: { fontSize: 10, marginTop: 2 },
+  iconWrap: { paddingBottom: 2, paddingHorizontal: 10 },
+  iconWrapActive: { backgroundColor: `${palette.primary}1f` },
+  glyph: { fontSize: 20 },
+  tabLabel: { fontSize: 10, marginTop: 2, letterSpacing: 0.6, textTransform: 'uppercase' },
 });
