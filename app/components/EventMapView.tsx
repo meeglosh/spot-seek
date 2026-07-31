@@ -1,57 +1,47 @@
 import React, { useRef, useState } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, Animated, useColorScheme, Platform,
+  View, Text, Pressable, StyleSheet, Animated, ScrollView,
 } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { useRouter } from 'expo-router';
-import { light, dark, fonts, spacing, radius, palette } from '../lib/theme';
+import { colors, palette, spacing, type as t } from '../lib/theme';
+import { Badge, Btn } from './ui';
 import type { EventItem } from './EventCard';
 
-// ─── Monochrome map styles ─────────────────────────────────────────────────────
-// Strips all colour from the map so it matches the app's B&W palette.
+// ─── Neon night map style ──────────────────────────────────────────────────────
+// Near-black base with a dark-teal glow on roads and water, per the HEA map
+// reference. Only applies on the Google provider; on Apple Maps the map keeps
+// its native tiles while the neon chrome and pins still render on top.
 
-const LIGHT_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+const NEON_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#0a0e11' }] },
   { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#f5f5f5' }] },
-  { featureType: 'administrative.land_parcel', elementType: 'labels.text.fill', stylers: [{ color: '#bdbdbd' }] },
-  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#eeeeee' }] },
-  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#e5e5e5' }] },
-  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-  { featureType: 'road.arterial', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dadada' }] },
-  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
-  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
-  { featureType: 'transit.line', elementType: 'geometry', stylers: [{ color: '#e5e5e5' }] },
-  { featureType: 'transit.station', elementType: 'geometry', stylers: [{ color: '#eeeeee' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9c9c9' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#3f6b72' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#060a0c' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#12313a' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#5e9aa3' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#0c1619' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#102d33' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#0a1a1e' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#3f6b72' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#14424b' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#1a5f6b' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#0e2a30' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d2b33' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#2c565e' }] },
 ];
 
-const DARK_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#212121' }] },
-  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#212121' }] },
-  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#757575' }] },
-  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
-  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#bdbdbd' }] },
-  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#181818' }] },
-  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
-  { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#2c2c2c' }] },
-  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
-  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373737' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3c3c3c' }] },
-  { featureType: 'road.highway.controlled_access', elementType: 'geometry', stylers: [{ color: '#4e4e4e' }] },
-  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
-  { featureType: 'transit', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#000000' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d3d3d' }] },
-];
+// Live-soon: event starts within the next ~3 hours (or kicked off in the last
+// 3 hours) — these pins burn neon orange instead of cyan.
+const LIVE_SOON_MS = 3 * 60 * 60 * 1000;
+
+function isLiveSoon(startsAt?: string | null): boolean {
+  if (!startsAt) return false;
+  const diff = new Date(startsAt).getTime() - Date.now();
+  return diff <= LIVE_SOON_MS && diff > -LIVE_SOON_MS;
+}
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -75,15 +65,23 @@ const DEFAULT_REGION = {
 
 export function EventMapView({ events, userLocation, initialRegion }: Props) {
   const router = useRouter();
-  const scheme = useColorScheme();
-  const c = scheme === 'dark' ? dark : light;
-  const isDark = scheme === 'dark';
 
   const [selected, setSelected] = useState<EventItem | null>(null);
+  const [liveOnly, setLiveOnly] = useState(false);
+  const [sportFilter, setSportFilter] = useState<string | null>(null);
   const slideAnim = useRef(new Animated.Value(200)).current;
 
   // Events that have coordinates.
   const mappable = events.filter((e) => e.venueLat != null && e.venueLng != null);
+
+  // Sport chips derived from the events actually on the map — no invented data.
+  const subjects = Array.from(new Set(mappable.map((e) => e.broadcastSubject))).slice(0, 5);
+
+  const shown = mappable.filter((e) => {
+    if (liveOnly && !isLiveSoon(e.startsAt)) return false;
+    if (sportFilter && e.broadcastSubject !== sportFilter) return false;
+    return true;
+  });
 
   function selectEvent(event: EventItem) {
     setSelected(event);
@@ -113,40 +111,70 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
         style={s.map}
         provider={PROVIDER_DEFAULT}
         initialRegion={region}
-        customMapStyle={isDark ? DARK_STYLE : LIGHT_STYLE}
+        customMapStyle={NEON_MAP_STYLE}
         showsUserLocation
         showsMyLocationButton={false}
         showsCompass={false}
         showsScale={false}
         onPress={() => selected && dismiss()}
       >
-        {mappable.map((event) => (
-          <Marker
-            key={event.id}
-            coordinate={{
-              latitude: event.venueLat!,
-              longitude: event.venueLng!,
-            }}
-            onPress={() => selectEvent(event)}
-            tracksViewChanges={false}
-          >
-            {/* Custom marker — black pill with broadcast subject */}
-            <View style={[
-              s.marker,
-              selected?.id === event.id && s.markerSelected,
-              isDark && s.markerDark,
-              isDark && selected?.id === event.id && s.markerSelectedDark,
-            ]}>
-              <Text style={s.markerText}>{event.broadcastSubject}</Text>
-            </View>
-          </Marker>
-        ))}
+        {shown.map((event) => {
+          const live = isLiveSoon(event.startsAt);
+          const tone = live ? colors.live : colors.accent;
+          const isSel = selected?.id === event.id;
+          return (
+            <Marker
+              key={event.id}
+              coordinate={{
+                latitude: event.venueLat!,
+                longitude: event.venueLng!,
+              }}
+              onPress={() => selectEvent(event)}
+              tracksViewChanges={false}
+            >
+              {/* Glowing neon pin — cyan by default, orange when live-soon */}
+              <View style={s.pinWrap}>
+                <View
+                  style={[
+                    s.pin,
+                    { borderColor: tone, shadowColor: tone },
+                    isSel && s.pinSelected,
+                  ]}
+                >
+                  <View style={[s.pinCore, { backgroundColor: tone }]} />
+                </View>
+                <View style={[s.pinStem, { backgroundColor: tone }]} />
+              </View>
+            </Marker>
+          );
+        })}
       </MapView>
+
+      {/* Filter chips — LIVE NOW + sport chips over the map */}
+      <View style={s.chipBar} pointerEvents="box-none">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
+          <MapChip
+            label="Live Now"
+            tone={colors.live}
+            active={liveOnly}
+            onPress={() => setLiveOnly((v) => !v)}
+          />
+          {subjects.map((sub) => (
+            <MapChip
+              key={sub}
+              label={sub}
+              tone={colors.accent}
+              active={sportFilter === sub}
+              onPress={() => setSportFilter((prev) => (prev === sub ? null : sub))}
+            />
+          ))}
+        </ScrollView>
+      </View>
 
       {/* No-coordinates notice */}
       {mappable.length === 0 && (
-        <View style={[s.emptyOverlay, { backgroundColor: c.card + 'EE', borderColor: c.cardBorder }]}>
-          <Text style={[s.emptyText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
+        <View style={s.emptyOverlay}>
+          <Text style={[t.bodySm, s.emptyText]}>
             No events with locations yet.{'\n'}Create an event with a venue to see it here.
           </Text>
         </View>
@@ -154,9 +182,9 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
 
       {/* Event count badge */}
       {mappable.length > 0 && (
-        <View style={[s.badge, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
-          <Text style={[s.badgeText, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>
-            {mappable.length} event{mappable.length === 1 ? '' : 's'} on map
+        <View style={s.countBadge}>
+          <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
+            {shown.length} of {mappable.length} on map
           </Text>
         </View>
       )}
@@ -164,41 +192,34 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
       {/* Bottom card — slides up when a marker is tapped */}
       {selected && (
         <Animated.View
-          style={[
-            s.bottomCard,
-            { backgroundColor: c.card, borderColor: c.cardBorder },
-            { transform: [{ translateY: slideAnim }] },
-          ]}
+          style={[s.bottomCard, { transform: [{ translateY: slideAnim }] }]}
         >
-          <View style={[s.dragHandle, { backgroundColor: c.cardBorder }]} />
-
           {/* Subject tag */}
           <View style={s.cardSubjectRow}>
-            <View style={[s.subjectTag, { backgroundColor: c.bgSubtle }]}>
-              <Text style={[s.subjectText, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>
-                {selected.broadcastSubject}
-              </Text>
+            <View style={s.cardBadges}>
+              {isLiveSoon(selected.startsAt) && <Badge label="Live Soon" tone="live" />}
+              <Badge label={selected.broadcastSubject} tone="accent" dot={false} />
             </View>
             <Pressable onPress={dismiss} hitSlop={12}>
-              <Text style={[{ color: c.textTertiary, fontSize: 18 }]}>✕</Text>
+              <Text style={s.closeGlyph}>✕</Text>
             </Pressable>
           </View>
 
           {/* Event title */}
-          <Text style={[s.cardTitle, { color: c.textPrimary, fontFamily: fonts.display }]} numberOfLines={2}>
+          <Text style={[t.headlineMd, { color: colors.textPrimary }]} numberOfLines={2}>
             {selected.title}
           </Text>
 
           {/* Venue + date row */}
           <View style={s.cardMeta}>
             {selected.venueName && (
-              <Text style={[s.cardMetaText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]} numberOfLines={1}>
-                📍 {selected.isPrivateLocation ? `${selected.venueName} (private)` : selected.venueName}
+              <Text style={[t.monoData, s.cardVenue]} numberOfLines={1}>
+                {selected.isPrivateLocation ? `${selected.venueName} — private` : selected.venueName}
               </Text>
             )}
             {selected.startsAt && (
-              <Text style={[s.cardMetaText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
-                📅 {new Date(selected.startsAt).toLocaleDateString('en-GB', {
+              <Text style={[t.monoData, { color: colors.textSecondary }]}>
+                {new Date(selected.startsAt).toLocaleDateString('en-GB', {
                   weekday: 'short', day: 'numeric', month: 'short',
                 })} · {new Date(selected.startsAt).toLocaleTimeString('en-GB', {
                   hour: '2-digit', minute: '2-digit',
@@ -206,109 +227,126 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
               </Text>
             )}
             {typeof selected.goingCount === 'number' && (
-              <Text style={[s.cardMetaText, { color: palette.green, fontFamily: fonts.sansMedium }]}>
-                ✓ {selected.goingCount} going
+              <Text style={[t.labelCapsSm, { color: colors.volt }]}>
+                {selected.goingCount} going
               </Text>
             )}
           </View>
 
           {/* CTA */}
-          <Pressable
-            style={[s.viewBtn, { backgroundColor: c.fill }]}
+          <Btn
+            label="View Event"
             onPress={() => {
               dismiss();
               router.push({ pathname: '/(tabs)/discover/[id]', params: { id: selected.id } });
             }}
-          >
-            <Text style={[s.viewBtnText, { color: c.fillText, fontFamily: fonts.sansSemiBold }]}>
-              View event
-            </Text>
-          </Pressable>
+          />
         </Animated.View>
       )}
     </View>
   );
 }
 
+// Solid dark chip over the map — needs an opaque body so it reads on tiles.
+function MapChip({
+  label, tone, active, onPress,
+}: {
+  label: string;
+  tone: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        s.mapChip,
+        active && { borderColor: tone, shadowColor: tone, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.9, shadowRadius: 6, elevation: 5 },
+      ]}
+    >
+      <Text style={[t.labelCapsSm, { color: active ? tone : colors.textSecondary }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const s = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: colors.bg },
   map: { flex: 1 },
 
-  // Markers
-  marker: {
-    backgroundColor: '#0A0A0A',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
+  // Glowing pins
+  pinWrap: { alignItems: 'center' },
+  pin: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    backgroundColor: 'rgba(10,14,17,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+    elevation: 6,
   },
-  markerSelected: {
-    backgroundColor: '#000000',
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    transform: [{ scale: 1.1 }],
-  },
-  markerDark: { backgroundColor: '#FAFAFA' },
-  markerSelectedDark: { backgroundColor: '#FFFFFF' },
-  markerText: {
-    color: '#FAFAFA',
-    fontSize: 11,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
-    fontWeight: '600',
-    letterSpacing: 0.2,
+  pinSelected: { transform: [{ scale: 1.3 }] },
+  pinCore: { width: 8, height: 8, borderRadius: 4 },
+  pinStem: { width: 2, height: 7 },
+
+  // Chip bar over the map
+  chipBar: { position: 'absolute', top: spacing.md, left: 0, right: 0 },
+  chipRow: { paddingHorizontal: spacing.lg, gap: spacing.sm, flexDirection: 'row' },
+  mapChip: {
+    backgroundColor: palette.surfaceLowest,
+    borderWidth: 1,
+    borderColor: palette.surfaceHighest,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
 
   // Count badge
-  badge: {
-    position: 'absolute', top: spacing.xl, left: spacing.xl,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
-    borderRadius: radius.full, borderWidth: 1,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08, shadowRadius: 4, elevation: 3,
+  countBadge: {
+    position: 'absolute',
+    top: spacing.md + 42,
+    left: spacing.lg,
+    backgroundColor: palette.surfaceLowest,
+    borderWidth: 1,
+    borderColor: palette.surfaceHighest,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
   },
-  badgeText: { fontSize: 12 },
 
   // Empty overlay
   emptyOverlay: {
-    position: 'absolute', bottom: spacing['3xl'], left: spacing.xl, right: spacing.xl,
-    borderRadius: radius.lg, borderWidth: 1,
-    padding: spacing.lg, alignItems: 'center',
+    position: 'absolute',
+    bottom: spacing['3xl'],
+    left: spacing.xl,
+    right: spacing.xl,
+    backgroundColor: palette.surfaceLow,
+    borderWidth: 1,
+    borderColor: palette.surfaceHighest,
+    borderTopWidth: 2,
+    borderTopColor: colors.accent,
+    padding: spacing.lg,
+    alignItems: 'center',
   },
-  emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  emptyText: { color: colors.textSecondary, textAlign: 'center' },
 
-  // Bottom card
+  // Bottom card — sharp HEA sheet with a cyan top edge
   bottomCard: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    borderTopWidth: 1, borderLeftWidth: 1, borderRightWidth: 1,
-    padding: spacing.xl, paddingTop: spacing.md, gap: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 12,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: palette.surfaceLow,
+    borderTopWidth: 2,
+    borderTopColor: colors.accent,
+    padding: spacing.xl,
+    paddingTop: spacing.lg,
+    gap: spacing.md,
   },
-  dragHandle: {
-    width: 36, height: 4, borderRadius: 2,
-    alignSelf: 'center', marginBottom: spacing.sm,
-  },
-  cardSubjectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  subjectTag: {
-    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-  },
-  subjectText: { fontSize: 11, letterSpacing: 0.4, textTransform: 'uppercase' },
-  cardTitle: { fontSize: 26, lineHeight: 30 },
+  cardSubjectRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  cardBadges: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', flex: 1, paddingRight: spacing.md },
+  closeGlyph: { color: colors.textTertiary, fontSize: 18 },
   cardMeta: { gap: 4 },
-  cardMetaText: { fontSize: 13, lineHeight: 20 },
-  viewBtn: {
-    height: 48, borderRadius: radius.md,
-    alignItems: 'center', justifyContent: 'center',
-    marginTop: spacing.xs,
-  },
-  viewBtnText: { fontSize: 15 },
+  cardVenue: { color: colors.accent, textTransform: 'uppercase' },
 });

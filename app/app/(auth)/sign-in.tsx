@@ -1,23 +1,23 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, useColorScheme,
+  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../lib/auth';
-import { light, dark, fonts, spacing, radius, palette } from '../../lib/theme';
+import { colors, fonts, palette, spacing, type as t } from '../../lib/theme';
+import { Badge, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
 
 export default function SignInScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
-  const scheme = useColorScheme();
-  const c = scheme === 'dark' ? dark : light;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [focused, setFocused] = useState<'email' | 'password' | null>(null);
 
   async function handleSignIn() {
     if (!email || !password) return;
@@ -35,68 +35,65 @@ export default function SignInScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[s.container, { backgroundColor: c.bg }]}
+      style={s.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={[s.inner, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}>
         {/* Back */}
-        <Pressable onPress={() => router.back()} style={s.back}>
-          <Text style={[s.backText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>← Back</Text>
+        <Pressable onPress={() => router.back()} style={s.back} hitSlop={8}>
+          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>← Back</Text>
         </Pressable>
 
-        <Text style={[s.title, { color: c.textPrimary, fontFamily: fonts.display }]}>
-          Welcome back.
-        </Text>
-        <Text style={[s.subtitle, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
-          Sign in to your SpotSeek account.
-        </Text>
+        <Badge label="Secure connection" tone="live" />
+        <Text style={[t.headlineLg, s.title]}>Welcome{'\n'}back</Text>
+        <Text style={[t.bodyMd, s.subtitle]}>Sign in to your SpotSeek account.</Text>
 
         <View style={s.form}>
           <View style={s.field}>
-            <Text style={[s.label, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>Email</Text>
+            <FieldLabel>Email address</FieldLabel>
             <TextInput
-              style={[s.input, { backgroundColor: c.bgSubtle, color: c.textPrimary, borderColor: c.cardBorder, fontFamily: fonts.sansRegular }]}
+              style={[inputStyle, focused === 'email' && inputFocusedStyle]}
               placeholder="you@example.com"
-              placeholderTextColor={c.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={email}
               onChangeText={setEmail}
+              onFocus={() => setFocused('email')}
+              onBlur={() => setFocused(null)}
               autoCapitalize="none"
               keyboardType="email-address"
               autoComplete="email"
             />
           </View>
           <View style={s.field}>
-            <Text style={[s.label, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>Password</Text>
+            <FieldLabel>Password</FieldLabel>
             <TextInput
-              style={[s.input, { backgroundColor: c.bgSubtle, color: c.textPrimary, borderColor: c.cardBorder, fontFamily: fonts.sansRegular }]}
+              style={[inputStyle, focused === 'password' && inputFocusedStyle]}
               placeholder="••••••••"
-              placeholderTextColor={c.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               value={password}
               onChangeText={setPassword}
+              onFocus={() => setFocused('password')}
+              onBlur={() => setFocused(null)}
               secureTextEntry
               autoComplete="password"
             />
           </View>
 
           {!!error && (
-            <Text style={[s.errorText, { fontFamily: fonts.sansRegular }]}>{error}</Text>
+            <Text style={[t.bodySm, s.errorText]}>{error}</Text>
           )}
         </View>
 
         <View style={s.footer}>
-          <Pressable
-            style={[s.primaryBtn, { backgroundColor: c.fill, opacity: loading ? 0.6 : 1 }]}
+          <Btn
+            label={loading ? 'Signing in…' : 'Sign in →'}
             onPress={handleSignIn}
             disabled={loading}
-          >
-            <Text style={[s.primaryBtnText, { color: c.fillText, fontFamily: fonts.sansSemiBold }]}>
-              {loading ? 'Signing in…' : 'Sign in'}
-            </Text>
-          </Pressable>
-          <Pressable onPress={() => router.push('/(auth)/sign-up')}>
-            <Text style={[s.switchText, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>
+          />
+          <Pressable onPress={() => router.push('/(auth)/sign-up')} hitSlop={8}>
+            <Text style={[t.bodySm, s.switchText]}>
               Don&apos;t have an account?{' '}
-              <Text style={{ color: c.textPrimary, fontFamily: fonts.sansSemiBold }}>Sign up</Text>
+              <Text style={s.switchLink}>Sign up</Text>
             </Text>
           </Pressable>
         </View>
@@ -106,24 +103,22 @@ export default function SignInScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: colors.bg },
   inner: { flex: 1, paddingHorizontal: spacing.xl },
-  back: { marginBottom: spacing['2xl'] },
-  backText: { fontSize: 16 },
-  title: { fontSize: 40, lineHeight: 44, marginBottom: spacing.sm },
-  subtitle: { fontSize: 16, lineHeight: 24, marginBottom: spacing['3xl'] },
-  form: { gap: spacing.lg, flex: 1 },
-  field: { gap: spacing.sm },
-  label: { fontSize: 13, letterSpacing: 0.3 },
-  input: {
-    height: 52, borderRadius: radius.md, paddingHorizontal: spacing.lg,
-    fontSize: 16, borderWidth: 1,
+  back: { marginBottom: spacing['2xl'], alignSelf: 'flex-start' },
+  title: {
+    color: palette.white,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    textShadowColor: palette.secondary,
+    textShadowOffset: { width: 3, height: 3 },
+    textShadowRadius: 0,
   },
-  errorText: { fontSize: 14, color: palette.red },
-  footer: { gap: spacing.md },
-  primaryBtn: {
-    height: 52, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
-  },
-  primaryBtnText: { fontSize: 16 },
-  switchText: { fontSize: 14, textAlign: 'center' },
+  subtitle: { color: colors.textSecondary, marginBottom: spacing['3xl'] },
+  form: { gap: spacing.xl, flex: 1 },
+  field: { gap: 0 },
+  errorText: { color: colors.danger },
+  footer: { gap: spacing.lg },
+  switchText: { color: colors.textSecondary, textAlign: 'center' },
+  switchLink: { color: colors.accent, fontFamily: fonts.sansBold },
 });

@@ -1,24 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet, ScrollView,
-  Switch, Platform, useColorScheme, KeyboardAvoidingView,
-  Image, ActivityIndicator,
+  Switch, Platform, KeyboardAvoidingView, Image, ActivityIndicator,
+  type TextInputProps,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
 import { createEvent, fetchEvent, type ApiEvent } from '../../../lib/api';
-import { apiFetch, uploadEventCover, deleteEvent } from '../../../lib/api';
+import { API_BASE, apiFetch, uploadEventCover, deleteEvent } from '../../../lib/api';
+import { AppHeader } from '../../../components/AppHeader';
+import { Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { BroadcastSubjectInput } from '../../../components/BroadcastSubjectInput';
 import { DateTimePicker } from '../../../components/DateTimePicker';
-import { light, dark, fonts, spacing, radius, palette, type Colors } from '../../../lib/theme';
+import { colors, palette, spacing, type as t } from '../../../lib/theme';
+
+// ─── HEA form primitives ─────────────────────────────────────────────────────
+
+// Underline input with orange focus state.
+function Input(props: TextInputProps) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <TextInput
+      placeholderTextColor={colors.textTertiary}
+      {...props}
+      style={[inputStyle, focused && inputFocusedStyle, props.style]}
+      onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
+      onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
+    />
+  );
+}
+
+// Numbered section block: cyan top border, Anton section title.
+function FormSection({ num, title, children }: { num: string; title: string; children: React.ReactNode }) {
+  return (
+    <View style={s.section}>
+      <Text style={[t.headlineMd, { color: colors.accent }]}>{num}. {title}</Text>
+      {children}
+    </View>
+  );
+}
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function CreateEventScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const scheme = useColorScheme();
-  const c = scheme === 'dark' ? dark : light;
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const isEdit = !!eventId;
   const auth = useAuth();
@@ -143,247 +171,305 @@ export default function CreateEventScreen() {
 
   if (initialising) {
     return (
-      <View style={[s.container, { backgroundColor: c.bg, justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator color={c.textSecondary} />
+      <View style={[s.container, s.centerFill]}>
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }
 
-  const coverSource = coverUri ?? (existingCoverUrl ? `http://localhost:8787${existingCoverUrl}` : null);
+  const coverSource = coverUri ?? (existingCoverUrl ? `${API_BASE}${existingCoverUrl}` : null);
 
   return (
     <KeyboardAvoidingView
-      style={[s.container, { backgroundColor: c.bg }]}
+      style={s.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {/* Header */}
-      <View style={[s.header, { paddingTop: insets.top + spacing.md }]}>
-        <Pressable onPress={() => router.back()} disabled={loading}>
-          <Text style={[s.cancelText, { color: c.textSecondary, fontFamily: fonts.sansRegular, opacity: loading ? 0.4 : 1 }]}>
-            Cancel
-          </Text>
-        </Pressable>
-        <Text style={[s.headerTitle, { color: c.textPrimary, fontFamily: fonts.sansSemiBold }]}>
-          {isEdit ? 'Edit event' : 'New event'}
-        </Text>
-        <Pressable
-          onPress={() => handleSave('published')}
-          disabled={!canSave}
-          style={[s.publishBtn, { backgroundColor: c.fill, opacity: canSave ? 1 : 0.4 }]}
-        >
-          <Text style={[s.publishBtnText, { color: c.fillText, fontFamily: fonts.sansSemiBold }]}>
-            {loading ? '…' : isEdit ? 'Save' : 'Publish'}
-          </Text>
-        </Pressable>
-      </View>
+      <AppHeader back />
 
       <ScrollView
         contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing['2xl'] }]}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Headline */}
+        <View style={s.headlineBlock}>
+          <Text style={[t.headlineLg, { color: colors.textPrimary }]}>
+            {isEdit ? 'Edit Party' : 'Host a Party'}
+          </Text>
+          <Text style={[t.bodyMd, { color: colors.textSecondary }]}>
+            Set up your watch party and rally the squad.
+          </Text>
+        </View>
+
         {!!error && (
-          <View style={[s.errorBanner, { backgroundColor: palette.red + '18', borderColor: palette.red + '40' }]}>
-            <Text style={[{ color: palette.red, fontFamily: fonts.sansRegular, fontSize: 13 }]}>{error}</Text>
+          <View style={s.errorBanner}>
+            <Text style={[t.bodySm, { color: colors.danger }]}>{error}</Text>
           </View>
         )}
 
         {/* Cover image */}
-        <Pressable onPress={pickImage} style={[s.coverPicker, { backgroundColor: c.bgSubtle, borderColor: c.cardBorder }]}>
+        <Pressable onPress={pickImage} style={s.coverPicker}>
           {coverSource ? (
             <Image source={{ uri: coverSource }} style={s.coverPreview} resizeMode="cover" />
           ) : (
-            <View style={s.coverEmpty}>
-              <Text style={[{ fontSize: 28 }]}>🖼️</Text>
-              <Text style={[s.coverHint, { color: c.textTertiary, fontFamily: fonts.sansRegular }]}>
-                Add cover photo
-              </Text>
-            </View>
+            <Text style={[t.labelCaps, { color: colors.textTertiary }]}>+ Add Cover Photo</Text>
           )}
-          <View style={[s.coverOverlay, { backgroundColor: 'rgba(0,0,0,0.35)' }]}>
-            <Text style={{ color: '#fff', fontFamily: fonts.sansMedium, fontSize: 13 }}>
-              {coverSource ? 'Change photo' : 'Add photo'}
+          <View style={s.coverOverlay}>
+            <Text style={[t.labelCapsSm, { color: colors.accent }]}>
+              {coverSource ? 'Change Photo' : 'Cover Photo'}
             </Text>
           </View>
         </Pressable>
 
-        {/* Main fields */}
-        <View style={s.section}>
-          <Field label="Event title" required c={c}>
-            <TextInput
-              style={[s.input, { backgroundColor: c.bgSubtle, color: c.textPrimary, borderColor: title ? c.fill : c.cardBorder, fontFamily: fonts.sansRegular }]}
+        {/* 01 — The basics */}
+        <FormSection num="01" title="The Basics">
+          <View style={s.field}>
+            <FieldLabel>Event Name</FieldLabel>
+            <Input
               placeholder="e.g. Arsenal v Chelsea watch party"
-              placeholderTextColor={c.textTertiary}
               value={title}
               onChangeText={setTitle}
               autoFocus={!isEdit}
             />
-          </Field>
+          </View>
 
-          <Field label="What is being watched" required c={c}>
+          <View style={s.field}>
+            <FieldLabel>What Is Being Watched</FieldLabel>
             <BroadcastSubjectInput
               value={broadcastSubject}
               onChange={setBroadcastSubject}
             />
-          </Field>
+          </View>
 
-          <Field label="Description" c={c}>
-            <TextInput
-              style={[s.input, s.textArea, { backgroundColor: c.bgSubtle, color: c.textPrimary, borderColor: c.cardBorder, fontFamily: fonts.sansRegular }]}
+          <View style={s.field}>
+            <FieldLabel>Description</FieldLabel>
+            <Input
+              style={s.textArea}
               placeholder="Tell people what to expect…"
-              placeholderTextColor={c.textTertiary}
               value={description}
               onChangeText={setDescription}
               multiline
               numberOfLines={4}
               textAlignVertical="top"
             />
-          </Field>
+          </View>
 
-          <Field label="Starts" c={c}>
+          <View style={s.field}>
+            <View style={s.labelRow}>
+              <FieldLabel>Max Capacity</FieldLabel>
+              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>Blank = unlimited</Text>
+            </View>
+            <Input
+              placeholder="e.g. 30"
+              value={capacity}
+              onChangeText={setCapacity}
+              keyboardType="numeric"
+            />
+          </View>
+        </FormSection>
+
+        {/* 02 — Time & place */}
+        <FormSection num="02" title="Time & Place">
+          <View style={s.field}>
+            <FieldLabel>Starts</FieldLabel>
             <DateTimePicker
               value={startsAt}
               onChange={setStartsAt}
               placeholder="Set date & time"
               minimumDate={new Date()}
             />
-          </Field>
+          </View>
 
-          <Field label="Ends" c={c}>
+          <View style={s.field}>
+            <FieldLabel>Ends</FieldLabel>
             <DateTimePicker
               value={endsAt}
               onChange={setEndsAt}
               placeholder="Optional end time"
               minimumDate={startsAt ?? new Date()}
             />
-          </Field>
+          </View>
 
-          <Field label="Max capacity" hint="Leave blank for unlimited" c={c}>
-            <TextInput
-              style={[s.input, { backgroundColor: c.bgSubtle, color: c.textPrimary, borderColor: c.cardBorder, fontFamily: fonts.sansRegular }]}
-              placeholder="e.g. 30"
-              placeholderTextColor={c.textTertiary}
-              value={capacity}
-              onChangeText={setCapacity}
-              keyboardType="numeric"
-            />
-          </Field>
-        </View>
-
-        {/* Venue */}
-        <View style={[s.toggleCard, { backgroundColor: c.card, borderColor: c.cardBorder }]}>
           <View style={s.toggleRow}>
             <View style={s.toggleLabels}>
-              <Text style={[s.toggleTitle, { color: c.textPrimary, fontFamily: fonts.sansMedium }]}>Add a venue</Text>
-              <Text style={[s.toggleSub, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>Let attendees know where to show up</Text>
+              <Text style={[t.labelCaps, { color: colors.textPrimary }]}>Add a Venue</Text>
+              <Text style={[t.bodySm, { color: colors.textSecondary }]}>
+                Let attendees know where to show up
+              </Text>
             </View>
-            <Switch value={hasVenue} onValueChange={setHasVenue} trackColor={{ false: c.cardBorder, true: c.fill }} thumbColor={c.bg} />
+            <Switch
+              value={hasVenue}
+              onValueChange={setHasVenue}
+              trackColor={{ false: palette.surfaceHigh, true: colors.accent }}
+              thumbColor={colors.bg}
+            />
           </View>
+
           {hasVenue && (
-            <View style={[s.venueFields, { borderTopColor: c.separator }]}>
-              <TextInput style={[s.input, { backgroundColor: c.bgSubtle, color: c.textPrimary, borderColor: c.cardBorder, fontFamily: fonts.sansRegular }]} placeholder="Venue name" placeholderTextColor={c.textTertiary} value={venueName} onChangeText={setVenueName} />
-              <TextInput style={[s.input, { backgroundColor: c.bgSubtle, color: c.textPrimary, borderColor: c.cardBorder, fontFamily: fonts.sansRegular }]} placeholder="Address" placeholderTextColor={c.textTertiary} value={venueAddress} onChangeText={setVenueAddress} />
-              <View style={s.toggleRow}>
-                <View style={s.toggleLabels}>
-                  <Text style={[s.toggleTitle, { color: c.textPrimary, fontFamily: fonts.sansMedium }]}>Private location</Text>
-                  <Text style={[s.toggleSub, { color: c.textSecondary, fontFamily: fonts.sansRegular }]}>Address hidden until RSVP&apos;d</Text>
-                </View>
-                <Switch value={isPrivate} onValueChange={setIsPrivate} trackColor={{ false: c.cardBorder, true: c.fill }} thumbColor={c.bg} />
+            <View style={s.venueFields}>
+              <View style={s.field}>
+                <FieldLabel>Venue Name</FieldLabel>
+                <Input placeholder="Venue name" value={venueName} onChangeText={setVenueName} />
+              </View>
+              <View style={s.field}>
+                <FieldLabel>Address</FieldLabel>
+                <Input placeholder="Address" value={venueAddress} onChangeText={setVenueAddress} />
               </View>
             </View>
           )}
-        </View>
+        </FormSection>
 
-        {/* Draft / Delete */}
-        <Pressable onPress={() => handleSave('draft')} disabled={!canSave} style={[s.draftBtn, { borderColor: c.cardBorder, opacity: canSave ? 1 : 0.4 }]}>
-          <Text style={[s.draftText, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>
-            {isEdit ? 'Save as draft' : 'Save as draft instead'}
-          </Text>
-        </Pressable>
+        {/* 03 — Privacy (maps to isPrivateLocation) */}
+        <FormSection num="03" title="Privacy">
+          <View style={s.privacyTiles}>
+            <Pressable
+              onPress={() => setIsPrivate(false)}
+              style={[s.privacyTile, !isPrivate && s.privacyTileActive]}
+            >
+              <Text style={[t.labelCaps, { color: !isPrivate ? colors.live : colors.textPrimary }]}>
+                Public
+              </Text>
+              <Text style={[t.bodySm, s.privacyTileSub]}>Anyone can join</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setIsPrivate(true)}
+              style={[s.privacyTile, isPrivate && s.privacyTileActive]}
+            >
+              <Text style={[t.labelCaps, { color: isPrivate ? colors.live : colors.textPrimary }]}>
+                Private
+              </Text>
+              <Text style={[t.bodySm, s.privacyTileSub]}>Invite only — address hidden until RSVP</Text>
+            </Pressable>
+          </View>
+          {isPrivate && !hasVenue && (
+            <Text style={[t.bodySm, { color: colors.textTertiary }]}>
+              Add a venue above to hide its address from non-attendees.
+            </Text>
+          )}
+        </FormSection>
+
+        {/* Actions */}
+        <Btn
+          label={loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Publish Party'}
+          onPress={() => handleSave('published')}
+          disabled={!canSave}
+        />
+        <Btn
+          label={isEdit ? 'Save as Draft' : 'Save as Draft Instead'}
+          variant="secondary"
+          onPress={() => handleSave('draft')}
+          disabled={!canSave}
+        />
 
         {isEdit && (
-          <>
-            {!showDeleteConfirm ? (
-              <Pressable onPress={() => setShowDeleteConfirm(true)} style={[s.deleteBtn, { borderColor: palette.red + '40' }]}>
-                <Text style={[s.deleteText, { fontFamily: fonts.sansMedium }]}>Delete event</Text>
-              </Pressable>
-            ) : (
-              <View style={[s.confirmBox, { backgroundColor: palette.red + '10', borderColor: palette.red + '40' }]}>
-                <Text style={[s.confirmText, { color: c.textPrimary, fontFamily: fonts.sansMedium }]}>
-                  Delete this event? This cannot be undone.
-                </Text>
-                <View style={s.confirmBtns}>
-                  <Pressable onPress={() => setShowDeleteConfirm(false)} style={[s.confirmCancel, { borderColor: c.cardBorder }]}>
-                    <Text style={[{ color: c.textSecondary, fontFamily: fonts.sansMedium, fontSize: 14 }]}>Keep it</Text>
-                  </Pressable>
-                  <Pressable onPress={handleDelete} disabled={loading} style={s.confirmDelete}>
-                    <Text style={[{ color: '#fff', fontFamily: fonts.sansSemiBold, fontSize: 14 }]}>
-                      {loading ? '…' : 'Yes, delete'}
-                    </Text>
-                  </Pressable>
-                </View>
+          !showDeleteConfirm ? (
+            <Btn label="Delete Party" variant="danger" onPress={() => setShowDeleteConfirm(true)} />
+          ) : (
+            <View style={s.confirmBox}>
+              <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
+                Delete this party? This cannot be undone.
+              </Text>
+              <View style={s.confirmBtns}>
+                <Btn
+                  label="Keep It"
+                  variant="ghost"
+                  small
+                  style={s.confirmBtn}
+                  onPress={() => setShowDeleteConfirm(false)}
+                />
+                <Btn
+                  label={loading ? '…' : 'Yes, Delete'}
+                  variant="danger"
+                  small
+                  style={s.confirmBtn}
+                  onPress={handleDelete}
+                  disabled={loading}
+                />
               </View>
-            )}
-          </>
+            </View>
+          )
         )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-function Field({ label, required, hint, children, c }: { label: string; required?: boolean; hint?: string; children: React.ReactNode; c: Colors }) {
-  return (
-    <View style={s.field}>
-      <View style={s.labelRow}>
-        <Text style={[s.label, { color: c.textSecondary, fontFamily: fonts.sansMedium }]}>
-          {label}{required && <Text style={{ color: palette.red }}> *</Text>}
-        </Text>
-        {hint && <Text style={[s.hint, { color: c.textTertiary, fontFamily: fonts.sansRegular }]}>{hint}</Text>}
-      </View>
-      {children}
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
-  container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.xl, paddingBottom: spacing.md },
-  cancelText: { fontSize: 16 },
-  headerTitle: { fontSize: 16 },
-  publishBtn: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: radius.full },
-  publishBtnText: { fontSize: 14 },
-  scroll: { paddingHorizontal: spacing.xl, gap: spacing.xl, paddingTop: spacing.md },
-  errorBanner: { borderRadius: radius.md, borderWidth: 1, padding: spacing.md },
+  container: { flex: 1, backgroundColor: colors.bg },
+  centerFill: { justifyContent: 'center', alignItems: 'center' },
+
+  scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg },
+  headlineBlock: { gap: spacing.xs },
+
+  errorBanner: {
+    borderWidth: 1,
+    borderColor: colors.danger,
+    backgroundColor: `${palette.errorDim}33`,
+    padding: spacing.md,
+  },
+
   coverPicker: {
-    height: 160, borderRadius: radius.lg, borderWidth: 1,
-    overflow: 'hidden', justifyContent: 'center', alignItems: 'center',
+    height: 160,
+    backgroundColor: palette.surfaceMid,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   coverPreview: { position: 'absolute', width: '100%', height: '100%' },
-  coverEmpty: { alignItems: 'center', gap: spacing.sm },
-  coverHint: { fontSize: 14 },
   coverOverlay: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: spacing.sm, alignItems: 'center',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.sm,
+    alignItems: 'center',
+    backgroundColor: colors.overlay,
   },
-  section: { gap: spacing.lg },
-  field: { gap: spacing.xs + 2 },
-  labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  label: { fontSize: 13, letterSpacing: 0.3 },
-  hint: { fontSize: 12 },
-  input: { height: 52, borderRadius: radius.md, paddingHorizontal: spacing.lg, fontSize: 16, borderWidth: 1 },
+
+  section: {
+    backgroundColor: palette.surfaceLow,
+    borderTopWidth: 1,
+    borderTopColor: colors.accentDim,
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
+
+  field: { gap: 0 },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   textArea: { height: 100, paddingTop: spacing.md },
-  toggleCard: { borderRadius: radius.lg, borderWidth: 1, overflow: 'hidden' },
-  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.lg },
-  toggleLabels: { flex: 1, paddingRight: spacing.lg },
-  toggleTitle: { fontSize: 15 },
-  toggleSub: { fontSize: 13, marginTop: 2 },
-  venueFields: { borderTopWidth: 1, padding: spacing.lg, gap: spacing.md },
-  draftBtn: { height: 48, borderRadius: radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  draftText: { fontSize: 15 },
-  deleteBtn: { height: 48, borderRadius: radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  deleteText: { fontSize: 15, color: palette.red },
-  confirmBox: { borderRadius: radius.lg, borderWidth: 1, padding: spacing.lg, gap: spacing.md },
-  confirmText: { fontSize: 14, lineHeight: 20 },
+
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  toggleLabels: { flex: 1, paddingRight: spacing.lg, gap: 2 },
+  venueFields: {
+    borderTopWidth: 1,
+    borderTopColor: colors.separator,
+    paddingTop: spacing.lg,
+    gap: spacing.lg,
+  },
+
+  privacyTiles: { flexDirection: 'row', gap: spacing.md },
+  privacyTile: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: palette.outlineVariant,
+    padding: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  privacyTileActive: {
+    borderColor: colors.live,
+    backgroundColor: `${palette.secondary}1a`,
+  },
+  privacyTileSub: { color: colors.textSecondary, textAlign: 'center' },
+
+  confirmBox: {
+    borderWidth: 1,
+    borderColor: colors.danger,
+    backgroundColor: `${palette.errorDim}1a`,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
   confirmBtns: { flexDirection: 'row', gap: spacing.md },
-  confirmCancel: { flex: 1, height: 44, borderRadius: radius.md, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  confirmDelete: { flex: 1, height: 44, borderRadius: radius.md, backgroundColor: palette.red, alignItems: 'center', justifyContent: 'center' },
+  confirmBtn: { flex: 1 },
 });
