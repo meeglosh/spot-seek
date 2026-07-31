@@ -10,8 +10,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.spotseek.app",
+      "buildNumber": "1",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "SpotSeek uses your location to show watch parties near you."
+        "NSLocationWhenInUseUsageDescription": "SpotSeek uses your location to show watch parties near you.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

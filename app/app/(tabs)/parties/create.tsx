@@ -12,6 +12,7 @@ import { createEvent, fetchEvent, type ApiEvent } from '../../../lib/api';
 import { API_BASE, apiFetch, uploadEventCover, deleteEvent } from '../../../lib/api';
 import { AppHeader } from '../../../components/AppHeader';
 import { Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../../components/ui';
+import { GuestGate, goToAuth } from '../../../components/AuthGate';
 import { BroadcastSubjectInput } from '../../../components/BroadcastSubjectInput';
 import { DateTimePicker } from '../../../components/DateTimePicker';
 import { colors, palette, spacing, type as t } from '../../../lib/theme';
@@ -109,7 +110,7 @@ export default function CreateEventScreen() {
 
   async function handleSave(status: 'published' | 'draft') {
     if (!canSave) return;
-    if (auth.status !== 'authenticated') { router.push('/(auth)/sign-in'); return; }
+    if (auth.status !== 'authenticated') { goToAuth(router, 'sign-in', '/(tabs)/parties/create'); return; }
 
     setLoading(true);
     setError('');
@@ -148,7 +149,7 @@ export default function CreateEventScreen() {
       router.back();
     } catch (err) {
       const msg = (err as Error).message;
-      if (msg === 'unauthorized') router.push('/(auth)/sign-in');
+      if (msg === 'unauthorized') goToAuth(router, 'sign-in', '/(tabs)/parties/create');
       else setError(msg || 'Could not save event.');
     } finally {
       setLoading(false);
@@ -167,6 +168,20 @@ export default function CreateEventScreen() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // ── Not signed in: gate before the form, not at submit time ────────────────
+  if (auth.status !== 'authenticated') {
+    return (
+      <View style={s.container}>
+        <AppHeader back />
+        <GuestGate
+          title="Host a Party"
+          message="Sign in to create watch parties, rally your crowd, and manage RSVPs."
+          redirect="/(tabs)/parties/create"
+        />
+      </View>
+    );
   }
 
   if (initialising) {

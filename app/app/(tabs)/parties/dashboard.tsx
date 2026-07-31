@@ -7,6 +7,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../components/AppHeader';
 import { Btn, SegmentBar } from '../../../components/ui';
+import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
   API_BASE, fetchDashboard, fetchHostAnalytics, fetchEventBids,
@@ -105,13 +106,11 @@ export default function CommandCenterScreen() {
     return (
       <View style={s.container}>
         <AppHeader back />
-        <View style={s.center}>
-          <Text style={[t.headlineLg, s.stateTitle]}>Command Center</Text>
-          <Text style={[t.bodyMd, s.stateBody]}>
-            Sign in to create and manage your watch parties.
-          </Text>
-          <Btn label="Sign In" onPress={() => router.push('/(auth)/sign-in')} />
-        </View>
+        <GuestGate
+          title="Command Center"
+          message="Sign in to create and manage your watch parties."
+          redirect="/(tabs)/parties/dashboard"
+        />
       </View>
     );
   }

@@ -12,6 +12,7 @@ import {
 import { colors, palette, spacing, type as t, hardShadow } from '../../../lib/theme';
 import { AppHeader } from '../../../components/AppHeader';
 import { Badge, SectionTitle } from '../../../components/ui';
+import { AuthGateSheet } from '../../../components/AuthGate';
 
 function startsToday(startsAt?: string | null): boolean {
   if (!startsAt) return false;
@@ -36,6 +37,7 @@ export default function EventDetailScreen() {
   const [rsvp, setRsvp] = useState<ApiRsvp | null>(null);
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpError, setRsvpError] = useState('');
+  const [gateOpen, setGateOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -47,7 +49,7 @@ export default function EventDetailScreen() {
 
   async function handleRsvp() {
     if (auth.status !== 'authenticated') {
-      router.push('/(auth)/sign-in');
+      setGateOpen(true);
       return;
     }
     if (!event) return;
@@ -65,7 +67,7 @@ export default function EventDetailScreen() {
     } catch (err) {
       const msg = (err as Error).message;
       if (msg === 'already_rsvpd') setRsvpError('You already have an RSVP for this event.');
-      else if (msg === 'unauthorized') router.push('/(auth)/sign-in');
+      else if (msg === 'unauthorized') setGateOpen(true);
       else setRsvpError('Something went wrong. Please try again.');
     } finally {
       setRsvpLoading(false);
@@ -229,7 +231,7 @@ export default function EventDetailScreen() {
 
           {/* Auth nudge */}
           {auth.status !== 'authenticated' && (
-            <Pressable style={s.authNudge} onPress={() => router.push('/(auth)/sign-in')}>
+            <Pressable style={s.authNudge} onPress={() => setGateOpen(true)}>
               <Text style={[t.bodySm, { color: colors.textSecondary }]}>
                 Sign in to RSVP and see full venue details →
               </Text>
@@ -264,6 +266,13 @@ export default function EventDetailScreen() {
           </Pressable>
         )}
       </View>
+
+      <AuthGateSheet
+        visible={gateOpen}
+        onClose={() => setGateOpen(false)}
+        message="Sign in to RSVP, join the guest list, and see full venue details."
+        redirect={id ? `/(tabs)/discover/${id}` : undefined}
+      />
     </View>
   );
 }

@@ -7,6 +7,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../components/AppHeader';
 import { Btn, Badge } from '../../../components/ui';
+import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
   API_BASE, fetchMyRsvps, fetchDashboard,
@@ -222,13 +223,11 @@ export default function MyPartiesScreen() {
       </View>
 
       {needsAuth ? (
-        <View style={s.center}>
-          <Text style={[t.headlineLg, s.stateTitle]}>Get in the game</Text>
-          <Text style={[t.bodyMd, s.stateBody]}>
-            Sign in to track your RSVPs and run your own watch parties.
-          </Text>
-          <Btn label="Sign In" onPress={() => router.push('/(auth)/sign-in')} />
-        </View>
+        <GuestGate
+          title="Get in the game"
+          message="Sign in to track your RSVPs and run your own watch parties."
+          redirect="/(tabs)/parties"
+        />
       ) : showSpinner ? (
         <View style={s.center}>
           <ActivityIndicator color={colors.accent} />

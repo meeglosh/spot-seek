@@ -8,6 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, palette, spacing, fonts, type as t } from '../../../lib/theme';
 import { Btn, Chip, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
+import { GuestGate } from '../../../components/AuthGate';
+import { useAuth } from '../../../lib/auth';
 import {
   fetchMySponsorProfile, fetchSponsorAnalytics, fetchFeed, fetchMyBids, registerSponsor,
   type ApiSponsorProfile, type ApiSponsorAnalytics, type ApiEvent, type ApiSponsorBid,
@@ -57,6 +59,7 @@ function applyFilter(events: ApiEvent[], filter: FilterKey): ApiEvent[] {
 export default function SponsorshipHubScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const auth = useAuth();
 
   const [sponsor, setSponsor] = useState<ApiSponsorProfile | null>(null);
   const [analytics, setAnalytics] = useState<ApiSponsorAnalytics | null>(null);
@@ -119,6 +122,20 @@ export default function SponsorshipHubScreen() {
 
   const shown = applyFilter(events, filter);
   const summary = analytics?.summary;
+
+  // ── Not signed in: sponsor tools are members-only ───────────────────────────
+  if (auth.status !== 'authenticated') {
+    return (
+      <View style={s.container}>
+        <AppHeader />
+        <GuestGate
+          title="Sponsorship Hub"
+          message="Sign in to register your brand, browse high-engagement watch parties, and bid on sponsorships."
+          redirect="/(tabs)/sponsorship"
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={s.container}>

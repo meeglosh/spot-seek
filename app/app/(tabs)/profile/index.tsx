@@ -13,6 +13,7 @@ import {
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, palette, spacing, fonts, type as t, hardShadow } from '../../../lib/theme';
 import { Btn, Chip, Badge, SegmentBar, SectionTitle } from '../../../components/ui';
+import { GuestGate } from '../../../components/AuthGate';
 import { SPORTS } from '../../../lib/sports-data';
 
 type ProfileData = {
@@ -84,15 +85,11 @@ export default function ProfileScreen() {
     return (
       <View style={s.container}>
         <AppHeader />
-        <View style={s.center}>
-          <Text style={[t.headlineLg, { color: colors.textPrimary, textAlign: 'center' }]}>
-            Personal Hub
-          </Text>
-          <Text style={[t.bodyMd, s.unauthBody]}>
-            Sign in to track your RSVPs, teams, and hosting record.
-          </Text>
-          <Btn label="Sign In" onPress={() => router.push('/(auth)/sign-in')} />
-        </View>
+        <GuestGate
+          title="Personal Hub"
+          message="Sign in to track your RSVPs, teams, and hosting record."
+          redirect="/(tabs)/profile"
+        />
       </View>
     );
   }

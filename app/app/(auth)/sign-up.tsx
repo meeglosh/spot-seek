@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../lib/auth';
 import { colors, fonts, palette, spacing, type as t } from '../../lib/theme';
@@ -12,6 +12,7 @@ export default function SignUpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signUp } = useAuth();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -26,8 +27,9 @@ export default function SignUpScreen() {
     setError('');
     try {
       await signUp(name, email, password);
-      // Route through interests onboarding before landing on Discover.
-      router.replace('/(auth)/interests');
+      // Route through interests onboarding; carry the redirect so onboarding
+      // returns the user to whatever screen originally gated them.
+      router.replace({ pathname: '/(auth)/interests', params: redirect ? { redirect } : {} } as never);
     } catch (err) {
       setError((err as Error).message || 'Something went wrong.');
     } finally {
@@ -86,7 +88,10 @@ export default function SignUpScreen() {
             onPress={handleSignUp}
             disabled={loading}
           />
-          <Pressable onPress={() => router.push('/(auth)/sign-in')} hitSlop={8}>
+          <Pressable
+            onPress={() => router.push({ pathname: '/(auth)/sign-in', params: redirect ? { redirect } : {} } as never)}
+            hitSlop={8}
+          >
             <Text style={[t.bodySm, s.switchText]}>
               Already have an account?{' '}
               <Text style={s.switchLink}>Sign in</Text>

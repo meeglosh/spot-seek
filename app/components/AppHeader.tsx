@@ -74,21 +74,27 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
           </Pressable>
         ))}
 
-        {auth.status === 'authenticated' && (
-          <>
-            <View style={s.drawerDivider} />
-            <Pressable
-              style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: palette.surfaceHigh }]}
-              onPress={() => {
-                onClose();
-                auth.signOut();
-                router.replace('/(auth)');
-              }}
-            >
-              <Text style={[s.drawerIcon, { color: colors.danger }]}>⏻</Text>
-              <Text style={[s.drawerLabel, { fontFamily: fonts.sansMedium, color: colors.danger }]}>Sign Out</Text>
-            </Pressable>
-          </>
+        <View style={s.drawerDivider} />
+        {auth.status === 'authenticated' ? (
+          <Pressable
+            style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: palette.surfaceHigh }]}
+            onPress={() => {
+              onClose();
+              auth.signOut();
+              router.replace('/(auth)');
+            }}
+          >
+            <Text style={[s.drawerIcon, { color: colors.danger }]}>⏻</Text>
+            <Text style={[s.drawerLabel, { fontFamily: fonts.sansMedium, color: colors.danger }]}>Sign Out</Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: palette.surfaceHigh }]}
+            onPress={() => go('/(auth)/sign-in')}
+          >
+            <Text style={[s.drawerIcon, { color: colors.accent }]}>→</Text>
+            <Text style={[s.drawerLabel, { fontFamily: fonts.sansMedium, color: colors.accent }]}>Sign In</Text>
+          </Pressable>
         )}
       </Animated.View>
     </Modal>
