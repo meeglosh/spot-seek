@@ -262,6 +262,129 @@ export async function saveFavouritesBulk(
   return saved;
 }
 
+// ─── Sponsors (Phase 3 — payments stubbed, see BLOCKED.md) ───────────────────
+
+export type ApiSponsorProfile = {
+  id: string;
+  companyName: string;
+  website: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SponsorshipStatus = 'pending' | 'active' | 'rejected' | 'cancelled';
+
+export type ApiSponsorBid = {
+  id: string;
+  eventId: string;
+  sponsorId: string;
+  amountCents: number;
+  platformFeeCents: number;
+  note: string | null;
+  status: SponsorshipStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiHostAnalyticsEvent = ApiEvent & {
+  confirmedAttendees: number;
+  sponsorRevenueCents: number;
+  platformRevenueCents: number;
+  activeSponsorships: number;
+};
+
+export type ApiSponsorAnalytics = {
+  bids: ApiSponsorBid[];
+  summary: {
+    totalBids: number;
+    activeBids: number;
+    totalSpendCents: number;
+    totalFeeCents: number;
+    totalReach: number;
+  };
+};
+
+export async function registerSponsor(companyName: string, website?: string): Promise<ApiSponsorProfile> {
+  const res = await apiFetch('/api/sponsors/register', {
+    method: 'POST',
+    body: JSON.stringify({ companyName, website }),
+  });
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) throw new Error(`Sponsor registration failed: ${res.status}`);
+  const { sponsor } = await res.json() as { sponsor: ApiSponsorProfile };
+  return sponsor;
+}
+
+// Returns null when the signed-in user has no sponsor profile yet.
+export async function fetchMySponsorProfile(): Promise<ApiSponsorProfile | null> {
+  const res = await apiFetch('/api/sponsors/me');
+  if (res.status === 404 || res.status === 401) return null;
+  if (!res.ok) throw new Error(`Sponsor profile fetch failed: ${res.status}`);
+  const { sponsor } = await res.json() as { sponsor: ApiSponsorProfile };
+  return sponsor;
+}
+
+export async function placeSponsorBid(eventId: string, amountCents: number, note?: string): Promise<ApiSponsorBid> {
+  const res = await apiFetch('/api/sponsors/bids', {
+    method: 'POST',
+    body: JSON.stringify({ eventId, amountCents, note }),
+  });
+  if (res.status === 401) throw new Error('unauthorized');
+  if (res.status === 403) throw new Error('not_a_sponsor');
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? `Bid failed: ${res.status}`);
+  }
+  const { bid } = await res.json() as { bid: ApiSponsorBid };
+  return bid;
+}
+
+export async function fetchMyBids(): Promise<ApiSponsorBid[]> {
+  const res = await apiFetch('/api/sponsors/bids/mine');
+  if (res.status === 401) return [];
+  if (!res.ok) throw new Error(`Bids fetch failed: ${res.status}`);
+  const { bids } = await res.json() as { bids: ApiSponsorBid[] };
+  return bids;
+}
+
+// Host-only: bids on one of the host's own events.
+export async function fetchEventBids(eventId: string): Promise<ApiSponsorBid[]> {
+  const res = await apiFetch(`/api/sponsors/events/${eventId}/bids`);
+  if (res.status === 401 || res.status === 403) return [];
+  if (!res.ok) throw new Error(`Event bids fetch failed: ${res.status}`);
+  const { bids } = await res.json() as { bids: ApiSponsorBid[] };
+  return bids;
+}
+
+// Host sets 'active' | 'rejected'; sponsor may set 'cancelled'.
+export async function updateBidStatus(bidId: string, status: SponsorshipStatus): Promise<ApiSponsorBid> {
+  const res = await apiFetch(`/api/sponsors/bids/${bidId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? `Bid update failed: ${res.status}`);
+  }
+  const { bid } = await res.json() as { bid: ApiSponsorBid };
+  return bid;
+}
+
+export async function fetchHostAnalytics(): Promise<ApiHostAnalyticsEvent[]> {
+  const res = await apiFetch('/api/sponsors/analytics/host');
+  if (res.status === 401) return [];
+  if (!res.ok) throw new Error(`Host analytics fetch failed: ${res.status}`);
+  const { events } = await res.json() as { events: ApiHostAnalyticsEvent[] };
+  return events;
+}
+
+export async function fetchSponsorAnalytics(): Promise<ApiSponsorAnalytics | null> {
+  const res = await apiFetch('/api/sponsors/analytics/me');
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error(`Sponsor analytics fetch failed: ${res.status}`);
+  return await res.json() as ApiSponsorAnalytics;
+}
+
 export async function fetchFollowCounts(id: string): Promise<{ followers: number; following: number }> {
   const [frs, fing] = await Promise.all([
     apiFetch(`/api/profiles/${id}/followers`).then((r) => r.json() as Promise<{ followers: unknown[] }>),
