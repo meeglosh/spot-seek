@@ -10,15 +10,17 @@ The agents write here instead of guessing. Read this each morning. Empty is good
 - Real final error (verbatim, if any): 
 -->
 
-## R2 image storage — bucket must be created before deploying
+## R2 image storage — RESOLVED 2026-07-31: buckets created, Worker deployed
 
-- What it needs: an R2 bucket named `spotseek-images` in your Cloudflare account.
-  Run: `npx wrangler r2 bucket create spotseek-images`
-  Or create it in the Cloudflare dashboard under R2 → Create bucket.
-- Why noted: wrangler local dev simulates R2 in memory (no bucket needed to test
-  locally). The binding in wrangler.jsonc is wired. Deployment needs the real bucket.
-- Public image URLs: for production, attach a custom domain to the R2 bucket in
-  the Cloudflare dashboard. Until then, images are served through the Worker at
+- Buckets `spotseek-images` + `spotseek-images-preview` created via wrangler
+  (human authenticated wrangler OAuth in-session and approved).
+- Worker deployed to the dev/preview URL
+  https://spot-seek-api.dry-base-037d.workers.dev — NOT a production deploy;
+  serves the Neon dev branch DB.
+- Secrets set with human approval: DATABASE_URL (Neon dev), BETTER_AUTH_SECRET
+  (freshly generated). BETTER_AUTH_URL set as a plain var in wrangler.jsonc.
+- Public image URLs: for production later, attach a custom domain to the R2
+  bucket. Until then, images are served through the Worker at
   GET /api/images/:key.
 
 ## 3.1-3.4 — Payment processor for sponsor transactions needs a human decision

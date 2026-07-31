@@ -4,7 +4,7 @@ export const API_BASE = __DEV__
   ? Platform.OS === 'android'
     ? 'http://10.0.2.2:8787'
     : 'http://localhost:8787'
-  : 'https://spot-seek-api.YOUR_SUBDOMAIN.workers.dev';
+  : 'https://spot-seek-api.dry-base-037d.workers.dev';
 
 // In-memory bearer token — set after sign-in/sign-up.
 // Upgrade to expo-secure-store for persistence across app restarts.

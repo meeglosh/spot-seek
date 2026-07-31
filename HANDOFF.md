@@ -198,10 +198,15 @@ wrangler simulates R2 in memory locally.
   `com.spotseek.app`, suggested SKU `SPOTSEEK001`), sign into Xcode with the
   Apple ID, enable automatic signing with their Team, Product → Archive →
   Distribute → App Store Connect, then add TestFlight testers.
-- ⚠️ Before a real TestFlight test: `API_BASE` in `app/lib/api.ts` still points
-  at `localhost:8787` in dev and a placeholder workers.dev URL in prod — the
-  backend must be deployed (dev/preview only per CLAUDE.md) and the URL filled
-  in, or the app will have no data outside the simulator.
+- ✅ RESOLVED 2026-07-31: backend deployed to
+  **https://spot-seek-api.dry-base-037d.workers.dev** (dev/preview — Neon dev
+  branch DB, R2 buckets `spotseek-images`/`-preview` created, secrets
+  DATABASE_URL + BETTER_AUTH_SECRET set, BETTER_AUTH_URL as wrangler var).
+  `API_BASE` release path in `app/lib/api.ts` now points at it; dev builds
+  still use localhost:8787. Smoke-tested: `/` and `/api/feed` return live data.
+  Wrangler OAuth is authenticated on this machine; the Cloudflare Claude Code
+  plugin (`cloudflare@cloudflare`) is installed. Wrangler is v3 (v4 upgrade is
+  a pending follow-up — see §11).
 
 ## 11. Possible next steps (not started)
 - End-to-end pass in the simulator against the live local backend (the redesign
@@ -215,3 +220,7 @@ wrangler simulates R2 in memory locally.
 - Session persistence: the bearer token is in-memory only (`lib/api.ts`), so
   every app launch starts signed-out — fine for guest-first flow, but consider
   expo-secure-store persistence before wider TestFlight testing.
+- Wrangler 3 → 4 upgrade (backend devDependency): deploy works on v3 but it
+  warns; upgrade + re-verify vitest-pool-workers when convenient.
+- The Neon dev-branch DB contains test fixtures (e.g. a "Past Event") that
+  TestFlight testers will see — seed or clean it before wider testing.
