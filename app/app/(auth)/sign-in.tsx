@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../lib/auth';
 import { colors, fonts, palette, spacing, type as t } from '../../lib/theme';
@@ -12,6 +12,9 @@ export default function SignInScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  // Where to land after auth — back to the gated screen, or Discover by default.
+  const target = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/(tabs)/discover';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +28,7 @@ export default function SignInScreen() {
     setError('');
     try {
       await signIn(email, password);
-      router.replace('/(tabs)/discover');
+      router.replace(target as never);
     } catch (err) {
       setError((err as Error).message || 'Invalid email or password.');
     } finally {
@@ -90,7 +93,10 @@ export default function SignInScreen() {
             onPress={handleSignIn}
             disabled={loading}
           />
-          <Pressable onPress={() => router.push('/(auth)/sign-up')} hitSlop={8}>
+          <Pressable
+            onPress={() => router.push({ pathname: '/(auth)/sign-up', params: redirect ? { redirect } : {} } as never)}
+            hitSlop={8}
+          >
             <Text style={[t.bodySm, s.switchText]}>
               Don&apos;t have an account?{' '}
               <Text style={s.switchLink}>Sign up</Text>

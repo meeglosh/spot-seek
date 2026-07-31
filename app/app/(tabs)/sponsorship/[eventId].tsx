@@ -8,6 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, palette, spacing, fonts, type as t } from '../../../lib/theme';
 import { Btn, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
+import { GuestGate } from '../../../components/AuthGate';
+import { useAuth } from '../../../lib/auth';
 import {
   fetchEvent, fetchMyBids, placeSponsorBid, updateBidStatus,
   type ApiEvent, type ApiSponsorBid, type SponsorshipStatus,
@@ -58,6 +60,7 @@ export default function SponsorshipDetailsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
+  const auth = useAuth();
 
   const [event, setEvent] = useState<ApiEvent | null>(null);
   const [bids, setBids] = useState<ApiSponsorBid[]>([]);
@@ -131,6 +134,20 @@ export default function SponsorshipDetailsScreen() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // ── Not signed in: bidding is members-only ─────────────────────────────────
+  if (auth.status !== 'authenticated') {
+    return (
+      <View style={s.container}>
+        <AppHeader back />
+        <GuestGate
+          title="Sponsor this party"
+          message="Sign in to review sponsorship terms and place a bid on this watch party."
+          redirect={eventId ? `/(tabs)/sponsorship/${eventId}` : '/(tabs)/sponsorship'}
+        />
+      </View>
+    );
   }
 
   if (loading) {

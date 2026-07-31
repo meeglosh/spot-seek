@@ -15,10 +15,13 @@ import { DateTimePicker } from '../../../components/DateTimePicker';
 import { useDiscoverFilters } from '../../../lib/discover-filters';
 import { colors, fonts, palette, spacing, type as t } from '../../../lib/theme';
 import { Btn, Chip, SectionTitle } from '../../../components/ui';
+import { goToAuth } from '../../../components/AuthGate';
+import { useAuth } from '../../../lib/auth';
 
 export default function FilterScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const auth = useAuth();
 
   const { filters, setFilters } = useDiscoverFilters();
 
@@ -94,8 +97,25 @@ export default function FilterScreen() {
 
       <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 120 }]} showsVerticalScrollIndicator={false}>
 
-        {/* Your favourites quick-apply */}
-        {favourites.length > 0 && (
+        {/* Your favourites quick-apply — sign-in nudge for guests */}
+        {auth.status !== 'authenticated' ? (
+          <View style={s.section}>
+            <SectionTitle accent={colors.volt}>Your Interests</SectionTitle>
+            <Pressable
+              style={s.favouriteRow}
+              onPress={() => goToAuth(router, 'sign-in', '/(tabs)/discover/filter')}
+            >
+              <View style={s.favouriteLabels}>
+                <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
+                  Filter by your teams & sports
+                </Text>
+                <Text style={[t.bodySm, { color: colors.textSecondary }]}>
+                  Sign in to save favourites and filter the feed by them →
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        ) : favourites.length > 0 && (
           <View style={s.section}>
             <SectionTitle accent={colors.volt}>Your Interests</SectionTitle>
             <View style={s.favouriteRow}>

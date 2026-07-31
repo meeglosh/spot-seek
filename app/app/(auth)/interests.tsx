@@ -6,7 +6,7 @@ import React, { useState } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView, TextInput,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SPORTS, searchTeams, type Sport } from '../../lib/sports-data';
 import { saveFavouritesBulk } from '../../lib/api';
@@ -16,6 +16,9 @@ import { Btn, Chip, inputStyle, inputFocusedStyle } from '../../components/ui';
 export default function InterestsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  // Land back on the screen that originally gated the user, or Discover.
+  const target = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/(tabs)/discover';
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expandedSport, setExpandedSport] = useState<string | null>(null);
@@ -60,7 +63,7 @@ export default function InterestsScreen() {
       await saveFavouritesBulk(favs);
     } catch { /* non-fatal, user can set later */ }
     setSaving(false);
-    router.replace('/(tabs)/discover');
+    router.replace(target as never);
   }
 
   return (
@@ -73,7 +76,7 @@ export default function InterestsScreen() {
             Pick your sports and teams. You can change these any time.
           </Text>
         </View>
-        <Pressable onPress={() => router.replace('/(tabs)/discover')} hitSlop={8}>
+        <Pressable onPress={() => router.replace(target as never)} hitSlop={8}>
           <Text style={[t.labelCaps, { color: colors.textTertiary }]}>Skip</Text>
         </Pressable>
       </View>
