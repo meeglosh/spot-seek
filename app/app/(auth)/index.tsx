@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, palette, spacing, type as t } from '../../lib/theme';
@@ -27,16 +27,11 @@ export default function WelcomeScreen() {
       <View style={s.panel}>
         <Btn label="Create account →" onPress={() => router.push('/(auth)/sign-up')} />
         <Btn label="Sign in" variant="secondary" onPress={() => router.push('/(auth)/sign-in')} />
-        <Pressable
+        <Btn
+          label="Skip — explore as guest"
+          variant="ghost"
           onPress={() => router.replace('/(tabs)/discover')}
-          hitSlop={8}
-          style={s.guestLink}
-          accessibilityLabel="Explore as guest"
-        >
-          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>
-            Explore as guest <Text style={{ color: colors.accent }}>→</Text>
-          </Text>
-        </Pressable>
+        />
       </View>
     </View>
   );
@@ -66,5 +61,4 @@ const s = StyleSheet.create({
     padding: spacing.xl,
     gap: spacing.md,
   },
-  guestLink: { alignItems: 'center', paddingTop: spacing.sm },
 });
