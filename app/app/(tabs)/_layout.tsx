@@ -1,18 +1,31 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, Image, StyleSheet, type ImageSourcePropType } from 'react-native';
 import { colors, fonts, palette } from '../../lib/theme';
 
-type IconName = React.ComponentProps<typeof Ionicons>['name'];
+// Rendered from the actual Material Symbols glyph outlines (explore /
+// sports_kabaddi / person) via a local extraction script, not the
+// @expo/vector-icons font — that font never got linked into the compiled
+// TestFlight archive (expo prebuild wasn't re-run after installing it) and
+// silently fell back to tofu glyphs in production despite working in dev.
+// Plain tintable PNGs sidestep font-linking entirely, the same asset
+// pipeline already proven reliable for the app icon and splash screen.
+// Metro's static-asset require() has no ESM equivalent for local images.
+/* eslint-disable @typescript-eslint/no-require-imports */
+const ICONS: Record<'discover' | 'parties' | 'profile', ImageSourcePropType> = {
+  discover: require('../../assets/icons/tab-discover.png'),
+  parties: require('../../assets/icons/tab-parties.png'),
+  profile: require('../../assets/icons/tab-profile.png'),
+};
+/* eslint-enable @typescript-eslint/no-require-imports */
 
-function TabIcon({ focused, outline, filled }: { focused: boolean; outline: IconName; filled: IconName }) {
+function TabIcon({ focused, icon }: { focused: boolean; icon: keyof typeof ICONS }) {
   return (
     <View style={[s.iconWrap, focused && s.iconWrapActive]}>
-      <Ionicons
-        name={focused ? filled : outline}
-        size={22}
-        color={focused ? colors.accent : colors.textTertiary}
+      <Image
+        source={ICONS[icon]}
+        style={[s.icon, { tintColor: focused ? colors.accent : colors.textTertiary }]}
+        resizeMode="contain"
       />
     </View>
   );
@@ -54,9 +67,7 @@ export default function TabsLayout() {
         name="discover"
         options={{
           title: 'Discover',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} outline="compass-outline" filled="compass" />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="discover" />,
           tabBarLabel: ({ focused }) => <TabLabel label="Discover" focused={focused} />,
         }}
       />
@@ -64,9 +75,7 @@ export default function TabsLayout() {
         name="parties"
         options={{
           title: 'My Parties',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} outline="people-outline" filled="people" />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="parties" />,
           tabBarLabel: ({ focused }) => <TabLabel label="My Parties" focused={focused} />,
         }}
       />
@@ -74,9 +83,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} outline="person-outline" filled="person" />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="profile" />,
           tabBarLabel: ({ focused }) => <TabLabel label="Profile" focused={focused} />,
         }}
       />
@@ -93,5 +100,6 @@ const s = StyleSheet.create({
     borderRadius: 14,
   },
   iconWrapActive: { backgroundColor: `${palette.primary}1f` },
+  icon: { width: 22, height: 22 },
   tabLabel: { fontSize: 10, marginTop: 2, letterSpacing: 0.6, textTransform: 'uppercase' },
 });

@@ -1,11 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, FlatList, Pressable, StyleSheet, RefreshControl,
-  TextInput, ActivityIndicator,
+  TextInput, ActivityIndicator, Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
@@ -208,7 +207,12 @@ export default function DiscoverScreen() {
             onPress={openFilters}
             accessibilityLabel="Filters"
           >
-            <Ionicons name="filter" size={18} color={filterCount > 0 ? colors.accent : colors.textSecondary} />
+            <Image
+              // eslint-disable-next-line @typescript-eslint/no-require-imports -- Metro static-asset require
+              source={require('../../../assets/icons/icon-filter.png')}
+              style={[s.filterIcon, { tintColor: filterCount > 0 ? colors.accent : colors.textSecondary }]}
+              resizeMode="contain"
+            />
             {filterCount > 0 && (
               <View style={s.filterBadge}>
                 <Text style={s.filterBadgeText}>{filterCount}</Text>
@@ -363,6 +367,7 @@ const s = StyleSheet.create({
     backgroundColor: `${colors.accent}20`,
     borderColor: `${colors.accent}80`,
   },
+  filterIcon: { width: 18, height: 18 },
   filterBadge: {
     position: 'absolute',
     top: -6,
