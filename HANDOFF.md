@@ -1,6 +1,7 @@
 # SpotSeek — Session Handoff
 
-_Last updated: 2026-07-31. Read this first when resuming in a new session._
+_Last updated: 2026-07-31 (evening — guest mode + TestFlight prep added). Read
+this first when resuming in a new session._
 
 This is a running snapshot of where the project stands so work can continue
 without re-deriving context. For the immutable operating rules see `CLAUDE.md`;
@@ -63,8 +64,38 @@ package in `stitch_spot_seek_event_network.zip` (repo root, untracked —
 - **Branch**: `main`, pushed to origin (https://github.com/meeglosh/spot-seek.git).
 - Design work merged via `design/high-energy-action` (merge commit `5fbda0a`):
   `3e465ae` foundation → `b9cf15c` sponsor API client → `aa27355` all screens.
+- Guest mode merged via `feat/guest-mode` (merge commit `fee6aea`, single
+  commit `2eea0f6`).
 - Note: the 4.5MB design zip was accidentally committed in `3e465ae` and later
   untracked; it remains in git history (harmless, but known).
+
+## 4b. Guest mode (added 2026-07-31)
+
+Users can browse without an account; member actions gate to auth with a
+return-path. Backend needed no changes (all gated endpoints already 401).
+
+- **Entry**: "Explore as guest →" link on the `(auth)/index` landing panel →
+  `router.replace('/(tabs)/discover')`.
+- **Free for guests**: Discover feed, map view, filter screen, event detail
+  pages (private venue addresses were already masked server-side).
+- **Gated (members only)**: RSVP, My Parties, Command Center dashboard,
+  Host a Party create form (gated before the form renders, not at submit),
+  Personal Hub profile, Sponsorship Hub + bid screen, and the "your teams"
+  favourites toggle on the filter screen (shows a sign-in nudge instead).
+- **Gate primitives** in `app/components/AuthGate.tsx`:
+  - `GuestGate` — full-screen block (MEMBERS ONLY badge, title w/ orange hard
+    shadow, sign-in + create-account Btns). Screens render AppHeader above it.
+  - `AuthGateSheet` — bottom-sheet modal for inline actions (used by the RSVP
+    button on event detail), with a "Keep browsing" dismiss.
+  - `goToAuth(router, 'sign-in'|'sign-up', redirect?)` — pushes the auth screen
+    with a `redirect` param.
+- **Redirect-back flow**: `sign-in`, `sign-up`, and `interests` all read a
+  `redirect` search param (validated: must start with `/`). Sign-in replaces
+  to it directly; sign-up threads it through interests onboarding, whose Save
+  and Skip both land on it. Default target: `/(tabs)/discover`. So a guest
+  gated at an event's RSVP returns to that exact event after auth.
+- **Drawer** (AppHeader): guests see a cyan "Sign In" item where members see
+  the red "Sign Out".
 
 ## 5. App structure (post-redesign)
 
@@ -154,12 +185,33 @@ wrangler simulates R2 in memory locally.
   fee-timing decision.
 - **R2 bucket** `spotseek-images` must be created before any deploy.
 
-## 10. Possible next steps (not started)
+## 10. TestFlight / iOS release state (in progress, 2026-07-31)
+
+- `app.json` ios block now has `buildNumber: "1"` and
+  `ITSAppUsesNonExemptEncryption: false`. **Bump buildNumber before every new
+  archive upload** — Apple rejects duplicate build numbers.
+- `npx expo prebuild --platform ios` was run; native project at `app/ios/`
+  (gitignored — regenerate rather than edit). CocoaPods installed. A Release
+  simulator build compiles clean (`BUILD SUCCEEDED`, Xcode 26.6).
+- Chosen path: **local Xcode archive + upload** (not EAS). Remaining manual
+  steps for the human: create the App Store Connect app record (bundle ID
+  `com.spotseek.app`, suggested SKU `SPOTSEEK001`), sign into Xcode with the
+  Apple ID, enable automatic signing with their Team, Product → Archive →
+  Distribute → App Store Connect, then add TestFlight testers.
+- ⚠️ Before a real TestFlight test: `API_BASE` in `app/lib/api.ts` still points
+  at `localhost:8787` in dev and a placeholder workers.dev URL in prod — the
+  backend must be deployed (dev/preview only per CLAUDE.md) and the URL filled
+  in, or the app will have no data outside the simulator.
+
+## 11. Possible next steps (not started)
 - End-to-end pass in the simulator against the live local backend (the redesign
-  has only been verified by the four checks, not by hand).
+  and guest mode have only been verified by the four checks, not by hand).
 - Surface the sports-data `kind` field (league/cup/international) as badges in
   the autocomplete + filter UI.
 - Wallet + Settings drawer items are stubs (Alert "Coming soon").
 - Event chat UI — backend DO chat exists at `GET /api/chat/:eventId/ws`; the
   redesigned event detail screen does not yet expose a chat entry point.
 - Wire Stripe test-mode keys once the BLOCKED.md decision lands.
+- Session persistence: the bearer token is in-memory only (`lib/api.ts`), so
+  every app launch starts signed-out — fine for guest-first flow, but consider
+  expo-secure-store persistence before wider TestFlight testing.
