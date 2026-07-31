@@ -1,12 +1,19 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, palette } from '../../lib/theme';
 
-function TabIcon({ focused, glyph }: { focused: boolean; glyph: string }) {
+type IconName = React.ComponentProps<typeof Ionicons>['name'];
+
+function TabIcon({ focused, outline, filled }: { focused: boolean; outline: IconName; filled: IconName }) {
   return (
     <View style={[s.iconWrap, focused && s.iconWrapActive]}>
-      <Text style={[s.glyph, { color: focused ? colors.accent : colors.textTertiary }]}>{glyph}</Text>
+      <Ionicons
+        name={focused ? filled : outline}
+        size={22}
+        color={focused ? colors.accent : colors.textTertiary}
+      />
     </View>
   );
 }
@@ -47,7 +54,9 @@ export default function TabsLayout() {
         name="discover"
         options={{
           title: 'Discover',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} glyph="◎" />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon focused={focused} outline="compass-outline" filled="compass" />
+          ),
           tabBarLabel: ({ focused }) => <TabLabel label="Discover" focused={focused} />,
         }}
       />
@@ -55,7 +64,9 @@ export default function TabsLayout() {
         name="parties"
         options={{
           title: 'My Parties',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} glyph="⚑" />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon focused={focused} outline="people-outline" filled="people" />
+          ),
           tabBarLabel: ({ focused }) => <TabLabel label="My Parties" focused={focused} />,
         }}
       />
@@ -63,7 +74,9 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon focused={focused} glyph="◈" />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon focused={focused} outline="person-outline" filled="person" />
+          ),
           tabBarLabel: ({ focused }) => <TabLabel label="Profile" focused={focused} />,
         }}
       />
@@ -74,8 +87,11 @@ export default function TabsLayout() {
 }
 
 const s = StyleSheet.create({
-  iconWrap: { paddingBottom: 2, paddingHorizontal: 10 },
+  iconWrap: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
   iconWrapActive: { backgroundColor: `${palette.primary}1f` },
-  glyph: { fontSize: 20 },
   tabLabel: { fontSize: 10, marginTop: 2, letterSpacing: 0.6, textTransform: 'uppercase' },
 });
