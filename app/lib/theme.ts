@@ -127,11 +127,15 @@ export const fonts = {
 } as const;
 
 // Typography presets matching the design spec.
+// Anton's cap-height runs much taller than its nominal font size — a tight
+// lineHeight clips glyph tops on iOS and undersizes the box below the real
+// ink, which also throws off `gap` spacing above these headlines. Use a
+// generous ~1.25-1.35x multiplier on every Anton preset.
 export const type = {
-  displayXl:  { fontFamily: fonts.display, fontSize: 44, lineHeight: 46, letterSpacing: -0.5, textTransform: 'uppercase' as const },
-  headlineLg: { fontFamily: fonts.display, fontSize: 32, lineHeight: 34, textTransform: 'uppercase' as const },
-  headlineMd: { fontFamily: fonts.display, fontSize: 24, lineHeight: 27, textTransform: 'uppercase' as const },
-  headlineSm: { fontFamily: fonts.display, fontSize: 18, lineHeight: 21, textTransform: 'uppercase' as const },
+  displayXl:  { fontFamily: fonts.display, fontSize: 44, lineHeight: 56, letterSpacing: -0.5, textTransform: 'uppercase' as const },
+  headlineLg: { fontFamily: fonts.display, fontSize: 32, lineHeight: 40, textTransform: 'uppercase' as const },
+  headlineMd: { fontFamily: fonts.display, fontSize: 24, lineHeight: 30, textTransform: 'uppercase' as const },
+  headlineSm: { fontFamily: fonts.display, fontSize: 18, lineHeight: 24, textTransform: 'uppercase' as const },
   bodyLg:     { fontFamily: fonts.sansMedium, fontSize: 18, lineHeight: 26 },
   bodyMd:     { fontFamily: fonts.sansRegular, fontSize: 16, lineHeight: 24 },
   bodySm:     { fontFamily: fonts.sansRegular, fontSize: 14, lineHeight: 20 },
