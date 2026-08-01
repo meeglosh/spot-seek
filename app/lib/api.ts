@@ -262,6 +262,14 @@ export async function saveFavouritesBulk(
   return saved;
 }
 
+// Resolve a stored cover path (e.g. "/api/images/…") to a fetchable URL.
+// Every screen must use this — passing the raw path to <Image> silently
+// renders nothing.
+export function resolveImageUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  return path.startsWith('/') ? `${API_BASE}${path}` : path;
+}
+
 // ─── Geocoding (venue address autocomplete) ──────────────────────────────────
 
 export type GeocodeSuggestion = {

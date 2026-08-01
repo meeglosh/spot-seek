@@ -77,6 +77,13 @@ export default function CreateEventScreen() {
   const [initialising, setInitialising] = useState(isEdit);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Terminal state: replaces the form with a success screen once the
+  // publish/draft/delete round-trip has actually completed.
+  const [outcome, setOutcome] = useState<{
+    kind: 'published' | 'draft' | 'deleted';
+    savedEventId?: string;
+    coverError?: string;
+  } | null>(null);
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -151,12 +158,20 @@ export default function CreateEventScreen() {
         savedEvent = await createEvent(payload);
       }
 
-      // Upload new cover image if one was picked
+      // Upload the cover separately: a failed upload must never make a
+      // successful publish look like a failure (it used to abort before
+      // navigation, stranding the user on this screen with the error banner
+      // scrolled out of view). Surface it on the success screen instead.
+      let coverError: string | undefined;
       if (coverUri) {
-        await uploadEventCover(savedEvent.id, coverUri, coverMime);
+        try {
+          await uploadEventCover(savedEvent.id, coverUri, coverMime);
+        } catch (err) {
+          coverError = (err as Error).message || 'Cover upload failed.';
+        }
       }
 
-      router.back();
+      setOutcome({ kind: status, savedEventId: savedEvent.id, coverError });
     } catch (err) {
       const msg = (err as Error).message;
       if (msg === 'unauthorized') goToAuth(router, 'sign-in', '/(tabs)/parties/create');
@@ -171,9 +186,9 @@ export default function CreateEventScreen() {
     setLoading(true);
     try {
       await deleteEvent(eventId);
-      router.back();
+      setOutcome({ kind: 'deleted' });
     } catch (err) {
-      setError((err as Error).message);
+      setError((err as Error).message || 'Could not delete the party.');
       setShowDeleteConfirm(false);
     } finally {
       setLoading(false);
@@ -198,6 +213,60 @@ export default function CreateEventScreen() {
     return (
       <View style={[s.container, s.centerFill]}>
         <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
+
+  // ── Success screen — publish / draft / delete completed ────────────────────
+  if (outcome) {
+    const copy = {
+      published: {
+        title: 'Party Published',
+        body: 'Your watch party is live on the Discover feed.',
+      },
+      draft: {
+        title: 'Draft Saved',
+        body: 'Pick it back up any time from your Command Center drafts.',
+      },
+      deleted: {
+        title: 'Party Deleted',
+        body: 'The party and its RSVPs have been removed.',
+      },
+    }[outcome.kind];
+
+    return (
+      <View style={s.container}>
+        <AppHeader back />
+        <View style={s.centerFill}>
+          <View style={s.successGlyphBox}>
+            <Text style={s.successGlyph}>✓</Text>
+          </View>
+          <Text style={[t.headlineLg, s.successTitle]}>{copy.title}</Text>
+          <Text style={[t.bodyMd, s.successBody]}>{copy.body}</Text>
+
+          {outcome.coverError && (
+            <View style={s.successWarn}>
+              <Text style={[t.labelCapsSm, { color: colors.live }]}>Cover image failed</Text>
+              <Text style={[t.bodySm, { color: colors.textSecondary }]}>
+                {outcome.coverError} — you can retry from Edit Party.
+              </Text>
+            </View>
+          )}
+
+          <View style={s.successActions}>
+            {outcome.kind === 'published' && outcome.savedEventId && (
+              <Btn
+                label="View Party"
+                onPress={() => router.replace(`/(tabs)/discover/${outcome.savedEventId}` as never)}
+              />
+            )}
+            <Btn
+              label="Done"
+              variant={outcome.kind === 'published' ? 'secondary' : 'primary'}
+              onPress={() => router.back()}
+            />
+          </View>
+        </View>
       </View>
     );
   }
@@ -464,7 +533,7 @@ export default function CreateEventScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  centerFill: { justifyContent: 'center', alignItems: 'center' },
+  centerFill: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
 
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg },
   headlineBlock: { gap: spacing.xs },
@@ -531,6 +600,40 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
+
+  // Success screen
+  successGlyphBox: {
+    width: 72,
+    height: 72,
+    borderWidth: 2,
+    borderColor: colors.volt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
+  },
+  successGlyph: { fontSize: 36, color: colors.volt },
+  successTitle: {
+    color: palette.white,
+    textAlign: 'center',
+    textShadowColor: palette.secondary,
+    textShadowOffset: { width: 3, height: 3 },
+    textShadowRadius: 0,
+  },
+  successBody: {
+    color: colors.textSecondary,
+    textAlign: 'center',
+    maxWidth: 300,
+    marginTop: spacing.sm,
+  },
+  successWarn: {
+    borderWidth: 1,
+    borderColor: `${colors.live}80`,
+    padding: spacing.md,
+    gap: spacing.xs,
+    marginTop: spacing.xl,
+    maxWidth: 320,
+  },
+  successActions: { alignSelf: 'stretch', gap: spacing.md, marginTop: spacing['2xl'], paddingHorizontal: spacing.xl },
 
   privacyTiles: { flexDirection: 'row', gap: spacing.md },
   privacyTile: {

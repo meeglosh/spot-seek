@@ -11,7 +11,7 @@ import { Btn, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } f
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
-  fetchEvent, fetchMyBids, placeSponsorBid, updateBidStatus,
+  fetchEvent, fetchMyBids, placeSponsorBid, updateBidStatus, resolveImageUrl,
   type ApiEvent, type ApiSponsorBid, type SponsorshipStatus,
 } from '../../../lib/api';
 
@@ -188,7 +188,7 @@ export default function SponsorshipDetailsScreen() {
         <View style={s.coverWrap}>
           {event.coverImageUrl ? (
             <>
-              <Image source={{ uri: event.coverImageUrl }} style={s.coverImg} resizeMode="cover" />
+              <Image source={{ uri: resolveImageUrl(event.coverImageUrl)! }} style={s.coverImg} resizeMode="cover" />
               <View style={s.coverTint} />
             </>
           ) : (

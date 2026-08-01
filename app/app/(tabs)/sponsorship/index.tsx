@@ -11,7 +11,7 @@ import { Btn, Chip, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedSty
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
-  fetchMySponsorProfile, fetchSponsorAnalytics, fetchFeed, fetchMyBids, registerSponsor,
+  fetchMySponsorProfile, fetchSponsorAnalytics, fetchFeed, fetchMyBids, registerSponsor, resolveImageUrl,
   type ApiSponsorProfile, type ApiSponsorAnalytics, type ApiEvent, type ApiSponsorBid,
   type SponsorshipStatus,
 } from '../../../lib/api';
@@ -244,7 +244,7 @@ export default function SponsorshipHubScreen() {
                     <View style={s.coverWrap}>
                       {ev.coverImageUrl ? (
                         <>
-                          <Image source={{ uri: ev.coverImageUrl }} style={s.coverImg} resizeMode="cover" />
+                          <Image source={{ uri: resolveImageUrl(ev.coverImageUrl)! }} style={s.coverImg} resizeMode="cover" />
                           <View style={s.coverTint} />
                         </>
                       ) : (

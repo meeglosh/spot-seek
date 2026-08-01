@@ -121,7 +121,7 @@ eventsRouter.patch('/:id', async (c) => {
   return c.json({ event: updated });
 });
 
-// DELETE /:id — host deletes their own event (cascades RSVPs and comments).
+// DELETE /:id — host deletes their own event.
 eventsRouter.delete('/:id', async (c) => {
   const hostId = c.get('hostId');
   if (!hostId) return c.json({ error: 'Unauthorized' }, 401);
@@ -131,6 +131,10 @@ eventsRouter.delete('/:id', async (c) => {
   if (!existing) return c.json({ error: 'Not found' }, 404);
   if (existing.hostId !== hostId) return c.json({ error: 'Forbidden' }, 403);
 
+  // rsvps.event_id has no ON DELETE CASCADE (unlike comments/reminders/
+  // sponsorships), so deleting an event with RSVPs violates the FK and 500s.
+  // Clear them explicitly rather than altering the constraint.
+  await db.delete(schema.rsvps).where(eq(schema.rsvps.eventId, c.req.param('id')));
   await db.delete(schema.events).where(eq(schema.events.id, c.req.param('id')));
   return c.json({ deleted: true });
 });
