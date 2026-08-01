@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { File } from 'expo-file-system';
 
 export const API_BASE = __DEV__
   ? Platform.OS === 'android'
@@ -147,10 +148,14 @@ export async function rsvpToEvent(eventId: string): Promise<ApiRsvp> {
 }
 
 export async function cancelRsvp(rsvpId: string): Promise<void> {
-  await apiFetch(`/api/rsvps/${rsvpId}`, {
+  const res = await apiFetch(`/api/rsvps/${rsvpId}`, {
     method: 'PATCH',
     body: JSON.stringify({ state: 'cancelled' }),
   });
+  // Previously unchecked: a failed cancel left the UI showing "cancelled"
+  // while the RSVP was still live on the server.
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) throw new Error(`Cancel failed: ${res.status}`);
 }
 
 export async function createEvent(input: CreateEventInput): Promise<ApiEvent> {
@@ -196,11 +201,16 @@ export async function deleteEvent(id: string): Promise<void> {
   if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
 }
 
-export async function uploadEventCover(eventId: string, uri: string, mimeType: string): Promise<ApiEvent> {
+export async function uploadEventCover(eventId: string, uri: string): Promise<ApiEvent> {
+  // Expo SDK 54+ swaps global fetch for a spec-compliant (WinterCG)
+  // implementation whose multipart encoder rejects React Native's legacy
+  // { uri, name, type } file shape — it throws "Unsupported FormDataPart
+  // implementation" and the upload never leaves the device. The encoder
+  // accepts strings, Blobs, and objects exposing bytes(); expo-file-system's
+  // File implements Blob and carries name/type/bytes(), so it encodes with a
+  // correct filename and content-type.
   const formData = new FormData();
-  const filename = uri.split('/').pop() ?? 'cover.jpg';
-  // React Native FormData accepts this shape for file uploads
-  formData.append('image', { uri, name: filename, type: mimeType } as unknown as Blob);
+  formData.append('image', new File(uri) as unknown as Blob);
 
   const token = getBearerToken();
   const headers: Record<string, string> = {};
@@ -212,7 +222,10 @@ export async function uploadEventCover(eventId: string, uri: string, mimeType: s
     body: formData,
   });
   if (res.status === 401) throw new Error('unauthorized');
-  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Upload failed: ${res.status}${body ? ` — ${body.slice(0, 120)}` : ''}`);
+  }
   const { event } = await res.json() as { event: ApiEvent };
   return event;
 }

@@ -153,7 +153,17 @@ eventsRouter.post('/:id/cover', async (c) => {
   const file = formData.get('image') as File | null;
   if (!file) return c.json({ error: 'image field required' }, 400);
 
-  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+  // Derive the extension defensively: some multipart encoders omit the
+  // filename, and a name without a dot would otherwise yield the whole name
+  // as the "extension". Fall back to the content type, then to jpg.
+  const MIME_EXT: Record<string, string> = {
+    'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
+    'image/gif': 'gif', 'image/webp': 'webp', 'image/heic': 'heic',
+  };
+  const nameExt = file.name && file.name.includes('.')
+    ? file.name.split('.').pop()!.toLowerCase()
+    : undefined;
+  const ext = nameExt ?? MIME_EXT[file.type?.toLowerCase() ?? ''] ?? 'jpg';
   const key = `events/${c.req.param('id')}/cover.${ext}`;
 
   await c.env.SPOTSEEK_IMAGES.put(key, file.stream(), {

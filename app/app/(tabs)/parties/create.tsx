@@ -69,7 +69,6 @@ export default function CreateEventScreen() {
   const [venueCoords, setVenueCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isPrivate, setIsPrivate] = useState(false);
   const [coverUri, setCoverUri] = useState<string | null>(null);
-  const [coverMime, setCoverMime] = useState('image/jpeg');
   const [existingCoverUrl, setExistingCoverUrl] = useState<string | null>(null);
 
   // UI state
@@ -119,7 +118,6 @@ export default function CreateEventScreen() {
     });
     if (!result.canceled && result.assets[0]) {
       setCoverUri(result.assets[0].uri);
-      setCoverMime(result.assets[0].mimeType ?? 'image/jpeg');
     }
   }
 
@@ -165,7 +163,7 @@ export default function CreateEventScreen() {
       let coverError: string | undefined;
       if (coverUri) {
         try {
-          await uploadEventCover(savedEvent.id, coverUri, coverMime);
+          await uploadEventCover(savedEvent.id, coverUri);
         } catch (err) {
           coverError = (err as Error).message || 'Cover upload failed.';
         }

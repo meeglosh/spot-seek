@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../lib/auth';
 import {
-  fetchEvent, rsvpToEvent, cancelRsvp, API_BASE, type ApiEvent, type ApiRsvp,
+  fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, API_BASE, type ApiEvent, type ApiRsvp,
 } from '../../../lib/api';
 import { colors, palette, spacing, type as t, hardShadow } from '../../../lib/theme';
 import { AppHeader } from '../../../components/AppHeader';
@@ -47,6 +47,23 @@ export default function EventDetailScreen() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Load this user's existing RSVP so the button reflects reality on every
+  // visit. Without this the screen always rendered "Join Party", so returning
+  // to an event you'd already joined and tapping it hit a 409 instead of
+  // offering to cancel.
+  useEffect(() => {
+    if (!id || auth.status !== 'authenticated') return;
+    let cancelled = false;
+    fetchMyRsvps()
+      .then((rsvps) => {
+        if (cancelled) return;
+        const mine = rsvps.find((r) => r.eventId === id && r.state !== 'cancelled');
+        if (mine) setRsvp(mine);
+      })
+      .catch(() => { /* non-fatal: falls back to the join state */ });
+    return () => { cancelled = true; };
+  }, [id, auth.status]);
+
   async function handleRsvp() {
     if (auth.status !== 'authenticated') {
       setGateOpen(true);
@@ -66,9 +83,21 @@ export default function EventDetailScreen() {
       }
     } catch (err) {
       const msg = (err as Error).message;
-      if (msg === 'already_rsvpd') setRsvpError('You already have an RSVP for this event.');
-      else if (msg === 'unauthorized') setGateOpen(true);
-      else setRsvpError('Something went wrong. Please try again.');
+      if (msg === 'already_rsvpd') {
+        // Server says an RSVP exists but our state disagrees — resync rather
+        // than leave the user staring at an error they can't act on.
+        const mine = await fetchMyRsvps()
+          .then((rsvps) => rsvps.find((r) => r.eventId === event.id && r.state !== 'cancelled'))
+          .catch(() => undefined);
+        if (mine) setRsvp(mine);
+        else setRsvpError('You already have an RSVP for this event.');
+      } else if (msg === 'unauthorized') {
+        setGateOpen(true);
+      } else {
+        // Surface the real reason — a generic message here hid a
+        // "Unsupported FormDataPart"-class bug on the cover upload for days.
+        setRsvpError(msg || 'Something went wrong. Please try again.');
+      }
     } finally {
       setRsvpLoading(false);
     }
