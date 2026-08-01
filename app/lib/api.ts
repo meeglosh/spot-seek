@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
 export const API_BASE = __DEV__
   ? Platform.OS === 'android'
@@ -6,17 +7,34 @@ export const API_BASE = __DEV__
     : 'http://localhost:8787'
   : 'https://spot-seek-api.dry-base-037d.workers.dev';
 
-// In-memory bearer token — set after sign-in/sign-up.
-// Upgrade to expo-secure-store for persistence across app restarts.
+const TOKEN_KEY = 'spotseek_bearer_token';
+
+// Mirrored in-memory for synchronous reads (apiFetch, uploadEventCover)
+// alongside expo-secure-store, which persists it across app restarts.
 let _bearerToken = '';
 
 export function setBearerToken(token: string) {
   _bearerToken = token;
+  SecureStore.setItemAsync(TOKEN_KEY, token).catch((err) => {
+    console.error('[api] failed to persist bearer token:', err);
+  });
 }
 export function clearBearerToken() {
   _bearerToken = '';
+  SecureStore.deleteItemAsync(TOKEN_KEY).catch((err) => {
+    console.error('[api] failed to clear persisted bearer token:', err);
+  });
 }
 export function getBearerToken() {
+  return _bearerToken;
+}
+
+// Called once on app launch, before any authenticated request, to restore
+// the token saved on a previous run — SecureStore access is async, unlike
+// the in-memory mirror above.
+export async function restoreBearerToken(): Promise<string> {
+  const token = await SecureStore.getItemAsync(TOKEN_KEY);
+  _bearerToken = token ?? '';
   return _bearerToken;
 }
 

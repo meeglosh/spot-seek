@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
-import { API_BASE, apiFetch, setBearerToken, clearBearerToken } from './api';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import {
+  API_BASE, apiFetch, setBearerToken, clearBearerToken, restoreBearerToken,
+} from './api';
 
 export type AuthUser = {
   id: string;
@@ -8,6 +10,7 @@ export type AuthUser = {
 };
 
 type AuthState =
+  | { status: 'loading' }
   | { status: 'unauthenticated' }
   | { status: 'authenticated'; user: AuthUser };
 
@@ -27,7 +30,37 @@ function extractToken(body: Record<string, unknown> | null): string {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({ status: 'unauthenticated' });
+  const [state, setState] = useState<AuthState>({ status: 'loading' });
+
+  useEffect(() => {
+    (async () => {
+      const token = await restoreBearerToken();
+      if (!token) {
+        setState({ status: 'unauthenticated' });
+        return;
+      }
+      // A persisted token may have expired since the last launch — validate
+      // it against the server instead of trusting it blindly.
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/get-session`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const body = await res.json().catch(() => null) as { user?: AuthUser } | null;
+        if (res.ok && body?.user) {
+          setState({ status: 'authenticated', user: body.user });
+        } else {
+          clearBearerToken();
+          setState({ status: 'unauthenticated' });
+        }
+      } catch (err) {
+        // Network failure on launch — don't clear the persisted token over a
+        // transient connectivity gap; the UI just treats this launch as
+        // signed-out and the next successful request can re-validate it.
+        console.error('[auth] session restore failed:', err);
+        setState({ status: 'unauthenticated' });
+      }
+    })();
+  }, []);
 
   async function signUp(name: string, email: string, password: string) {
     const res = await fetch(`${API_BASE}/api/auth/sign-up/email`, {
@@ -90,6 +123,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearBearerToken();
     setState({ status: 'unauthenticated' });
   }
+
+  // Hold rendering until a persisted session has been restored (or ruled
+  // out) — otherwise every screen's `status !== 'authenticated'` gate
+  // flashes its signed-out state for the split second before restoration
+  // resolves, even when the user is about to come back authenticated.
+  if (state.status === 'loading') return null;
 
   return (
     <Ctx.Provider value={{ ...state, signIn, signUp, signOut }}>

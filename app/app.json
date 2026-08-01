@@ -65,7 +65,8 @@
           "locationWhenInUsePermission": "SpotSeek uses your location to show watch parties near you."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
