@@ -143,4 +143,70 @@ describe('RSVP', () => {
     const updated = await patchRes.json() as { rsvp: { state: string } };
     expect(updated.rsvp.state).toBe('cancelled');
   });
+
+  it('allows rejoining after cancelling (regression: cancel was permanent)', async () => {
+    const event = await createPublishedEvent(hostCookie);
+
+    const joinRes = await SELF.fetch(RSVPS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: attendee1Cookie },
+      body: JSON.stringify({ eventId: event.id }),
+    });
+    const { rsvp } = await joinRes.json() as { rsvp: { id: string } };
+
+    await SELF.fetch(`${RSVPS}/${rsvp.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Cookie: attendee1Cookie },
+      body: JSON.stringify({ state: 'cancelled' }),
+    });
+
+    // Rejoining used to 409 forever: the uniqueness guard matched the
+    // cancelled row, so the user could never get back in.
+    const rejoinRes = await SELF.fetch(RSVPS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: attendee1Cookie },
+      body: JSON.stringify({ eventId: event.id }),
+    });
+    expect(rejoinRes.status).toBe(201);
+    const rejoined = await rejoinRes.json() as { rsvp: { id: string; state: string } };
+    expect(rejoined.rsvp.state).toBe('going');
+    // Revives the same row rather than creating a duplicate.
+    expect(rejoined.rsvp.id).toBe(rsvp.id);
+
+    // A second attempt while active must still be rejected.
+    const dupRes = await SELF.fetch(RSVPS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: attendee1Cookie },
+      body: JSON.stringify({ eventId: event.id }),
+    });
+    expect(dupRes.status).toBe(409);
+  });
+
+  it('a cancelled RSVP does not consume a capacity slot on rejoin', async () => {
+    // Capacity 1: attendee1 joins, cancels, then rejoins — the freed slot is
+    // theirs again, so they come back as 'going' rather than 'waitlisted'.
+    const event = await createPublishedEvent(hostCookie, 1);
+
+    const first = await SELF.fetch(RSVPS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: attendee1Cookie },
+      body: JSON.stringify({ eventId: event.id }),
+    });
+    const { rsvp } = await first.json() as { rsvp: { id: string } };
+
+    await SELF.fetch(`${RSVPS}/${rsvp.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Cookie: attendee1Cookie },
+      body: JSON.stringify({ state: 'cancelled' }),
+    });
+
+    const rejoin = await SELF.fetch(RSVPS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: attendee1Cookie },
+      body: JSON.stringify({ eventId: event.id }),
+    });
+    expect(rejoin.status).toBe(201);
+    const body = await rejoin.json() as { rsvp: { state: string } };
+    expect(body.rsvp.state).toBe('going');
+  });
 });

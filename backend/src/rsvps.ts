@@ -62,14 +62,18 @@ rsvpsRouter.post('/', async (c) => {
   const eventId = body.eventId;
   const capacity = event.capacity;
 
+  // ON CONFLICT (rather than a NOT EXISTS guard) so a cancelled RSVP can be
+  // revived: cancelling leaves the row in place with state='cancelled', and
+  // matching on the row's mere existence made cancellation permanent — the
+  // user could never rejoin. The DO UPDATE only fires for cancelled rows, so
+  // an already-active RSVP still yields zero rows and a 409.
+  // The capacity count only counts 'going', so the user's own cancelled row
+  // never occupies a slot.
   const rows = await db.execute(sql`
     WITH going_count AS (
       SELECT COUNT(*) AS cnt
       FROM rsvps
       WHERE event_id = ${eventId} AND state = 'going'
-    ),
-    existing AS (
-      SELECT id FROM rsvps WHERE event_id = ${eventId} AND user_id = ${userId}
     )
     INSERT INTO rsvps (event_id, user_id, state)
     SELECT
@@ -80,7 +84,9 @@ rsvpsRouter.post('/', async (c) => {
           THEN 'going'::rsvp_state
         ELSE 'waitlisted'::rsvp_state
       END
-    WHERE NOT EXISTS (SELECT 1 FROM existing)
+    ON CONFLICT ON CONSTRAINT rsvps_event_user_unique DO UPDATE
+      SET state = EXCLUDED.state, updated_at = now()
+      WHERE rsvps.state = 'cancelled'
     RETURNING *
   `);
 
