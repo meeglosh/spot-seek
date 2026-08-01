@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform,
+  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,7 +41,10 @@ export default function SignInScreen() {
       style={s.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={[s.inner, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}>
+      <ScrollView
+        contentContainerStyle={[s.inner, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Back */}
         <Pressable onPress={() => router.back()} style={s.back} hitSlop={8}>
           <Text style={[t.labelCaps, { color: colors.textSecondary }]}>← Back</Text>
@@ -111,14 +114,20 @@ export default function SignInScreen() {
             <Text style={[t.labelCaps, { color: colors.textSecondary }]}>Skip for now</Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  inner: { flex: 1, paddingHorizontal: spacing.xl },
+  // flexGrow (not flex) — a ScrollView's content must be free to exceed the
+  // viewport height when the keyboard shrinks available space, not forced to
+  // fit it. flex:1 here previously collapsed the form to near-zero height
+  // whenever the keyboard opened, since this View had no ScrollView to
+  // overflow into — the footer (Sign in / Skip) rendered directly on top of
+  // the squeezed-out email/password fields.
+  inner: { flexGrow: 1, paddingHorizontal: spacing.xl },
   back: { marginBottom: spacing['2xl'], alignSelf: 'flex-start' },
   title: {
     color: palette.white,
@@ -129,7 +138,7 @@ const s = StyleSheet.create({
     textShadowRadius: 0,
   },
   subtitle: { color: colors.textSecondary, marginBottom: spacing['3xl'] },
-  form: { gap: spacing.xl, flex: 1 },
+  form: { gap: spacing.xl, marginBottom: spacing['2xl'], flexGrow: 1 },
   field: { gap: 0 },
   errorText: { color: colors.danger },
   footer: { gap: spacing.lg },
