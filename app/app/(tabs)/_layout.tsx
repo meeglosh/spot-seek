@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, Image, StyleSheet, type ImageSourcePropType } from 'react-native';
+import { Text, Image, Pressable, StyleSheet, type ImageSourcePropType } from 'react-native';
+import type { BottomTabBarButtonProps } from 'expo-router/build/react-navigation/bottom-tabs/types';
 import { colors, fonts, palette } from '../../lib/theme';
 
 // Rendered from the actual Material Symbols glyph outlines (explore /
@@ -21,13 +22,11 @@ const ICONS: Record<'discover' | 'parties' | 'profile', ImageSourcePropType> = {
 
 function TabIcon({ focused, icon }: { focused: boolean; icon: keyof typeof ICONS }) {
   return (
-    <View style={[s.iconWrap, focused && s.iconWrapActive]}>
-      <Image
-        source={ICONS[icon]}
-        style={[s.icon, { tintColor: focused ? colors.accent : colors.textTertiary }]}
-        resizeMode="contain"
-      />
-    </View>
+    <Image
+      source={ICONS[icon]}
+      style={[s.icon, { tintColor: focused ? colors.accent : colors.textTertiary }]}
+      resizeMode="contain"
+    />
   );
 }
 
@@ -44,6 +43,31 @@ function TabLabel({ label, focused }: { label: string; focused: boolean }) {
     >
       {label}
     </Text>
+  );
+}
+
+// The library renders tabBarIcon and tabBarLabel as independent children —
+// by default the active pill (iconWrap) could only wrap one of them. This
+// wraps the whole default icon+label stack (passed in as `children`) in one
+// Pressable so the active background covers both, matching the design.
+// Selected state arrives as the `aria-selected` prop (BottomTabItem passes
+// it directly, not via accessibilityState.selected — confirmed by reading
+// the actual runtime source, not just the type declarations).
+// `ref` is destructured out (not forwarded) solely to exclude it from the
+// Pressable spread below — its BottomTabBarButtonProps type doesn't match
+// Pressable's ref type, and this wrapper doesn't need to forward it anyway.
+function TabButton(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  { children, style, 'aria-selected': focused, ref: _ref, ...rest }: BottomTabBarButtonProps,
+) {
+  return (
+    <Pressable
+      {...rest}
+      aria-selected={focused}
+      style={[style, s.tabButton, focused && s.tabButtonActive]}
+    >
+      {children}
+    </Pressable>
   );
 }
 
@@ -70,6 +94,7 @@ export default function TabsLayout() {
           title: 'Discover',
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="discover" />,
           tabBarLabel: ({ focused }) => <TabLabel label="Discover" focused={focused} />,
+          tabBarButton: TabButton,
         }}
       />
       <Tabs.Screen
@@ -78,6 +103,7 @@ export default function TabsLayout() {
           title: 'My Parties',
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="parties" />,
           tabBarLabel: ({ focused }) => <TabLabel label="My Parties" focused={focused} />,
+          tabBarButton: TabButton,
         }}
       />
       <Tabs.Screen
@@ -86,6 +112,7 @@ export default function TabsLayout() {
           title: 'Profile',
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="profile" />,
           tabBarLabel: ({ focused }) => <TabLabel label="Profile" focused={focused} />,
+          tabBarButton: TabButton,
         }}
       />
       {/* Sponsorship screens live behind the drawer, not the tab bar */}
@@ -95,12 +122,17 @@ export default function TabsLayout() {
 }
 
 const s = StyleSheet.create({
-  iconWrap: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
+  tabButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
   },
-  iconWrapActive: { backgroundColor: `${palette.primary}1f` },
-  icon: { width: 17, height: 17 },
-  tabLabel: { fontSize: 11, marginTop: 4, letterSpacing: 0.6, textTransform: 'uppercase' },
+  tabButtonActive: {
+    backgroundColor: `${palette.primary}1f`,
+    borderRadius: 20,
+    marginHorizontal: 8,
+  },
+  // +50% over the original 17 -> 26, matching the reference design's weight.
+  icon: { width: 26, height: 26 },
+  tabLabel: { fontSize: 11, marginTop: 2, letterSpacing: 0.6, textTransform: 'uppercase' },
 });
