@@ -14,8 +14,8 @@ import { colors, fonts, palette, spacing, type as t } from '../../../lib/theme';
 import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
 import { useDiscoverFilters, activeFilterCount } from '../../../lib/discover-filters';
 
-// 'Today' first — it's the default; 'All' last since it's the least-used option.
-const FILTERS = ['Today', 'This week', 'Near me', 'All'] as const;
+// 'This week' first — it's the default; 'All' last since it's the least-used option.
+const FILTERS = ['This week', 'Today', 'Near me', 'All'] as const;
 type Filter = typeof FILTERS[number];
 
 function apiEventToItem(e: ApiEvent): EventItem {
@@ -63,7 +63,7 @@ export default function DiscoverScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<Filter>('Today');
+  const [filter, setFilter] = useState<Filter>('This week');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
