@@ -3,7 +3,7 @@
  * Navigated to from the Discover header filter buttons.
  * Passes filter state back via router.back() + a shared state atom.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView, TextInput, Switch,
 } from 'react-native';
@@ -22,6 +22,12 @@ export default function FilterScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+
+  // Modal: router.back() is a no-op if this is the only entry in its stack.
+  const closeFilter = useCallback(() => {
+    if (router.canGoBack()) { router.back(); return; }
+    router.replace('/(tabs)/discover' as never);
+  }, [router]);
 
   const { filters, setFilters } = useDiscoverFilters();
 
@@ -74,7 +80,7 @@ export default function FilterScreen() {
       venue: venueSearch || undefined,
       useFavourites,
     });
-    router.back();
+    closeFilter();
   }
 
   const favTeams = favourites.filter((f) => f.type === 'team').map((f) => f.value);
@@ -84,7 +90,7 @@ export default function FilterScreen() {
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={s.closeBtn} hitSlop={8}>
+        <Pressable onPress={closeFilter} style={s.closeBtn} hitSlop={8}>
           <Text style={s.closeGlyph}>✕</Text>
         </Pressable>
         <Text style={[t.headlineSm, { color: colors.textPrimary }]}>Filters</Text>

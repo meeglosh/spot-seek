@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
   Image, Linking, Platform,
@@ -38,6 +38,14 @@ export default function EventDetailScreen() {
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpError, setRsvpError] = useState('');
   const [gateOpen, setGateOpen] = useState(false);
+
+  // Reachable via replace() from the publish flow, where no history exists and
+  // router.back() is a silent no-op — fall back to the feed so the back arrow
+  // is never dead.
+  const leaveDetail = useCallback(() => {
+    if (router.canGoBack()) { router.back(); return; }
+    router.replace('/(tabs)/discover' as never);
+  }, [router]);
 
   useEffect(() => {
     if (!id) return;
@@ -117,7 +125,7 @@ export default function EventDetailScreen() {
         <Text style={[t.bodySm, { color: colors.textSecondary }]}>
           {error || 'Event not found'}
         </Text>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={leaveDetail}>
           <Text style={[t.labelCaps, { color: colors.accent, marginTop: spacing.md }]}>
             ← Go back
           </Text>
@@ -191,7 +199,7 @@ export default function EventDetailScreen() {
 
   return (
     <View style={s.container}>
-      <AppHeader back />
+      <AppHeader back onBack={leaveDetail} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 140 }}>
         {/* Hero — cover photo with dark duotone treatment */}

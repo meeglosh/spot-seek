@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet, ScrollView,
   Switch, Platform, KeyboardAvoidingView, Image, ActivityIndicator,
@@ -108,6 +108,17 @@ export default function CreateEventScreen() {
       .finally(() => setInitialising(false));
   }, [isEdit, eventId]);
 
+  // This screen is presented as a modal and is often the only entry in its
+  // stack, so router.back() and router.dismiss() are both no-ops here
+  // (canGoBack() and canDismiss() both report false) — which stranded users on
+  // the success screen with every control dead. Always fall back to an
+  // explicit replace, which does navigate out of the modal.
+  const leaveCreate = useCallback(() => {
+    if (router.canGoBack()) { router.back(); return; }
+    // Guests would just hit another sign-in gate on My Parties.
+    router.replace((auth.status === 'authenticated' ? '/(tabs)/parties' : '/(tabs)/discover') as never);
+  }, [router, auth.status]);
+
   const canSave = title.trim().length > 0 && broadcastSubject.trim().length > 0 && !loading;
 
   async function pickImage() {
@@ -199,7 +210,7 @@ export default function CreateEventScreen() {
   if (auth.status !== 'authenticated') {
     return (
       <View style={s.container}>
-        <AppHeader back />
+        <AppHeader back onBack={leaveCreate} />
         <GuestGate
           title="Host a Party"
           message="Sign in to create watch parties, rally your crowd, and manage RSVPs."
@@ -236,7 +247,7 @@ export default function CreateEventScreen() {
 
     return (
       <View style={s.container}>
-        <AppHeader back />
+        <AppHeader back onBack={leaveCreate} />
         <View style={s.centerFill}>
           <View style={s.successGlyphBox}>
             <Text style={s.successGlyph}>✓</Text>
@@ -257,13 +268,16 @@ export default function CreateEventScreen() {
             {outcome.kind === 'published' && outcome.savedEventId && (
               <Btn
                 label="View Party"
-                onPress={() => router.replace(`/(tabs)/discover/${outcome.savedEventId}` as never)}
+                onPress={() => router.replace({
+                  pathname: '/(tabs)/discover/[id]',
+                  params: { id: outcome.savedEventId! },
+                } as never)}
               />
             )}
             <Btn
               label="Done"
               variant={outcome.kind === 'published' ? 'secondary' : 'primary'}
-              onPress={() => router.back()}
+              onPress={leaveCreate}
             />
           </View>
         </View>
@@ -278,7 +292,7 @@ export default function CreateEventScreen() {
       style={s.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <AppHeader back />
+      <AppHeader back onBack={leaveCreate} />
 
       <ScrollView
         contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing['2xl'] }]}

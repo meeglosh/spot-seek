@@ -101,7 +101,9 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   );
 }
 
-export function AppHeader({ back = false }: { back?: boolean }) {
+// `onBack` overrides the default router.back(), which is a no-op on screens
+// with no history beneath them (e.g. a modal opened directly into its stack).
+export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const auth = useAuth();
@@ -113,7 +115,7 @@ export function AppHeader({ back = false }: { back?: boolean }) {
   return (
     <View style={[s.header, { paddingTop: insets.top + spacing.sm }]}>
       {back ? (
-        <Pressable onPress={() => router.back()} hitSlop={12} style={s.headerBtn}>
+        <Pressable onPress={onBack ?? (() => router.back())} hitSlop={12} style={s.headerBtn}>
           <Text style={s.headerBtnIcon}>←</Text>
         </Pressable>
       ) : (
