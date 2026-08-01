@@ -1,5 +1,4 @@
 import { Platform } from 'react-native';
-import { File } from 'expo-file-system';
 
 export const API_BASE = __DEV__
   ? Platform.OS === 'android'
@@ -201,33 +200,49 @@ export async function deleteEvent(id: string): Promise<void> {
   if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
 }
 
-export async function uploadEventCover(eventId: string, uri: string): Promise<ApiEvent> {
-  // Expo SDK 54+ swaps global fetch for a spec-compliant (WinterCG)
-  // implementation whose multipart encoder rejects React Native's legacy
-  // { uri, name, type } file shape — it throws "Unsupported FormDataPart
-  // implementation" and the upload never leaves the device. The encoder
-  // accepts strings, Blobs, and objects exposing bytes(); expo-file-system's
-  // File implements Blob and carries name/type/bytes(), so it encodes with a
-  // correct filename and content-type.
+export function uploadEventCover(eventId: string, uri: string, mimeType: string): Promise<ApiEvent> {
+  // Uploads deliberately go through XMLHttpRequest rather than fetch.
+  //
+  // Expo SDK 54+ replaces global fetch with a WinterCG implementation whose
+  // multipart encoder rejects React Native's proprietary { uri, name, type }
+  // file part ("Unsupported FormDataPart implementation"), so the request
+  // never left the device. Expo does NOT replace XMLHttpRequest, and RN's
+  // native networking supports that part shape directly — it also streams the
+  // file from disk instead of loading it into JS memory.
+  //
+  // The obvious alternative, expo-file-system's Blob-compatible File, shipped
+  // a prebuilt XCFramework whose Swift ABI didn't match expo-modules-core
+  // 57.0.2 and hard-crashed the app at launch (dyld "Symbol not found").
+  // Avoiding the extra native module removes that class of risk entirely.
+  const filename = uri.split('/').pop() || 'cover.jpg';
   const formData = new FormData();
-  formData.append('image', new File(uri) as unknown as Blob);
+  formData.append('image', { uri, name: filename, type: mimeType } as unknown as Blob);
 
   const token = getBearerToken();
-  const headers: Record<string, string> = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}/api/events/${eventId}/cover`, {
-    method: 'POST',
-    headers,
-    body: formData,
+  return new Promise<ApiEvent>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_BASE}/api/events/${eventId}/cover`);
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    // Content-Type is intentionally unset: RN derives multipart/form-data
+    // plus the boundary from the FormData body.
+    xhr.onload = () => {
+      if (xhr.status === 401) return reject(new Error('unauthorized'));
+      if (xhr.status < 200 || xhr.status >= 300) {
+        const detail = typeof xhr.responseText === 'string' ? xhr.responseText.slice(0, 120) : '';
+        return reject(new Error(`Upload failed: ${xhr.status}${detail ? ` — ${detail}` : ''}`));
+      }
+      try {
+        const { event } = JSON.parse(xhr.responseText) as { event: ApiEvent };
+        resolve(event);
+      } catch {
+        reject(new Error('Upload succeeded but the response could not be read.'));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error during upload.'));
+    xhr.ontimeout = () => reject(new Error('Upload timed out.'));
+    xhr.send(formData);
   });
-  if (res.status === 401) throw new Error('unauthorized');
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`Upload failed: ${res.status}${body ? ` — ${body.slice(0, 120)}` : ''}`);
-  }
-  const { event } = await res.json() as { event: ApiEvent };
-  return event;
 }
 
 // ─── Favourites ───────────────────────────────────────────────────────────────
