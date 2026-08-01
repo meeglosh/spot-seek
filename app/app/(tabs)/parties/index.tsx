@@ -262,7 +262,12 @@ export default function MyPartiesScreen() {
         <FlatList
           data={hosted ?? []}
           keyExtractor={(e) => e.id}
-          contentContainerStyle={[s.list, { paddingBottom: insets.bottom + spacing['2xl'] }]}
+          contentContainerStyle={[
+            s.list,
+            // Extra clearance so the floating Create Party button never
+            // covers the last card.
+            { paddingBottom: insets.bottom + spacing['4xl'] + spacing['2xl'] },
+          ]}
           ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
           ListEmptyComponent={
@@ -279,6 +284,14 @@ export default function MyPartiesScreen() {
           )}
           showsVerticalScrollIndicator={false}
         />
+      )}
+
+      {/* Floating CREATE PARTY action — hosts already have parties here, so
+          they shouldn't need to switch to the dashboard just to make another. */}
+      {tab === 'hosting' && !needsAuth && !showSpinner && (hosted?.length ?? 0) > 0 && (
+        <View style={[s.fabWrap, { bottom: insets.bottom + spacing.xl }]}>
+          <Btn label="+ Create Party" onPress={() => router.push('/(tabs)/parties/create' as never)} />
+        </View>
       )}
     </View>
   );
@@ -341,6 +354,8 @@ const s = StyleSheet.create({
     borderTopColor: colors.separator,
     paddingTop: spacing.md,
   },
+
+  fabWrap: { position: 'absolute', right: spacing.lg },
 
   center: {
     flexGrow: 1,
