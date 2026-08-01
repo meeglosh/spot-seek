@@ -14,7 +14,9 @@ import { AppHeader } from '../../../components/AppHeader';
 import { Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { GuestGate, goToAuth } from '../../../components/AuthGate';
 import { BroadcastSubjectInput } from '../../../components/BroadcastSubjectInput';
+import { AddressAutocompleteInput } from '../../../components/AddressAutocompleteInput';
 import { DateTimePicker } from '../../../components/DateTimePicker';
+import MapView, { Marker } from 'react-native-maps';
 import { colors, palette, spacing, type as t } from '../../../lib/theme';
 
 // ─── HEA form primitives ─────────────────────────────────────────────────────
@@ -62,6 +64,9 @@ export default function CreateEventScreen() {
   const [hasVenue, setHasVenue] = useState(false);
   const [venueName, setVenueName] = useState('');
   const [venueAddress, setVenueAddress] = useState('');
+  // Set only by picking an autocomplete suggestion; cleared on manual edits so
+  // a stale pin never outlives the address it belonged to.
+  const [venueCoords, setVenueCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isPrivate, setIsPrivate] = useState(false);
   const [coverUri, setCoverUri] = useState<string | null>(null);
   const [coverMime, setCoverMime] = useState('image/jpeg');
@@ -86,6 +91,9 @@ export default function CreateEventScreen() {
         setEndsAt(e.endsAt ? new Date(e.endsAt) : null);
         if (e.venueName) { setHasVenue(true); setVenueName(e.venueName); }
         if (e.venueAddress) setVenueAddress(e.venueAddress);
+        if (e.venueLat != null && e.venueLng != null) {
+          setVenueCoords({ latitude: e.venueLat, longitude: e.venueLng });
+        }
         setIsPrivate(e.isPrivateLocation);
         setExistingCoverUrl(e.coverImageUrl);
       })
@@ -125,6 +133,8 @@ export default function CreateEventScreen() {
         endsAt: endsAt?.toISOString(),
         venueName: hasVenue && venueName.trim() ? venueName.trim() : undefined,
         venueAddress: hasVenue && venueAddress.trim() ? venueAddress.trim() : undefined,
+        venueLat: hasVenue && venueCoords ? venueCoords.latitude : undefined,
+        venueLng: hasVenue && venueCoords ? venueCoords.longitude : undefined,
         isPrivateLocation: hasVenue ? isPrivate : undefined,
       };
 
@@ -327,8 +337,52 @@ export default function CreateEventScreen() {
               </View>
               <View style={s.field}>
                 <FieldLabel>Address</FieldLabel>
-                <Input placeholder="Address" value={venueAddress} onChangeText={setVenueAddress} />
+                <AddressAutocompleteInput
+                  value={venueAddress}
+                  onChangeText={(text) => {
+                    setVenueAddress(text);
+                    setVenueCoords(null); // manual edit invalidates the picked pin
+                  }}
+                  onSelect={(sugg) => {
+                    setVenueAddress(sugg.label);
+                    setVenueCoords({ latitude: sugg.lat, longitude: sugg.lng });
+                    // Prefill the venue name from a picked POI if it's still empty.
+                    if (!venueName.trim() && sugg.name && sugg.name !== sugg.label) {
+                      setVenueName(sugg.name);
+                    }
+                  }}
+                />
               </View>
+
+              {/* Map preview — proves the pin before publishing */}
+              {venueCoords && (
+                <View style={s.mapPreviewWrap}>
+                  <MapView
+                    style={s.mapPreview}
+                    region={{
+                      ...venueCoords,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                    scrollEnabled={false}
+                    zoomEnabled={false}
+                    rotateEnabled={false}
+                    pitchEnabled={false}
+                    toolbarEnabled={false}
+                    pointerEvents="none"
+                  >
+                    <Marker coordinate={venueCoords} pinColor={palette.secondary} />
+                  </MapView>
+                  <View style={s.mapPreviewBadge}>
+                    <Text style={[t.labelCapsSm, { color: colors.accent }]}>Pinned on map</Text>
+                  </View>
+                </View>
+              )}
+              {!venueCoords && venueAddress.trim().length > 0 && (
+                <Text style={[t.bodySm, { color: colors.textTertiary }]}>
+                  Pick a suggested address to pin this party on the Discover map.
+                </Text>
+              )}
             </View>
           )}
         </FormSection>
@@ -461,6 +515,21 @@ const s = StyleSheet.create({
     borderTopColor: colors.separator,
     paddingTop: spacing.lg,
     gap: spacing.lg,
+  },
+  mapPreviewWrap: {
+    height: 150,
+    borderWidth: 1,
+    borderColor: `${colors.accent}80`,
+    overflow: 'hidden',
+  },
+  mapPreview: { flex: 1 },
+  mapPreviewBadge: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    backgroundColor: colors.overlay,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
 
   privacyTiles: { flexDirection: 'row', gap: spacing.md },

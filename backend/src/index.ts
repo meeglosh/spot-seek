@@ -11,6 +11,7 @@ import { chatRouter } from './chat';
 import { adminRouter } from './admin';
 import { sponsorsRouter } from './sponsors';
 import { favouritesRouter } from './favourites';
+import { geocodeRouter } from './geocode';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -29,6 +30,7 @@ app.route('/api/chat', chatRouter);
 app.route('/api/admin', adminRouter);
 app.route('/api/sponsors', sponsorsRouter);
 app.route('/api/favourites', favouritesRouter);
+app.route('/api/geocode', geocodeRouter);
 
 // GET /api/images/:key — serve R2 images through the Worker.
 // Replace with a public R2 domain once the bucket has one configured.

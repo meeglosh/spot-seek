@@ -262,6 +262,32 @@ export async function saveFavouritesBulk(
   return saved;
 }
 
+// ─── Geocoding (venue address autocomplete) ──────────────────────────────────
+
+export type GeocodeSuggestion = {
+  label: string;   // full display string, also what fills the address field
+  name: string;    // POI/venue name when the provider has one
+  lat: number;
+  lng: number;
+  city: string | null;
+  country: string | null;
+};
+
+export async function searchAddresses(
+  q: string,
+  bias?: { latitude: number; longitude: number },
+): Promise<GeocodeSuggestion[]> {
+  const params = new URLSearchParams({ q });
+  if (bias) {
+    params.set('lat', String(bias.latitude));
+    params.set('lon', String(bias.longitude));
+  }
+  const res = await apiFetch(`/api/geocode?${params.toString()}`, { skipAuth: true });
+  if (!res.ok) throw new Error(`Geocode failed: ${res.status}`);
+  const { suggestions } = await res.json() as { suggestions: GeocodeSuggestion[] };
+  return suggestions;
+}
+
 // ─── Sponsors (Phase 3 — payments stubbed, see BLOCKED.md) ───────────────────
 
 export type ApiSponsorProfile = {
