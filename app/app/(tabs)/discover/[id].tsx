@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
-  Image, Linking, Platform, Share, type ImageSourcePropType,
+  Image, Linking, Platform, Share, ActionSheetIOS, Alert, type ImageSourcePropType,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -184,24 +184,52 @@ export default function EventDetailScreen() {
   const canShowDirections =
     hasDirectionTarget && (!event.isPrivateLocation || isActive);
 
-  function openDirections() {
+  async function openDirections() {
     if (!event) return;
-    let url: string;
-    if (event.venueLat != null && event.venueLng != null) {
-      url = Platform.select({
-        ios: `http://maps.apple.com/?daddr=${event.venueLat},${event.venueLng}`,
-        default: `https://www.google.com/maps/dir/?api=1&destination=${event.venueLat},${event.venueLng}`,
-      });
-    } else if (event.venueAddress) {
-      const q = encodeURIComponent(event.venueAddress);
-      url = Platform.select({
-        ios: `http://maps.apple.com/?daddr=${q}`,
-        default: `https://www.google.com/maps/dir/?api=1&destination=${q}`,
-      });
+
+    // Prefer lat/lng (all three apps take it directly); fall back to the
+    // free-text address only when coordinates aren't set.
+    const ll = event.venueLat != null && event.venueLng != null
+      ? `${event.venueLat},${event.venueLng}`
+      : null;
+    const addr = event.venueAddress ? encodeURIComponent(event.venueAddress) : null;
+    const daddr = ll ?? addr;
+    if (!daddr) return;
+
+    // Native app deep links, each with a web fallback that works even when
+    // the app isn't installed (and canOpenURL — which needs the scheme
+    // whitelisted in LSApplicationQueriesSchemes to ever return true on iOS
+    // — can't confirm it either way).
+    const googleApp = `comgooglemaps://?daddr=${daddr}&directionsmode=driving`;
+    const googleWeb = `https://www.google.com/maps/dir/?api=1&destination=${daddr}`;
+    const wazeApp = ll ? `waze://?ll=${ll}&navigate=yes` : `waze://?q=${daddr}&navigate=yes`;
+    const wazeWeb = ll ? `https://waze.com/ul?ll=${ll}&navigate=yes` : `https://waze.com/ul?q=${daddr}&navigate=yes`;
+
+    const [googleAvailable, wazeAvailable] = await Promise.all([
+      Linking.canOpenURL(googleApp).catch(() => false),
+      Linking.canOpenURL(wazeApp).catch(() => false),
+    ]);
+
+    const options = [
+      { label: 'Apple Maps', url: `http://maps.apple.com/?daddr=${daddr}` },
+      { label: 'Google Maps', url: googleAvailable ? googleApp : googleWeb },
+      { label: 'Waze', url: wazeAvailable ? wazeApp : wazeWeb },
+    ];
+
+    const open = (url: string) => Linking.openURL(url).catch(() => {});
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: [...options.map((o) => o.label), 'Cancel'], cancelButtonIndex: options.length },
+        (index) => { if (index < options.length) open(options[index].url); },
+      );
     } else {
-      return;
+      Alert.alert(
+        'Get Directions',
+        undefined,
+        [...options.map((o) => ({ text: o.label, onPress: () => open(o.url) })), { text: 'Cancel', style: 'cancel' as const }],
+      );
     }
-    Linking.openURL(url).catch(() => {});
   }
 
   function handleShare() {

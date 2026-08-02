@@ -18,7 +18,8 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "SpotSeek uses your location to show watch parties near you.",
         "ITSAppUsesNonExemptEncryption": false,
-        "LSSupportsMacDesignedForiPhoneIPad": false
+        "LSSupportsMacDesignedForiPhoneIPad": false,
+        "LSApplicationQueriesSchemes": ["comgooglemaps", "waze"]
       }
     },
     "android": {
