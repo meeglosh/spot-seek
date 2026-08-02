@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
-  Image, Linking, Platform,
+  Image, Linking, Platform, Share, type ImageSourcePropType,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,9 @@ import { colors, palette, spacing, type as t, hardShadow } from '../../../lib/th
 import { AppHeader } from '../../../components/AppHeader';
 import { Badge, SectionTitle } from '../../../components/ui';
 import { AuthGateSheet } from '../../../components/AuthGate';
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const SHARE_ICON: ImageSourcePropType = require('../../../assets/icons/icon-share.png');
 
 function startsToday(startsAt?: string | null): boolean {
   if (!startsAt) return false;
@@ -197,6 +200,18 @@ export default function EventDetailScreen() {
     Linking.openURL(url).catch(() => {});
   }
 
+  function handleShare() {
+    if (!event) return;
+    const when = dateStr ? `${dateStr}${timeStr ? ` at ${timeStr}` : ''}` : null;
+    const message = [
+      event.title,
+      when,
+      `spotseek://(tabs)/discover/${event.id}`,
+    ].filter(Boolean).join('\n');
+    Share.share(Platform.OS === 'ios' ? { message, url: `spotseek://(tabs)/discover/${event.id}` } : { message })
+      .catch(() => {});
+  }
+
   return (
     <View style={s.container}>
       <AppHeader back onBack={leaveDetail} />
@@ -209,6 +224,14 @@ export default function EventDetailScreen() {
           )}
           <View style={[StyleSheet.absoluteFill, s.duoDark]} />
           <View style={[StyleSheet.absoluteFill, s.duoBlue]} />
+          <Pressable
+            onPress={handleShare}
+            hitSlop={12}
+            style={({ pressed }) => [s.shareBtn, pressed && s.pressed]}
+            accessibilityLabel="Share event"
+          >
+            <Image source={SHARE_ICON} style={s.shareIcon} resizeMode="contain" />
+          </Pressable>
           <View style={s.heroContent}>
             <View style={s.heroBadges}>
               {liveTonight && <Badge label="Live Tonight" tone="live" />}
@@ -328,6 +351,18 @@ const s = StyleSheet.create({
   },
   duoDark: { backgroundColor: 'rgba(15,15,18,0.5)' },
   duoBlue: { backgroundColor: 'rgba(0,101,117,0.18)' },
+  shareBtn: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(15,15,18,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shareIcon: { width: 20, height: 20, tintColor: palette.white },
   heroContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: spacing['3xl'], gap: spacing.md },
   heroBadges: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
 
