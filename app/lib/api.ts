@@ -7,6 +7,10 @@ export const API_BASE = __DEV__
     : 'http://localhost:8787'
   : 'https://spot-seek-api.dry-base-037d.workers.dev';
 
+// Always the deployed Worker, even in dev builds — shared event links go to
+// other people, so they can never point at API_BASE's localhost dev value.
+export const EVENT_SHARE_BASE = 'https://spot-seek-api.dry-base-037d.workers.dev';
+
 const TOKEN_KEY = 'spotseek_bearer_token';
 
 // Mirrored in-memory for synchronous reads (apiFetch, uploadEventCover)

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, Pressable, StyleSheet, ScrollView,
-  Switch, Platform, KeyboardAvoidingView, Image, ActivityIndicator,
+  Switch, Platform, KeyboardAvoidingView, Image, ActivityIndicator, Share,
   type TextInputProps,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
-import { createEvent, fetchEvent, type ApiEvent } from '../../../lib/api';
+import { createEvent, fetchEvent, EVENT_SHARE_BASE, type ApiEvent } from '../../../lib/api';
 import { API_BASE, apiFetch, uploadEventCover, deleteEvent } from '../../../lib/api';
 import { AppHeader } from '../../../components/AppHeader';
 import { Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../../components/ui';
@@ -135,6 +135,22 @@ export default function CreateEventScreen() {
     if (router.canDismiss()) { router.dismissTo(target); return; }
     router.replace(target);
   }, [router, auth.status, from]);
+
+  // Reuses discover/[id].tsx's share link format — same handler wiring, but
+  // here the title/date come from local form state rather than a re-fetched
+  // ApiEvent, since we already have them right after publishing.
+  function shareEvent(savedEventId: string) {
+    const link = `${EVENT_SHARE_BASE}/e/${savedEventId}`;
+    const dateStr = startsAt
+      ? startsAt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+      : null;
+    const timeStr = startsAt
+      ? startsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+      : null;
+    const when = dateStr ? `${dateStr}${timeStr ? ` at ${timeStr}` : ''}` : null;
+    const message = [title, when, link].filter(Boolean).join('\n');
+    Share.share(Platform.OS === 'ios' ? { message, url: link } : { message }).catch(() => {});
+  }
 
   const canSave = title.trim().length > 0 && broadcastSubject.trim().length > 0 && !loading;
 
@@ -301,6 +317,13 @@ export default function CreateEventScreen() {
                   if (router.canDismiss()) { router.dismiss(); }
                   router.push(target);
                 }}
+              />
+            )}
+            {outcome.kind === 'published' && outcome.savedEventId && (
+              <Btn
+                label="Share Party"
+                variant="secondary"
+                onPress={() => shareEvent(outcome.savedEventId!)}
               />
             )}
             <Btn

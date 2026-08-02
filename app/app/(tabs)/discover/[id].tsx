@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../../lib/auth';
 import {
-  fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, API_BASE, type ApiEvent, type ApiRsvp,
+  fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, API_BASE, EVENT_SHARE_BASE, type ApiEvent, type ApiRsvp,
 } from '../../../lib/api';
 import { colors, palette, spacing, type as t, hardShadow } from '../../../lib/theme';
 import { AppHeader } from '../../../components/AppHeader';
@@ -16,10 +16,6 @@ import { AuthGateSheet } from '../../../components/AuthGate';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const SHARE_ICON: ImageSourcePropType = require('../../../assets/icons/icon-share.png');
-
-// Always the deployed Worker, even in dev builds — this URL is shared with
-// other people, so it can never be API_BASE's localhost dev value.
-const EVENT_SHARE_BASE = 'https://spot-seek-api.dry-base-037d.workers.dev';
 
 function startsToday(startsAt?: string | null): boolean {
   if (!startsAt) return false;
