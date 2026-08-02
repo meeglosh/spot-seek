@@ -108,15 +108,20 @@ export default function CreateEventScreen() {
       .finally(() => setInitialising(false));
   }, [isEdit, eventId]);
 
-  // This screen is presented as a modal and is often the only entry in its
-  // stack, so router.back() and router.dismiss() are both no-ops here
-  // (canGoBack() and canDismiss() both report false) — which stranded users on
-  // the success screen with every control dead. Always fall back to an
-  // explicit replace, which does navigate out of the modal.
+  // This screen is always presented as a modal (see parties/_layout.tsx).
+  // router.back()/replace() only pop or swap the *current* stack's route —
+  // neither is guaranteed to actually dismiss the enclosing native modal
+  // sheet, which is what left "Done" (and "View Party", below) visually
+  // stuck with only a swipe-down able to close it. dismissTo() is the API
+  // built specifically for "close this modal and land on X": when
+  // canDismiss() is true it's a single atomic dismiss-and-navigate; when
+  // it's false (deep-linked straight into create, no history at all) fall
+  // back to replace(), which still does escape the modal in that case.
   const leaveCreate = useCallback(() => {
-    if (router.canGoBack()) { router.back(); return; }
     // Guests would just hit another sign-in gate on My Parties.
-    router.replace((auth.status === 'authenticated' ? '/(tabs)/parties' : '/(tabs)/discover') as never);
+    const target = (auth.status === 'authenticated' ? '/(tabs)/parties' : '/(tabs)/discover') as never;
+    if (router.canDismiss()) { router.dismissTo(target); return; }
+    router.replace(target);
   }, [router, auth.status]);
 
   const canSave = title.trim().length > 0 && broadcastSubject.trim().length > 0 && !loading;
@@ -268,10 +273,22 @@ export default function CreateEventScreen() {
             {outcome.kind === 'published' && outcome.savedEventId && (
               <Btn
                 label="View Party"
-                onPress={() => router.replace({
-                  pathname: '/(tabs)/discover/[id]',
-                  params: { id: outcome.savedEventId! },
-                } as never)}
+                onPress={() => {
+                  // dismissTo() (used by leaveCreate(), above) maps to React
+                  // Navigation's POP_TO — it can only return to a screen that
+                  // already exists in the stack's history. The just-created
+                  // event's detail screen was never visited, so dismissTo()
+                  // here is silently a no-op (confirmed on-device: canDismiss
+                  // was true, dismissTo was called, nothing happened).
+                  // dismiss() unconditionally closes this modal; push()
+                  // then lands on the new screen underneath it.
+                  const target = {
+                    pathname: '/(tabs)/discover/[id]',
+                    params: { id: outcome.savedEventId! },
+                  } as never;
+                  if (router.canDismiss()) { router.dismiss(); }
+                  router.push(target);
+                }}
               />
             )}
             <Btn
