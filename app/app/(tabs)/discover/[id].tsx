@@ -17,6 +17,10 @@ import { AuthGateSheet } from '../../../components/AuthGate';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const SHARE_ICON: ImageSourcePropType = require('../../../assets/icons/icon-share.png');
 
+// Always the deployed Worker, even in dev builds — this URL is shared with
+// other people, so it can never be API_BASE's localhost dev value.
+const EVENT_SHARE_BASE = 'https://spot-seek-api.dry-base-037d.workers.dev';
+
 function startsToday(startsAt?: string | null): boolean {
   if (!startsAt) return false;
   const d = new Date(startsAt);
@@ -202,13 +206,14 @@ export default function EventDetailScreen() {
 
   function handleShare() {
     if (!event) return;
+    // A real https link, not the spotseek:// scheme — Messages/etc. only
+    // linkify and preview http(s) URLs, and only a Universal Link can fall
+    // back to a web page (with an Open Graph preview) when the recipient
+    // doesn't have the app installed yet. See backend/src/deeplinks.ts.
+    const link = `${EVENT_SHARE_BASE}/e/${event.id}`;
     const when = dateStr ? `${dateStr}${timeStr ? ` at ${timeStr}` : ''}` : null;
-    const message = [
-      event.title,
-      when,
-      `spotseek://(tabs)/discover/${event.id}`,
-    ].filter(Boolean).join('\n');
-    Share.share(Platform.OS === 'ios' ? { message, url: `spotseek://(tabs)/discover/${event.id}` } : { message })
+    const message = [event.title, when, link].filter(Boolean).join('\n');
+    Share.share(Platform.OS === 'ios' ? { message, url: link } : { message })
       .catch(() => {});
   }
 
