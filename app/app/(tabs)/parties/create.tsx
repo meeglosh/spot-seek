@@ -312,7 +312,7 @@ export default function CreateEventScreen() {
       <AppHeader back onBack={leaveCreate} />
 
       <ScrollView
-        contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing['2xl'] }]}
+        contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 96 }]}
         keyboardShouldPersistTaps="handled"
       >
         {/* Headline */}
@@ -516,12 +516,9 @@ export default function CreateEventScreen() {
           )}
         </FormSection>
 
-        {/* Actions */}
-        <Btn
-          label={loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Publish Party'}
-          onPress={() => handleSave('published')}
-          disabled={!canSave}
-        />
+        {/* Actions — the primary save/publish action is pinned below as a
+            sticky bar (see saveBar) so it's always reachable without
+            scrolling; this keeps the secondary draft/delete actions. */}
         <Btn
           label={isEdit ? 'Save as Draft' : 'Save as Draft Instead'}
           variant="secondary"
@@ -558,6 +555,16 @@ export default function CreateEventScreen() {
           )
         )}
       </ScrollView>
+
+      {/* Sticky save bar — the primary action shouldn't require scrolling
+          to the bottom of a long form to find. */}
+      <View style={[s.saveBar, { paddingBottom: insets.bottom + spacing.md }]}>
+        <Btn
+          label={loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Publish Party'}
+          onPress={() => handleSave('published')}
+          disabled={!canSave}
+        />
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -567,6 +574,13 @@ const s = StyleSheet.create({
   centerFill: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
 
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg },
+  saveBar: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    backgroundColor: colors.bg,
+    borderTopWidth: 1,
+    borderTopColor: colors.separator,
+  },
   headlineBlock: { gap: spacing.xs },
 
   errorBanner: {
