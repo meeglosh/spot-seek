@@ -50,7 +50,11 @@ function FormSection({ num, title, children }: { num: string; title: string; chi
 export default function CreateEventScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { eventId } = useLocalSearchParams<{ eventId?: string }>();
+  // `from` is set by whichever screen pushed into this one, so leaving can
+  // return there instead of always landing on the generic My Parties list —
+  // e.g. managing an event from the host Command Center should come back to
+  // the Command Center, not bounce out to wherever "My Parties" defaults to.
+  const { eventId, from } = useLocalSearchParams<{ eventId?: string; from?: string }>();
   const isEdit = !!eventId;
   const auth = useAuth();
 
@@ -119,10 +123,18 @@ export default function CreateEventScreen() {
   // back to replace(), which still does escape the modal in that case.
   const leaveCreate = useCallback(() => {
     // Guests would just hit another sign-in gate on My Parties.
-    const target = (auth.status === 'authenticated' ? '/(tabs)/parties' : '/(tabs)/discover') as never;
+    const target = (
+      from === 'dashboard'
+        ? '/(tabs)/parties/dashboard'
+        : auth.status === 'authenticated' ? '/(tabs)/parties' : '/(tabs)/discover'
+    ) as never;
+    // dismissTo (POP_TO) only works when `target` already exists in the
+    // stack's history — safe here because `from` is only ever set to a
+    // screen this one was actually pushed from (see the entry points that
+    // pass it).
     if (router.canDismiss()) { router.dismissTo(target); return; }
     router.replace(target);
-  }, [router, auth.status]);
+  }, [router, auth.status, from]);
 
   const canSave = title.trim().length > 0 && broadcastSubject.trim().length > 0 && !loading;
 

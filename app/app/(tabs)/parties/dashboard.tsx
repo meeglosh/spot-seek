@@ -99,7 +99,7 @@ export default function CommandCenterScreen() {
   const onRefresh = useCallback(() => { setRefreshing(true); load(true); }, [load]);
 
   const edit = (eventId: string) =>
-    router.push({ pathname: '/(tabs)/parties/create', params: { eventId } } as never);
+    router.push({ pathname: '/(tabs)/parties/create', params: { eventId, from: 'dashboard' } } as never);
 
   // ── Not signed in ──────────────────────────────────────────────────────────
   if (auth.status !== 'authenticated') {
@@ -277,7 +277,10 @@ export default function CommandCenterScreen() {
       {/* Floating CREATE PARTY action */}
       {auth.status === 'authenticated' && !loading && (
         <View style={[s.fabWrap, { bottom: insets.bottom + spacing.xl }]}>
-          <Btn label="+ Create Party" onPress={() => router.push('/(tabs)/parties/create' as never)} />
+          <Btn
+            label="+ Create Party"
+            onPress={() => router.push({ pathname: '/(tabs)/parties/create', params: { from: 'dashboard' } } as never)}
+          />
         </View>
       )}
     </View>
