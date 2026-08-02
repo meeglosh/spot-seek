@@ -60,6 +60,20 @@ deeplinksRouter.get('/e/:id', async (c) => {
     : null;
   const description = escapeHtml([when, event.venueName].filter(Boolean).join(' — ') || 'Join this watch party on SpotSeek.');
 
+  // Resolve to an absolute URL — Messages/WhatsApp/Slack/etc. fetch this
+  // page server-side to build the link-preview card, so a relative
+  // `/api/images/...` path (same shape the app resolves via
+  // lib/api.ts#resolveImageUrl) means nothing to them.
+  const origin = new URL(c.req.url).origin;
+  const imageUrl = event.coverImageUrl
+    ? (event.coverImageUrl.startsWith('/') ? `${origin}${event.coverImageUrl}` : event.coverImageUrl)
+    : null;
+  const ogImageTags = imageUrl
+    ? `
+<meta property="og:image" content="${imageUrl}">
+<meta name="twitter:card" content="summary_large_image">`
+    : '';
+
   // Placeholder while the app isn't on the App Store yet — swap in the real
   // listing URL once available (see APP_STORE_URL above).
   const storeCta = APP_STORE_URL
@@ -74,9 +88,11 @@ deeplinksRouter.get('/e/:id', async (c) => {
 <title>${title} — SpotSeek</title>
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${description}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="website">${ogImageTags}
 <style>
-  body { font-family: -apple-system, sans-serif; background: #0b0e0e; color: #fff; margin: 0; padding: 40px 24px; text-align: center; }
+  body { font-family: -apple-system, sans-serif; background: #0b0e0e; color: #fff; margin: 0; padding: 0 0 40px; text-align: center; }
+  img { width: 100%; max-height: 320px; object-fit: cover; display: block; }
+  .content { padding: 24px; }
   h1 { font-size: 22px; margin: 0 0 8px; }
   p { color: #9aa; margin: 0 0 24px; }
   .btn { display: inline-block; background: #22e0ff; color: #000; font-weight: 700; text-decoration: none; padding: 14px 28px; border-radius: 4px; }
@@ -84,9 +100,12 @@ deeplinksRouter.get('/e/:id', async (c) => {
 </style>
 </head>
 <body>
-  <h1>${title}</h1>
-  <p>${description}</p>
-  ${storeCta}
+  ${imageUrl ? `<img src="${imageUrl}" alt="">` : ''}
+  <div class="content">
+    <h1>${title}</h1>
+    <p>${description}</p>
+    ${storeCta}
+  </div>
 </body>
 </html>`;
 
