@@ -56,10 +56,21 @@ export default function SignUpScreen() {
 
         <View style={s.form}>
           {([
-            { label: 'Name', value: name, setter: setName, placeholder: 'Your name', type: 'name', secure: false },
-            { label: 'Email address', value: email, setter: setEmail, placeholder: 'you@example.com', type: 'email', secure: false },
-            { label: 'Password', value: password, setter: setPassword, placeholder: '8+ characters', type: 'password', secure: true },
-          ] as const).map(({ label, value, setter, placeholder, secure }) => (
+            {
+              label: 'Name', value: name, setter: setName, placeholder: 'Your name', secure: false,
+              autoComplete: 'name' as const, textContentType: 'name' as const,
+            },
+            {
+              label: 'Email address', value: email, setter: setEmail, placeholder: 'you@example.com', secure: false,
+              autoComplete: 'email' as const, textContentType: 'username' as const,
+            },
+            {
+              label: 'Password', value: password, setter: setPassword, placeholder: '8+ characters', secure: true,
+              autoComplete: 'new-password' as const, textContentType: 'newPassword' as const,
+            },
+          ]).map(({
+            label, value, setter, placeholder, secure, autoComplete, textContentType,
+          }) => (
             <View key={label} style={s.field}>
               <FieldLabel>{label}</FieldLabel>
               <TextInput
@@ -73,6 +84,12 @@ export default function SignUpScreen() {
                 secureTextEntry={secure}
                 autoCapitalize={label === 'Name' ? 'words' : 'none'}
                 keyboardType={label === 'Email address' ? 'email-address' : 'default'}
+                autoComplete={autoComplete}
+                // "newPassword" (as opposed to sign-in's "password") tells
+                // iOS this is account creation, so 1Password/Keychain offer
+                // to generate+save a new credential instead of asking to
+                // update an existing one.
+                textContentType={textContentType}
               />
             </View>
           ))}

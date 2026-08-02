@@ -68,6 +68,7 @@ export default function SignInScreen() {
               autoCapitalize="none"
               keyboardType="email-address"
               autoComplete="email"
+              textContentType="username"
             />
           </View>
           <View style={s.field}>
@@ -82,6 +83,11 @@ export default function SignInScreen() {
               onBlur={() => setFocused(null)}
               secureTextEntry
               autoComplete="password"
+              // Without this, iOS has no signal that a sign-in field is
+              // reusing an *existing* credential rather than entering a new
+              // one, and 1Password/Keychain prompt "Update Password?" on
+              // every successful sign-in even when it's unchanged.
+              textContentType="password"
             />
           </View>
 
