@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, Animated, ScrollView,
+  View, Text, Pressable, StyleSheet, Animated, ScrollView, Platform,
 } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { useRouter } from 'expo-router';
@@ -111,11 +111,21 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
         style={s.map}
         provider={PROVIDER_DEFAULT}
         initialRegion={region}
-        customMapStyle={NEON_MAP_STYLE}
+        // PROVIDER_DEFAULT is Apple Maps on iOS (no Google Maps SDK linked),
+        // where this JSON style array is already documented as a no-op —
+        // don't even send it through the native bridge there.
+        customMapStyle={Platform.OS === 'android' ? NEON_MAP_STYLE : undefined}
         showsUserLocation
         showsMyLocationButton={false}
         showsCompass={false}
         showsScale={false}
+        // Double-tapping a MapView on iOS 26 is a known, unresolved
+        // react-native-maps bug that freezes the entire app, not just the
+        // map (react-native-maps/react-native-maps#5679) — not something
+        // fixable from this codebase. zoomTapEnabled disables exactly the
+        // double-tap-to-zoom gesture that triggers it; pinch-to-zoom and
+        // pan are unaffected.
+        zoomTapEnabled={false}
         onPress={() => selected && dismiss()}
       >
         {shown.map((event) => {
