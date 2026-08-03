@@ -14,6 +14,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
+import { sendSponsorshipRequestEmail } from './reminders';
 
 const PLATFORM_FEE_RATE = 0.15;
 
@@ -39,15 +40,26 @@ sponsorsRouter.post('/register', async (c) => {
   if (!userId) return c.json({ error: 'Unauthorized' }, 401);
 
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
-  const { companyName, website } = await c.req.json<{ companyName?: string; website?: string }>();
+  const { companyName, website, categories, budgetMinCents, budgetMaxCents } = await c.req.json<{
+    companyName?: string; website?: string; categories?: string[];
+    budgetMinCents?: number; budgetMaxCents?: number;
+  }>();
   if (!companyName?.trim()) return c.json({ error: 'companyName is required' }, 400);
+
+  const values = {
+    companyName: companyName.trim(),
+    website: website ?? null,
+    categories: categories?.length ? categories : null,
+    budgetMinCents: typeof budgetMinCents === 'number' ? budgetMinCents : null,
+    budgetMaxCents: typeof budgetMaxCents === 'number' ? budgetMaxCents : null,
+  };
 
   const [profile] = await db
     .insert(schema.sponsorProfiles)
-    .values({ id: userId, companyName: companyName.trim(), website: website ?? null })
+    .values({ id: userId, ...values })
     .onConflictDoUpdate({
       target: schema.sponsorProfiles.id,
-      set: { companyName: companyName.trim(), website: website ?? null, updatedAt: new Date() },
+      set: { ...values, updatedAt: new Date() },
     })
     .returning();
   return c.json({ sponsor: profile }, 201);
@@ -65,6 +77,40 @@ sponsorsRouter.get('/me', async (c) => {
   return c.json({ sponsor: profile });
 });
 
+// Sponsorship counts (active/completed only — "past sponsorships", not
+// pending/rejected/cancelled noise) keyed by sponsorId, for one or all
+// sponsors depending on whether `sponsorIds` is passed.
+async function sponsorshipCounts(
+  db: ReturnType<typeof drizzle<typeof schema>>,
+  sponsorIds?: string[],
+): Promise<Map<string, number>> {
+  const rows = await db
+    .select({ sponsorId: schema.sponsorships.sponsorId, total: count() })
+    .from(schema.sponsorships)
+    .where(
+      sponsorIds?.length
+        ? and(inArray(schema.sponsorships.status, ['active', 'completed']), inArray(schema.sponsorships.sponsorId, sponsorIds))
+        : inArray(schema.sponsorships.status, ['active', 'completed']),
+    )
+    .groupBy(schema.sponsorships.sponsorId);
+  return new Map(rows.map((r) => [r.sponsorId, Number(r.total)]));
+}
+
+// Browse sponsors — hosts looking for who to request sponsorship from.
+// Requires auth (this is a host workflow, not a public directory).
+sponsorsRouter.get('/', async (c) => {
+  const userId = c.get('userId');
+  if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const profiles = await db.query.sponsorProfiles.findMany({
+    orderBy: desc(schema.sponsorProfiles.createdAt),
+  });
+  const counts = await sponsorshipCounts(db, profiles.map((p) => p.id));
+  const sponsors = profiles.map((p) => ({ ...p, sponsorshipCount: counts.get(p.id) ?? 0 }));
+  return c.json({ sponsors });
+});
+
 // Public — no auth required.
 sponsorsRouter.get('/:id', async (c) => {
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
@@ -72,7 +118,8 @@ sponsorsRouter.get('/:id', async (c) => {
     where: eq(schema.sponsorProfiles.id, c.req.param('id')),
   });
   if (!profile) return c.json({ error: 'Not found' }, 404);
-  return c.json({ sponsor: profile });
+  const counts = await sponsorshipCounts(db, [profile.id]);
+  return c.json({ sponsor: { ...profile, sponsorshipCount: counts.get(profile.id) ?? 0 } });
 });
 
 // ── 3.2 Sponsored event slots / auction ───────────────────────────────────────
@@ -103,6 +150,79 @@ sponsorsRouter.post('/bids', async (c) => {
     .values({ eventId, sponsorId, amountCents, platformFeeCents, note: note ?? null })
     .returning();
   return c.json({ bid }, 201);
+});
+
+// Host requests a specific sponsor for one of their own published events —
+// the reverse of /bids (sponsor bids on an event). Same underlying table,
+// requestedBy: 'host' distinguishes it for the accept/decline authorization
+// in PATCH /bids/:id below.
+sponsorsRouter.post('/requests', async (c) => {
+  const hostId = c.get('userId');
+  if (!hostId) return c.json({ error: 'Unauthorized' }, 401);
+
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const { eventId, sponsorId, amountCents, note } = await c.req.json<{
+    eventId?: string; sponsorId?: string; amountCents?: number; note?: string;
+  }>();
+  if (!eventId || !sponsorId || typeof amountCents !== 'number' || amountCents <= 0) {
+    return c.json({ error: 'eventId, sponsorId, and amountCents (>0) are required' }, 400);
+  }
+
+  const event = await db.query.events.findFirst({ where: eq(schema.events.id, eventId) });
+  if (!event || event.status !== 'published') return c.json({ error: 'Event not found or not published' }, 404);
+  if (event.hostId !== hostId) return c.json({ error: 'Forbidden' }, 403);
+
+  const sponsor = await db.query.sponsorProfiles.findFirst({
+    where: eq(schema.sponsorProfiles.id, sponsorId),
+  });
+  if (!sponsor) return c.json({ error: 'Sponsor not found' }, 404);
+
+  const platformFeeCents = Math.round(amountCents * PLATFORM_FEE_RATE);
+  const [request] = await db
+    .insert(schema.sponsorships)
+    .values({ eventId, sponsorId, amountCents, platformFeeCents, note: note ?? null, requestedBy: 'host' })
+    .returning();
+
+  const sponsorUser = await db.query.users.findFirst({ where: eq(schema.users.id, sponsorId) });
+  if (sponsorUser?.email) {
+    await sendSponsorshipRequestEmail(
+      sponsorUser.email, event.title, amountCents, note ?? null, c.env.RESEND_API_KEY,
+    ).catch((err) => console.error('[sponsors] request email failed:', err));
+  }
+
+  return c.json({ request }, 201);
+});
+
+sponsorsRouter.get('/requests/mine', async (c) => {
+  const sponsorId = c.get('userId');
+  if (!sponsorId) return c.json({ error: 'Unauthorized' }, 401);
+
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const requests = await db.query.sponsorships.findMany({
+    where: and(eq(schema.sponsorships.sponsorId, sponsorId), eq(schema.sponsorships.requestedBy, 'host')),
+    orderBy: desc(schema.sponsorships.createdAt),
+  });
+  if (requests.length === 0) return c.json({ requests: [] });
+
+  const eventIds = [...new Set(requests.map((r) => r.eventId))];
+  const events = await db.query.events.findMany({
+    where: (t, { inArray }) => inArray(t.id, eventIds),
+  });
+  const eventById = new Map(events.map((e) => [e.id, e]));
+
+  const rsvpRows = await db
+    .select({ eventId: schema.rsvps.eventId, total: count() })
+    .from(schema.rsvps)
+    .where(and(eq(schema.rsvps.state, 'going'), inArray(schema.rsvps.eventId, eventIds)))
+    .groupBy(schema.rsvps.eventId);
+  const rsvpCountByEvent = new Map(rsvpRows.map((r) => [r.eventId, Number(r.total)]));
+
+  const enriched = requests.map((r) => ({
+    ...r,
+    event: eventById.get(r.eventId) ?? null,
+    goingCount: rsvpCountByEvent.get(r.eventId) ?? 0,
+  }));
+  return c.json({ requests: enriched });
 });
 
 sponsorsRouter.get('/bids/mine', async (c) => {
@@ -148,11 +268,17 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
   const isSponsor = bid.sponsorId === userId;
   if (!isHost && !isSponsor) return c.json({ error: 'Forbidden' }, 403);
 
+  // Whoever didn't initiate is the one reviewing — they may accept/reject;
+  // the initiator may only cancel their own pending proposal.
+  const reviewer = bid.requestedBy === 'host' ? 'sponsor' : 'host';
+  const isReviewer = reviewer === 'host' ? isHost : isSponsor;
+  const isInitiator = !isReviewer && (isHost || isSponsor);
+
   const { status } = await c.req.json<{ status: schema.SponsorshipStatus }>();
-  if (isHost && !['active', 'rejected'].includes(status))
-    return c.json({ error: 'Host may set status to active or rejected' }, 400);
-  if (isSponsor && status !== 'cancelled')
-    return c.json({ error: 'Sponsor may only cancel their bid' }, 400);
+  if (isReviewer && !['active', 'rejected'].includes(status))
+    return c.json({ error: `${reviewer === 'host' ? 'Host' : 'Sponsor'} may set status to active or rejected` }, 400);
+  if (isInitiator && status !== 'cancelled')
+    return c.json({ error: 'Only the reviewer may accept or reject — you may only cancel' }, 400);
 
   // Stub: payment processing on 'active' → see BLOCKED.md (Stripe).
   const [updated] = await db

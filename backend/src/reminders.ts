@@ -70,6 +70,30 @@ function sendReminderDev(rsvp: Rsvp, event: Event): void {
   );
 }
 
+// ─── Sponsorship request notification ─────────────────────────────────────────
+// Fired when a host requests a specific sponsor (sponsors.ts POST /requests).
+// Same Resend-with-dev-console-fallback shape as sendReminder above.
+export async function sendSponsorshipRequestEmail(
+  sponsorEmail: string,
+  eventTitle: string,
+  amountCents: number,
+  note: string | null,
+  resendApiKey: string | undefined,
+): Promise<void> {
+  const amount = (amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const subject = `New sponsorship request: "${eventTitle}"`;
+  const text =
+    `A host has requested you sponsor "${eventTitle}" for ${amount}.\n\n` +
+    (note ? `Note from the host: ${note}\n\n` : '') +
+    'Review and respond in the SpotSeek app under Sponsorship > Requests.';
+
+  if (resendApiKey) {
+    await sendEmail(sponsorEmail, subject, text, resendApiKey);
+    return;
+  }
+  console.log(`[DEV SPONSOR REQUEST] to=${sponsorEmail} event="${eventTitle}" amount=${amount}`);
+}
+
 // ─── Main dispatcher ─────────────────────────────────────────────────────────
 async function sendReminder(
   rsvp: Rsvp,

@@ -102,24 +102,36 @@ export const rsvps = pgTable(
 // ─── Phase 3: sponsor tables ──────────────────────────────────────────────────
 
 export const sponsorshipStatusEnum = pgEnum('sponsorship_status', [
-  'pending',   // bid placed, awaiting host review
-  'active',    // host accepted the bid
-  'rejected',  // host rejected
-  'cancelled', // sponsor cancelled
+  'pending',   // awaiting review by whichever side didn't initiate
+  'active',    // accepted
+  'rejected',  // declined
+  'cancelled', // initiator cancelled
   'completed', // event completed, payment settled
 ]);
+
+// Who proposed the sponsorship — a sponsor bidding on a published event
+// (original flow), or a host requesting a specific sponsor (added later).
+// Determines who may accept/reject vs. only cancel in PATCH /bids/:id.
+export const sponsorshipInitiatorEnum = pgEnum('sponsorship_initiator', ['sponsor', 'host']);
 
 // Sponsor profile — a user opts in as a sponsor.
 export const sponsorProfiles = pgTable('sponsor_profiles', {
   id: text('id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   companyName: text('company_name').notNull(),
   website: text('website'),
+  // Free-form tags a host can filter/skim by when browsing sponsors, e.g.
+  // "Food & Drink", "Local Business" — not a fixed enum since sponsor
+  // categories aren't a closed set.
+  categories: text('categories').array(),
+  budgetMinCents: integer('budget_min_cents'),
+  budgetMaxCents: integer('budget_max_cents'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Sponsorship bid on an event.
-// amount_cents is what the sponsor pays; platform_fee_cents (15%) is the platform cut.
+// A sponsorship — either a sponsor's bid on a published event, or a host's
+// request to a specific sponsor. amount_cents is what the sponsor pays;
+// platform_fee_cents (15%) is the platform cut either way.
 // Payment processing is stubbed — see BLOCKED.md.
 export const sponsorships = pgTable('sponsorships', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -132,6 +144,7 @@ export const sponsorships = pgTable('sponsorships', {
   amountCents: integer('amount_cents').notNull(),
   platformFeeCents: integer('platform_fee_cents').notNull(),
   status: sponsorshipStatusEnum('status').notNull().default('pending'),
+  requestedBy: sponsorshipInitiatorEnum('requested_by').notNull().default('sponsor'),
   note: text('note'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

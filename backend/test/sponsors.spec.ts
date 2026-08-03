@@ -138,6 +138,86 @@ describe('3.3 offers/promos', () => {
   });
 });
 
+describe('3.5 host-initiated sponsorship requests', () => {
+  let requestId: string;
+
+  it('GET /sponsors browses sponsor profiles', async () => {
+    const res = await SELF.fetch(SPONSORS, { headers: { Cookie: host.cookie } });
+    expect(res.status).toBe(200);
+    const { sponsors } = await res.json() as { sponsors: Array<{ id: string; sponsorshipCount: number }> };
+    const found = sponsors.find((s) => s.id === sponsor.id);
+    expect(found).toBeDefined();
+    // The 3.2 test already accepted one bid for this sponsor.
+    expect(found?.sponsorshipCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('host requests a sponsor for their event', async () => {
+    const res = await SELF.fetch(`${SPONSORS}/requests`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: host.cookie },
+      body: JSON.stringify({ eventId, sponsorId: sponsor.id, amountCents: 20000, note: 'Would love to have you!' }),
+    });
+    expect(res.status).toBe(201);
+    const { request } = await res.json() as { request: { id: string; requestedBy: string; status: string } };
+    expect(request.requestedBy).toBe('host');
+    expect(request.status).toBe('pending');
+    requestId = request.id;
+  });
+
+  it('non-host cannot request sponsorship for someone else\'s event', async () => {
+    const res = await SELF.fetch(`${SPONSORS}/requests`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: attendee.cookie },
+      body: JSON.stringify({ eventId, sponsorId: sponsor.id, amountCents: 5000 }),
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it('sponsor sees the incoming request with event details and RSVP count', async () => {
+    const res = await SELF.fetch(`${SPONSORS}/requests/mine`, { headers: { Cookie: sponsor.cookie } });
+    expect(res.status).toBe(200);
+    const { requests } = await res.json() as {
+      requests: Array<{ id: string; event: { title: string } | null; goingCount: number }>;
+    };
+    const found = requests.find((r) => r.id === requestId);
+    expect(found).toBeDefined();
+    expect(found?.event?.title).toBe('Sponsored Event');
+    expect(found?.goingCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it('host cannot accept their own request — only the sponsor may', async () => {
+    const res = await SELF.fetch(`${SPONSORS}/bids/${requestId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json', Cookie: host.cookie },
+      body: JSON.stringify({ status: 'active' }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('host can cancel their own pending request', async () => {
+    const res = await SELF.fetch(`${SPONSORS}/bids/${requestId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json', Cookie: host.cookie },
+      body: JSON.stringify({ status: 'cancelled' }),
+    });
+    expect(res.status).toBe(200);
+    const { bid } = await res.json() as { bid: { status: string } };
+    expect(bid.status).toBe('cancelled');
+  });
+
+  it('sponsor accepts a fresh request', async () => {
+    const createRes = await SELF.fetch(`${SPONSORS}/requests`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: host.cookie },
+      body: JSON.stringify({ eventId, sponsorId: sponsor.id, amountCents: 15000 }),
+    });
+    const { request } = await createRes.json() as { request: { id: string } };
+
+    const acceptRes = await SELF.fetch(`${SPONSORS}/bids/${request.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json', Cookie: sponsor.cookie },
+      body: JSON.stringify({ status: 'active' }),
+    });
+    expect(acceptRes.status).toBe(200);
+    const { bid } = await acceptRes.json() as { bid: { status: string } };
+    expect(bid.status).toBe('active');
+  });
+});
+
 describe('3.4 analytics', () => {
   it('host sees sponsorship revenue in host analytics', async () => {
     const res = await SELF.fetch(`${SPONSORS}/analytics/host`, {
