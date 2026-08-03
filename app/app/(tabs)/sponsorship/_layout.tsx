@@ -5,6 +5,7 @@ export default function SponsorshipLayout() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="browse" />
       <Stack.Screen name="[eventId]" />
     </Stack>
   );

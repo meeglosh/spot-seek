@@ -352,11 +352,18 @@ export type ApiSponsorProfile = {
   id: string;
   companyName: string;
   website: string | null;
+  categories: string[] | null;
+  budgetMinCents: number | null;
+  budgetMaxCents: number | null;
   createdAt: string;
   updatedAt: string;
+  // Present on GET /sponsors (browse list) and GET /sponsors/:id, absent on
+  // /me and the register response.
+  sponsorshipCount?: number;
 };
 
 export type SponsorshipStatus = 'pending' | 'active' | 'rejected' | 'cancelled';
+export type SponsorshipInitiator = 'sponsor' | 'host';
 
 export type ApiSponsorBid = {
   id: string;
@@ -366,8 +373,17 @@ export type ApiSponsorBid = {
   platformFeeCents: number;
   note: string | null;
   status: SponsorshipStatus;
+  requestedBy: SponsorshipInitiator;
   createdAt: string;
   updatedAt: string;
+};
+
+// A host-initiated request, as seen from the sponsor's inbox — same row as
+// ApiSponsorBid (requestedBy: 'host') plus the event context needed to
+// review it without a second round-trip.
+export type ApiSponsorRequest = ApiSponsorBid & {
+  event: ApiEvent | null;
+  goingCount: number;
 };
 
 export type ApiHostAnalyticsEvent = ApiEvent & {
@@ -388,10 +404,16 @@ export type ApiSponsorAnalytics = {
   };
 };
 
-export async function registerSponsor(companyName: string, website?: string): Promise<ApiSponsorProfile> {
+export async function registerSponsor(
+  companyName: string,
+  website?: string,
+  categories?: string[],
+  budgetMinCents?: number,
+  budgetMaxCents?: number,
+): Promise<ApiSponsorProfile> {
   const res = await apiFetch('/api/sponsors/register', {
     method: 'POST',
-    body: JSON.stringify({ companyName, website }),
+    body: JSON.stringify({ companyName, website, categories, budgetMinCents, budgetMaxCents }),
   });
   if (res.status === 401) throw new Error('unauthorized');
   if (!res.ok) throw new Error(`Sponsor registration failed: ${res.status}`);
@@ -406,6 +428,45 @@ export async function fetchMySponsorProfile(): Promise<ApiSponsorProfile | null>
   if (!res.ok) throw new Error(`Sponsor profile fetch failed: ${res.status}`);
   const { sponsor } = await res.json() as { sponsor: ApiSponsorProfile };
   return sponsor;
+}
+
+// Browse sponsors — a host workflow, so requires auth (empty list otherwise).
+export async function fetchSponsors(): Promise<ApiSponsorProfile[]> {
+  const res = await apiFetch('/api/sponsors');
+  if (res.status === 401) return [];
+  if (!res.ok) throw new Error(`Sponsors fetch failed: ${res.status}`);
+  const { sponsors } = await res.json() as { sponsors: ApiSponsorProfile[] };
+  return sponsors;
+}
+
+// Host requests a specific sponsor for one of their own published events —
+// the reverse of placeSponsorBid.
+export async function requestSponsorship(
+  eventId: string,
+  sponsorId: string,
+  amountCents: number,
+  note?: string,
+): Promise<ApiSponsorBid> {
+  const res = await apiFetch('/api/sponsors/requests', {
+    method: 'POST',
+    body: JSON.stringify({ eventId, sponsorId, amountCents, note }),
+  });
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? `Request failed: ${res.status}`);
+  }
+  const { request } = await res.json() as { request: ApiSponsorBid };
+  return request;
+}
+
+// Sponsor-side inbox of incoming host requests.
+export async function fetchMySponsorRequests(): Promise<ApiSponsorRequest[]> {
+  const res = await apiFetch('/api/sponsors/requests/mine');
+  if (res.status === 401) return [];
+  if (!res.ok) throw new Error(`Requests fetch failed: ${res.status}`);
+  const { requests } = await res.json() as { requests: ApiSponsorRequest[] };
+  return requests;
 }
 
 export async function placeSponsorBid(eventId: string, amountCents: number, note?: string): Promise<ApiSponsorBid> {

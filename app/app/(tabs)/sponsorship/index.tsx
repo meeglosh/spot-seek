@@ -12,8 +12,9 @@ import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
   fetchMySponsorProfile, fetchSponsorAnalytics, fetchFeed, fetchMyBids, registerSponsor, resolveImageUrl,
+  fetchMySponsorRequests, updateBidStatus,
   type ApiSponsorProfile, type ApiSponsorAnalytics, type ApiEvent, type ApiSponsorBid,
-  type SponsorshipStatus,
+  type ApiSponsorRequest, type SponsorshipStatus,
 } from '../../../lib/api';
 
 const FILTERS = [
@@ -22,6 +23,13 @@ const FILTERS = [
   { key: 'week', label: 'This Week' },
 ] as const;
 type FilterKey = typeof FILTERS[number]['key'];
+
+// Free-form on the backend (text[]), fixed choices here just to keep the
+// picker simple — hosts see whatever a sponsor picked, matching or not.
+const SPONSOR_CATEGORIES = [
+  'Food & Drink', 'Beverage & Alcohol', 'Sports & Fitness', 'Tech',
+  'Local Business', 'Apparel & Merch', 'Finance', 'Other',
+] as const;
 
 const BID_TONE: Record<SponsorshipStatus, 'neutral' | 'volt' | 'live'> = {
   pending: 'neutral',
@@ -65,6 +73,8 @@ export default function SponsorshipHubScreen() {
   const [analytics, setAnalytics] = useState<ApiSponsorAnalytics | null>(null);
   const [events, setEvents] = useState<ApiEvent[]>([]);
   const [bids, setBids] = useState<ApiSponsorBid[]>([]);
+  const [requests, setRequests] = useState<ApiSponsorRequest[]>([]);
+  const [requestActionId, setRequestActionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterKey>('all');
@@ -72,6 +82,9 @@ export default function SponsorshipHubScreen() {
   // Registration form
   const [companyName, setCompanyName] = useState('');
   const [website, setWebsite] = useState('');
+  const [categories, setCategories] = useState<string[]>([]);
+  const [budgetMin, setBudgetMin] = useState('');
+  const [budgetMax, setBudgetMax] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [registering, setRegistering] = useState(false);
   const [regError, setRegError] = useState('');
@@ -86,6 +99,7 @@ export default function SponsorshipHubScreen() {
     setEvents(feed);
     setBids(myBids);
     setAnalytics(sp ? await fetchSponsorAnalytics().catch(() => null) : null);
+    setRequests(sp ? await fetchMySponsorRequests().catch(() => []) : []);
     setLoading(false);
     setRefreshing(false);
   }, []);
@@ -93,15 +107,24 @@ export default function SponsorshipHubScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
   const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [load]);
 
+  function toggleCategory(cat: string) {
+    setCategories((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]));
+  }
+
   async function handleRegister() {
     const name = companyName.trim();
     if (!name) { setRegError('Company name is required.'); return; }
     setRegistering(true);
     setRegError('');
     try {
-      await registerSponsor(name, website.trim() || undefined);
+      const min = budgetMin.trim() ? Math.round(Number(budgetMin) * 100) : undefined;
+      const max = budgetMax.trim() ? Math.round(Number(budgetMax) * 100) : undefined;
+      await registerSponsor(name, website.trim() || undefined, categories.length ? categories : undefined, min, max);
       setCompanyName('');
       setWebsite('');
+      setCategories([]);
+      setBudgetMin('');
+      setBudgetMax('');
       await load();
     } catch (err) {
       setRegError(
@@ -111,6 +134,18 @@ export default function SponsorshipHubScreen() {
       );
     } finally {
       setRegistering(false);
+    }
+  }
+
+  async function handleRequestAction(id: string, status: 'active' | 'rejected') {
+    setRequestActionId(id);
+    try {
+      await updateBidStatus(id, status);
+      await load();
+    } catch {
+      // Non-fatal — the request stays pending and the user can retry.
+    } finally {
+      setRequestActionId(null);
     }
   }
 
@@ -186,6 +221,42 @@ export default function SponsorshipHubScreen() {
                     onBlur={() => setFocusedField(null)}
                   />
                 </View>
+                <View style={s.field}>
+                  <FieldLabel>Categories (Optional)</FieldLabel>
+                  <View style={s.categoryRow}>
+                    {SPONSOR_CATEGORIES.map((cat) => (
+                      <Chip key={cat} label={cat} active={categories.includes(cat)} onPress={() => toggleCategory(cat)} />
+                    ))}
+                  </View>
+                </View>
+                <View style={s.budgetRow}>
+                  <View style={[s.field, s.budgetField]}>
+                    <FieldLabel>Budget Min (Optional)</FieldLabel>
+                    <TextInput
+                      style={[inputStyle, focusedField === 'budgetMin' && inputFocusedStyle]}
+                      placeholder="$"
+                      placeholderTextColor={colors.textTertiary}
+                      value={budgetMin}
+                      onChangeText={setBudgetMin}
+                      keyboardType="numeric"
+                      onFocus={() => setFocusedField('budgetMin')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </View>
+                  <View style={[s.field, s.budgetField]}>
+                    <FieldLabel>Budget Max (Optional)</FieldLabel>
+                    <TextInput
+                      style={[inputStyle, focusedField === 'budgetMax' && inputFocusedStyle]}
+                      placeholder="$"
+                      placeholderTextColor={colors.textTertiary}
+                      value={budgetMax}
+                      onChangeText={setBudgetMax}
+                      keyboardType="numeric"
+                      onFocus={() => setFocusedField('budgetMax')}
+                      onBlur={() => setFocusedField(null)}
+                    />
+                  </View>
+                </View>
                 {regError !== '' && (
                   <Text style={[t.bodySm, { color: colors.danger }]}>{regError}</Text>
                 )}
@@ -217,6 +288,52 @@ export default function SponsorshipHubScreen() {
                   </View>
                 )}
               </View>
+            )}
+
+            {/* ── Incoming requests from hosts ─────────────────────────────── */}
+            {sponsor && requests.length > 0 && (
+              <>
+                <SectionTitle>Sponsorship Requests</SectionTitle>
+                {requests.map((r) => (
+                  <View key={r.id} style={s.requestCard}>
+                    <View style={s.requestHeader}>
+                      <Text style={[t.headlineSm, { color: colors.textPrimary }]} numberOfLines={1}>
+                        {r.event?.title ?? 'Event'}
+                      </Text>
+                      <Badge
+                        label={r.status === 'pending' ? 'New Request' : r.status}
+                        tone={r.status === 'pending' ? 'volt' : r.status === 'active' ? 'accent' : 'neutral'}
+                      />
+                    </View>
+                    <Text style={[t.bodySm, { color: colors.textSecondary }]}>
+                      {fmtEventDate(r.event?.startsAt ?? null)} · {r.goingCount} going
+                    </Text>
+                    <Text style={[t.headlineMd, { color: colors.accent }]}>{fmtUsd(r.amountCents)}</Text>
+                    {r.note && (
+                      <Text style={[t.bodySm, { color: colors.textSecondary }]}>“{r.note}”</Text>
+                    )}
+                    {r.status === 'pending' && (
+                      <View style={s.requestActions}>
+                        <Btn
+                          label="Decline"
+                          variant="ghost"
+                          small
+                          style={s.requestBtn}
+                          disabled={requestActionId === r.id}
+                          onPress={() => handleRequestAction(r.id, 'rejected')}
+                        />
+                        <Btn
+                          label={requestActionId === r.id ? '…' : 'Accept'}
+                          small
+                          style={s.requestBtn}
+                          disabled={requestActionId === r.id}
+                          onPress={() => handleRequestAction(r.id, 'active')}
+                        />
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </>
             )}
 
             {/* ── Marketplace ──────────────────────────────────────────────── */}
@@ -310,6 +427,21 @@ const s = StyleSheet.create({
     marginBottom: spacing['2xl'],
   },
   field: { gap: 0 },
+  categoryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  budgetRow: { flexDirection: 'row', gap: spacing.md },
+  budgetField: { flex: 1 },
+
+  requestCard: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: palette.outlineVariant,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  requestHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
+  requestActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+  requestBtn: { flex: 1 },
 
   sponsorBlock: { gap: spacing.md, marginBottom: spacing['2xl'] },
   tileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },

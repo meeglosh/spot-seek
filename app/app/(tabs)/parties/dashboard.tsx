@@ -101,6 +101,9 @@ export default function CommandCenterScreen() {
   const edit = (eventId: string) =>
     router.push({ pathname: '/(tabs)/parties/create', params: { eventId, from: 'dashboard' } } as never);
 
+  const findSponsors = (eventId: string) =>
+    router.push({ pathname: '/(tabs)/sponsorship/browse', params: { eventId } } as never);
+
   // ── Not signed in ──────────────────────────────────────────────────────────
   if (auth.status !== 'authenticated') {
     return (
@@ -208,7 +211,7 @@ export default function CommandCenterScreen() {
                     ) : pending ? (
                       <Text style={[t.labelCaps, { color: colors.textSecondary }]}>Pending Sponsor</Text>
                     ) : (
-                      <View />
+                      <Btn label="Find Sponsors" variant="ghost" small onPress={() => findSponsors(e.id)} />
                     )}
                     <Btn label="Manage" variant="secondary" small onPress={() => edit(e.id)} />
                   </View>
