@@ -1,13 +1,17 @@
 import React, { useRef, useState } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, Animated, ScrollView, Platform,
+  View, Text, Image, Pressable, StyleSheet, Animated, ScrollView, Platform, Alert,
 } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { colors, palette, spacing, type as t } from '../lib/theme';
 import { Badge, Btn } from './ui';
 import type { EventItem } from './EventCard';
 import { formatEventDateTime } from '../lib/dateFormat';
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- Metro static-asset require
+const LOCATE_ICON = require('../assets/icons/icon-locate.png');
 
 // ─── Neon night map style ──────────────────────────────────────────────────────
 // Near-black base with a dark-teal glow on roads and water, per the HEA map
@@ -70,7 +74,35 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
   const [selected, setSelected] = useState<EventItem | null>(null);
   const [liveOnly, setLiveOnly] = useState(false);
   const [sportFilter, setSportFilter] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
   const slideAnim = useRef(new Animated.Value(200)).current;
+  const mapRef = useRef<MapView>(null);
+
+  async function centerOnMyLocation() {
+    if (locating) return;
+    setLocating(true);
+    try {
+      let { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        ({ status } = await Location.requestForegroundPermissionsAsync());
+      }
+      if (status !== 'granted') {
+        Alert.alert('Location permission is needed to find you on the map.');
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      mapRef.current?.animateToRegion({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      }, 350);
+    } catch (err) {
+      console.error('Failed to center map on current location', err);
+    } finally {
+      setLocating(false);
+    }
+  }
 
   // Events that have coordinates.
   const mappable = events.filter((e) => e.venueLat != null && e.venueLng != null);
@@ -109,6 +141,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
   return (
     <View style={s.container}>
       <MapView
+        ref={mapRef}
         style={s.map}
         provider={PROVIDER_DEFAULT}
         initialRegion={region}
@@ -190,6 +223,25 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
           </Text>
         </View>
       )}
+
+      {/* Locate-me control — bottom-right, lifted clear of the bottom card
+          while it's open so the two never overlap. */}
+      <Pressable
+        style={[
+          s.locateBtn,
+          selected && s.locateBtnLifted,
+          locating && s.locateBtnDisabled,
+        ]}
+        onPress={centerOnMyLocation}
+        disabled={locating}
+        accessibilityLabel="Center map on my location"
+      >
+        <Image
+          source={LOCATE_ICON}
+          style={s.locateIcon}
+          resizeMode="contain"
+        />
+      </Pressable>
 
       {/* Event count badge */}
       {mappable.length > 0 && (
@@ -312,6 +364,23 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
+
+  // Locate-me control
+  locateBtn: {
+    position: 'absolute',
+    right: spacing.lg,
+    bottom: spacing.lg,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: palette.outlineVariant,
+  },
+  locateBtnLifted: { bottom: spacing.lg + 260 },
+  locateBtnDisabled: { opacity: 0.5 },
+  locateIcon: { width: 22, height: 22, tintColor: colors.textPrimary },
 
   // Count badge
   countBadge: {
