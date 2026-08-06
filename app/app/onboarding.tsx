@@ -109,10 +109,6 @@ export default function OnboardingScreen() {
       return (
         <View style={[{ width: pageWidth, flex: 1 }, s.brandSlide]}>
           <View style={[s.slideContent, { paddingTop: insets.top + spacing.sm }]}>
-            <Pressable onPress={finish} hitSlop={8} style={s.skipBtn} accessibilityLabel="Skip onboarding">
-              <Text style={[t.labelCaps, { color: colors.textSecondary }]}>SKIP</Text>
-            </Pressable>
-
             <View style={s.brandCenter}>
               <Image source={BRAND_LOGO} resizeMode="contain" style={s.brandLogo} />
               <Text style={[s.brandWordmark, { fontFamily: fonts.display }]}>SPOT SEEK</Text>
@@ -133,10 +129,6 @@ export default function OnboardingScreen() {
         <View style={[StyleSheet.absoluteFill, s.scrim]} />
 
         <View style={[s.slideContent, { paddingTop: insets.top + spacing.sm }]}>
-          <Pressable onPress={finish} hitSlop={8} style={s.skipBtn} accessibilityLabel="Skip onboarding">
-            <Text style={[t.labelCaps, { color: colors.textSecondary }]}>SKIP</Text>
-          </Pressable>
-
           <View style={{ flex: 1 }} />
 
           <View style={[s.card, { borderTopColor: item.accent, borderBottomColor: item.accent }]}>
@@ -174,7 +166,7 @@ export default function OnboardingScreen() {
       />
 
       {/* Fixed footer — shared across all slides, never scrolls with them. */}
-      <View style={[s.footer, { paddingBottom: insets.bottom + spacing.lg }]}>
+      <View style={[s.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
         <View style={s.progressRow}>
           {SLIDES.map((slide, i) => (
             <View
@@ -187,6 +179,9 @@ export default function OnboardingScreen() {
           label={index === SLIDES.length - 1 ? 'GET STARTED →' : 'NEXT →'}
           onPress={goNext}
         />
+        <Pressable onPress={finish} hitSlop={8} style={s.skipBtn} accessibilityLabel="Skip onboarding">
+          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>SKIP</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -198,7 +193,14 @@ const s = StyleSheet.create({
   scrim: { backgroundColor: 'rgba(14,14,17,0.28)' },
 
   slideContent: { flex: 1 },
-  skipBtn: { alignSelf: 'flex-end', paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
+  skipBtn: {
+    alignSelf: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   brandSlide: { backgroundColor: colors.bg },
   brandCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
@@ -219,10 +221,14 @@ const s = StyleSheet.create({
     borderBottomWidth: 4,
     padding: spacing.lg,
     marginHorizontal: spacing.xl,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     gap: spacing.md,
   },
-  headline: { color: colors.textPrimary, fontSize: 40, lineHeight: 46 },
+  // Anton's cap-height runs much taller than its nominal font size — a tight
+  // lineHeight clips glyph tops (see the ~1.25-1.35x multiplier the theme's
+  // own Anton presets use, e.g. displayXl's 56/44 ≈ 1.27). paddingTop adds a
+  // small extra margin above the ink for full-bleed slides.
+  headline: { color: colors.textPrimary, fontSize: 40, lineHeight: 52, paddingTop: 6 },
   bodyRule: { borderLeftWidth: 3, paddingLeft: spacing.md },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: { borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2 },
@@ -230,8 +236,8 @@ const s = StyleSheet.create({
   footer: {
     backgroundColor: colors.bg,
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    gap: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.sm,
   },
   progressRow: { flexDirection: 'row', gap: spacing.sm },
   progressSeg: { flex: 1, height: 4 },
