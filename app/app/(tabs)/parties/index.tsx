@@ -24,7 +24,7 @@ function isToday(iso: string) {
 }
 
 function timeLabel(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
 }
 
 function dateLabel(iso: string) {

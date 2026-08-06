@@ -53,10 +53,16 @@ deeplinksRouter.get('/e/:id', async (c) => {
   }
 
   const title = escapeHtml(event.title);
+  // Link-preview bots (Messages/WhatsApp/Slack) scrape this page's HTML
+  // server-side and never run the client-side script below, so the
+  // og:description needs a real, self-contained time — rendered in UTC and
+  // labelled as such, since the Worker has no way to know the eventual
+  // reader's timezone at scrape time. A human who actually opens the page
+  // gets their own local time instead, via the inline script.
   const when = event.startsAt
-    ? new Date(event.startsAt).toLocaleString('en-GB', {
-      weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-    })
+    ? `${new Date(event.startsAt).toLocaleString('en-GB', {
+      weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
+    })} UTC`
     : null;
   const description = escapeHtml([when, event.venueName].filter(Boolean).join(' — ') || 'Join this watch party on SpotSeek.');
 
@@ -103,9 +109,23 @@ deeplinksRouter.get('/e/:id', async (c) => {
   ${imageUrl ? `<img src="${imageUrl}" alt="">` : ''}
   <div class="content">
     <h1>${title}</h1>
-    <p>${description}</p>
+    <p id="when">${description}</p>
     ${storeCta}
   </div>
+  ${event.startsAt ? `<script>
+    // Link-preview bots never run this — they only see the UTC-labelled
+    // og:description above. A human opening the page gets the event time
+    // re-rendered in *their own* device's local timezone instead, with no
+    // location permission needed: the browser already knows its timezone.
+    (function () {
+      var startsAt = new Date(${JSON.stringify(event.startsAt)});
+      var when = startsAt.toLocaleString(undefined, {
+        weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+      });
+      var venue = ${JSON.stringify(event.venueName ?? null)};
+      document.getElementById('when').textContent = venue ? (when + ' — ' + venue) : when;
+    })();
+  </script>` : ''}
 </body>
 </html>`;
 

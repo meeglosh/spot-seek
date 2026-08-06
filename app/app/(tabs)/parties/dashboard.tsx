@@ -29,7 +29,7 @@ function isToday(iso: string) {
 function whenLabel(e: ApiDashboardEvent): string {
   if (!e.startsAt) return 'No date set';
   const d = new Date(e.startsAt);
-  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
   if (isToday(e.startsAt)) return `Tonight @ ${time}`;
   const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
   return `${date} @ ${time}`;

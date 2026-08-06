@@ -145,7 +145,7 @@ export default function CreateEventScreen() {
       ? startsAt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
       : null;
     const timeStr = startsAt
-      ? startsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+      ? startsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })
       : null;
     const when = dateStr ? `${dateStr}${timeStr ? ` at ${timeStr}` : ''}` : null;
     const message = [title, when, link].filter(Boolean).join('\n');

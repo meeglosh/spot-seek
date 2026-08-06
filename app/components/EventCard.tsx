@@ -41,7 +41,7 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
     ? new Date(event.startsAt).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
     : null;
   const timeStr = event.startsAt
-    ? new Date(event.startsAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    ? new Date(event.startsAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })
     : null;
 
   const coverSrc = event.coverImageUrl

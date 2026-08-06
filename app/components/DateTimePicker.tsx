@@ -19,7 +19,7 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
   const [staged, setStaged] = useState<Date>(value ?? new Date());
 
   const formatted = value
-    ? `${value.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} · ${value.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
+    ? `${value.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} · ${value.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}`
     : null;
 
   function openPicker() {

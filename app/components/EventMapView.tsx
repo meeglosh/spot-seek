@@ -232,7 +232,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
                 {new Date(selected.startsAt).toLocaleDateString('en-GB', {
                   weekday: 'short', day: 'numeric', month: 'short',
                 })} · {new Date(selected.startsAt).toLocaleTimeString('en-GB', {
-                  hour: '2-digit', minute: '2-digit',
+                  hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
                 })}
               </Text>
             )}

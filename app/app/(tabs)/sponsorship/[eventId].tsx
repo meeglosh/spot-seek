@@ -33,7 +33,7 @@ function fmtEventDate(iso: string | null): string {
   if (!iso) return 'DATE TBC';
   const d = new Date(iso);
   const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
   return `${date} · ${time}`.toUpperCase();
 }
 
