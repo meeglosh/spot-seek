@@ -197,6 +197,9 @@ export default function MyPartiesScreen() {
   const activeData = tab === 'attending' ? rsvps : hosted;
   const showSpinner = !needsAuth && activeData === null && !error;
 
+  const showCreateFooter =
+    tab === 'hosting' && !needsAuth && !showSpinner && (hosted?.length ?? 0) > 0;
+
   return (
     <View style={s.container}>
       <AppHeader />
@@ -265,9 +268,13 @@ export default function MyPartiesScreen() {
           keyExtractor={(e) => e.id}
           contentContainerStyle={[
             s.list,
-            // Extra clearance so the floating Create Party button never
+            // Extra clearance so the sticky Create Party footer never
             // covers the last card.
-            { paddingBottom: insets.bottom + spacing['4xl'] + spacing['2xl'] },
+            {
+              paddingBottom: showCreateFooter
+                ? insets.bottom + spacing['4xl'] + spacing['2xl']
+                : insets.bottom + spacing['2xl'],
+            },
           ]}
           ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
@@ -287,11 +294,16 @@ export default function MyPartiesScreen() {
         />
       )}
 
-      {/* Floating CREATE PARTY action — hosts already have parties here, so
-          they shouldn't need to switch to the dashboard just to make another. */}
-      {tab === 'hosting' && !needsAuth && !showSpinner && (hosted?.length ?? 0) > 0 && (
-        <View style={[s.fabWrap, { bottom: insets.bottom + spacing.xl }]}>
-          <Btn label="+ Create Party" onPress={() => router.push('/(tabs)/parties/create' as never)} />
+      {/* Sticky CREATE PARTY footer — hosts already have parties here, so
+          they shouldn't need to switch to the dashboard just to make another.
+          Mirrors the sticky RSVP bar pattern on discover/[id].tsx. */}
+      {showCreateFooter && (
+        <View style={[s.footerBar, { paddingBottom: insets.bottom + spacing.md }]}>
+          <Btn
+            label="+ Create Party"
+            onPress={() => router.push('/(tabs)/parties/create' as never)}
+            style={s.footerBtn}
+          />
         </View>
       )}
     </View>
@@ -356,7 +368,13 @@ const s = StyleSheet.create({
     paddingTop: spacing.md,
   },
 
-  fabWrap: { position: 'absolute', right: spacing.lg },
+  footerBar: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    paddingHorizontal: spacing.lg, paddingTop: spacing.md,
+    backgroundColor: colors.bg,
+    borderTopWidth: 1, borderTopColor: colors.separator,
+  },
+  footerBtn: { width: '100%' },
 
   center: {
     flexGrow: 1,
