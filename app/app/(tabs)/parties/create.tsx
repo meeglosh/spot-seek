@@ -148,8 +148,11 @@ export default function CreateEventScreen() {
       ? startsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })
       : null;
     const when = dateStr ? `${dateStr}${timeStr ? ` at ${timeStr}` : ''}` : null;
-    const message = [title, when, link].filter(Boolean).join('\n');
-    Share.share(Platform.OS === 'ios' ? { message, url: link } : { message }).catch(() => {});
+    // On iOS, `url` already produces the rich link preview — keep it out of
+    // `message` there, or Messages' link-detector previews it a second time.
+    const iosMessage = [title, when].filter(Boolean).join('\n');
+    const androidMessage = [title, when, link].filter(Boolean).join('\n');
+    Share.share(Platform.OS === 'ios' ? { message: iosMessage, url: link } : { message: androidMessage }).catch(() => {});
   }
 
   const canSave = title.trim().length > 0 && broadcastSubject.trim().length > 0 && !loading;

@@ -236,8 +236,11 @@ export default function EventDetailScreen() {
     // doesn't have the app installed yet. See backend/src/deeplinks.ts.
     const link = `${EVENT_SHARE_BASE}/e/${event.id}`;
     const when = dateStr ? `${dateStr}${timeStr ? ` at ${timeStr}` : ''}` : null;
-    const message = [event.title, when, link].filter(Boolean).join('\n');
-    Share.share(Platform.OS === 'ios' ? { message, url: link } : { message })
+    // On iOS, `url` already produces the rich link preview — keep it out of
+    // `message` there, or Messages' link-detector previews it a second time.
+    const iosMessage = [event.title, when].filter(Boolean).join('\n');
+    const androidMessage = [event.title, when, link].filter(Boolean).join('\n');
+    Share.share(Platform.OS === 'ios' ? { message: iosMessage, url: link } : { message: androidMessage })
       .catch(() => {});
   }
 
