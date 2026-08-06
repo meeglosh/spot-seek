@@ -10,6 +10,24 @@ The agents write here instead of guessing. Read this each morning. Empty is good
 - Real final error (verbatim, if any): 
 -->
 
+## Session lifetime — RESOLVED 2026-08-06: expiresIn extended to 1 year
+
+- Decision: `session.expiresIn` raised from Better Auth's 7-day default to
+  `60 * 60 * 24 * 365` (1 year), with `session.updateAge` set to 1 day so an
+  active user's session keeps rolling forward instead of hitting a hard
+  cliff.
+- Why this needed a BLOCKED.md entry: `backend/src/auth.ts` flags any change
+  to cookie/session config beyond defaults as requiring human review before
+  it lands.
+- Owner requested this interactively (session on 2026-08-06): sessions
+  should last as long as possible and expire only at the max token lifespan,
+  not on a short rolling window. Users sign out explicitly, or the session
+  lapses after 1 year of inactivity.
+- Also fixes the underlying "signed out every launch" bug alongside app-side
+  changes (expo-router root index route + optimistic session restore) — this
+  session-lifetime change means a validated session stays valid far longer
+  once the app-side restore bug is fixed.
+
 ## R2 image storage — RESOLVED 2026-07-31: buckets created, Worker deployed
 
 - Buckets `spotseek-images` + `spotseek-images-preview` created via wrangler

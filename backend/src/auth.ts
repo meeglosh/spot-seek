@@ -50,6 +50,15 @@ export function createAuth(sql: NeonQueryFunction<false, false>, opts?: { baseUR
     emailAndPassword: {
       enabled: true,
     },
+    // Owner-requested 2026-08-06 (see BLOCKED.md): sessions should last as
+    // long as possible, expiring only at the max token lifespan rather than
+    // Better Auth's 7-day default. Sessions now persist until explicit
+    // sign-out or 1 year of inactivity; updateAge rolls the expiry forward
+    // daily as long as the user stays active.
+    session: {
+      expiresIn: 60 * 60 * 24 * 365, // 1 year
+      updateAge: 60 * 60 * 24,       // rolls forward daily with activity
+    },
     // bearer plugin: returns the session token in the response body so React
     // Native clients can store and send it as Authorization: Bearer <token>.
     // Native apps can't read Set-Cookie headers, so this is the correct approach.

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   API_BASE, apiFetch, setBearerToken, clearBearerToken, restoreBearerToken,
+  setStoredUser, clearStoredUser, getStoredUser,
 } from './api';
 
 export type AuthUser = {
@@ -34,28 +35,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const token = await restoreBearerToken();
+      const [token, cachedUser] = await Promise.all([
+        restoreBearerToken(),
+        getStoredUser<AuthUser>(),
+      ]);
       if (!token) {
         setState({ status: 'unauthenticated' });
         return;
       }
-      // A persisted token may have expired since the last launch — validate
-      // it against the server instead of trusting it blindly.
+
+      // A definitive-invalid response means the server has actively rejected
+      // the session (401/403, or a 200 with no `.user` — Better Auth returns
+      // that for an invalid/expired token). Anything else — network error,
+      // 5xx, a timeout — is inconclusive and must never sign the user out;
+      // the next authenticated request will surface a real auth failure.
+      async function validateInBackground() {
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/get-session`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const body = await res.json().catch(() => null) as { user?: AuthUser } | null;
+          if (res.ok && body?.user) {
+            setStoredUser(body.user);
+            setState({ status: 'authenticated', user: body.user });
+          } else if (res.status === 401 || res.status === 403 || (res.ok && !body?.user)) {
+            clearBearerToken();
+            clearStoredUser();
+            setState({ status: 'unauthenticated' });
+          }
+          // else: inconclusive (non-401/403 error status) — stay signed in.
+        } catch (err) {
+          // Network failure — stay signed in over a transient connectivity gap.
+          console.error('[auth] background session validation failed:', err);
+        }
+      }
+
+      if (cachedUser) {
+        // Optimistic restore: trust the cached user immediately so cold
+        // start never shows the sign-in screen to an already-signed-in
+        // user, then reconcile with the server in the background.
+        setState({ status: 'authenticated', user: cachedUser });
+        validateInBackground();
+        return;
+      }
+
+      // Pre-existing installs from before user caching was added: no cached
+      // user yet, so fall back to validating before rendering — but still
+      // only clear the token on a definitive-invalid response, not on a
+      // network error or 5xx.
       try {
         const res = await fetch(`${API_BASE}/api/auth/get-session`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const body = await res.json().catch(() => null) as { user?: AuthUser } | null;
         if (res.ok && body?.user) {
+          setStoredUser(body.user);
           setState({ status: 'authenticated', user: body.user });
-        } else {
+        } else if (res.status === 401 || res.status === 403 || (res.ok && !body?.user)) {
           clearBearerToken();
+          clearStoredUser();
+          setState({ status: 'unauthenticated' });
+        } else {
+          // Inconclusive network/5xx error with no cached user to fall back
+          // on — this launch renders signed-out, but the token is preserved
+          // so a later successful validation (or request) can still use it.
           setState({ status: 'unauthenticated' });
         }
       } catch (err) {
-        // Network failure on launch — don't clear the persisted token over a
-        // transient connectivity gap; the UI just treats this launch as
-        // signed-out and the next successful request can re-validate it.
         console.error('[auth] session restore failed:', err);
         setState({ status: 'unauthenticated' });
       }
@@ -85,11 +131,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setBearerToken(token);
     } else {
       // No token in sign-up body — sign in immediately to get one.
-      await signIn(name, password);
+      await signIn(email, password);
       return;
     }
 
     const user = body?.user as AuthUser;
+    setStoredUser(user);
     setState({ status: 'authenticated', user });
   }
 
@@ -115,12 +162,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (token) setBearerToken(token);
 
     const user = body?.user as AuthUser;
+    setStoredUser(user);
     setState({ status: 'authenticated', user });
   }
 
   function signOut() {
     apiFetch('/api/auth/sign-out', { method: 'POST' });
     clearBearerToken();
+    clearStoredUser();
     setState({ status: 'unauthenticated' });
   }
 

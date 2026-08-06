@@ -12,6 +12,7 @@ export const API_BASE = __DEV__
 export const EVENT_SHARE_BASE = 'https://spot-seek-api.dry-base-037d.workers.dev';
 
 const TOKEN_KEY = 'spotseek_bearer_token';
+const USER_KEY = 'spotseek_auth_user';
 
 // Mirrored in-memory for synchronous reads (apiFetch, uploadEventCover)
 // alongside expo-secure-store, which persists it across app restarts.
@@ -40,6 +41,29 @@ export async function restoreBearerToken(): Promise<string> {
   const token = await SecureStore.getItemAsync(TOKEN_KEY);
   _bearerToken = token ?? '';
   return _bearerToken;
+}
+
+// Persisted alongside the bearer token so launch can restore an authenticated
+// UI immediately, without waiting on a network round-trip to fetch the user
+// again — see the launch restore effect in lib/auth.tsx.
+export function setStoredUser(user: unknown) {
+  SecureStore.setItemAsync(USER_KEY, JSON.stringify(user)).catch((err) => {
+    console.error('[api] failed to persist auth user:', err);
+  });
+}
+export function clearStoredUser() {
+  SecureStore.deleteItemAsync(USER_KEY).catch((err) => {
+    console.error('[api] failed to clear persisted auth user:', err);
+  });
+}
+export async function getStoredUser<T = unknown>(): Promise<T | null> {
+  const raw = await SecureStore.getItemAsync(USER_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
 }
 
 // Keep old names as aliases so auth.tsx compiles without changes.

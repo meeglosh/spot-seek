@@ -31,6 +31,10 @@ export default function RootLayout() {
       {/* Dark-only design system — light status bar text everywhere */}
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+        {/* Registered first so "/" is unambiguously the initial route — it
+            redirects based on auth state instead of leaving expo-router to
+            default to whichever screen sorts first (was "(auth)"). */}
+        <Stack.Screen name="index" />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
