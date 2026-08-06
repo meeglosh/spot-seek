@@ -1,11 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, Modal, Animated, Dimensions, Alert,
+  View, Text, Pressable, Image, StyleSheet, Modal, Animated, Dimensions, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, fonts, palette, spacing, type as t } from '../lib/theme';
 import { useAuth } from '../lib/auth';
+import { fetchNotifications } from '../lib/api';
+
+// Rendered from the Material Symbols "notifications" glyph outline via the
+// same local extraction script used for the tab bar icons — see
+// app/(tabs)/_layout.tsx for why plain tintable PNGs are used instead of the
+// vector-icon font.
+/* eslint-disable @typescript-eslint/no-require-imports */
+const BELL_ICON = require('../assets/icons/icon-bell.png');
+/* eslint-enable @typescript-eslint/no-require-imports */
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
 
@@ -34,7 +43,7 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
     { icon: '⚡', label: 'Switch to Hosting', onPress: () => go('/(tabs)/parties/dashboard') },
     { icon: '◎', label: 'Sponsorships', onPress: () => go('/(tabs)/sponsorship') },
     { icon: '▣', label: 'Wallet', onPress: () => { onClose(); Alert.alert('Wallet', 'Coming soon.'); } },
-    { icon: '⚙', label: 'Settings', onPress: () => { onClose(); Alert.alert('Settings', 'Coming soon.'); } },
+    { icon: '⚙', label: 'Settings', onPress: () => go('/settings') },
   ];
 
   const name = auth.status === 'authenticated' ? auth.user.name : 'Seeker';
@@ -108,9 +117,34 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
   const router = useRouter();
   const auth = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   const initial =
     auth.status === 'authenticated' ? (auth.user.name.trim().charAt(0).toUpperCase() || 'S') : 'S';
+
+  // AppHeader isn't a screen, so it has no focus lifecycle of its own —
+  // refresh on mount, whenever the drawer opens (a natural re-engagement
+  // point), and on a 60s poll while mounted, which for practical purposes is
+  // "while the app is open" since AppHeader is rendered on every screen.
+  useEffect(() => {
+    if (auth.status !== 'authenticated') { setUnread(0); return; }
+    let cancelled = false;
+    const load = () => {
+      fetchNotifications()
+        .then(({ unread: n }) => { if (!cancelled) setUnread(n); })
+        .catch(() => {});
+    };
+    load();
+    const interval = setInterval(load, 60_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [auth.status]);
+
+  useEffect(() => {
+    if (!menuOpen || auth.status !== 'authenticated') return;
+    fetchNotifications()
+      .then(({ unread: n }) => setUnread(n))
+      .catch(() => {});
+  }, [menuOpen, auth.status]);
 
   return (
     <View style={[s.header, { paddingTop: insets.top + spacing.sm }]}>
@@ -126,14 +160,38 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
 
       <Text style={[s.wordmark, { fontFamily: fonts.display }]}>SPOT SEEK</Text>
 
-      <Pressable
-        onPress={() => router.push('/(tabs)/profile' as never)}
-        hitSlop={12}
-        style={s.avatar}
-        accessibilityLabel="Profile"
-      >
-        <Text style={[t.labelCaps, { color: colors.accent }]}>{initial}</Text>
-      </Pressable>
+      <View style={s.headerRight}>
+        {auth.status === 'authenticated' && (
+          <Pressable
+            onPress={() => router.push('/notifications' as never)}
+            hitSlop={12}
+            style={s.bellBtn}
+            accessibilityLabel="Notifications"
+          >
+            <Image
+              source={BELL_ICON}
+              style={[s.bellIcon, { tintColor: colors.textSecondary }]}
+              resizeMode="contain"
+            />
+            {unread > 0 && (
+              <View style={s.bellBadge}>
+                <Text style={[t.labelCapsSm, s.bellBadgeText]} numberOfLines={1}>
+                  {unread > 99 ? '99+' : unread}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        )}
+
+        <Pressable
+          onPress={() => router.push('/(tabs)/profile' as never)}
+          hitSlop={12}
+          style={s.avatar}
+          accessibilityLabel="Profile"
+        >
+          <Text style={[t.labelCaps, { color: colors.accent }]}>{initial}</Text>
+        </Pressable>
+      </View>
 
       <DrawerMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </View>
@@ -159,6 +217,22 @@ const s = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
   },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  bellBtn: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
+  bellIcon: { width: 22, height: 22 },
+  bellBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    borderRadius: 8,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bellBadgeText: { color: palette.black, fontSize: 9, lineHeight: 11 },
   avatar: {
     width: 36,
     height: 36,

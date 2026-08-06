@@ -41,6 +41,12 @@ export const users = pgTable('users', {
   isVerified: boolean('is_verified').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+
+  // Coarse last-known location (rounded to ~1km) used to gate favorite_nearby
+  // notifications. Not for precise tracking — see notification_prefs.radiusMiles.
+  lastLat: doublePrecision('last_lat'),
+  lastLng: doublePrecision('last_lng'),
+  locationUpdatedAt: timestamp('location_updated_at', { withTimezone: true }),
 });
 
 // ─── events ───────────────────────────────────────────────────────────────────
@@ -243,6 +249,43 @@ export const followsRelations = relations(follows, ({ one }) => ({
 }));
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+// ─── notifications ────────────────────────────────────────────────────────────
+// type is plain text (not pgEnum) because the set of notification kinds is
+// expected to grow — sponsor_bid | sponsorship_request | sponsorship_accepted |
+// sponsorship_rejected | rsvp | reminder_24h | reminder_1h | event_cancelled |
+// venue_changed | favorite_nearby.
+
+export const notifications = pgTable('notifications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(),
+  title: text('title').notNull(),
+  body: text('body').notNull(),
+  eventId: uuid('event_id').references(() => events.id, { onDelete: 'cascade' }),
+  read: boolean('read').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type NewNotification = typeof notifications.$inferInsert;
+
+// ─── notification_prefs ───────────────────────────────────────────────────────
+
+export const notificationPrefs = pgTable('notification_prefs', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  emailEnabled: boolean('email_enabled').notNull().default(true),
+  pushEnabled: boolean('push_enabled').notNull().default(false),
+  radiusMiles: integer('radius_miles').notNull().default(100),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type NotificationPrefs = typeof notificationPrefs.$inferSelect;
+export type NewNotificationPrefs = typeof notificationPrefs.$inferInsert;
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;

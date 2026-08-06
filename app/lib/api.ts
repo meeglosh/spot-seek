@@ -561,3 +561,86 @@ export async function fetchFollowCounts(id: string): Promise<{ followers: number
   ]);
   return { followers: frs.followers.length, following: fing.following.length };
 }
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export type ApiNotificationType =
+  | 'sponsor_bid'
+  | 'sponsorship_request'
+  | 'sponsorship_accepted'
+  | 'sponsorship_rejected'
+  | 'rsvp'
+  | 'reminder_24h'
+  | 'reminder_1h'
+  | 'event_cancelled'
+  | 'venue_changed'
+  | 'favorite_nearby';
+
+export type ApiNotification = {
+  id: string;
+  userId: string;
+  type: ApiNotificationType;
+  title: string;
+  body: string;
+  eventId: string | null;
+  read: boolean;
+  createdAt: string;
+};
+
+export type ApiNotificationPrefs = {
+  emailEnabled: boolean;
+  pushEnabled: boolean;
+  radiusMiles: number;
+  lastLat: number | null;
+  lastLng: number | null;
+};
+
+export async function fetchNotifications(): Promise<{ notifications: ApiNotification[]; unread: number }> {
+  const res = await apiFetch('/api/notifications');
+  if (res.status === 401) return { notifications: [], unread: 0 };
+  if (!res.ok) throw new Error(`Notifications fetch failed: ${res.status}`);
+  return await res.json() as { notifications: ApiNotification[]; unread: number };
+}
+
+export async function markNotificationsRead(ids?: string[]): Promise<void> {
+  const res = await apiFetch('/api/notifications/read', {
+    method: 'POST',
+    body: JSON.stringify(ids ? { ids } : {}),
+  });
+  if (res.status === 401) return;
+  if (!res.ok) throw new Error(`Mark read failed: ${res.status}`);
+}
+
+// Returns null when signed out — mirrors the other prefs-style fetchers.
+export async function fetchNotificationPrefs(): Promise<ApiNotificationPrefs | null> {
+  const res = await apiFetch('/api/notifications/prefs');
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error(`Notification prefs fetch failed: ${res.status}`);
+  const { prefs } = await res.json() as { prefs: ApiNotificationPrefs };
+  return prefs;
+}
+
+export async function updateNotificationPrefs(
+  partial: Partial<{ emailEnabled: boolean; pushEnabled: boolean; radiusMiles: number; lat: number; lng: number }>,
+): Promise<ApiNotificationPrefs> {
+  const res = await apiFetch('/api/notifications/prefs', {
+    method: 'PUT',
+    body: JSON.stringify(partial),
+  });
+  if (!res.ok) throw new Error(`Notification prefs update failed: ${res.status}`);
+  const { prefs } = await res.json() as { prefs: ApiNotificationPrefs };
+  return prefs;
+}
+
+// ─── Account ──────────────────────────────────────────────────────────────────
+
+// Backend route may not exist yet (see notification system task brief) — a
+// 404 surfaces as a generic error the caller renders, same as any other
+// failure shape here.
+export async function deleteAccount(): Promise<void> {
+  const res = await apiFetch('/api/account', { method: 'DELETE' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? `Delete account failed: ${res.status}`);
+  }
+}

@@ -14,7 +14,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
-import { sendSponsorshipRequestEmail } from './reminders';
+import { notify } from './notifications';
 
 const PLATFORM_FEE_RATE = 0.15;
 
@@ -149,6 +149,16 @@ sponsorsRouter.post('/bids', async (c) => {
     .insert(schema.sponsorships)
     .values({ eventId, sponsorId, amountCents, platformFeeCents, note: note ?? null })
     .returning();
+
+  const amount = (amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  await notify(db, c.env.RESEND_API_KEY, {
+    userId: event.hostId,
+    type: 'sponsor_bid',
+    title: `New sponsorship bid on "${event.title}"`,
+    body: `A sponsor bid ${amount} on "${event.title}". Review it in your Command Center.`,
+    eventId: event.id,
+  }).catch((err) => console.error('[sponsors] sponsor_bid notify failed:', err));
+
   return c.json({ bid }, 201);
 });
 
@@ -183,12 +193,18 @@ sponsorsRouter.post('/requests', async (c) => {
     .values({ eventId, sponsorId, amountCents, platformFeeCents, note: note ?? null, requestedBy: 'host' })
     .returning();
 
-  const sponsorUser = await db.query.users.findFirst({ where: eq(schema.users.id, sponsorId) });
-  if (sponsorUser?.email) {
-    await sendSponsorshipRequestEmail(
-      sponsorUser.email, event.title, amountCents, note ?? null, c.env.RESEND_API_KEY,
-    ).catch((err) => console.error('[sponsors] request email failed:', err));
-  }
+  const requestAmount = (amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  const requestBody =
+    `A host has requested you sponsor "${event.title}" for ${requestAmount}.\n\n` +
+    (note ? `Note from the host: ${note}\n\n` : '') +
+    'Review and respond in the SpotSeek app under Sponsorship > Requests.';
+  await notify(db, c.env.RESEND_API_KEY, {
+    userId: sponsorId,
+    type: 'sponsorship_request',
+    title: `New sponsorship request: "${event.title}"`,
+    body: requestBody,
+    eventId: event.id,
+  }).catch((err) => console.error('[sponsors] sponsorship_request notify failed:', err));
 
   return c.json({ request }, 201);
 });
@@ -286,6 +302,26 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
     .set({ status, updatedAt: new Date() })
     .where(eq(schema.sponsorships.id, bid.id))
     .returning();
+
+  if (event && (status === 'active' || status === 'rejected')) {
+    // Notify whichever party did NOT just act: if the host acted, notify the
+    // sponsor; if the sponsor acted, notify the host.
+    const notifyUserId = isHost ? bid.sponsorId : event.hostId;
+    const amount = (bid.amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    const type = status === 'active' ? 'sponsorship_accepted' : 'sponsorship_rejected';
+    const title =
+      status === 'active'
+        ? `Sponsorship accepted for "${event.title}"`
+        : `Sponsorship declined for "${event.title}"`;
+    const body =
+      status === 'active'
+        ? `The ${amount} sponsorship for "${event.title}" was accepted.`
+        : `The ${amount} sponsorship for "${event.title}" was declined.`;
+    await notify(db, c.env.RESEND_API_KEY, { userId: notifyUserId, type, title, body, eventId: event.id }).catch(
+      (err) => console.error(`[sponsors] ${type} notify failed:`, err),
+    );
+  }
+
   return c.json({ bid: updated });
 });
 

@@ -13,6 +13,7 @@ import { sponsorsRouter } from './sponsors';
 import { favouritesRouter } from './favourites';
 import { geocodeRouter } from './geocode';
 import { deeplinksRouter } from './deeplinks';
+import { notificationsRouter, scheduled } from './notifications';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -32,6 +33,7 @@ app.route('/api/admin', adminRouter);
 app.route('/api/sponsors', sponsorsRouter);
 app.route('/api/favourites', favouritesRouter);
 app.route('/api/geocode', geocodeRouter);
+app.route('/api/notifications', notificationsRouter);
 app.route('/', deeplinksRouter);
 
 // GET /api/images/:key — serve R2 images through the Worker.
@@ -46,7 +48,7 @@ app.get('/api/images/*', async (c) => {
 
 app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 
-export default app;
+export default { fetch: app.fetch, scheduled };
 
 // Required by Wrangler for DO binding resolution (does not affect test isolation).
 export { ChatRoom } from './chat-room';

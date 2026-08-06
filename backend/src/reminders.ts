@@ -18,7 +18,7 @@ import type { Event, Rsvp } from './schema';
 import { createAuth } from './auth';
 
 // ─── Email sender via Resend ──────────────────────────────────────────────────
-async function sendEmail(
+export async function sendEmail(
   to: string,
   subject: string,
   text: string,

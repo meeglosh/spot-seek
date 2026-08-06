@@ -1,9 +1,10 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
+import { notify } from './notifications';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
 
@@ -104,6 +105,23 @@ rsvpsRouter.post('/', async (c) => {
     createdAt: row['created_at'],
     updatedAt: row['updated_at'],
   };
+
+  if ((rsvp.state === 'going' || rsvp.state === 'waitlisted') && event.hostId !== userId) {
+    await (async () => {
+      const [goingRow] = await db
+        .select({ total: count() })
+        .from(schema.rsvps)
+        .where(and(eq(schema.rsvps.eventId, eventId), eq(schema.rsvps.state, 'going')));
+      const goingCount = Number(goingRow?.total ?? 0);
+      await notify(db, c.env.RESEND_API_KEY, {
+        userId: event.hostId,
+        type: 'rsvp',
+        title: `New RSVP on "${event.title}"`,
+        body: `Someone joined "${event.title}" — ${goingCount} going.`,
+        eventId: event.id,
+      });
+    })().catch((err) => console.error('[rsvps] rsvp notify failed:', err));
+  }
 
   return c.json({ rsvp }, 201);
 });

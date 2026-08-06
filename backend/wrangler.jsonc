@@ -25,4 +25,7 @@
 			"preview_bucket_name": "spotseek-images-preview"
 		}
 	],
+	"triggers": {
+		"crons": ["*/15 * * * *"]
+	},
 }

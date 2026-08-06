@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { parseRRule, generateOccurrences } from './recurrence';
+import { notify, fanoutFavoriteNearby } from './notifications';
 
 type AppEnv = { Bindings: Env; Variables: { hostId?: string } };
 
@@ -58,6 +59,12 @@ eventsRouter.post('/', async (c) => {
       recurrenceRule: typeof body.recurrenceRule === 'string' ? body.recurrenceRule : null,
     })
     .returning();
+
+  if (event.status === 'published') {
+    await fanoutFavoriteNearby(db, c.env.RESEND_API_KEY, event).catch((err) =>
+      console.error('[events] favorite_nearby fanout failed:', err),
+    );
+  }
 
   return c.json({ event }, 201);
 });
@@ -117,6 +124,60 @@ eventsRouter.patch('/:id', async (c) => {
     .set({ ...patch, updatedAt: new Date() })
     .where(eq(schema.events.id, id))
     .returning();
+
+  const becameCancelled = existing.status !== 'cancelled' && updated.status === 'cancelled';
+  const venueChanged =
+    patch.venueName !== undefined || patch.venueAddress !== undefined ||
+    patch.venueLat !== undefined || patch.venueLng !== undefined
+      ? existing.venueName !== updated.venueName ||
+        existing.venueAddress !== updated.venueAddress ||
+        existing.venueLat !== updated.venueLat ||
+        existing.venueLng !== updated.venueLng
+      : false;
+
+  if (becameCancelled || venueChanged) {
+    await (async () => {
+      const rsvps = await db.query.rsvps.findMany({
+        where: and(eq(schema.rsvps.eventId, id), inArray(schema.rsvps.state, ['going', 'waitlisted'])),
+      });
+      const recipients = rsvps.filter((r) => r.userId !== updated.hostId);
+      if (recipients.length === 0) return;
+
+      if (becameCancelled) {
+        await Promise.all(
+          recipients.map((r) =>
+            notify(db, c.env.RESEND_API_KEY, {
+              userId: r.userId,
+              type: 'event_cancelled',
+              title: `"${updated.title}" was cancelled`,
+              body: `The host cancelled "${updated.title}".`,
+              eventId: updated.id,
+            }),
+          ),
+        );
+      }
+      if (venueChanged) {
+        await Promise.all(
+          recipients.map((r) =>
+            notify(db, c.env.RESEND_API_KEY, {
+              userId: r.userId,
+              type: 'venue_changed',
+              title: `Venue changed for "${updated.title}"`,
+              body: `The venue for "${updated.title}" changed to ${updated.venueName ?? 'a new location'}.`,
+              eventId: updated.id,
+            }),
+          ),
+        );
+      }
+    })().catch((err) => console.error('[events] cancel/venue notify failed:', err));
+  }
+
+  const becamePublished = existing.status !== 'published' && updated.status === 'published';
+  if (becamePublished) {
+    await fanoutFavoriteNearby(db, c.env.RESEND_API_KEY, updated).catch((err) =>
+      console.error('[events] favorite_nearby fanout failed:', err),
+    );
+  }
 
   return c.json({ event: updated });
 });
