@@ -66,6 +66,23 @@ export async function getStoredUser<T = unknown>(): Promise<T | null> {
   }
 }
 
+const ONBOARDING_KEY = 'spotseek_onboarding_seen';
+
+// Read once, at root `index.tsx` mount, to decide whether an unauthenticated
+// user still needs the onboarding slideshow.
+export async function getOnboardingSeen(): Promise<boolean> {
+  const raw = await SecureStore.getItemAsync(ONBOARDING_KEY);
+  return raw === '1';
+}
+
+// Fire-and-forget, matching setStoredUser/setBearerToken above — called when
+// the user skips or finishes the onboarding slideshow.
+export function setOnboardingSeen(): void {
+  SecureStore.setItemAsync(ONBOARDING_KEY, '1').catch((err) => {
+    console.error('[api] failed to persist onboarding seen flag:', err);
+  });
+}
+
 // Keep old names as aliases so auth.tsx compiles without changes.
 export const setSessionCookie = setBearerToken;
 export const clearSessionCookie = clearBearerToken;
