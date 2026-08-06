@@ -12,26 +12,34 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, palette, spacing, type as t } from '../lib/theme';
+import { colors, fonts, palette, spacing, type as t } from '../lib/theme';
 import { Btn } from '../components/ui';
 import { setOnboardingSeen } from '../lib/api';
 
-type Slide = {
+// A brand slide has no photo/accent/chips — just the logo mark, wordmark,
+// and tagline centered on the plain background. Photo slides carry the
+// existing fields. Both variants share the same footer (progress + CTA).
+type BrandSlide = { key: string; kind: 'brand' };
+type PhotoSlide = {
   key: string;
+  kind: 'photo';
   image: number;
   accent: string;
   headline: string;
   body: string;
   chips: string[];
 };
+type Slide = BrandSlide | PhotoSlide;
 
 // Matches the require() pattern used elsewhere for local image assets (see
 // components/AppHeader.tsx) — static imports don't cover these picture
 // assets the way they do the icon set.
 /* eslint-disable @typescript-eslint/no-require-imports */
 const SLIDES: Slide[] = [
+  { key: 'brand', kind: 'brand' },
   {
     key: 'seeker',
+    kind: 'photo',
     image: require('../assets/onboarding/onboarding-seeker.jpg'),
     accent: colors.accent,
     headline: 'FIND YOUR CROWD',
@@ -40,6 +48,7 @@ const SLIDES: Slide[] = [
   },
   {
     key: 'host',
+    kind: 'photo',
     image: require('../assets/onboarding/onboarding-host.jpg'),
     accent: colors.live,
     headline: 'LEAD THE EXPERIENCE',
@@ -48,6 +57,7 @@ const SLIDES: Slide[] = [
   },
   {
     key: 'sponsor',
+    kind: 'photo',
     image: require('../assets/onboarding/onboarding-sponsor.jpg'),
     accent: colors.volt,
     headline: 'FUEL THE PASSION',
@@ -55,6 +65,7 @@ const SLIDES: Slide[] = [
     chips: ['VIP ACCESS', 'GEAR DROPS', 'PARTNER DEALS'],
   },
 ];
+const BRAND_LOGO = require('../assets/splash-icon.png');
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 export default function OnboardingScreen() {
@@ -93,39 +104,58 @@ export default function OnboardingScreen() {
     [pageWidth],
   );
 
-  const renderItem = ({ item }: { item: Slide }) => (
-    <View style={{ width: pageWidth, flex: 1 }}>
-      <Image source={item.image} resizeMode="cover" style={StyleSheet.absoluteFill} />
-      {/* Dark scrim over the full slide, plus a stronger bottom region to
-          seat the content card — approximated with two stacked absolute
-          Views since expo-linear-gradient isn't a project dependency. */}
-      <View style={[StyleSheet.absoluteFill, s.scrim]} />
-      <View style={s.bottomScrimOuter} />
-      <View style={s.bottomScrimInner} />
+  const renderItem = ({ item }: { item: Slide }) => {
+    if (item.kind === 'brand') {
+      return (
+        <View style={[{ width: pageWidth, flex: 1 }, s.brandSlide]}>
+          <View style={[s.slideContent, { paddingTop: insets.top + spacing.sm }]}>
+            <Pressable onPress={finish} hitSlop={8} style={s.skipBtn} accessibilityLabel="Skip onboarding">
+              <Text style={[t.labelCaps, { color: colors.textSecondary }]}>SKIP</Text>
+            </Pressable>
 
-      <View style={[s.slideContent, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable onPress={finish} hitSlop={8} style={s.skipBtn} accessibilityLabel="Skip onboarding">
-          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>SKIP</Text>
-        </Pressable>
-
-        <View style={{ flex: 1 }} />
-
-        <View style={[s.card, { borderTopColor: item.accent, borderBottomColor: item.accent }]}>
-          <Text style={[t.displayXl, s.headline]}>{item.headline}</Text>
-          <View style={[s.bodyRule, { borderLeftColor: item.accent }]}>
-            <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{item.body}</Text>
+            <View style={s.brandCenter}>
+              <Image source={BRAND_LOGO} resizeMode="contain" style={s.brandLogo} />
+              <Text style={[s.brandWordmark, { fontFamily: fonts.display }]}>SPOT SEEK</Text>
+              <Text style={[t.labelCaps, s.brandTagline]}>NEVER WATCH ALONE</Text>
+            </View>
           </View>
-          <View style={s.chipRow}>
-            {item.chips.map((chip) => (
-              <View key={chip} style={[s.chip, { borderColor: item.accent }]}>
-                <Text style={[t.labelCapsSm, { color: item.accent }]}>{chip}</Text>
-              </View>
-            ))}
+        </View>
+      );
+    }
+
+    return (
+      <View style={{ width: pageWidth, flex: 1 }}>
+        <Image source={item.image} resizeMode="cover" style={StyleSheet.absoluteFill} />
+        {/* The bottom-to-dark fade that seats the content card is now baked
+            into the JPEG asset itself (smoothstep vertical gradient), so
+            only the flat full-bleed scrim for overall text/SKIP contrast
+            remains here. */}
+        <View style={[StyleSheet.absoluteFill, s.scrim]} />
+
+        <View style={[s.slideContent, { paddingTop: insets.top + spacing.sm }]}>
+          <Pressable onPress={finish} hitSlop={8} style={s.skipBtn} accessibilityLabel="Skip onboarding">
+            <Text style={[t.labelCaps, { color: colors.textSecondary }]}>SKIP</Text>
+          </Pressable>
+
+          <View style={{ flex: 1 }} />
+
+          <View style={[s.card, { borderTopColor: item.accent, borderBottomColor: item.accent }]}>
+            <Text style={[t.displayXl, s.headline]}>{item.headline}</Text>
+            <View style={[s.bodyRule, { borderLeftColor: item.accent }]}>
+              <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{item.body}</Text>
+            </View>
+            <View style={s.chipRow}>
+              {item.chips.map((chip) => (
+                <View key={chip} style={[s.chip, { borderColor: item.accent }]}>
+                  <Text style={[t.labelCapsSm, { color: item.accent }]}>{chip}</Text>
+                </View>
+              ))}
+            </View>
           </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={s.container}>
@@ -165,26 +195,23 @@ export default function OnboardingScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
 
-  scrim: { backgroundColor: 'rgba(14,14,17,0.55)' },
-  bottomScrimOuter: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '55%',
-    backgroundColor: 'rgba(14,14,17,0.35)',
-  },
-  bottomScrimInner: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '30%',
-    backgroundColor: 'rgba(14,14,17,0.45)',
-  },
+  scrim: { backgroundColor: 'rgba(14,14,17,0.28)' },
 
   slideContent: { flex: 1 },
   skipBtn: { alignSelf: 'flex-end', paddingHorizontal: spacing.xl, paddingVertical: spacing.sm },
+
+  brandSlide: { backgroundColor: colors.bg },
+  brandCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+  brandLogo: { width: 140, height: 140, marginBottom: spacing.sm },
+  brandWordmark: {
+    fontSize: 40,
+    color: colors.accent,
+    letterSpacing: 1,
+    textShadowColor: `${colors.accent}66`,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
+  },
+  brandTagline: { color: colors.textSecondary, fontSize: 16, letterSpacing: 3 },
 
   card: {
     backgroundColor: 'rgba(27,27,30,0.92)',
