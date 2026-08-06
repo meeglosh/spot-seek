@@ -9,6 +9,25 @@ describe('timezoneAbbreviation', () => {
   it('returns EST for America/New_York in January (standard time)', () => {
     expect(timezoneAbbreviation(new Date('2026-01-15T18:00:00Z'), 'America/New_York')).toBe('EST');
   });
+
+  // Pins the Hermes regression: getOffsetMinutes previously round-tripped
+  // through `new Date(toLocaleString())`, which Hermes cannot parse (only
+  // ISO 8601 parses reliably there), yielding NaN and always falling through
+  // to the standard-time abbreviation regardless of actual DST state.
+  it('returns EDT (not EST) for America/New_York in August (DST regression pin)', () => {
+    expect(timezoneAbbreviation(new Date('2026-08-03T23:00:00Z'), 'America/New_York')).toBe('EDT');
+  });
+
+  it('returns EST for America/New_York in mid-January (DST regression pin)', () => {
+    expect(timezoneAbbreviation(new Date('2026-01-15T23:00:00Z'), 'America/New_York')).toBe('EST');
+  });
+
+  // Zones outside ZONE_ABBR fall through to the GMT±H:MM computed fallback,
+  // which directly renders the NaN from a broken getOffsetMinutes as
+  // "GMT+NaN" — this pins that the offset is a finite, correct value instead.
+  it('renders a finite GMT offset for an unknown zone (Asia/Kathmandu, UTC+5:45 year-round)', () => {
+    expect(timezoneAbbreviation(new Date('2026-08-03T23:00:00Z'), 'Asia/Kathmandu')).toBe('GMT+5:45');
+  });
 });
 
 describe('formatEventDateTime', () => {

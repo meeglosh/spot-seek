@@ -5,12 +5,25 @@
 // support is relied on, never `timeZoneName`.
 
 // Returns the offset of `timeZone` from UTC, in minutes, at the given instant.
-// Cross-engine-safe: relies only on Intl's `timeZone` option (baseline, always available),
-// never on `timeZoneName` display data (unreliable on Hermes).
+// Cross-engine-safe: uses formatToParts (reliable on Hermes AND V8) rather than
+// re-parsing toLocaleString output through new Date(), which Hermes cannot parse
+// (Hermes only reliably parses ISO 8601 — the en-US toLocaleString format comes
+// back as Invalid Date/NaN).
 function getOffsetMinutes(date: Date, timeZone: string): number {
-  const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
-  const tzDate = new Date(date.toLocaleString('en-US', { timeZone }));
-  return Math.round((tzDate.getTime() - utcDate.getTime()) / 60000);
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  });
+  const parts: Record<string, number> = {};
+  for (const p of dtf.formatToParts(date)) {
+    if (p.type !== 'literal') parts[p.type] = Number(p.value);
+  }
+  // hour12:false can yield hour 24 for midnight in some engines — normalize.
+  const hour = parts.hour === 24 ? 0 : parts.hour;
+  const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, hour, parts.minute, parts.second);
+  return Math.round((asUtc - date.getTime()) / 60000);
 }
 
 const ZONE_ABBR: Record<string, { std: { abbr: string; offset: number }; dst?: { abbr: string; offset: number } }> = {
