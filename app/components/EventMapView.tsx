@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { colors, palette, spacing, type as t } from '../lib/theme';
 import { Badge, Btn } from './ui';
 import type { EventItem } from './EventCard';
+import { formatEventDateTime } from '../lib/dateFormat';
 
 // ─── Neon night map style ──────────────────────────────────────────────────────
 // Near-black base with a dark-teal glow on roads and water, per the HEA map
@@ -227,15 +228,14 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
                 {selected.isPrivateLocation ? `${selected.venueName} — private` : selected.venueName}
               </Text>
             )}
-            {selected.startsAt && (
-              <Text style={[t.monoData, { color: colors.textSecondary }]}>
-                {new Date(selected.startsAt).toLocaleDateString('en-GB', {
-                  weekday: 'short', day: 'numeric', month: 'short',
-                })} · {new Date(selected.startsAt).toLocaleTimeString('en-GB', {
-                  hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
-                })}
-              </Text>
-            )}
+            {selected.startsAt && (() => {
+              const { dateStr, timeStr } = formatEventDateTime(selected.startsAt, selected.venueTimezone ?? null);
+              return (
+                <Text style={[t.monoData, { color: colors.textSecondary }]}>
+                  {dateStr} · {timeStr}
+                </Text>
+              );
+            })()}
             {typeof selected.goingCount === 'number' && (
               <Text style={[t.labelCapsSm, { color: colors.volt }]}>
                 {selected.goingCount} going

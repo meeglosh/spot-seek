@@ -9,6 +9,7 @@ import { useAuth } from '../../../lib/auth';
 import {
   fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, API_BASE, EVENT_SHARE_BASE, type ApiEvent, type ApiRsvp,
 } from '../../../lib/api';
+import { formatEventDateTime } from '../../../lib/dateFormat';
 import { colors, palette, spacing, type as t, hardShadow } from '../../../lib/theme';
 import { AppHeader } from '../../../components/AppHeader';
 import { Badge, SectionTitle } from '../../../components/ui';
@@ -137,12 +138,9 @@ export default function EventDetailScreen() {
     );
   }
 
-  const dateStr = event.startsAt
-    ? new Date(event.startsAt).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-    : null;
-  const timeStr = event.startsAt
-    ? new Date(event.startsAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })
-    : null;
+  const { dateStr, timeStr } = event.startsAt
+    ? formatEventDateTime(event.startsAt, event.venueTimezone)
+    : { dateStr: null, timeStr: null };
 
   const rsvpState = rsvp?.state;
   const isGoing = rsvpState === 'going';

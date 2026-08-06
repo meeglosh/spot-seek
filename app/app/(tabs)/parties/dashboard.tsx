@@ -14,6 +14,7 @@ import {
   type ApiDashboardEvent, type ApiHostAnalyticsEvent,
 } from '../../../lib/api';
 import { colors, palette, spacing, type as t } from '../../../lib/theme';
+import { formatEventDateTime } from '../../../lib/dateFormat';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -28,15 +29,13 @@ function isToday(iso: string) {
 
 function whenLabel(e: ApiDashboardEvent): string {
   if (!e.startsAt) return 'No date set';
-  const d = new Date(e.startsAt);
-  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
-  if (isToday(e.startsAt)) return `Tonight @ ${time}`;
-  const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-  return `${date} @ ${time}`;
+  const { dateStr, timeStr } = formatEventDateTime(e.startsAt, e.venueTimezone);
+  if (isToday(e.startsAt)) return `Tonight @ ${timeStr}`;
+  return `${dateStr} @ ${timeStr}`;
 }
 
-function shortDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+function shortDate(iso: string, venueTimezone: string | null = null) {
+  return formatEventDateTime(iso, venueTimezone).dateStr;
 }
 
 // $0 / $840 / $4.2K — real cents in, compact label out.
@@ -263,7 +262,7 @@ export default function CommandCenterScreen() {
                     <Text style={[t.monoData, { color: colors.textSecondary }]}>
                       {e.status === 'cancelled'
                         ? 'Cancelled'
-                        : endRef ? `Ended ${shortDate(endRef)}` : 'Ended'}
+                        : endRef ? `Ended ${shortDate(endRef, e.venueTimezone)}` : 'Ended'}
                     </Text>
                   </View>
                   <View style={s.rowRight}>

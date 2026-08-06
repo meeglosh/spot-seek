@@ -105,6 +105,7 @@ export type ApiEvent = {
   venueAddress: string | null;
   venueLat: number | null;
   venueLng: number | null;
+  venueTimezone: string | null;
   isPrivateLocation: boolean;
   createdAt: string;
   updatedAt: string;

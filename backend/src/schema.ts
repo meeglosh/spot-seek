@@ -79,6 +79,9 @@ export const events = pgTable('events', {
   venueAddress: text('venue_address'),
   venueLat: doublePrecision('venue_lat'),
   venueLng: doublePrecision('venue_lng'),
+  // IANA timezone identifier derived from venueLat/venueLng, e.g. "America/New_York".
+  // Nullable — absent until a venue with coordinates is set.
+  venueTimezone: text('venue_timezone'),
   isPrivateLocation: boolean('is_private_location').notNull().default(false),
 });
 

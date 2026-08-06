@@ -18,6 +18,7 @@ import { AddressAutocompleteInput } from '../../../components/AddressAutocomplet
 import { DateTimePicker } from '../../../components/DateTimePicker';
 import MapView, { Marker } from 'react-native-maps';
 import { colors, palette, spacing, type as t } from '../../../lib/theme';
+import { formatEventDateTime } from '../../../lib/dateFormat';
 
 // ─── HEA form primitives ─────────────────────────────────────────────────────
 
@@ -141,12 +142,11 @@ export default function CreateEventScreen() {
   // ApiEvent, since we already have them right after publishing.
   function shareEvent(savedEventId: string) {
     const link = `${EVENT_SHARE_BASE}/e/${savedEventId}`;
-    const dateStr = startsAt
-      ? startsAt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-      : null;
-    const timeStr = startsAt
-      ? startsAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })
-      : null;
+    // No venueTimezone available here — this is local pre-save form state,
+    // not a fetched ApiEvent, so this falls back to device-local formatting.
+    const { dateStr, timeStr } = startsAt
+      ? formatEventDateTime(startsAt, null)
+      : { dateStr: null, timeStr: null };
     const when = dateStr ? `${dateStr}${timeStr ? ` at ${timeStr}` : ''}` : null;
     // On iOS, `url` already produces the rich link preview — keep it out of
     // `message` there, or Messages' link-detector previews it a second time.

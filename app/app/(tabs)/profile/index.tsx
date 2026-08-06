@@ -15,6 +15,7 @@ import { colors, palette, spacing, fonts, type as t, hardShadow } from '../../..
 import { Btn, Chip, Badge, SegmentBar, SectionTitle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { SPORTS } from '../../../lib/sports-data';
+import { formatEventDateTime } from '../../../lib/dateFormat';
 
 type ProfileData = {
   profile: ApiProfile | null;
@@ -44,12 +45,10 @@ function monogram(name: string): string {
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
-function fmtEventDate(iso: string | null): string {
+function fmtEventDate(iso: string | null, venueTimezone: string | null = null): string {
   if (!iso) return 'DATE TBC';
-  const d = new Date(iso);
-  const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
-  return `${date} · ${time}`.toUpperCase();
+  const { dateStr, timeStr } = formatEventDateTime(iso, venueTimezone);
+  return `${dateStr} · ${timeStr}`.toUpperCase();
 }
 
 export default function ProfileScreen() {
@@ -240,7 +239,7 @@ export default function ProfileScreen() {
                         {(r.event?.title ?? 'Unknown event').toUpperCase()}
                       </Text>
                       <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
-                        {fmtEventDate(r.event?.startsAt ?? null)}
+                        {fmtEventDate(r.event?.startsAt ?? null, r.event?.venueTimezone ?? null)}
                       </Text>
                     </View>
                     {r.state === 'waitlisted' ? (

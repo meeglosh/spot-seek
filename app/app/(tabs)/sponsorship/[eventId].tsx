@@ -14,6 +14,7 @@ import {
   fetchEvent, fetchMyBids, placeSponsorBid, updateBidStatus, resolveImageUrl,
   type ApiEvent, type ApiSponsorBid, type SponsorshipStatus,
 } from '../../../lib/api';
+import { formatEventDateTime } from '../../../lib/dateFormat';
 
 const PLATFORM_FEE_RATE = 0.15;
 
@@ -29,12 +30,10 @@ function fmtUsd(cents: number): string {
   return `$${str.endsWith('.00') ? str.slice(0, -3) : str}`;
 }
 
-function fmtEventDate(iso: string | null): string {
+function fmtEventDate(iso: string | null, venueTimezone: string | null = null): string {
   if (!iso) return 'DATE TBC';
-  const d = new Date(iso);
-  const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
-  return `${date} · ${time}`.toUpperCase();
+  const { dateStr, timeStr } = formatEventDateTime(iso, venueTimezone);
+  return `${dateStr} · ${timeStr}`.toUpperCase();
 }
 
 const DEAL_POINTS = [
@@ -209,7 +208,7 @@ export default function SponsorshipDetailsScreen() {
           <View style={s.factsCard}>
             <View style={s.factRow}>
               <Text style={[t.labelCaps, s.factLabel]}>Date</Text>
-              <Text style={[t.monoData, s.factValue]}>{fmtEventDate(event.startsAt)}</Text>
+              <Text style={[t.monoData, s.factValue]}>{fmtEventDate(event.startsAt, event.venueTimezone)}</Text>
             </View>
             <View style={s.factDivider} />
             <View style={s.factRow}>

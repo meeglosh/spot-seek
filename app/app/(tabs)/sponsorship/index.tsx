@@ -16,6 +16,7 @@ import {
   type ApiSponsorProfile, type ApiSponsorAnalytics, type ApiEvent, type ApiSponsorBid,
   type ApiSponsorRequest, type SponsorshipStatus,
 } from '../../../lib/api';
+import { formatEventDateTime } from '../../../lib/dateFormat';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -43,12 +44,10 @@ function fmtUsd(cents: number): string {
   return `$${str.endsWith('.00') ? str.slice(0, -3) : str}`;
 }
 
-function fmtEventDate(iso: string | null): string {
+function fmtEventDate(iso: string | null, venueTimezone: string | null = null): string {
   if (!iso) return 'DATE TBC';
-  const d = new Date(iso);
-  const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
-  return `${date} · ${time}`.toUpperCase();
+  const { dateStr, timeStr } = formatEventDateTime(iso, venueTimezone);
+  return `${dateStr} · ${timeStr}`.toUpperCase();
 }
 
 function applyFilter(events: ApiEvent[], filter: FilterKey): ApiEvent[] {
@@ -306,7 +305,7 @@ export default function SponsorshipHubScreen() {
                       />
                     </View>
                     <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                      {fmtEventDate(r.event?.startsAt ?? null)} · {r.goingCount} going
+                      {fmtEventDate(r.event?.startsAt ?? null, r.event?.venueTimezone ?? null)} · {r.goingCount} going
                     </Text>
                     <Text style={[t.headlineMd, { color: colors.accent }]}>{fmtUsd(r.amountCents)}</Text>
                     {r.note && (
@@ -381,7 +380,7 @@ export default function SponsorshipHubScreen() {
                         <View style={s.eventTile}>
                           <Text style={[t.labelCapsSm, s.tileLabel]}>Date</Text>
                           <Text style={[t.monoData, { color: colors.textPrimary }]}>
-                            {fmtEventDate(ev.startsAt)}
+                            {fmtEventDate(ev.startsAt, ev.venueTimezone)}
                           </Text>
                         </View>
                         {ev.capacity != null && (

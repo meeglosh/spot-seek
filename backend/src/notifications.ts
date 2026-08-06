@@ -14,6 +14,7 @@ import * as schema from './schema';
 import type { Event, Notification } from './schema';
 import { createAuth } from './auth';
 import { sendEmail } from './reminders';
+import { formatEventDateTime } from './timezone';
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -167,7 +168,12 @@ async function fireReminderWindow(
     });
     const when = type === 'reminder_24h' ? 'is tomorrow' : 'starts soon';
     const title = `"${event.title}" ${when}`;
-    const timeStr = event.startsAt ? event.startsAt.toUTCString() : '';
+    const timeStr = event.startsAt
+      ? (() => {
+          const { dateStr, timeStr: t } = formatEventDateTime(event.startsAt, event.venueTimezone);
+          return `${dateStr} at ${t}`;
+        })()
+      : '';
     const body =
       `"${event.title}" starts ${timeStr}.` +
       (event.venueName && !event.isPrivateLocation ? ` Venue: ${event.venueName}.` : '');

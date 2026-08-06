@@ -31,6 +31,7 @@ function apiEventToItem(e: ApiEvent): EventItem {
     status: e.status,
     venueLat: e.venueLat ?? undefined,
     venueLng: e.venueLng ?? undefined,
+    venueTimezone: e.venueTimezone,
     coverImageUrl: e.coverImageUrl,
   };
 }

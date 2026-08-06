@@ -6,6 +6,7 @@ import * as schema from './schema';
 import { createAuth } from './auth';
 import { parseRRule, generateOccurrences } from './recurrence';
 import { notify, fanoutFavoriteNearby } from './notifications';
+import { lookupVenueTimezone } from './timezone';
 
 type AppEnv = { Bindings: Env; Variables: { hostId?: string } };
 
@@ -33,6 +34,9 @@ eventsRouter.post('/', async (c) => {
     return c.json({ error: 'title and broadcastSubject are required' }, 400);
   }
 
+  const venueLat = typeof body.venueLat === 'number' ? body.venueLat : null;
+  const venueLng = typeof body.venueLng === 'number' ? body.venueLng : null;
+
   const [event] = await db
     .insert(schema.events)
     .values({
@@ -53,8 +57,9 @@ eventsRouter.post('/', async (c) => {
           : 'draft',
       venueName: typeof body.venueName === 'string' ? body.venueName : null,
       venueAddress: typeof body.venueAddress === 'string' ? body.venueAddress : null,
-      venueLat: typeof body.venueLat === 'number' ? body.venueLat : null,
-      venueLng: typeof body.venueLng === 'number' ? body.venueLng : null,
+      venueLat,
+      venueLng,
+      venueTimezone: lookupVenueTimezone(venueLat, venueLng),
       isPrivateLocation: body.isPrivateLocation === true,
       recurrenceRule: typeof body.recurrenceRule === 'string' ? body.recurrenceRule : null,
     })
@@ -112,8 +117,16 @@ eventsRouter.patch('/:id', async (c) => {
     patch.status = body.status;
   if (typeof body.venueName === 'string') patch.venueName = body.venueName;
   if (typeof body.venueAddress === 'string') patch.venueAddress = body.venueAddress;
-  if (typeof body.venueLat === 'number') patch.venueLat = body.venueLat;
-  if (typeof body.venueLng === 'number') patch.venueLng = body.venueLng;
+  // Venue coords may be set (number), or explicitly cleared (null) — either
+  // way venueTimezone is recomputed/cleared alongside them. A missing key
+  // means "not part of this patch" and is left untouched.
+  if (typeof body.venueLat === 'number' || body.venueLat === null) patch.venueLat = body.venueLat;
+  if (typeof body.venueLng === 'number' || body.venueLng === null) patch.venueLng = body.venueLng;
+  if ('venueLat' in patch || 'venueLng' in patch) {
+    const nextLat = 'venueLat' in patch ? patch.venueLat : existing.venueLat;
+    const nextLng = 'venueLng' in patch ? patch.venueLng : existing.venueLng;
+    patch.venueTimezone = lookupVenueTimezone(nextLat, nextLng);
+  }
   if (typeof body.isPrivateLocation === 'boolean') patch.isPrivateLocation = body.isPrivateLocation;
   if (typeof body.recurrenceRule === 'string') patch.recurrenceRule = body.recurrenceRule;
 

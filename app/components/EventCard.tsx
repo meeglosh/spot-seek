@@ -5,6 +5,7 @@ import { colors, palette, spacing, type as t } from '../lib/theme';
 import { Badge, Btn } from './ui';
 
 import { API_BASE } from '../lib/api';
+import { formatEventDateTime } from '../lib/dateFormat';
 
 export type EventItem = {
   id: string;
@@ -20,6 +21,7 @@ export type EventItem = {
   goingCount?: number;
   venueLat?: number | null;
   venueLng?: number | null;
+  venueTimezone?: string | null;
   coverImageUrl?: string | null;
 };
 
@@ -37,12 +39,9 @@ function startsToday(startsAt?: string | null): boolean {
 export function EventCard({ event, compact = false }: { event: EventItem; compact?: boolean }) {
   const router = useRouter();
 
-  const dateStr = event.startsAt
-    ? new Date(event.startsAt).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-    : null;
-  const timeStr = event.startsAt
-    ? new Date(event.startsAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })
-    : null;
+  const { dateStr, timeStr } = event.startsAt
+    ? formatEventDateTime(event.startsAt, event.venueTimezone ?? null)
+    : { dateStr: null, timeStr: null };
 
   const coverSrc = event.coverImageUrl
     ? { uri: event.coverImageUrl.startsWith('/') ? `${API_BASE}${event.coverImageUrl}` : event.coverImageUrl }

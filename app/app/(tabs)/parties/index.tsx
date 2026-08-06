@@ -14,6 +14,7 @@ import {
   type ApiRsvp, type ApiEvent, type ApiDashboardEvent,
 } from '../../../lib/api';
 import { colors, palette, spacing, type as t } from '../../../lib/theme';
+import { formatEventDateTime } from '../../../lib/dateFormat';
 
 type TabKey = 'attending' | 'hosting';
 
@@ -23,12 +24,12 @@ function isToday(iso: string) {
   return new Date(iso).toDateString() === new Date().toDateString();
 }
 
-function timeLabel(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+function timeLabel(iso: string, venueTimezone: string | null = null) {
+  return formatEventDateTime(iso, venueTimezone).timeStr;
 }
 
-function dateLabel(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+function dateLabel(iso: string, venueTimezone: string | null = null) {
+  return formatEventDateTime(iso, venueTimezone).dateStr;
 }
 
 // Maps deep link for GET DIRECTIONS — coords win, address is the fallback.
@@ -72,10 +73,10 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
           <Text style={[t.headlineMd, s.cardTitle]} numberOfLines={3}>{e.title}</Text>
           <View style={s.timeCol}>
             <Text style={[t.monoData, { color: colors.live }]}>
-              {e.startsAt ? timeLabel(e.startsAt) : 'TBD'}
+              {e.startsAt ? timeLabel(e.startsAt, e.venueTimezone) : 'TBD'}
             </Text>
             {e.startsAt && (
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{dateLabel(e.startsAt)}</Text>
+              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{dateLabel(e.startsAt, e.venueTimezone)}</Text>
             )}
           </View>
         </View>
@@ -115,10 +116,10 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
           <Text style={[t.headlineMd, s.cardTitle]} numberOfLines={3}>{event.title}</Text>
           <View style={s.timeCol}>
             <Text style={[t.monoData, { color: colors.live }]}>
-              {event.startsAt ? timeLabel(event.startsAt) : 'TBD'}
+              {event.startsAt ? timeLabel(event.startsAt, event.venueTimezone) : 'TBD'}
             </Text>
             {event.startsAt && (
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{dateLabel(event.startsAt)}</Text>
+              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{dateLabel(event.startsAt, event.venueTimezone)}</Text>
             )}
           </View>
         </View>
