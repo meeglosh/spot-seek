@@ -19,6 +19,26 @@ function fmtUsd(cents: number): string {
   return `$${str}`;
 }
 
+const SORTS = [
+  { key: 'sponsored', label: 'Most Sponsored' },
+  { key: 'budget', label: 'Highest Budget' },
+  { key: 'name', label: 'Name A–Z' },
+] as const;
+type SortKey = typeof SORTS[number]['key'];
+
+function sortSponsors(list: ApiSponsorProfile[], sort: SortKey): ApiSponsorProfile[] {
+  const sorted = [...list];
+  if (sort === 'sponsored') {
+    sorted.sort((a, b) => (b.sponsorshipCount ?? 0) - (a.sponsorshipCount ?? 0));
+  } else if (sort === 'budget') {
+    // Sponsors with no budget listed sort last rather than tying with $0.
+    sorted.sort((a, b) => (b.budgetMaxCents ?? -1) - (a.budgetMaxCents ?? -1));
+  } else {
+    sorted.sort((a, b) => a.companyName.localeCompare(b.companyName));
+  }
+  return sorted;
+}
+
 export default function BrowseSponsorsScreen() {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const router = useRouter();
@@ -29,6 +49,10 @@ export default function BrowseSponsorsScreen() {
   const [sponsors, setSponsors] = useState<ApiSponsorProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortKey>('sponsored');
 
   // Which sponsor's request form is expanded, plus that form's local state.
   const [openId, setOpenId] = useState<string | null>(null);
@@ -81,6 +105,19 @@ export default function BrowseSponsorsScreen() {
     }
   }
 
+  // Categories derived from whatever sponsors actually registered with —
+  // no invented/predefined list here, same reasoning as EventMapView's
+  // sport chips.
+  const categories = Array.from(new Set(sponsors.flatMap((sp) => sp.categories ?? []))).sort();
+
+  const q = query.trim().toLowerCase();
+  const filtered = sponsors.filter((sp) => {
+    if (category && !sp.categories?.includes(category)) return false;
+    if (q && !sp.companyName.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const visible = sortSponsors(filtered, sort);
+
   if (auth.status !== 'authenticated') {
     return (
       <View style={s.container}>
@@ -106,6 +143,35 @@ export default function BrowseSponsorsScreen() {
           {event ? `For "${event.title}"` : 'Loading event…'}
         </Text>
 
+        {!loading && !error && sponsors.length > 0 && (
+          <>
+            <TextInput
+              style={[inputStyle, s.searchInput]}
+              placeholder="Search sponsors…"
+              placeholderTextColor={colors.textTertiary}
+              value={query}
+              onChangeText={setQuery}
+              autoCapitalize="none"
+              returnKeyType="search"
+            />
+
+            {categories.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipScroll} contentContainerStyle={s.chipRow}>
+                <Chip label="All Categories" active={category === null} onPress={() => setCategory(null)} />
+                {categories.map((cat) => (
+                  <Chip key={cat} label={cat} active={category === cat} onPress={() => setCategory((prev) => (prev === cat ? null : cat))} />
+                ))}
+              </ScrollView>
+            )}
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipScroll} contentContainerStyle={s.chipRow}>
+              {SORTS.map((opt) => (
+                <Chip key={opt.key} label={opt.label} tone="volt" active={sort === opt.key} onPress={() => setSort(opt.key)} />
+              ))}
+            </ScrollView>
+          </>
+        )}
+
         {loading ? (
           <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing['2xl'] }} />
         ) : error ? (
@@ -114,8 +180,12 @@ export default function BrowseSponsorsScreen() {
           <Text style={[t.bodySm, { color: colors.textTertiary }]}>
             No sponsors have registered yet — check back later.
           </Text>
+        ) : visible.length === 0 ? (
+          <Text style={[t.bodySm, { color: colors.textTertiary }]}>
+            No sponsors match your search.
+          </Text>
         ) : (
-          sponsors.map((sp) => {
+          visible.map((sp) => {
             const isOpen = openId === sp.id;
             const wasSent = sentIds.has(sp.id);
             return (
@@ -198,6 +268,9 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   subtitle: { color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.xl },
+  searchInput: { marginBottom: spacing.md },
+  chipScroll: { marginBottom: spacing.md },
+  chipRow: { gap: spacing.sm, paddingRight: spacing.lg },
 
   card: {
     backgroundColor: colors.card,
