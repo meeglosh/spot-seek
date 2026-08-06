@@ -110,11 +110,41 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
   // Sport chips derived from the events actually on the map — no invented data.
   const subjects = Array.from(new Set(mappable.map((e) => e.broadcastSubject))).slice(0, 5);
 
-  const shown = mappable.filter((e) => {
-    if (liveOnly && !isLiveSoon(e.startsAt)) return false;
-    if (sportFilter && e.broadcastSubject !== sportFilter) return false;
-    return true;
-  });
+  // Shared filter predicate — reused by both the render-time `shown` list and
+  // the chip handlers below (which need to know what *will* match before the
+  // state update lands, so they can frame the map for it).
+  function matchingEvents(liveOnlyVal: boolean, sportFilterVal: string | null) {
+    return mappable.filter((e) => {
+      if (liveOnlyVal && !isLiveSoon(e.startsAt)) return false;
+      if (sportFilterVal && e.broadcastSubject !== sportFilterVal) return false;
+      return true;
+    });
+  }
+
+  const shown = matchingEvents(liveOnly, sportFilter);
+
+  // Snap the map to frame whatever the new filter selection matches. Called
+  // directly from the chip press handlers (not a useEffect) so the animation
+  // only fires on an actual filter change, never on unrelated re-renders.
+  function animateToMatches(matches: EventItem[]) {
+    if (matches.length === 0) return;
+    if (matches.length === 1) {
+      mapRef.current?.animateToRegion({
+        latitude: matches[0].venueLat!,
+        longitude: matches[0].venueLng!,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      }, 350);
+      return;
+    }
+    mapRef.current?.fitToCoordinates(
+      matches.map((e) => ({ latitude: e.venueLat!, longitude: e.venueLng! })),
+      {
+        edgePadding: { top: 120, right: 60, bottom: 220, left: 60 },
+        animated: true,
+      },
+    );
+  }
 
   function selectEvent(event: EventItem) {
     setSelected(event);
@@ -201,7 +231,11 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
             label="Live Now"
             tone={colors.live}
             active={liveOnly}
-            onPress={() => setLiveOnly((v) => !v)}
+            onPress={() => {
+              const next = !liveOnly;
+              setLiveOnly(next);
+              animateToMatches(matchingEvents(next, sportFilter));
+            }}
           />
           {subjects.map((sub) => (
             <MapChip
@@ -209,7 +243,11 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
               label={sub}
               tone={colors.accent}
               active={sportFilter === sub}
-              onPress={() => setSportFilter((prev) => (prev === sub ? null : sub))}
+              onPress={() => {
+                const next = sportFilter === sub ? null : sub;
+                setSportFilter(next);
+                animateToMatches(matchingEvents(liveOnly, next));
+              }}
             />
           ))}
         </ScrollView>
