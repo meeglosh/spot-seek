@@ -10,7 +10,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.spotseek.app",
-      "buildNumber": "21",
+      "buildNumber": "22",
       "appleTeamId": "XM2SC5YZ8C",
       "associatedDomains": [
         "applinks:spot-seek-api.dry-base-037d.workers.dev"
