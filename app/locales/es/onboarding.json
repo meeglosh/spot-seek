@@ -1,0 +1,40 @@
+{
+  "brand": {
+    "tagline": "NUNCA MÁS VEAS SOLO"
+  },
+  "seeker": {
+    "headline": "ENCUENTRA TU GENTE",
+    "body": "Descubre fiestas de visualización cerca de ti para los eventos que amas. Nunca más veas solo.",
+    "chips": {
+      "liveSports": "DEPORTES EN VIVO",
+      "awards": "PREMIACIONES",
+      "bigEvents": "GRANDES EVENTOS"
+    }
+  },
+  "host": {
+    "headline": "LIDERA LA EXPERIENCIA",
+    "body": "Organiza tu propia fiesta de visualización. Construye una comunidad en torno a tu pasión y lidera la diversión.",
+    "chips": {
+      "yourVenue": "TU LOCAL",
+      "yourCrowd": "TU GENTE",
+      "yourRules": "TUS REGLAS"
+    }
+  },
+  "sponsor": {
+    "headline": "ALIMENTA LA PASIÓN",
+    "body": "Asóciate con eventos locales. Patrocina fiestas de visualización para llegar a tu público y desbloquear beneficios exclusivos.",
+    "chips": {
+      "vipAccess": "ACCESO VIP",
+      "gearDrops": "MERCH EXCLUSIVO",
+      "partnerDeals": "OFERTAS DE PARTNERS"
+    }
+  },
+  "cta": {
+    "next": "SIGUIENTE →",
+    "getStarted": "EMPEZAR →"
+  },
+  "skip": {
+    "label": "OMITIR",
+    "a11y": "Omitir introducción"
+  }
+}

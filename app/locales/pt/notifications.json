@@ -1,0 +1,24 @@
+{
+  "title": "Notificações",
+  "guestGate": {
+    "title": "Notificações",
+    "message": "Inicia sessão para veres a atividade das tuas festas e patrocínios."
+  },
+  "loadError": "Não foi possível carregar as notificações.",
+  "empty": "Ainda não há notificações — a atividade das tuas festas aparece aqui.",
+  "timeAgo": {
+    "justNow": "agora mesmo",
+    "minutes_one": "há {{count}} min",
+    "minutes_other": "há {{count}} min",
+    "hours_one": "há {{count}} h",
+    "hours_other": "há {{count}} h",
+    "days_one": "há {{count}} dia",
+    "days_other": "há {{count}} dias",
+    "weeks_one": "há {{count}} sem.",
+    "weeks_other": "há {{count}} sem.",
+    "months_one": "há {{count}} mês",
+    "months_other": "há {{count}} meses",
+    "years_one": "há {{count}} ano",
+    "years_other": "há {{count}} anos"
+  }
+}

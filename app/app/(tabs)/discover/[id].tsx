@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../lib/auth';
 import {
   fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, API_BASE, EVENT_SHARE_BASE, type ApiEvent, type ApiRsvp,
@@ -34,6 +35,8 @@ export default function EventDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+  const { t: tr } = useTranslation('discover');
+  const { t: trCommon } = useTranslation('common');
 
   const [event, setEvent] = useState<ApiEvent | null>(null);
   const [loading, setLoading] = useState(true); // true = show spinner on initial load
@@ -55,9 +58,9 @@ export default function EventDetailScreen() {
     if (!id) return;
     fetchEvent(id)
       .then(setEvent)
-      .catch(() => setError('Could not load event.'))
+      .catch(() => setError(tr('detail.loadError')))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, tr]);
 
   // Load this user's existing RSVP so the button reflects reality on every
   // visit. Without this the screen always rendered "Join Party", so returning
@@ -102,13 +105,13 @@ export default function EventDetailScreen() {
           .then((rsvps) => rsvps.find((r) => r.eventId === event.id && r.state !== 'cancelled'))
           .catch(() => undefined);
         if (mine) setRsvp(mine);
-        else setRsvpError('You already have an RSVP for this event.');
+        else setRsvpError(tr('detail.alreadyRsvpd'));
       } else if (msg === 'unauthorized') {
         setGateOpen(true);
       } else {
         // Surface the real reason — a generic message here hid a
         // "Unsupported FormDataPart"-class bug on the cover upload for days.
-        setRsvpError(msg || 'Something went wrong. Please try again.');
+        setRsvpError(msg || tr('detail.genericError'));
       }
     } finally {
       setRsvpLoading(false);
@@ -127,11 +130,11 @@ export default function EventDetailScreen() {
     return (
       <View style={[s.container, s.center]}>
         <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-          {error || 'Event not found'}
+          {error || tr('detail.notFound')}
         </Text>
         <Pressable onPress={leaveDetail}>
           <Text style={[t.labelCaps, { color: colors.accent, marginTop: spacing.md }]}>
-            ← Go back
+            {tr('detail.goBack')}
           </Text>
         </Pressable>
       </View>
@@ -148,7 +151,7 @@ export default function EventDetailScreen() {
   const isActive = isGoing || isWaitlisted;
 
   const rsvpBg = isGoing ? colors.volt : isWaitlisted ? colors.live : colors.fill;
-  const rsvpLabel = isGoing ? 'Going' : isWaitlisted ? 'Waitlisted' : 'Join Party';
+  const rsvpLabel = isGoing ? tr('detail.going') : isWaitlisted ? tr('detail.waitlisted') : tr('detail.joinParty');
 
   const coverSrc = event.coverImageUrl
     ? { uri: event.coverImageUrl.startsWith('/') ? `${API_BASE}${event.coverImageUrl}` : event.coverImageUrl }
@@ -158,18 +161,18 @@ export default function EventDetailScreen() {
 
   // STATUS tile — only real data: the viewer's own RSVP state, else capacity.
   const statusValue = isGoing
-    ? 'Going'
+    ? tr('detail.going')
     : isWaitlisted
-      ? 'Waitlisted'
+      ? tr('detail.waitlisted')
       : event.capacity != null
-        ? `Cap ${event.capacity}`
+        ? tr('detail.capacity', { count: event.capacity })
         : null;
   const statusColor = isGoing ? colors.volt : isWaitlisted ? colors.live : colors.accent;
 
   // Venue address masking — private locations never reveal the address here.
   const venueDetail = event.venueName
     ? event.isPrivateLocation
-      ? `Private location${isActive ? '' : ' (shown after RSVP)'}`
+      ? `${tr('detail.privateLocation')}${isActive ? '' : ` ${tr('detail.shownAfterRsvp')}`}`
       : event.venueAddress
     : null;
 
@@ -205,23 +208,23 @@ export default function EventDetailScreen() {
     ]);
 
     const options = [
-      { label: 'Apple Maps', url: `http://maps.apple.com/?daddr=${daddr}` },
-      { label: 'Google Maps', url: googleAvailable ? googleApp : googleWeb },
-      { label: 'Waze', url: wazeAvailable ? wazeApp : wazeWeb },
+      { label: tr('detail.directions.appleMaps'), url: `http://maps.apple.com/?daddr=${daddr}` },
+      { label: tr('detail.directions.googleMaps'), url: googleAvailable ? googleApp : googleWeb },
+      { label: tr('detail.directions.waze'), url: wazeAvailable ? wazeApp : wazeWeb },
     ];
 
     const open = (url: string) => Linking.openURL(url).catch(() => {});
 
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options: [...options.map((o) => o.label), 'Cancel'], cancelButtonIndex: options.length },
+        { options: [...options.map((o) => o.label), trCommon('cancel')], cancelButtonIndex: options.length },
         (index) => { if (index < options.length) open(options[index].url); },
       );
     } else {
       Alert.alert(
-        'Get Directions',
+        tr('detail.getDirections'),
         undefined,
-        [...options.map((o) => ({ text: o.label, onPress: () => open(o.url) })), { text: 'Cancel', style: 'cancel' as const }],
+        [...options.map((o) => ({ text: o.label, onPress: () => open(o.url) })), { text: trCommon('cancel'), style: 'cancel' as const }],
       );
     }
   }
@@ -233,7 +236,7 @@ export default function EventDetailScreen() {
     // back to a web page (with an Open Graph preview) when the recipient
     // doesn't have the app installed yet. See backend/src/deeplinks.ts.
     const link = `${EVENT_SHARE_BASE}/e/${event.id}`;
-    const when = dateStr ? `${dateStr}${timeStr ? ` at ${timeStr}` : ''}` : null;
+    const when = dateStr ? `${dateStr}${timeStr ? ` ${tr('detail.share.at')} ${timeStr}` : ''}` : null;
     // On iOS, `url` already produces the rich link preview — keep it out of
     // `message` there, or Messages' link-detector previews it a second time.
     const iosMessage = [event.title, when].filter(Boolean).join('\n');
@@ -258,13 +261,13 @@ export default function EventDetailScreen() {
             onPress={handleShare}
             hitSlop={12}
             style={({ pressed }) => [s.shareBtn, pressed && s.pressed]}
-            accessibilityLabel="Share event"
+            accessibilityLabel={tr('detail.shareEvent')}
           >
             <Image source={SHARE_ICON} style={s.shareIcon} resizeMode="contain" />
           </Pressable>
           <View style={s.heroContent}>
             <View style={s.heroBadges}>
-              {liveTonight && <Badge label="Live Tonight" tone="live" />}
+              {liveTonight && <Badge label={tr('detail.liveTonight')} tone="live" />}
               <Badge label={event.broadcastSubject} tone="accent" dot={false} />
             </View>
             <Text style={[t.headlineLg, { color: palette.white }]}>{event.title}</Text>
@@ -275,14 +278,14 @@ export default function EventDetailScreen() {
           {/* Meta tile grid */}
           <View style={s.tileRow}>
             <View style={s.tile}>
-              <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>Date & Time</Text>
+              <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('detail.dateTime')}</Text>
               <Text style={[t.monoData, s.tileValue]}>
-                {dateStr ? `${dateStr}${timeStr ? `\n${timeStr}` : ''}` : 'TBA'}
+                {dateStr ? `${dateStr}${timeStr ? `\n${timeStr}` : ''}` : tr('detail.tba')}
               </Text>
             </View>
             {statusValue && (
               <View style={[s.tile, s.tileStatus]}>
-                <Text style={[t.labelCapsSm, { color: colors.accent }]}>Status</Text>
+                <Text style={[t.labelCapsSm, { color: colors.accent }]}>{tr('detail.status')}</Text>
                 <Text style={[t.headlineMd, { color: statusColor }]} numberOfLines={1} adjustsFontSizeToFit>
                   {statusValue}
                 </Text>
@@ -293,7 +296,7 @@ export default function EventDetailScreen() {
           {/* Venue card */}
           {event.venueName && (
             <View style={s.venueCard}>
-              <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>Venue</Text>
+              <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('detail.venue')}</Text>
               <Text style={[t.bodyLg, { color: colors.textPrimary }]}>{event.venueName}</Text>
               {venueDetail && (
                 <Text style={[t.monoData, { color: colors.textSecondary }]}>{venueDetail}</Text>
@@ -303,7 +306,7 @@ export default function EventDetailScreen() {
                   style={({ pressed }) => [s.directionsBtn, pressed && s.pressed]}
                   onPress={openDirections}
                 >
-                  <Text style={[t.labelCaps, { color: colors.accent }]}>Get Directions</Text>
+                  <Text style={[t.labelCaps, { color: colors.accent }]}>{tr('detail.getDirections')}</Text>
                 </Pressable>
               )}
             </View>
@@ -312,7 +315,7 @@ export default function EventDetailScreen() {
           {/* The Breakdown */}
           {event.description && (
             <View style={s.section}>
-              <SectionTitle>The Breakdown</SectionTitle>
+              <SectionTitle>{tr('detail.breakdown')}</SectionTitle>
               <Text style={[t.bodyMd, { color: colors.textSecondary }]}>
                 {event.description}
               </Text>
@@ -323,7 +326,7 @@ export default function EventDetailScreen() {
           {auth.status !== 'authenticated' && (
             <Pressable style={s.authNudge} onPress={() => setGateOpen(true)}>
               <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                Sign in to RSVP and see full venue details →
+                {tr('detail.authNudge')}
               </Text>
             </Pressable>
           )}
@@ -352,7 +355,7 @@ export default function EventDetailScreen() {
         </Pressable>
         {isActive && (
           <Pressable onPress={handleRsvp} disabled={rsvpLoading}>
-            <Text style={[t.labelCapsSm, s.cancelText]}>Cancel RSVP</Text>
+            <Text style={[t.labelCapsSm, s.cancelText]}>{tr('detail.cancelRsvp')}</Text>
           </Pressable>
         )}
       </View>
@@ -360,7 +363,7 @@ export default function EventDetailScreen() {
       <AuthGateSheet
         visible={gateOpen}
         onClose={() => setGateOpen(false)}
-        message="Sign in to RSVP, join the guest list, and see full venue details."
+        message={tr('detail.authGateMessage')}
         redirect={id ? `/(tabs)/discover/${id}` : undefined}
       />
     </View>

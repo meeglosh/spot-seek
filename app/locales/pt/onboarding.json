@@ -1,0 +1,40 @@
+{
+  "brand": {
+    "tagline": "NUNCA MAIS VEJAS SOZINHO"
+  },
+  "seeker": {
+    "headline": "ENCONTRA O TEU GRUPO",
+    "body": "Descobre festas de visionamento locais para os eventos que adoras. Nunca mais vejas sozinho.",
+    "chips": {
+      "liveSports": "DESPORTO EM DIRETO",
+      "awards": "GALAS",
+      "bigEvents": "GRANDES EVENTOS"
+    }
+  },
+  "host": {
+    "headline": "LIDERA A EXPERIÊNCIA",
+    "body": "Organiza a tua própria festa de visionamento. Cria uma comunidade em torno da tua paixão e lidera a diversão.",
+    "chips": {
+      "yourVenue": "O TEU LOCAL",
+      "yourCrowd": "O TEU GRUPO",
+      "yourRules": "AS TUAS REGRAS"
+    }
+  },
+  "sponsor": {
+    "headline": "ALIMENTA A PAIXÃO",
+    "body": "Torna-te parceiro de eventos locais. Patrocina festas de visionamento para chegares ao público e desbloqueares vantagens exclusivas.",
+    "chips": {
+      "vipAccess": "ACESSO VIP",
+      "gearDrops": "MERCHANDISE EXCLUSIVO",
+      "partnerDeals": "OFERTAS DE PARCEIROS"
+    }
+  },
+  "cta": {
+    "next": "SEGUINTE →",
+    "getStarted": "COMEÇAR →"
+  },
+  "skip": {
+    "label": "SALTAR",
+    "a11y": "Saltar introdução"
+  }
+}

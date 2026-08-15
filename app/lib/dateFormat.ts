@@ -3,6 +3,24 @@
 // Deliberately avoids depending on Hermes/React Native's Intl CLDR
 // locale-name data (unreliable across engines) — only baseline `timeZone`
 // support is relied on, never `timeZoneName`.
+import { currentDisplayLocale } from './i18n';
+
+// Maps the app's active i18n language to a full Intl locale tag for
+// Intl.DateTimeFormat below. Only baseline `timeZone`/numeric formatting is
+// relied on (see the file-level comment), so these tags just need to steer
+// month/weekday names and ordering — they don't need to be the "canonical"
+// regional variant.
+const INTL_LOCALE: Record<string, string> = {
+  en: 'en-US',
+  fr: 'fr-FR',
+  es: 'es-ES',
+  de: 'de-DE',
+  pt: 'pt-PT',
+};
+
+function activeIntlLocale(): string {
+  return INTL_LOCALE[currentDisplayLocale()] ?? 'en-US';
+}
 
 // Returns the offset of `timeZone` from UTC, in minutes, at the given instant.
 // Cross-engine-safe: uses formatToParts (reliable on Hermes AND V8) rather than
@@ -75,8 +93,9 @@ export function formatEventDateTime(startsAt: string | Date, venueTimezone: stri
   const date = typeof startsAt === 'string' ? new Date(startsAt) : startsAt;
   const tz = venueTimezone ?? undefined; // undefined lets Intl use the device's local zone
   const hour12 = venueTimezone ? usesTwelveHourClock(venueTimezone) : true; // device fallback: default to 12h (matches prior app convention for US-first userbase); adjust only if you find evidence otherwise in the codebase
-  const dateStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' }).format(date);
-  const timePart = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12 }).format(date);
+  const locale = activeIntlLocale();
+  const dateStr = new Intl.DateTimeFormat(locale, { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' }).format(date);
+  const timePart = new Intl.DateTimeFormat(locale, { timeZone: tz, hour: 'numeric', minute: '2-digit', hour12 }).format(date);
   const abbr = venueTimezone ? timezoneAbbreviation(date, venueTimezone) : ''; // no abbreviation for device-local fallback — ambiguous what to label it
   return { dateStr, timeStr: abbr ? `${timePart} ${abbr}` : timePart };
 }

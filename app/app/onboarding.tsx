@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { colors, fonts, palette, spacing, type as t } from '../lib/theme';
 import { Btn } from '../components/ui';
 import { setOnboardingSeen } from '../lib/api';
@@ -35,38 +37,52 @@ type Slide = BrandSlide | PhotoSlide;
 // components/AppHeader.tsx) — static imports don't cover these picture
 // assets the way they do the icon set.
 /* eslint-disable @typescript-eslint/no-require-imports */
-const SLIDES: Slide[] = [
-  { key: 'brand', kind: 'brand' },
-  {
-    key: 'seeker',
-    kind: 'photo',
-    image: require('../assets/onboarding/onboarding-seeker.jpg'),
-    accent: colors.accent,
-    headline: 'FIND YOUR CROWD',
-    body: 'Discover local watch parties for the events you love. Never watch alone again.',
-    chips: ['LIVE SPORTS', 'AWARDS', 'BIG EVENTS'],
-  },
-  {
-    key: 'host',
-    kind: 'photo',
-    image: require('../assets/onboarding/onboarding-host.jpg'),
-    accent: colors.live,
-    headline: 'LEAD THE EXPERIENCE',
-    body: 'Host your own watch party. Build a community around your passion and lead the fun.',
-    chips: ['YOUR VENUE', 'YOUR CROWD', 'YOUR RULES'],
-  },
-  {
-    key: 'sponsor',
-    kind: 'photo',
-    image: require('../assets/onboarding/onboarding-sponsor.jpg'),
-    accent: colors.volt,
-    headline: 'FUEL THE PASSION',
-    body: 'Partner with local events. Sponsor watch parties to reach the crowd and unlock exclusive perks.',
-    chips: ['VIP ACCESS', 'GEAR DROPS', 'PARTNER DEALS'],
-  },
-];
+const SLIDE_IMAGES = {
+  seeker: require('../assets/onboarding/onboarding-seeker.jpg'),
+  host: require('../assets/onboarding/onboarding-host.jpg'),
+  sponsor: require('../assets/onboarding/onboarding-sponsor.jpg'),
+};
 const BRAND_LOGO = require('../assets/splash-icon.png');
 /* eslint-enable @typescript-eslint/no-require-imports */
+
+// Scoped to the 'onboarding' namespace — t()/tr() calls below read
+// locales/<lang>/onboarding.json (e.g. tr('seeker.headline')). See
+// lib/i18n.ts for the full key-naming convention. Built as a function
+// rather than a module-level constant because the SLIDES content must be
+// resolved through the translation function, which is only available
+// inside the component (and needs to re-run when the language changes).
+function buildSlides(tr: TFunction): Slide[] {
+  return [
+    { key: 'brand', kind: 'brand' },
+    {
+      key: 'seeker',
+      kind: 'photo',
+      image: SLIDE_IMAGES.seeker,
+      accent: colors.accent,
+      headline: tr('seeker.headline'),
+      body: tr('seeker.body'),
+      chips: [tr('seeker.chips.liveSports'), tr('seeker.chips.awards'), tr('seeker.chips.bigEvents')],
+    },
+    {
+      key: 'host',
+      kind: 'photo',
+      image: SLIDE_IMAGES.host,
+      accent: colors.live,
+      headline: tr('host.headline'),
+      body: tr('host.body'),
+      chips: [tr('host.chips.yourVenue'), tr('host.chips.yourCrowd'), tr('host.chips.yourRules')],
+    },
+    {
+      key: 'sponsor',
+      kind: 'photo',
+      image: SLIDE_IMAGES.sponsor,
+      accent: colors.volt,
+      headline: tr('sponsor.headline'),
+      body: tr('sponsor.body'),
+      chips: [tr('sponsor.chips.vipAccess'), tr('sponsor.chips.gearDrops'), tr('sponsor.chips.partnerDeals')],
+    },
+  ];
+}
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -74,6 +90,8 @@ export default function OnboardingScreen() {
   const { width: pageWidth } = useWindowDimensions();
   const listRef = React.useRef<FlatList<Slide>>(null);
   const [index, setIndex] = React.useState(0);
+  const { t: tr } = useTranslation('onboarding');
+  const SLIDES = React.useMemo(() => buildSlides(tr), [tr]);
 
   // Both exits (SKIP on any slide, GET STARTED on the last) persist the
   // seen-flag and send unauthenticated users on to the existing welcome /
@@ -92,7 +110,7 @@ export default function OnboardingScreen() {
     const next = index + 1;
     setIndex(next);
     listRef.current?.scrollToOffset({ offset: next * pageWidth, animated: true });
-  }, [index, pageWidth, finish]);
+  }, [index, pageWidth, finish, SLIDES.length]);
 
   // Swiping manually also has to update the progress bar / CTA label, since
   // the FlatList is `scrollEnabled` alongside the NEXT button driving it.
@@ -112,7 +130,7 @@ export default function OnboardingScreen() {
             <View style={s.brandCenter}>
               <Image source={BRAND_LOGO} resizeMode="contain" style={s.brandLogo} />
               <Text style={[s.brandWordmark, { fontFamily: fonts.display }]}>SPOT SEEK</Text>
-              <Text style={[t.labelCaps, s.brandTagline]}>NEVER WATCH ALONE</Text>
+              <Text style={[t.labelCaps, s.brandTagline]}>{tr('brand.tagline')}</Text>
             </View>
           </View>
         </View>
@@ -176,11 +194,11 @@ export default function OnboardingScreen() {
           ))}
         </View>
         <Btn
-          label={index === SLIDES.length - 1 ? 'GET STARTED →' : 'NEXT →'}
+          label={index === SLIDES.length - 1 ? tr('cta.getStarted') : tr('cta.next')}
           onPress={goNext}
         />
-        <Pressable onPress={finish} hitSlop={8} style={s.skipBtn} accessibilityLabel="Skip onboarding">
-          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>SKIP</Text>
+        <Pressable onPress={finish} hitSlop={8} style={s.skipBtn} accessibilityLabel={tr('skip.a11y')}>
+          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('skip.label')}</Text>
         </Pressable>
       </View>
     </View>

@@ -83,6 +83,31 @@ export function setOnboardingSeen(): void {
   });
 }
 
+const LOCALE_KEY = 'spotseek_locale';
+
+// Read once at i18n init to decide whether the user has a persisted language
+// override — see lib/i18n.ts. Returns null when unset (no override: fall
+// back to the device language).
+export async function getStoredLocale(): Promise<string | null> {
+  return SecureStore.getItemAsync(LOCALE_KEY);
+}
+
+// Called from setAppLocale('fr' | 'es' | ...) in lib/i18n.ts when the user
+// picks a language explicitly in Settings.
+export function setStoredLocale(code: string): void {
+  SecureStore.setItemAsync(LOCALE_KEY, code).catch((err) => {
+    console.error('[api] failed to persist locale override:', err);
+  });
+}
+
+// Called from setAppLocale(null) — "System default" — to remove the override
+// so the app reverts to following the device language.
+export function clearStoredLocale(): void {
+  SecureStore.deleteItemAsync(LOCALE_KEY).catch((err) => {
+    console.error('[api] failed to clear locale override:', err);
+  });
+}
+
 // Keep old names as aliases so auth.tsx compiles without changes.
 export const setSessionCookie = setBearerToken;
 export const clearSessionCookie = clearBearerToken;

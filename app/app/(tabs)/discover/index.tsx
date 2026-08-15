@@ -6,6 +6,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
+import { useTranslation } from 'react-i18next';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
 import { AppHeader } from '../../../components/AppHeader';
@@ -53,9 +54,21 @@ function filterByTime(events: EventItem[], filter: Filter): EventItem[] {
   });
 }
 
+// Internal filter identifiers stay in English — they're compared against in
+// filterByTime()/handleFilterPress() and used as the Filter type's values.
+// Only the on-screen label is translated, via FILTER_LABEL_KEYS below.
+const FILTER_LABEL_KEYS: Record<Filter, string> = {
+  'This week': 'feed.filterThisWeek',
+  Today: 'feed.filterToday',
+  'Near me': 'feed.filterNearMe',
+  All: 'feed.filterAll',
+};
+
 export default function DiscoverScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t: tr } = useTranslation('discover');
+  const { t: trCommon } = useTranslation('common');
   const { filters } = useDiscoverFilters();
   const filterCount = activeFilterCount(filters);
   const [favourites, setFavourites] = useState<ApiFavourite[]>([]);
@@ -101,7 +114,7 @@ export default function DiscoverScreen() {
       const events = await fetchFeed(params);
       setAllEvents(events.map(apiEventToItem));
     } catch (err) {
-      setError('Could not load events. Is the backend running?');
+      setError(tr('feed.loadError'));
       console.warn('[feed]', err);
     } finally {
       setLoading(false);
@@ -162,7 +175,7 @@ export default function DiscoverScreen() {
 
       {/* Header */}
       <View style={s.header}>
-        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>Discovery Feed</Text>
+        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('feed.title')}</Text>
 
         {/* LIST | MAP toggle + search */}
         <View style={s.controlsRow}>
@@ -174,10 +187,10 @@ export default function DiscoverScreen() {
                   key={mode}
                   style={[s.segmentBtn, on && s.segmentBtnActive]}
                   onPress={() => handleModePress(mode)}
-                  accessibilityLabel={mode === 'list' ? 'Switch to list view' : 'Switch to map view'}
+                  accessibilityLabel={mode === 'list' ? tr('feed.switchToListView') : tr('feed.switchToMapView')}
                 >
                   <Text style={[t.labelCaps, { color: on ? colors.fillText : colors.textSecondary }]}>
-                    {mode}
+                    {mode === 'list' ? tr('feed.viewList') : tr('feed.viewMap')}
                   </Text>
                 </Pressable>
               );
@@ -189,7 +202,7 @@ export default function DiscoverScreen() {
               <Text style={s.searchGlyph}>⌕</Text>
               <TextInput
                 style={s.searchInput}
-                placeholder="SEARCH EVENTS..."
+                placeholder={tr('feed.searchPlaceholder')}
                 placeholderTextColor={colors.textTertiary}
                 value={search}
                 onChangeText={setSearch}
@@ -206,7 +219,7 @@ export default function DiscoverScreen() {
           <Pressable
             style={[s.filterIconBtn, filterCount > 0 && s.filterIconBtnActive]}
             onPress={openFilters}
-            accessibilityLabel="Filters"
+            accessibilityLabel={tr('feed.filtersLabel')}
           >
             <Image
               // eslint-disable-next-line @typescript-eslint/no-require-imports -- Metro static-asset require
@@ -230,10 +243,10 @@ export default function DiscoverScreen() {
               <Chip key={tm} label={tm} active onPress={openFilters} />
             ))}
             {(filters.teams?.length ?? 0) > 2 && (
-              <Chip label={`+${(filters.teams?.length ?? 0) - 2} teams`} active onPress={openFilters} />
+              <Chip label={tr('feed.moreTeams', { count: (filters.teams?.length ?? 0) - 2 })} active onPress={openFilters} />
             )}
             {filters.venue && <Chip label={filters.venue} active onPress={openFilters} />}
-            {filters.useFavourites && <Chip label="Your teams" active tone="volt" onPress={openFilters} />}
+            {filters.useFavourites && <Chip label={tr('feed.yourTeams')} active tone="volt" onPress={openFilters} />}
           </View>
         )}
 
@@ -242,7 +255,7 @@ export default function DiscoverScreen() {
           {FILTERS.map((f) => (
             <Chip
               key={f}
-              label={f === 'Near me' && locationLoading ? 'Locating…' : f}
+              label={f === 'Near me' && locationLoading ? tr('feed.locating') : tr(FILTER_LABEL_KEYS[f])}
               active={filter === f}
               onPress={() => handleFilterPress(f)}
             />
@@ -270,13 +283,13 @@ export default function DiscoverScreen() {
           <View style={s.center}>
             <ActivityIndicator color={colors.accent} />
             <Text style={[t.bodySm, { color: colors.textTertiary }]}>
-              Loading events…
+              {tr('feed.loadingEvents')}
             </Text>
           </View>
         ) : error ? (
           <View style={s.center}>
             <Text style={[t.bodySm, s.stateText]}>{error}</Text>
-            <Btn label="Retry" variant="ghost" small onPress={() => loadFeed()} />
+            <Btn label={trCommon('retry')} variant="ghost" small onPress={() => loadFeed()} />
           </View>
         ) : (
           <FlatList
@@ -290,14 +303,14 @@ export default function DiscoverScreen() {
             ListHeaderComponent={
               <Text style={[t.labelCaps, s.sectionLabel]}>
                 {displayed.length === 0
-                  ? 'No events found'
-                  : `${displayed.length} upcoming event${displayed.length === 1 ? '' : 's'}`}
+                  ? tr('feed.noEventsFound')
+                  : tr('feed.upcomingCount', { count: displayed.length })}
               </Text>
             }
             ListEmptyComponent={
               <View style={s.center}>
                 <Text style={[t.bodySm, { color: colors.textTertiary, textAlign: 'center' }]}>
-                  {search ? 'No events match your search.' : 'No published events yet.'}
+                  {search ? tr('feed.emptySearch') : tr('feed.emptyDefault')}
                 </Text>
               </View>
             }

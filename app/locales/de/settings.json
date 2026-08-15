@@ -1,0 +1,44 @@
+{
+  "title": "Einstellungen",
+  "guestGate": {
+    "title": "Einstellungen",
+    "message": "Melde dich an, um dein Konto und deine Benachrichtigungseinstellungen zu verwalten."
+  },
+  "account": {
+    "title": "Konto",
+    "signedInAs": "Angemeldet als",
+    "signOut": "Abmelden",
+    "deleteAccount": "Konto löschen",
+    "deleteConfirm": "Konto löschen? Dies kann nicht rückgängig gemacht werden. Gastgeber müssen zuerst ihre eigenen Veranstaltungen löschen.",
+    "keepIt": "Behalten",
+    "yesDelete": "Ja, löschen",
+    "deleteFallbackError": "Konto konnte nicht gelöscht werden."
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "loadError": "Benachrichtigungseinstellungen konnten nicht geladen werden.",
+    "email": "E-Mail-Benachrichtigungen",
+    "emailError": "E-Mail-Benachrichtigungen konnten nicht gespeichert werden — bitte erneut versuchen.",
+    "push": "Push-Benachrichtigungen",
+    "radiusLabel": "Radius für Benachrichtigungen in der Nähe",
+    "radiusValue": "{{miles}} mi / {{km}} km",
+    "radiusError": "Radius konnte nicht gespeichert werden — bitte erneut versuchen."
+  },
+  "language": {
+    "title": "Sprache",
+    "systemDefault": "Systemsprache"
+  },
+  "favourites": {
+    "title": "Favoriten",
+    "manage": "Favoriten verwalten"
+  },
+  "about": {
+    "title": "Über",
+    "terms": "Nutzungsbedingungen",
+    "privacy": "Datenschutzrichtlinie",
+    "contactSupport": "Support kontaktieren",
+    "comingSoonAlert": "Demnächst verfügbar.",
+    "versionLabel": "Version {{version}}",
+    "versionLabelWithBuild": "Version {{version}} ({{build}})"
+  }
+}

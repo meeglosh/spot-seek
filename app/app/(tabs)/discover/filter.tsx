@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { SPORTS, searchTeams } from '../../../lib/sports-data';
 import { fetchFavourites, type ApiFavourite } from '../../../lib/api';
 import { DateTimePicker } from '../../../components/DateTimePicker';
@@ -22,6 +23,10 @@ export default function FilterScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+  // Scoped to 'discover' — this screen's strings live under the filters
+  // subtree of discover.json (see lib/i18n.ts for the key-naming convention).
+  // Aliased to `tr` because `t` is already the theme.type import above.
+  const { t: tr } = useTranslation('discover');
 
   // Modal: router.back() is a no-op if this is the only entry in its stack.
   const closeFilter = useCallback(() => {
@@ -93,10 +98,10 @@ export default function FilterScreen() {
         <Pressable onPress={closeFilter} style={s.closeBtn} hitSlop={8}>
           <Text style={s.closeGlyph}>✕</Text>
         </Pressable>
-        <Text style={[t.headlineSm, { color: colors.textPrimary }]}>Filters</Text>
+        <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{tr('filters.title')}</Text>
         <Pressable onPress={clearAll} hitSlop={8}>
           <Text style={[t.labelCapsSm, { color: activeCount > 0 ? colors.live : colors.textTertiary }]}>
-            Clear {activeCount > 0 ? `(${activeCount})` : 'all'}
+            {activeCount > 0 ? tr('filters.clearCount', { count: activeCount }) : tr('filters.clearAll')}
           </Text>
         </Pressable>
       </View>
@@ -106,32 +111,32 @@ export default function FilterScreen() {
         {/* Your favourites quick-apply — sign-in nudge for guests */}
         {auth.status !== 'authenticated' ? (
           <View style={s.section}>
-            <SectionTitle accent={colors.volt}>Your Interests</SectionTitle>
+            <SectionTitle accent={colors.volt}>{tr('filters.yourInterests')}</SectionTitle>
             <Pressable
               style={s.favouriteRow}
               onPress={() => goToAuth(router, 'sign-in', '/(tabs)/discover/filter')}
             >
               <View style={s.favouriteLabels}>
                 <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
-                  Filter by your teams & sports
+                  {tr('filters.filterByYourTeamsTitle')}
                 </Text>
                 <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                  Sign in to save favourites and filter the feed by them →
+                  {tr('filters.filterByYourTeamsSub')}
                 </Text>
               </View>
             </Pressable>
           </View>
         ) : favourites.length > 0 && (
           <View style={s.section}>
-            <SectionTitle accent={colors.volt}>Your Interests</SectionTitle>
+            <SectionTitle accent={colors.volt}>{tr('filters.yourInterests')}</SectionTitle>
             <View style={s.favouriteRow}>
               <View style={s.favouriteLabels}>
                 <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
-                  Show only your teams & sports
+                  {tr('filters.showOnlyYourTeams')}
                 </Text>
                 <Text style={[t.bodySm, { color: colors.textSecondary }]}>
                   {[...favSports, ...favTeams].slice(0, 3).join(', ')}
-                  {favourites.length > 3 ? ` +${favourites.length - 3} more` : ''}
+                  {favourites.length > 3 ? tr('filters.moreFavourites', { count: favourites.length - 3 }) : ''}
                 </Text>
               </View>
               <Switch
@@ -146,7 +151,7 @@ export default function FilterScreen() {
 
         {/* Sport */}
         <View style={s.section}>
-          <SectionTitle>Sport</SectionTitle>
+          <SectionTitle>{tr('filters.sport')}</SectionTitle>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.sportRow}>
             {SPORTS.map((s2) => (
               <Chip
@@ -161,12 +166,12 @@ export default function FilterScreen() {
 
         {/* Teams */}
         <View style={s.section}>
-          <SectionTitle>Teams</SectionTitle>
+          <SectionTitle>{tr('filters.teams')}</SectionTitle>
           <View style={s.searchRow}>
             <Text style={s.searchGlyph}>⌕</Text>
             <TextInput
               style={s.searchInput}
-              placeholder="SEARCH TEAMS..."
+              placeholder={tr('filters.searchTeamsPlaceholder')}
               placeholderTextColor={colors.textTertiary}
               value={teamSearch}
               onChangeText={setTeamSearch}
@@ -199,7 +204,7 @@ export default function FilterScreen() {
           {/* Favourite teams quick-add */}
           {favTeams.length > 0 && teamSearch.length === 0 && (
             <View style={s.favSection}>
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>Your favourite teams</Text>
+              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{tr('filters.yourFavouriteTeams')}</Text>
               <View style={s.chipRow}>
                 {favTeams.map((name) => (
                   <Chip
@@ -217,27 +222,27 @@ export default function FilterScreen() {
 
         {/* Date range */}
         <View style={s.section}>
-          <SectionTitle>Date Range</SectionTitle>
+          <SectionTitle>{tr('filters.dateRange')}</SectionTitle>
           <View style={s.dateRow}>
             <View style={s.datePart}>
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>From</Text>
-              <DateTimePicker value={after} onChange={setAfter} placeholder="Any date" />
+              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{tr('filters.from')}</Text>
+              <DateTimePicker value={after} onChange={setAfter} placeholder={tr('filters.anyDate')} />
             </View>
             <View style={s.datePart}>
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>To</Text>
-              <DateTimePicker value={before} onChange={setBefore} placeholder="Any date" minimumDate={after ?? undefined} />
+              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{tr('filters.to')}</Text>
+              <DateTimePicker value={before} onChange={setBefore} placeholder={tr('filters.anyDate')} minimumDate={after ?? undefined} />
             </View>
           </View>
         </View>
 
         {/* Venue */}
         <View style={s.section}>
-          <SectionTitle>Venue</SectionTitle>
+          <SectionTitle>{tr('filters.venue')}</SectionTitle>
           <View style={s.searchRow}>
             <Text style={s.searchGlyph}>⌕</Text>
             <TextInput
               style={s.searchInput}
-              placeholder="E.G. THE RED LION..."
+              placeholder={tr('filters.venuePlaceholder')}
               placeholderTextColor={colors.textTertiary}
               value={venueSearch}
               onChangeText={setVenueSearch}
@@ -255,7 +260,7 @@ export default function FilterScreen() {
       {/* Apply bar */}
       <View style={[s.applyBar, { paddingBottom: insets.bottom + spacing.md }]}>
         <Btn
-          label={activeCount > 0 ? `Show results · ${activeCount}` : 'Show all events'}
+          label={activeCount > 0 ? tr('filters.showResults', { count: activeCount }) : tr('filters.showAllEvents')}
           onPress={apply}
         />
       </View>

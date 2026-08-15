@@ -8,14 +8,16 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../lib/auth';
 import {
-  fetchNotificationPrefs, updateNotificationPrefs, deleteAccount, type ApiNotificationPrefs,
+  fetchNotificationPrefs, updateNotificationPrefs, deleteAccount, getStoredLocale, type ApiNotificationPrefs,
 } from '../lib/api';
 import { colors, palette, spacing, type as t } from '../lib/theme';
 import { AppHeader } from '../components/AppHeader';
 import { Btn, Badge, SectionTitle } from '../components/ui';
 import { GuestGate } from '../components/AuthGate';
+import { SUPPORTED_LOCALES, setAppLocale } from '../lib/i18n';
 
 function milesToKm(mi: number): number {
   return Math.round(mi * 1.609);
@@ -43,10 +45,32 @@ export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+  // Scoped to the 'settings' namespace — every tr() call below is a dot-path
+  // key relative to locales/<lang>/settings.json (e.g. tr('account.signOut')
+  // reads settings.json's { account: { signOut: ... } }). See lib/i18n.ts
+  // for the full key-naming convention. Aliased to `tr` (not the react-i18next
+  // default `t`) because this file already uses `t` for theme.type tokens
+  // (`t.bodyMd`, `t.headlineLg`, …) imported from ../lib/theme.
+  const { t: tr, i18n } = useTranslation('settings');
+  // 'Coming soon' is shared across screens, so it lives in common.json rather
+  // than being duplicated into settings.json — see lib/i18n.ts's convention
+  // note on when to reach for the `common` namespace instead of a domain one.
+  const { t: trCommon } = useTranslation('common');
 
   const [prefs, setPrefs] = useState<ApiNotificationPrefs | null>(null);
   const [radiusMi, setRadiusMi] = useState(50);
   const [prefsError, setPrefsError] = useState('');
+
+  // Which language row shows the checkmark: null means "System default" (no
+  // persisted override — i18n is just following the device language), a
+  // locale code means that row is the active pick. Re-read after every tap so
+  // the indicator reflects what's actually persisted, not just i18n.language
+  // (which alone can't distinguish "override set to device's own language"
+  // from "no override at all").
+  const [storedLocaleOverride, setStoredLocaleOverride] = useState<string | null>(null);
+  useEffect(() => {
+    getStoredLocale().then(setStoredLocaleOverride);
+  }, [i18n.language]);
 
   const [deleteStep, setDeleteStep] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -68,9 +92,9 @@ export default function SettingsScreen() {
         setRadiusMi(p.radiusMiles);
       }
     } catch {
-      setPrefsError('Could not load notification settings.');
+      setPrefsError(tr('notifications.loadError'));
     }
-  }, [auth.status]);
+  }, [auth.status, tr]);
 
   useEffect(() => { loadPrefs(); }, [loadPrefs]);
 
@@ -101,7 +125,7 @@ export default function SettingsScreen() {
       setRadiusMi(updated.radiusMiles);
     } catch {
       if (prevPrefs) { setPrefs(prevPrefs); setRadiusMi(prevPrefs.radiusMiles); }
-      setPrefsError('Could not save radius — try again.');
+      setPrefsError(tr('notifications.radiusError'));
     }
   }
 
@@ -115,7 +139,7 @@ export default function SettingsScreen() {
       setPrefs(updated);
     } catch {
       if (prevPrefs) setPrefs(prevPrefs);
-      setPrefsError('Could not save email notifications — try again.');
+      setPrefsError(tr('notifications.emailError'));
     }
   }
 
@@ -132,7 +156,7 @@ export default function SettingsScreen() {
       auth.signOut();
       router.replace('/(auth)');
     } catch (err) {
-      setDeleteError((err as Error).message || 'Could not delete account.');
+      setDeleteError((err as Error).message || tr('account.deleteFallbackError'));
       setDeleteStep(false);
     } finally {
       setDeleting(false);
@@ -144,8 +168,8 @@ export default function SettingsScreen() {
       <View style={s.container}>
         <AppHeader back />
         <GuestGate
-          title="Settings"
-          message="Sign in to manage your account and notification preferences."
+          title={tr('guestGate.title')}
+          message={tr('guestGate.message')}
           redirect="/settings"
         />
       </View>
@@ -159,21 +183,21 @@ export default function SettingsScreen() {
     <View style={s.container}>
       <AppHeader back />
       <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing.xl }]}>
-        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>Settings</Text>
+        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('title')}</Text>
 
         {/* ACCOUNT */}
         <View style={s.section}>
-          <SectionTitle>Account</SectionTitle>
+          <SectionTitle>{tr('account.title')}</SectionTitle>
           <SettingsRow
-            label="Signed in as"
+            label={tr('account.signedInAs')}
             sub={auth.user.email}
             right={<View />}
           />
-          <Btn label="Sign Out" variant="secondary" onPress={handleSignOut} style={s.fullBtn} />
+          <Btn label={tr('account.signOut')} variant="secondary" onPress={handleSignOut} style={s.fullBtn} />
 
           {!deleteStep ? (
             <Btn
-              label="Delete Account"
+              label={tr('account.deleteAccount')}
               variant="danger"
               onPress={() => { setDeleteStep(true); setDeleteError(''); }}
               style={s.fullBtn}
@@ -181,18 +205,18 @@ export default function SettingsScreen() {
           ) : (
             <View style={s.confirmBox}>
               <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
-                Delete your account? This cannot be undone. Hosts must delete their own events first.
+                {tr('account.deleteConfirm')}
               </Text>
               <View style={s.confirmBtns}>
                 <Btn
-                  label="Keep It"
+                  label={tr('account.keepIt')}
                   variant="ghost"
                   small
                   style={s.confirmBtn}
                   onPress={() => setDeleteStep(false)}
                 />
                 <Btn
-                  label={deleting ? '…' : 'Yes, Delete'}
+                  label={deleting ? '…' : tr('account.yesDelete')}
                   variant="danger"
                   small
                   style={s.confirmBtn}
@@ -207,11 +231,11 @@ export default function SettingsScreen() {
 
         {/* NOTIFICATIONS */}
         <View style={s.section}>
-          <SectionTitle>Notifications</SectionTitle>
+          <SectionTitle>{tr('notifications.title')}</SectionTitle>
           {prefsError ? <Text style={[t.bodySm, { color: colors.danger }]}>{prefsError}</Text> : null}
 
           <SettingsRow
-            label="Email notifications"
+            label={tr('notifications.email')}
             right={
               <Switch
                 value={!!prefs?.emailEnabled}
@@ -221,19 +245,19 @@ export default function SettingsScreen() {
             }
           />
           <SettingsRow
-            label="Push notifications"
+            label={tr('notifications.push')}
             right={
               <View style={s.disabledRow}>
                 <Switch value={!!prefs?.pushEnabled} disabled trackColor={{ false: palette.surfaceHigh, true: colors.accent }} />
-                <Badge label="Coming soon" tone="neutral" dot={false} />
+                <Badge label={trCommon('comingSoon')} tone="neutral" dot={false} />
               </View>
             }
           />
 
           <View style={s.sliderBlock}>
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>Nearby alert radius</Text>
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('notifications.radiusLabel')}</Text>
             <Text style={[t.labelCaps, { color: colors.accent }]}>
-              {radiusMi} mi / {milesToKm(radiusMi)} km
+              {tr('notifications.radiusValue', { miles: radiusMi, km: milesToKm(radiusMi) })}
             </Text>
             <Slider
               minimumValue={10}
@@ -249,45 +273,71 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* LANGUAGE */}
+        <View style={s.section}>
+          <SectionTitle>{tr('language.title')}</SectionTitle>
+          <Pressable
+            style={s.linkRow}
+            onPress={() => setAppLocale(null)}
+          >
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('language.systemDefault')}</Text>
+            {!storedLocaleOverride ? (
+              <Text style={[t.labelCapsSm, { color: colors.accent }]}>✓</Text>
+            ) : null}
+          </Pressable>
+          {SUPPORTED_LOCALES.map(({ code, nativeName }) => (
+            <Pressable
+              key={code}
+              style={s.linkRow}
+              onPress={() => setAppLocale(code)}
+            >
+              <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{nativeName}</Text>
+              {storedLocaleOverride === code ? (
+                <Text style={[t.labelCapsSm, { color: colors.accent }]}>✓</Text>
+              ) : null}
+            </Pressable>
+          ))}
+        </View>
+
         {/* FAVOURITES */}
         <View style={s.section}>
-          <SectionTitle>Favourites</SectionTitle>
+          <SectionTitle>{tr('favourites.title')}</SectionTitle>
           <Pressable
             style={s.linkRow}
             onPress={() => router.push('/(auth)/interests' as never)}
           >
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>Manage favourites</Text>
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('favourites.manage')}</Text>
             <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
           </Pressable>
         </View>
 
         {/* ABOUT */}
         <View style={s.section}>
-          <SectionTitle>About</SectionTitle>
+          <SectionTitle>{tr('about.title')}</SectionTitle>
           <Pressable
             style={s.linkRow}
-            onPress={() => Alert.alert('Terms of Service', 'Coming soon.')}
+            onPress={() => Alert.alert(tr('about.terms'), tr('about.comingSoonAlert'))}
           >
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>Terms of Service</Text>
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.terms')}</Text>
             <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
           </Pressable>
           <Pressable
             style={s.linkRow}
-            onPress={() => Alert.alert('Privacy Policy', 'Coming soon.')}
+            onPress={() => Alert.alert(tr('about.privacy'), tr('about.comingSoonAlert'))}
           >
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>Privacy Policy</Text>
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.privacy')}</Text>
             <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
           </Pressable>
           <Pressable
             style={s.linkRow}
-            onPress={() => Alert.alert('Contact Support', 'Coming soon.')}
+            onPress={() => Alert.alert(tr('about.contactSupport'), tr('about.comingSoonAlert'))}
           >
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>Contact Support</Text>
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.contactSupport')}</Text>
             <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
           </Pressable>
 
           <Text style={[t.labelCapsSm, s.versionText]}>
-            Version {version ?? '—'}{build ? ` (${build})` : ''}
+            {build ? tr('about.versionLabelWithBuild', { version: version ?? '—', build }) : tr('about.versionLabel', { version: version ?? '—' })}
           </Text>
         </View>
       </ScrollView>

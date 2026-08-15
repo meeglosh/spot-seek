@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
 import { Btn, Badge } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
@@ -52,6 +53,7 @@ function directionsUrl(e: ApiEvent): string | null {
 // ─── Cards ───────────────────────────────────────────────────────────────────
 
 function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
+  const { t: tr } = useTranslation('parties');
   const e = rsvp.event as ApiEvent;
   const tonight = !!e.startsAt && isToday(e.startsAt);
   const waitlisted = rsvp.state === 'waitlisted';
@@ -65,15 +67,19 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
       )}
       <View style={s.cardBody}>
         <View style={s.badgeRow}>
-          {waitlisted && <Badge label="Waitlisted" tone="live" />}
-          <Badge label={tonight ? 'Tonight' : 'Upcoming'} tone={tonight ? 'accent' : 'neutral'} dot={tonight} />
+          {waitlisted && <Badge label={tr('myParties.waitlisted')} tone="live" />}
+          <Badge
+            label={tonight ? tr('myParties.tonight') : tr('myParties.upcoming')}
+            tone={tonight ? 'accent' : 'neutral'}
+            dot={tonight}
+          />
         </View>
 
         <View style={s.titleRow}>
           <Text style={[t.headlineMd, s.cardTitle]} numberOfLines={3}>{e.title}</Text>
           <View style={s.timeCol}>
             <Text style={[t.monoData, { color: colors.live }]}>
-              {e.startsAt ? timeLabel(e.startsAt, e.venueTimezone) : 'TBD'}
+              {e.startsAt ? timeLabel(e.startsAt, e.venueTimezone) : tr('myParties.tbd')}
             </Text>
             {e.startsAt && (
               <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{dateLabel(e.startsAt, e.venueTimezone)}</Text>
@@ -91,7 +97,7 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
 
         {maps && (
           <View style={s.cardFooter}>
-            <Btn label="Get Directions" variant="secondary" small onPress={() => Linking.openURL(maps)} />
+            <Btn label={tr('myParties.getDirections')} variant="secondary" small onPress={() => Linking.openURL(maps)} />
           </View>
         )}
       </View>
@@ -100,13 +106,14 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
 }
 
 function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: () => void }) {
+  const { t: tr } = useTranslation('parties');
   const { going, waitlisted, interested } = event.rsvpCounts;
   return (
     <View style={[s.card, { borderTopColor: colors.accentDim }]}>
       <View style={s.cardBody}>
         <View style={s.badgeRow}>
           <Badge
-            label={event.status}
+            label={tr(`myParties.statusLabels.${event.status}`, { defaultValue: event.status })}
             tone={event.status === 'published' ? 'volt' : 'neutral'}
             dot={event.status === 'published'}
           />
@@ -116,7 +123,7 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
           <Text style={[t.headlineMd, s.cardTitle]} numberOfLines={3}>{event.title}</Text>
           <View style={s.timeCol}>
             <Text style={[t.monoData, { color: colors.live }]}>
-              {event.startsAt ? timeLabel(event.startsAt, event.venueTimezone) : 'TBD'}
+              {event.startsAt ? timeLabel(event.startsAt, event.venueTimezone) : tr('myParties.tbd')}
             </Text>
             {event.startsAt && (
               <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{dateLabel(event.startsAt, event.venueTimezone)}</Text>
@@ -126,9 +133,9 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
 
         <View style={s.statsRow}>
           {[
-            { label: 'Going', val: going, color: colors.volt },
-            { label: 'Waitlist', val: waitlisted, color: colors.live },
-            { label: 'Interested', val: interested, color: colors.textSecondary },
+            { label: tr('myParties.stats.going'), val: going, color: colors.volt },
+            { label: tr('myParties.stats.waitlist'), val: waitlisted, color: colors.live },
+            { label: tr('myParties.stats.interested'), val: interested, color: colors.textSecondary },
           ].map(({ label, val, color }) => (
             <View key={label} style={s.stat}>
               <Text style={[t.monoData, s.statVal, { color }]}>{val}</Text>
@@ -138,7 +145,7 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
         </View>
 
         <View style={s.cardFooter}>
-          <Btn label="Manage" variant="secondary" small onPress={onManage} />
+          <Btn label={tr('myParties.manage')} variant="secondary" small onPress={onManage} />
         </View>
       </View>
     </View>
@@ -151,6 +158,8 @@ export default function MyPartiesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+  const { t: tr } = useTranslation('parties');
+  const { t: trCommon } = useTranslation('common');
 
   const [tab, setTab] = useState<TabKey>('attending');
   const [rsvps, setRsvps] = useState<ApiRsvp[] | null>(null);
@@ -173,11 +182,11 @@ export default function MyPartiesScreen() {
     } catch (err) {
       const msg = (err as Error).message;
       if (msg === 'unauthorized') setNeedsAuth(true);
-      else setError(msg || 'Could not load your parties.');
+      else setError(msg || tr('myParties.loadError'));
     } finally {
       setRefreshing(false);
     }
-  }, [auth.status]);
+  }, [auth.status, tr]);
 
   useFocusEffect(useCallback(() => { load(tab); }, [load, tab]));
 
@@ -205,7 +214,7 @@ export default function MyPartiesScreen() {
       <AppHeader />
 
       <View style={s.headerBlock}>
-        <Text style={[t.headlineLg, { color: colors.accent }]}>My Parties</Text>
+        <Text style={[t.headlineLg, { color: colors.accent }]}>{tr('myParties.title')}</Text>
 
         {/* Brutalist two-button segmented toggle */}
         <View style={s.tabs}>
@@ -218,7 +227,7 @@ export default function MyPartiesScreen() {
                 style={[s.tabBtn, active && { backgroundColor: colors.fill }]}
               >
                 <Text style={[t.labelCaps, { color: active ? colors.fillText : colors.textPrimary }]}>
-                  {key}
+                  {tr(`myParties.tabs.${key}`)}
                 </Text>
               </Pressable>
             );
@@ -228,20 +237,20 @@ export default function MyPartiesScreen() {
 
       {needsAuth ? (
         <GuestGate
-          title="Get in the game"
-          message="Sign in to track your RSVPs and run your own watch parties."
+          title={tr('myParties.guestGate.title')}
+          message={tr('myParties.guestGate.message')}
           redirect="/(tabs)/parties"
         />
       ) : showSpinner ? (
         <View style={s.center}>
           <ActivityIndicator color={colors.accent} />
-          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>Loading</Text>
+          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('myParties.loading')}</Text>
         </View>
       ) : error && activeData === null ? (
         <View style={s.center}>
-          <Text style={[t.headlineMd, s.stateTitle]}>Signal lost</Text>
+          <Text style={[t.headlineMd, s.stateTitle]}>{tr('myParties.signalLost')}</Text>
           <Text style={[t.bodyMd, s.stateBody]}>{error}</Text>
-          <Btn label="Retry" variant="secondary" onPress={() => load(tab)} />
+          <Btn label={trCommon('retry')} variant="secondary" onPress={() => load(tab)} />
         </View>
       ) : tab === 'attending' ? (
         <FlatList
@@ -252,11 +261,11 @@ export default function MyPartiesScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
           ListEmptyComponent={
             <View style={s.center}>
-              <Text style={[t.headlineMd, s.stateTitle]}>No parties yet</Text>
+              <Text style={[t.headlineMd, s.stateTitle]}>{tr('myParties.emptyAttending.title')}</Text>
               <Text style={[t.bodyMd, s.stateBody]}>
-                RSVP to a watch party and it will show up here.
+                {tr('myParties.emptyAttending.body')}
               </Text>
-              <Btn label="Find a Party" onPress={() => router.push('/(tabs)/discover')} />
+              <Btn label={tr('myParties.emptyAttending.cta')} onPress={() => router.push('/(tabs)/discover')} />
             </View>
           }
           renderItem={({ item }) => <AttendingCard rsvp={item} />}
@@ -280,11 +289,11 @@ export default function MyPartiesScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
           ListEmptyComponent={
             <View style={s.center}>
-              <Text style={[t.headlineMd, s.stateTitle]}>Host your first party</Text>
+              <Text style={[t.headlineMd, s.stateTitle]}>{tr('myParties.emptyHosting.title')}</Text>
               <Text style={[t.bodyMd, s.stateBody]}>
-                Create a watch party and rally the squad.
+                {tr('myParties.emptyHosting.body')}
               </Text>
-              <Btn label="Create Party" onPress={() => router.push('/(tabs)/parties/create' as never)} />
+              <Btn label={tr('myParties.emptyHosting.cta')} onPress={() => router.push('/(tabs)/parties/create' as never)} />
             </View>
           }
           renderItem={({ item }) => (
@@ -300,7 +309,7 @@ export default function MyPartiesScreen() {
       {showCreateFooter && (
         <View style={[s.footerBar, { paddingBottom: insets.bottom + spacing.md }]}>
           <Btn
-            label="+ Create Party"
+            label={tr('myParties.createFooter')}
             onPress={() => router.push('/(tabs)/parties/create' as never)}
             style={s.footerBtn}
           />

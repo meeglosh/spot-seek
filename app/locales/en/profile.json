@@ -1,0 +1,41 @@
+{
+  "title": "Personal Hub",
+  "guestGate": {
+    "title": "Personal Hub",
+    "message": "Sign in to track your RSVPs, teams, and hosting record."
+  },
+  "hero": {
+    "verifiedHost": "Verified Host",
+    "followers_one": "{{count}} Follower",
+    "followers_other": "{{count}} Followers",
+    "following_one": "{{count}} Following",
+    "following_other": "{{count}} Following",
+    "since": "Since {{year}}",
+    "partiesAttended": "Parties Attended",
+    "nextMilestone": "Next milestone: {{count}} parties attended."
+  },
+  "hostCta": {
+    "title": "Host a Party",
+    "body": "Create a new event and invite your squad.",
+    "button": "Initialize Setup"
+  },
+  "teams": {
+    "sectionTitle": "My Teams (Favorites)",
+    "fallbackLeague": "Following",
+    "findTeams": "Find Teams"
+  },
+  "saved": {
+    "sectionTitle": "Saved Parties",
+    "empty": "No upcoming parties — browse events →",
+    "waitlist": "Waitlist",
+    "unknownEvent": "Unknown event",
+    "dateTbc": "DATE TBC"
+  },
+  "hosting": {
+    "sectionTitle": "Hosting History",
+    "empty": "Nothing hosted yet. Your past events will show up here.",
+    "attendee_one": "Completed · {{count}} attendee",
+    "attendee_other": "Completed · {{count}} attendees"
+  },
+  "signOut": "Sign Out"
+}

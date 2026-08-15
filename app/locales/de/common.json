@@ -1,0 +1,45 @@
+{
+  "cancel": "Abbrechen",
+  "save": "Speichern",
+  "back": "Zurück",
+  "done": "Fertig",
+  "retry": "Erneut versuchen",
+  "delete": "Löschen",
+  "edit": "Bearbeiten",
+  "close": "Schließen",
+  "loading": "Wird geladen…",
+  "comingSoon": "Demnächst verfügbar",
+  "brand": {
+    "tagline": "NIE WIEDER ALLEIN SCHAUEN"
+  },
+  "guestGate": {
+    "membersOnly": "Nur für Mitglieder",
+    "signIn": "Anmelden",
+    "createAccount": "Konto erstellen",
+    "keepBrowsing": "Weiter stöbern",
+    "joinTheAction": "Mach mit"
+  },
+  "tabs": {
+    "discover": "Entdecken",
+    "myParties": "Meine Partys",
+    "profile": "Profil"
+  },
+  "shell": {
+    "menu": {
+      "switchToHosting": "Zum Gastgeber-Modus wechseln",
+      "sponsorships": "Sponsoring",
+      "wallet": "Wallet",
+      "walletComingSoon": "Demnächst verfügbar.",
+      "settings": "Einstellungen",
+      "signOut": "Abmelden",
+      "signIn": "Anmelden"
+    },
+    "guestName": "Fan",
+    "roleSeeker": "Fan",
+    "accessibility": {
+      "openMenu": "Menü öffnen",
+      "notifications": "Benachrichtigungen",
+      "profile": "Profil"
+    }
+  }
+}

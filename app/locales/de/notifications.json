@@ -1,0 +1,24 @@
+{
+  "title": "Benachrichtigungen",
+  "guestGate": {
+    "title": "Benachrichtigungen",
+    "message": "Melde dich an, um Aktivitäten zu deinen Partys und Sponsorings zu sehen."
+  },
+  "loadError": "Benachrichtigungen konnten nicht geladen werden.",
+  "empty": "Noch keine Benachrichtigungen — Aktivitäten zu deinen Partys erscheinen hier.",
+  "timeAgo": {
+    "justNow": "gerade eben",
+    "minutes_one": "vor {{count}} Min.",
+    "minutes_other": "vor {{count}} Min.",
+    "hours_one": "vor {{count}} Std.",
+    "hours_other": "vor {{count}} Std.",
+    "days_one": "vor {{count}} Tag",
+    "days_other": "vor {{count}} Tagen",
+    "weeks_one": "vor {{count}} Woche",
+    "weeks_other": "vor {{count}} Wochen",
+    "months_one": "vor {{count}} Monat",
+    "months_other": "vor {{count}} Monaten",
+    "years_one": "vor {{count}} Jahr",
+    "years_other": "vor {{count}} Jahren"
+  }
+}

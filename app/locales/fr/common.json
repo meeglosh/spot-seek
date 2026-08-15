@@ -1,0 +1,45 @@
+{
+  "cancel": "Annuler",
+  "save": "Enregistrer",
+  "back": "Retour",
+  "done": "Terminé",
+  "retry": "Réessayer",
+  "delete": "Supprimer",
+  "edit": "Modifier",
+  "close": "Fermer",
+  "loading": "Chargement…",
+  "comingSoon": "Bientôt disponible",
+  "brand": {
+    "tagline": "NE PLUS JAMAIS REGARDER SEUL"
+  },
+  "guestGate": {
+    "membersOnly": "Réservé aux membres",
+    "signIn": "Se connecter",
+    "createAccount": "Créer un compte",
+    "keepBrowsing": "Continuer à explorer",
+    "joinTheAction": "Rejoindre l'action"
+  },
+  "tabs": {
+    "discover": "Découvrir",
+    "myParties": "Mes soirées",
+    "profile": "Profil"
+  },
+  "shell": {
+    "menu": {
+      "switchToHosting": "Passer en mode hôte",
+      "sponsorships": "Sponsoring",
+      "wallet": "Portefeuille",
+      "walletComingSoon": "Bientôt disponible.",
+      "settings": "Paramètres",
+      "signOut": "Se déconnecter",
+      "signIn": "Se connecter"
+    },
+    "guestName": "Chercheur",
+    "roleSeeker": "Chercheur",
+    "accessibility": {
+      "openMenu": "Ouvrir le menu",
+      "notifications": "Notifications",
+      "profile": "Profil"
+    }
+  }
+}

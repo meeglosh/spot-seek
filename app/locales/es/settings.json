@@ -1,0 +1,44 @@
+{
+  "title": "Ajustes",
+  "guestGate": {
+    "title": "Ajustes",
+    "message": "Inicia sesión para gestionar tu cuenta y tus preferencias de notificación."
+  },
+  "account": {
+    "title": "Cuenta",
+    "signedInAs": "Sesión iniciada como",
+    "signOut": "Cerrar sesión",
+    "deleteAccount": "Eliminar cuenta",
+    "deleteConfirm": "¿Eliminar tu cuenta? Esta acción no se puede deshacer. Los anfitriones deben eliminar antes sus propios eventos.",
+    "keepIt": "Conservar",
+    "yesDelete": "Sí, eliminar",
+    "deleteFallbackError": "No se pudo eliminar la cuenta."
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "loadError": "No se pudieron cargar los ajustes de notificaciones.",
+    "email": "Notificaciones por correo",
+    "emailError": "No se pudieron guardar las notificaciones por correo — inténtalo de nuevo.",
+    "push": "Notificaciones push",
+    "radiusLabel": "Radio de alertas cercanas",
+    "radiusValue": "{{miles}} mi / {{km}} km",
+    "radiusError": "No se pudo guardar el radio — inténtalo de nuevo."
+  },
+  "language": {
+    "title": "Idioma",
+    "systemDefault": "Idioma del sistema"
+  },
+  "favourites": {
+    "title": "Favoritos",
+    "manage": "Gestionar favoritos"
+  },
+  "about": {
+    "title": "Acerca de",
+    "terms": "Términos del servicio",
+    "privacy": "Política de privacidad",
+    "contactSupport": "Contactar con soporte",
+    "comingSoonAlert": "Próximamente.",
+    "versionLabel": "Versión {{version}}",
+    "versionLabelWithBuild": "Versión {{version}} ({{build}})"
+  }
+}

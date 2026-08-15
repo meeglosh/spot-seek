@@ -1,0 +1,45 @@
+{
+  "cancel": "Cancel",
+  "save": "Save",
+  "back": "Back",
+  "done": "Done",
+  "retry": "Retry",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "loading": "Loading…",
+  "comingSoon": "Coming soon",
+  "brand": {
+    "tagline": "NEVER WATCH ALONE"
+  },
+  "guestGate": {
+    "membersOnly": "Members only",
+    "signIn": "Sign in",
+    "createAccount": "Create account",
+    "keepBrowsing": "Keep browsing",
+    "joinTheAction": "Join the action"
+  },
+  "tabs": {
+    "discover": "Discover",
+    "myParties": "My Parties",
+    "profile": "Profile"
+  },
+  "shell": {
+    "menu": {
+      "switchToHosting": "Switch to Hosting",
+      "sponsorships": "Sponsorships",
+      "wallet": "Wallet",
+      "walletComingSoon": "Coming soon.",
+      "settings": "Settings",
+      "signOut": "Sign Out",
+      "signIn": "Sign In"
+    },
+    "guestName": "Seeker",
+    "roleSeeker": "Seeker",
+    "accessibility": {
+      "openMenu": "Open menu",
+      "notifications": "Notifications",
+      "profile": "Profile"
+    }
+  }
+}

@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
 import { Btn, SegmentBar } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
@@ -27,11 +28,11 @@ function isToday(iso: string) {
   return new Date(iso).toDateString() === new Date().toDateString();
 }
 
-function whenLabel(e: ApiDashboardEvent): string {
-  if (!e.startsAt) return 'No date set';
+function whenLabel(e: ApiDashboardEvent, tr: (key: string, opts?: Record<string, unknown>) => string): string {
+  if (!e.startsAt) return tr('dashboard.noDateSet');
   const { dateStr, timeStr } = formatEventDateTime(e.startsAt, e.venueTimezone);
-  if (isToday(e.startsAt)) return `Tonight @ ${timeStr}`;
-  return `${dateStr} @ ${timeStr}`;
+  if (isToday(e.startsAt)) return tr('dashboard.tonightAt', { time: timeStr });
+  return tr('dashboard.dateAt', { date: dateStr, time: timeStr });
 }
 
 function shortDate(iso: string, venueTimezone: string | null = null) {
@@ -55,6 +56,8 @@ export default function CommandCenterScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+  const { t: tr } = useTranslation('parties');
+  const { t: trCommon } = useTranslation('common');
 
   const [events, setEvents] = useState<ApiDashboardEvent[]>([]);
   const [analytics, setAnalytics] = useState<Record<string, ApiHostAnalyticsEvent>>({});
@@ -85,12 +88,12 @@ export default function CommandCenterScreen() {
         active.map((e, i) => [e.id, bids[i].some((b) => b.status === 'pending')]),
       ));
     } catch (err) {
-      if (!silent) setError((err as Error).message || 'Could not load dashboard.');
+      if (!silent) setError((err as Error).message || tr('dashboard.loadError'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [auth.status]);
+  }, [auth.status, tr]);
 
   // Reload when the screen regains focus so edits/creations show up.
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -109,8 +112,8 @@ export default function CommandCenterScreen() {
       <View style={s.container}>
         <AppHeader back />
         <GuestGate
-          title="Command Center"
-          message="Sign in to create and manage your watch parties."
+          title={tr('dashboard.guestGate.title')}
+          message={tr('dashboard.guestGate.message')}
           redirect="/(tabs)/parties/dashboard"
         />
       </View>
@@ -131,13 +134,13 @@ export default function CommandCenterScreen() {
       {loading && !refreshing ? (
         <View style={s.center}>
           <ActivityIndicator color={colors.accent} />
-          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>Loading</Text>
+          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('dashboard.loading')}</Text>
         </View>
       ) : error && events.length === 0 ? (
         <View style={s.center}>
-          <Text style={[t.headlineMd, s.stateTitle]}>Signal lost</Text>
+          <Text style={[t.headlineMd, s.stateTitle]}>{tr('dashboard.signalLost')}</Text>
           <Text style={[t.bodyMd, s.stateBody]}>{error}</Text>
-          <Btn label="Retry" variant="secondary" onPress={() => load()} />
+          <Btn label={trCommon('retry')} variant="secondary" onPress={() => load()} />
         </View>
       ) : (
         <ScrollView
@@ -147,18 +150,18 @@ export default function CommandCenterScreen() {
         >
           {/* Header: eyebrow + headline + stat tiles */}
           <View style={s.headerBlock}>
-            <Text style={[t.labelCaps, { color: colors.live }]}>Host Dashboard</Text>
-            <Text style={[t.headlineLg, { color: colors.textPrimary }]}>Command Center</Text>
+            <Text style={[t.labelCaps, { color: colors.live }]}>{tr('dashboard.hostDashboard')}</Text>
+            <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('dashboard.commandCenter')}</Text>
 
             <View style={s.statTiles}>
               <View style={s.statTile}>
-                <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>Total RSVP</Text>
+                <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('dashboard.totalRsvp')}</Text>
                 <Text style={[t.monoData, s.statTileValue, { color: colors.accentDim }]}>
                   {totalRsvp.toLocaleString('en-US')}
                 </Text>
               </View>
               <View style={s.statTile}>
-                <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>Sponsor Rev</Text>
+                <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('dashboard.sponsorRev')}</Text>
                 <Text style={[t.monoData, s.statTileValue, { color: colors.volt }]}>
                   {fmtMoney(sponsorRevCents)}
                 </Text>
@@ -169,11 +172,11 @@ export default function CommandCenterScreen() {
           {/* ── Active parties ── */}
           <View style={s.sectionHeader}>
             <View style={s.liveDot} />
-            <Text style={[t.headlineMd, { color: colors.textPrimary }]}>Active Parties</Text>
+            <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{tr('dashboard.activeParties')}</Text>
           </View>
 
           {activeParties.length === 0 ? (
-            <Text style={[t.bodyMd, s.emptyLine]}>No live parties. Publish one to get on the board.</Text>
+            <Text style={[t.bodyMd, s.emptyLine]}>{tr('dashboard.emptyActive')}</Text>
           ) : (
             activeParties.map((e) => {
               const stats = analytics[e.id];
@@ -192,10 +195,10 @@ export default function CommandCenterScreen() {
                   <Text style={[t.headlineMd, { color: colors.textPrimary }]} numberOfLines={2}>
                     {e.title}
                   </Text>
-                  <Text style={[t.monoData, { color: colors.textSecondary }]}>{whenLabel(e)}</Text>
+                  <Text style={[t.monoData, { color: colors.textSecondary }]}>{whenLabel(e, tr)}</Text>
 
                   <View style={s.rsvpRow}>
-                    <Text style={[t.bodyMd, { color: colors.textPrimary }]}>RSVPs</Text>
+                    <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('dashboard.rsvps')}</Text>
                     <Text style={[t.monoData, { color: colors.accentDim }]}>
                       {e.capacity != null ? `${going} / ${e.capacity}` : `${going}`}
                     </Text>
@@ -206,13 +209,13 @@ export default function CommandCenterScreen() {
 
                   <View style={s.activeFooter}>
                     {sponsored ? (
-                      <Text style={[t.labelCaps, { color: colors.volt }]}>Sponsored</Text>
+                      <Text style={[t.labelCaps, { color: colors.volt }]}>{tr('dashboard.sponsored')}</Text>
                     ) : pending ? (
-                      <Text style={[t.labelCaps, { color: colors.textSecondary }]}>Pending Sponsor</Text>
+                      <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('dashboard.pendingSponsor')}</Text>
                     ) : (
-                      <Btn label="Find Sponsors" variant="ghost" small onPress={() => findSponsors(e.id)} />
+                      <Btn label={tr('dashboard.findSponsors')} variant="ghost" small onPress={() => findSponsors(e.id)} />
                     )}
-                    <Btn label="Manage" variant="secondary" small onPress={() => edit(e.id)} />
+                    <Btn label={tr('dashboard.manage')} variant="secondary" small onPress={() => edit(e.id)} />
                   </View>
                 </View>
               );
@@ -220,9 +223,9 @@ export default function CommandCenterScreen() {
           )}
 
           {/* ── Drafts ── */}
-          <Text style={[t.headlineMd, s.dimSectionTitle]}>Drafts</Text>
+          <Text style={[t.headlineMd, s.dimSectionTitle]}>{tr('dashboard.drafts')}</Text>
           {drafts.length === 0 ? (
-            <Text style={[t.bodyMd, s.emptyLine]}>No drafts on the bench.</Text>
+            <Text style={[t.bodyMd, s.emptyLine]}>{tr('dashboard.emptyDrafts')}</Text>
           ) : (
             drafts.map((e) => (
               <Pressable
@@ -233,7 +236,7 @@ export default function CommandCenterScreen() {
                 <View style={s.rowText}>
                   <Text style={[t.bodyLg, s.rowTitle]} numberOfLines={1}>{e.title}</Text>
                   <Text style={[t.monoData, { color: colors.textSecondary }]}>
-                    Edited {shortDate(e.updatedAt)}
+                    {tr('dashboard.edited', { date: shortDate(e.updatedAt) })}
                   </Text>
                 </View>
                 <Text style={s.rowArrow}>→</Text>
@@ -242,9 +245,9 @@ export default function CommandCenterScreen() {
           )}
 
           {/* ── Completed ── */}
-          <Text style={[t.headlineMd, s.dimSectionTitle]}>Completed</Text>
+          <Text style={[t.headlineMd, s.dimSectionTitle]}>{tr('dashboard.completed')}</Text>
           {completed.length === 0 ? (
-            <Text style={[t.bodyMd, s.emptyLine]}>Nothing in the record books yet.</Text>
+            <Text style={[t.bodyMd, s.emptyLine]}>{tr('dashboard.emptyCompleted')}</Text>
           ) : (
             completed.map((e) => {
               const stats = analytics[e.id];
@@ -261,13 +264,15 @@ export default function CommandCenterScreen() {
                     <Text style={[t.bodyLg, s.rowTitle, s.struck]} numberOfLines={1}>{e.title}</Text>
                     <Text style={[t.monoData, { color: colors.textSecondary }]}>
                       {e.status === 'cancelled'
-                        ? 'Cancelled'
-                        : endRef ? `Ended ${shortDate(endRef, e.venueTimezone)}` : 'Ended'}
+                        ? tr('dashboard.cancelled')
+                        : endRef ? tr('dashboard.ended', { date: shortDate(endRef, e.venueTimezone) }) : tr('dashboard.endedNoDate')}
                     </Text>
                   </View>
                   <View style={s.rowRight}>
-                    {sponsored && <Text style={[t.labelCapsSm, { color: colors.volt }]}>Sponsored</Text>}
-                    <Text style={[t.monoData, { color: colors.textSecondary }]}>{attendees} attendees</Text>
+                    {sponsored && <Text style={[t.labelCapsSm, { color: colors.volt }]}>{tr('dashboard.sponsored')}</Text>}
+                    <Text style={[t.monoData, { color: colors.textSecondary }]}>
+                      {tr('dashboard.attendees', { count: attendees })}
+                    </Text>
                   </View>
                 </Pressable>
               );
@@ -281,7 +286,7 @@ export default function CommandCenterScreen() {
       {auth.status === 'authenticated' && !loading && (
         <View style={[s.footerBar, { paddingBottom: insets.bottom + spacing.md }]}>
           <Btn
-            label="+ Create Party"
+            label={tr('dashboard.createFooter')}
             onPress={() => router.push({ pathname: '/(tabs)/parties/create', params: { from: 'dashboard' } } as never)}
             style={s.footerBtn}
           />

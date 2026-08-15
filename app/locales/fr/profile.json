@@ -1,0 +1,41 @@
+{
+  "title": "Espace personnel",
+  "guestGate": {
+    "title": "Espace personnel",
+    "message": "Connectez-vous pour suivre vos confirmations, vos équipes et votre historique d'organisation."
+  },
+  "hero": {
+    "verifiedHost": "Hôte vérifié",
+    "followers_one": "{{count}} abonné",
+    "followers_other": "{{count}} abonnés",
+    "following_one": "{{count}} abonnement",
+    "following_other": "{{count}} abonnements",
+    "since": "Depuis {{year}}",
+    "partiesAttended": "Soirées suivies",
+    "nextMilestone": "Prochain palier : {{count}} soirées suivies."
+  },
+  "hostCta": {
+    "title": "Organiser une soirée",
+    "body": "Créez un nouvel événement et invitez votre équipe.",
+    "button": "Démarrer la configuration"
+  },
+  "teams": {
+    "sectionTitle": "Mes équipes (favoris)",
+    "fallbackLeague": "Suivi",
+    "findTeams": "Trouver des équipes"
+  },
+  "saved": {
+    "sectionTitle": "Soirées enregistrées",
+    "empty": "Aucune soirée à venir — parcourez les événements →",
+    "waitlist": "Liste d'attente",
+    "unknownEvent": "Événement inconnu",
+    "dateTbc": "DATE À CONFIRMER"
+  },
+  "hosting": {
+    "sectionTitle": "Historique d'organisation",
+    "empty": "Rien organisé pour l'instant. Vos événements passés apparaîtront ici.",
+    "attendee_one": "Terminée · {{count}} participant",
+    "attendee_other": "Terminée · {{count}} participants"
+  },
+  "signOut": "Se déconnecter"
+}

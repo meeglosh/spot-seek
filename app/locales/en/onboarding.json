@@ -1,0 +1,40 @@
+{
+  "brand": {
+    "tagline": "NEVER WATCH ALONE"
+  },
+  "seeker": {
+    "headline": "FIND YOUR CROWD",
+    "body": "Discover local watch parties for the events you love. Never watch alone again.",
+    "chips": {
+      "liveSports": "LIVE SPORTS",
+      "awards": "AWARDS",
+      "bigEvents": "BIG EVENTS"
+    }
+  },
+  "host": {
+    "headline": "LEAD THE EXPERIENCE",
+    "body": "Host your own watch party. Build a community around your passion and lead the fun.",
+    "chips": {
+      "yourVenue": "YOUR VENUE",
+      "yourCrowd": "YOUR CROWD",
+      "yourRules": "YOUR RULES"
+    }
+  },
+  "sponsor": {
+    "headline": "FUEL THE PASSION",
+    "body": "Partner with local events. Sponsor watch parties to reach the crowd and unlock exclusive perks.",
+    "chips": {
+      "vipAccess": "VIP ACCESS",
+      "gearDrops": "GEAR DROPS",
+      "partnerDeals": "PARTNER DEALS"
+    }
+  },
+  "cta": {
+    "next": "NEXT →",
+    "getStarted": "GET STARTED →"
+  },
+  "skip": {
+    "label": "SKIP",
+    "a11y": "Skip onboarding"
+  }
+}

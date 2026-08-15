@@ -1,5 +1,6 @@
 import React from 'react';
 import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, spacing, type as t } from '../lib/theme';
 
 // Matches the require() pattern used for the same asset in app/onboarding.tsx
@@ -23,6 +24,11 @@ type Props = {
 // after a hold period; it never reappears on foreground-from-background or
 // navigation because the parent only mounts it once, on cold start.
 export default function LaunchSplash({ dismiss, onDone }: Props) {
+  // Scoped to 'common' (the app's defaultNS) — the tagline lives under
+  // common.json's `brand` subtree since it's app-wide, not screen-specific.
+  // Aliased to `tr` because `t` is already the theme.type import used below
+  // (t.labelCaps).
+  const { t: tr } = useTranslation('common');
   const opacity = React.useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
@@ -41,7 +47,7 @@ export default function LaunchSplash({ dismiss, onDone }: Props) {
       <View style={s.center}>
         <Image source={BRAND_LOGO} resizeMode="contain" style={s.logo} />
         <Text style={[s.wordmark, { fontFamily: fonts.display }]}>SPOT SEEK</Text>
-        <Text style={[t.labelCaps, s.tagline]}>NEVER WATCH ALONE</Text>
+        <Text style={[t.labelCaps, s.tagline]}>{tr('brand.tagline')}</Text>
       </View>
     </Animated.View>
   );

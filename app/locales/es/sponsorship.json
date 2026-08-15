@@ -1,0 +1,126 @@
+{
+  "statusLabels": {
+    "pending": "Pendiente",
+    "active": "Activo",
+    "rejected": "Rechazado",
+    "cancelled": "Cancelado"
+  },
+  "browse": {
+    "title": "Centro de patrocinios",
+    "subtitle": "Oportunidades de segmentación de alto rendimiento.",
+    "guestGate": {
+      "title": "Centro de patrocinios",
+      "message": "Inicia sesión para registrar tu marca, explorar fiestas de alto engagement y pujar por patrocinios."
+    },
+    "filters": {
+      "all": "Todos",
+      "today": "Hoy",
+      "week": "Esta semana"
+    },
+    "dateTbc": "FECHA POR CONFIRMAR",
+    "register": {
+      "title": "Conviértete en patrocinador",
+      "description": "Registra tu empresa para pujar por fiestas de visualización. Los anfitriones aceptan o rechazan cada puja — se aplica una comisión de plataforma del 15 % a las pujas aceptadas.",
+      "companyName": "Nombre de la empresa",
+      "companyNamePlaceholder": "ej. Voltage Drinks Co.",
+      "website": "Sitio web (opcional)",
+      "websitePlaceholder": "https://…",
+      "categories": "Categorías (opcional)",
+      "budgetMin": "Presupuesto mín. (opcional)",
+      "budgetMax": "Presupuesto máx. (opcional)",
+      "budgetPlaceholder": "$",
+      "submit": "Registrarme como patrocinador",
+      "errorRequired": "El nombre de la empresa es obligatorio.",
+      "errorSignIn": "Inicia sesión primero para registrarte como patrocinador.",
+      "errorFailed": "El registro falló. Inténtalo de nuevo."
+    },
+    "sponsorLabel": "Patrocinador · {{company}}",
+    "stats": {
+      "totalBids": "Pujas totales",
+      "active": "Activas",
+      "totalSpend": "Gasto total",
+      "reach": "Alcance"
+    },
+    "requests": {
+      "sectionTitle": "Solicitudes de patrocinio",
+      "fallbackEventTitle": "Evento",
+      "newRequest": "Nueva solicitud",
+      "goingCount_one": "{{count}} asistente",
+      "goingCount_other": "{{count}} asistentes",
+      "decline": "Rechazar",
+      "accept": "Aceptar"
+    },
+    "marketplace": {
+      "sectionTitle": "Abierto a patrocinio",
+      "empty": "Ningún evento publicado coincide con este filtro.",
+      "privateVenue": "Ubicación privada — se revela tras confirmar asistencia",
+      "venueTbc": "Local por confirmar",
+      "date": "Fecha",
+      "capacity": "Aforo",
+      "yourBid": "Tu puja · {{amount}} · {{status}}",
+      "review": "Revisar para patrocinio"
+    }
+  },
+  "bid": {
+    "guestGate": {
+      "title": "Patrocina esta fiesta",
+      "message": "Inicia sesión para revisar las condiciones del patrocinio y hacer una puja por esta fiesta de visualización."
+    },
+    "loadError": "No se pudo cargar este evento.",
+    "eventNotFound": "Evento no encontrado.",
+    "openForBids": "Abierto a pujas",
+    "facts": {
+      "date": "Fecha",
+      "venue": "Local",
+      "privateVenue": "PRIVADO — TRAS CONFIRMAR ASISTENCIA",
+      "venueTbc": "POR CONFIRMAR",
+      "capacity": "Aforo"
+    },
+    "dealTitle": "El acuerdo",
+    "dealPoints": {
+      "yourBid": {
+        "title": "Tu puja",
+        "body": "Ofrece un monto de patrocinio para este evento. El anfitrión ve tu puja y tu nota."
+      },
+      "platformFee": {
+        "title": "Comisión de plataforma — 15 %",
+        "body": "SpotSeek se queda con el 15 % de una puja aceptada. El anfitrión recibe el resto."
+      },
+      "hostDecision": {
+        "title": "Decisión del anfitrión",
+        "body": "El anfitrión acepta o rechaza tu puja. Puedes cancelarla mientras esté pendiente."
+      },
+      "payment": {
+        "title": "Pago",
+        "body": "Se cobra solo después de que el anfitrión acepte. Los pagos están actualmente en modo de prueba — no se realiza ningún cargo real."
+      }
+    },
+    "statusTitle": "Estado del patrocinio",
+    "yourBid": "Tu puja",
+    "platformFee": "Comisión de plataforma (15 %)",
+    "hostReceives": "El anfitrión recibe",
+    "placed": "Realizada",
+    "note": "Nota: {{note}}",
+    "cancelBid": "Cancelar puja",
+    "hostAccepted": "El anfitrión aceptó esta puja.",
+    "testNoteAccepted": "El pago se procesa solo después de que el anfitrión acepte — los pagos están en modo de prueba, sin cargos reales.",
+    "sponsorProfileNeeded": {
+      "title": "Se necesita perfil de patrocinador",
+      "body": "Solo los patrocinadores registrados pueden pujar. Registra tu empresa en el Centro de patrocinios y vuelve a hacer una puja.",
+      "cta": "Registrarme en el Centro"
+    },
+    "lastBid": "Última puja · {{amount}} · {{status}}",
+    "bidAmountLabel": "Monto de la puja (USD)",
+    "bidAmountPlaceholder": "ej. 250",
+    "noteLabel": "Nota para el anfitrión (opcional)",
+    "notePlaceholder": "Qué aporta tu marca a la fiesta…",
+    "feeSummary": "COMISIÓN DE PLATAFORMA (15 %): {{fee}} · EL ANFITRIÓN RECIBE: {{host}}",
+    "placeBid": "Hacer puja",
+    "testNotePending": "El pago se procesa solo después de que el anfitrión acepte tu puja — los pagos están en modo de prueba, sin cargos reales.",
+    "errors": {
+      "signIn": "Inicia sesión para hacer una puja.",
+      "failed": "La puja falló. Inténtalo de nuevo.",
+      "cancelFailed": "No se pudo cancelar la puja. Inténtalo de nuevo."
+    }
+  }
+}

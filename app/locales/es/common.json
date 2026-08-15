@@ -1,0 +1,45 @@
+{
+  "cancel": "Cancelar",
+  "save": "Guardar",
+  "back": "Atrás",
+  "done": "Listo",
+  "retry": "Reintentar",
+  "delete": "Eliminar",
+  "edit": "Editar",
+  "close": "Cerrar",
+  "loading": "Cargando…",
+  "comingSoon": "Próximamente",
+  "brand": {
+    "tagline": "NUNCA MÁS VEAS SOLO"
+  },
+  "guestGate": {
+    "membersOnly": "Solo para miembros",
+    "signIn": "Iniciar sesión",
+    "createAccount": "Crear cuenta",
+    "keepBrowsing": "Seguir explorando",
+    "joinTheAction": "Únete a la acción"
+  },
+  "tabs": {
+    "discover": "Descubrir",
+    "myParties": "Mis fiestas",
+    "profile": "Perfil"
+  },
+  "shell": {
+    "menu": {
+      "switchToHosting": "Cambiar a modo anfitrión",
+      "sponsorships": "Patrocinios",
+      "wallet": "Cartera",
+      "walletComingSoon": "Próximamente.",
+      "settings": "Ajustes",
+      "signOut": "Cerrar sesión",
+      "signIn": "Iniciar sesión"
+    },
+    "guestName": "Buscador",
+    "roleSeeker": "Buscador",
+    "accessibility": {
+      "openMenu": "Abrir menú",
+      "notifications": "Notificaciones",
+      "profile": "Perfil"
+    }
+  }
+}

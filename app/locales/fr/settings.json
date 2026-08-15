@@ -1,0 +1,44 @@
+{
+  "title": "Paramètres",
+  "guestGate": {
+    "title": "Paramètres",
+    "message": "Connectez-vous pour gérer votre compte et vos préférences de notification."
+  },
+  "account": {
+    "title": "Compte",
+    "signedInAs": "Connecté en tant que",
+    "signOut": "Se déconnecter",
+    "deleteAccount": "Supprimer le compte",
+    "deleteConfirm": "Supprimer votre compte ? Cette action est irréversible. Les hôtes doivent d'abord supprimer leurs propres événements.",
+    "keepIt": "Conserver",
+    "yesDelete": "Oui, supprimer",
+    "deleteFallbackError": "Impossible de supprimer le compte."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "loadError": "Impossible de charger les paramètres de notification.",
+    "email": "Notifications par e-mail",
+    "emailError": "Impossible d'enregistrer les notifications par e-mail — réessayez.",
+    "push": "Notifications push",
+    "radiusLabel": "Rayon d'alerte à proximité",
+    "radiusValue": "{{miles}} mi / {{km}} km",
+    "radiusError": "Impossible d'enregistrer le rayon — réessayez."
+  },
+  "language": {
+    "title": "Langue",
+    "systemDefault": "Langue du système"
+  },
+  "favourites": {
+    "title": "Favoris",
+    "manage": "Gérer les favoris"
+  },
+  "about": {
+    "title": "À propos",
+    "terms": "Conditions d'utilisation",
+    "privacy": "Politique de confidentialité",
+    "contactSupport": "Contacter le support",
+    "comingSoonAlert": "Bientôt disponible.",
+    "versionLabel": "Version {{version}}",
+    "versionLabelWithBuild": "Version {{version}} ({{build}})"
+  }
+}

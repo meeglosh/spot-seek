@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
 import { colors, fonts, palette, spacing, type as t } from '../../lib/theme';
 import { Badge, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
@@ -13,6 +14,11 @@ export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
   const { signUp } = useAuth();
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  // Scoped to the 'auth' namespace — tr()/t() calls below read
+  // locales/<lang>/auth.json. Aliased to `tr` because this file already
+  // uses `t` for theme.type tokens imported from ../../lib/theme. See
+  // lib/i18n.ts for the full key-naming convention.
+  const { t: tr } = useTranslation('auth');
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -31,7 +37,7 @@ export default function SignUpScreen() {
       // returns the user to whatever screen originally gated them.
       router.replace({ pathname: '/(auth)/interests', params: redirect ? { redirect } : {} } as never);
     } catch (err) {
-      setError((err as Error).message || 'Something went wrong.');
+      setError((err as Error).message || tr('signUp.errorFallback'));
     } finally {
       setLoading(false);
     }
@@ -50,40 +56,43 @@ export default function SignUpScreen() {
           <Text style={[t.labelCaps, { color: colors.textSecondary }]}>← Back</Text>
         </Pressable>
 
-        <Badge label="Secure connection" tone="live" />
-        <Text style={[t.headlineLg, s.title]}>Join the{'\n'}action</Text>
-        <Text style={[t.bodyMd, s.subtitle]}>Create an account to host or discover watch parties.</Text>
+        <Badge label={tr('secureConnection')} tone="live" />
+        <Text style={[t.headlineLg, s.title]}>{tr('signUp.title')}</Text>
+        <Text style={[t.bodyMd, s.subtitle]}>{tr('signUp.subtitle')}</Text>
 
         <View style={s.form}>
           {([
             {
-              label: 'Name', value: name, setter: setName, placeholder: 'Your name', secure: false,
+              id: 'name' as const, label: tr('signUp.nameLabel'), value: name, setter: setName,
+              placeholder: tr('signUp.namePlaceholder'), secure: false,
               autoComplete: 'name' as const, textContentType: 'name' as const,
             },
             {
-              label: 'Email address', value: email, setter: setEmail, placeholder: 'you@example.com', secure: false,
+              id: 'email' as const, label: tr('signUp.emailLabel'), value: email, setter: setEmail,
+              placeholder: tr('signUp.emailPlaceholder'), secure: false,
               autoComplete: 'email' as const, textContentType: 'username' as const,
             },
             {
-              label: 'Password', value: password, setter: setPassword, placeholder: '8+ characters', secure: true,
+              id: 'password' as const, label: tr('signUp.passwordLabel'), value: password, setter: setPassword,
+              placeholder: tr('signUp.passwordPlaceholder'), secure: true,
               autoComplete: 'new-password' as const, textContentType: 'newPassword' as const,
             },
           ]).map(({
-            label, value, setter, placeholder, secure, autoComplete, textContentType,
+            id, label, value, setter, placeholder, secure, autoComplete, textContentType,
           }) => (
-            <View key={label} style={s.field}>
+            <View key={id} style={s.field}>
               <FieldLabel>{label}</FieldLabel>
               <TextInput
-                style={[inputStyle, focused === label && inputFocusedStyle]}
+                style={[inputStyle, focused === id && inputFocusedStyle]}
                 placeholder={placeholder}
                 placeholderTextColor={colors.textTertiary}
                 value={value}
                 onChangeText={setter}
-                onFocus={() => setFocused(label)}
+                onFocus={() => setFocused(id)}
                 onBlur={() => setFocused(null)}
                 secureTextEntry={secure}
-                autoCapitalize={label === 'Name' ? 'words' : 'none'}
-                keyboardType={label === 'Email address' ? 'email-address' : 'default'}
+                autoCapitalize={id === 'name' ? 'words' : 'none'}
+                keyboardType={id === 'email' ? 'email-address' : 'default'}
                 autoComplete={autoComplete}
                 // "newPassword" (as opposed to sign-in's "password") tells
                 // iOS this is account creation, so 1Password/Keychain offer
@@ -101,7 +110,7 @@ export default function SignUpScreen() {
 
         <View style={s.footer}>
           <Btn
-            label={loading ? 'Creating account…' : 'Create account →'}
+            label={loading ? tr('signUp.submitLoading') : tr('signUp.submitLabel')}
             onPress={handleSignUp}
             disabled={loading}
           />
@@ -110,8 +119,8 @@ export default function SignUpScreen() {
             hitSlop={8}
           >
             <Text style={[t.bodySm, s.switchText]}>
-              Already have an account?{' '}
-              <Text style={s.switchLink}>Sign in</Text>
+              {tr('signUp.switchPrompt')}{' '}
+              <Text style={s.switchLink}>{tr('signUp.switchLink')}</Text>
             </Text>
           </Pressable>
         </View>

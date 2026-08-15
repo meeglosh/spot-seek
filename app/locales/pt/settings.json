@@ -1,0 +1,44 @@
+{
+  "title": "Definições",
+  "guestGate": {
+    "title": "Definições",
+    "message": "Inicia sessão para gerir a tua conta e as tuas preferências de notificação."
+  },
+  "account": {
+    "title": "Conta",
+    "signedInAs": "Sessão iniciada como",
+    "signOut": "Terminar sessão",
+    "deleteAccount": "Eliminar conta",
+    "deleteConfirm": "Eliminar a tua conta? Esta ação não pode ser revertida. Os anfitriões devem eliminar primeiro os seus próprios eventos.",
+    "keepIt": "Manter",
+    "yesDelete": "Sim, eliminar",
+    "deleteFallbackError": "Não foi possível eliminar a conta."
+  },
+  "notifications": {
+    "title": "Notificações",
+    "loadError": "Não foi possível carregar as definições de notificações.",
+    "email": "Notificações por e-mail",
+    "emailError": "Não foi possível guardar as notificações por e-mail — tenta novamente.",
+    "push": "Notificações push",
+    "radiusLabel": "Raio de alertas próximos",
+    "radiusValue": "{{miles}} mi / {{km}} km",
+    "radiusError": "Não foi possível guardar o raio — tenta novamente."
+  },
+  "language": {
+    "title": "Idioma",
+    "systemDefault": "Idioma do sistema"
+  },
+  "favourites": {
+    "title": "Favoritos",
+    "manage": "Gerir favoritos"
+  },
+  "about": {
+    "title": "Sobre",
+    "terms": "Termos de Serviço",
+    "privacy": "Política de Privacidade",
+    "contactSupport": "Contactar suporte",
+    "comingSoonAlert": "Brevemente.",
+    "versionLabel": "Versão {{version}}",
+    "versionLabelWithBuild": "Versão {{version}} ({{build}})"
+  }
+}

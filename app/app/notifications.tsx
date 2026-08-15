@@ -8,6 +8,8 @@ import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useAuth } from '../lib/auth';
 import {
   fetchNotifications, markNotificationsRead, type ApiNotification, type ApiNotificationType,
@@ -17,25 +19,28 @@ import { AppHeader } from '../components/AppHeader';
 import { GuestGate } from '../components/AuthGate';
 
 // No new deps: a small relative-time formatter matching the compact style
-// used elsewhere in the app ("2h ago", "3d ago").
-function timeAgo(iso: string): string {
+// used elsewhere in the app ("2h ago", "3d ago"). Takes the notifications-
+// scoped `t` so it can be called from the component below without a hook of
+// its own — see lib/i18n.ts's key-naming convention for the `_one`/`_other`
+// plural suffixes used here.
+function timeAgo(iso: string, tr: TFunction<'notifications'>): string {
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return '';
   const diffMs = Date.now() - then;
   const sec = Math.floor(diffMs / 1000);
-  if (sec < 60) return 'just now';
+  if (sec < 60) return tr('timeAgo.justNow');
   const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}m ago`;
+  if (min < 60) return tr('timeAgo.minutes', { count: min });
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
+  if (hr < 24) return tr('timeAgo.hours', { count: hr });
   const day = Math.floor(hr / 24);
-  if (day < 7) return `${day}d ago`;
+  if (day < 7) return tr('timeAgo.days', { count: day });
   const week = Math.floor(day / 7);
-  if (week < 5) return `${week}w ago`;
+  if (week < 5) return tr('timeAgo.weeks', { count: week });
   const month = Math.floor(day / 30);
-  if (month < 12) return `${month}mo ago`;
+  if (month < 12) return tr('timeAgo.months', { count: month });
   const year = Math.floor(day / 365);
-  return `${year}y ago`;
+  return tr('timeAgo.years', { count: year });
 }
 
 function routeFor(type: ApiNotificationType, eventId: string | null): string | null {
@@ -49,6 +54,9 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+  // Scoped to 'notifications' — see settings.tsx / lib/i18n.ts for the
+  // key-naming convention this follows.
+  const { t: tr } = useTranslation('notifications');
 
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,11 +76,11 @@ export default function NotificationsScreen() {
         markNotificationsRead().catch(() => {});
       }
     } catch {
-      setError('Could not load notifications.');
+      setError(tr('loadError'));
     } finally {
       setLoading(false);
     }
-  }, [auth.status]);
+  }, [auth.status, tr]);
 
   useFocusEffect(useCallback(() => {
     markedRef.current = false;
@@ -90,8 +98,8 @@ export default function NotificationsScreen() {
       <View style={s.container}>
         <AppHeader back />
         <GuestGate
-          title="Notifications"
-          message="Sign in to see activity on your parties and sponsorships."
+          title={tr('guestGate.title')}
+          message={tr('guestGate.message')}
           redirect="/notifications"
         />
       </View>
@@ -102,7 +110,7 @@ export default function NotificationsScreen() {
     <View style={s.container}>
       <AppHeader back />
       <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing.xl }]}>
-        <Text style={[t.headlineLg, s.title]}>Notifications</Text>
+        <Text style={[t.headlineLg, s.title]}>{tr('title')}</Text>
 
         {loading ? (
           <ActivityIndicator color={colors.accent} style={{ marginTop: spacing.xl }} />
@@ -110,7 +118,7 @@ export default function NotificationsScreen() {
           <Text style={[t.bodyMd, s.errorText]}>{error}</Text>
         ) : notifications.length === 0 ? (
           <Text style={[t.bodyMd, s.emptyText]}>
-            No notifications yet — activity on your parties shows up here.
+            {tr('empty')}
           </Text>
         ) : (
           <View style={s.list}>
@@ -124,7 +132,7 @@ export default function NotificationsScreen() {
                 >
                   <Text style={[t.bodyLg, s.rowTitle]}>{n.title}</Text>
                   <Text style={[t.bodySm, s.rowBody]}>{n.body}</Text>
-                  <Text style={[t.labelCapsSm, s.rowTime]}>{timeAgo(n.createdAt)}</Text>
+                  <Text style={[t.labelCapsSm, s.rowTime]}>{timeAgo(n.createdAt, tr)}</Text>
                 </Pressable>
               );
             })}

@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, palette, spacing, type as t } from '../lib/theme';
 import { useAuth } from '../lib/auth';
 import { fetchNotifications } from '../lib/api';
@@ -24,6 +25,11 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const auth = useAuth();
+  // Scoped to 'common' (the app's defaultNS) since these keys live under
+  // common.json's `shell` subtree — see lib/i18n.ts for the convention.
+  // Aliased to `tr` because `t` is already the theme.type import used
+  // throughout this file (t.headlineSm, t.labelCapsSm, …).
+  const { t: tr } = useTranslation('common');
   const slide = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
 
   useEffect(() => {
@@ -40,13 +46,17 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   };
 
   const items: MenuItem[] = [
-    { icon: '⚡', label: 'Switch to Hosting', onPress: () => go('/(tabs)/parties/dashboard') },
-    { icon: '◎', label: 'Sponsorships', onPress: () => go('/(tabs)/sponsorship') },
-    { icon: '▣', label: 'Wallet', onPress: () => { onClose(); Alert.alert('Wallet', 'Coming soon.'); } },
-    { icon: '⚙', label: 'Settings', onPress: () => go('/settings') },
+    { icon: '⚡', label: tr('shell.menu.switchToHosting'), onPress: () => go('/(tabs)/parties/dashboard') },
+    { icon: '◎', label: tr('shell.menu.sponsorships'), onPress: () => go('/(tabs)/sponsorship') },
+    {
+      icon: '▣',
+      label: tr('shell.menu.wallet'),
+      onPress: () => { onClose(); Alert.alert(tr('shell.menu.wallet'), tr('shell.menu.walletComingSoon')); },
+    },
+    { icon: '⚙', label: tr('shell.menu.settings'), onPress: () => go('/settings') },
   ];
 
-  const name = auth.status === 'authenticated' ? auth.user.name : 'Seeker';
+  const name = auth.status === 'authenticated' ? auth.user.name : tr('shell.guestName');
   const initial = name.trim().charAt(0).toUpperCase() || 'S';
 
   return (
@@ -66,7 +76,7 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
             <Text style={[s.drawerName, { fontFamily: fonts.display }]} numberOfLines={1}>
               {name.toUpperCase()}
             </Text>
-            <Text style={[t.labelCapsSm, { color: colors.live }]}>Seeker</Text>
+            <Text style={[t.labelCapsSm, { color: colors.live }]}>{tr('shell.roleSeeker')}</Text>
           </View>
         </View>
 
@@ -94,7 +104,9 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
             }}
           >
             <Text style={[s.drawerIcon, { color: colors.danger }]}>⏻</Text>
-            <Text style={[s.drawerLabel, { fontFamily: fonts.sansMedium, color: colors.danger }]}>Sign Out</Text>
+            <Text style={[s.drawerLabel, { fontFamily: fonts.sansMedium, color: colors.danger }]}>
+              {tr('shell.menu.signOut')}
+            </Text>
           </Pressable>
         ) : (
           <Pressable
@@ -102,7 +114,9 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
             onPress={() => go('/(auth)/sign-in')}
           >
             <Text style={[s.drawerIcon, { color: colors.accent }]}>→</Text>
-            <Text style={[s.drawerLabel, { fontFamily: fonts.sansMedium, color: colors.accent }]}>Sign In</Text>
+            <Text style={[s.drawerLabel, { fontFamily: fonts.sansMedium, color: colors.accent }]}>
+              {tr('shell.menu.signIn')}
+            </Text>
           </Pressable>
         )}
       </Animated.View>
@@ -116,6 +130,7 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const auth = useAuth();
+  const { t: tr } = useTranslation('common');
   const [menuOpen, setMenuOpen] = useState(false);
   const [unread, setUnread] = useState(0);
 
@@ -153,7 +168,12 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
           <Text style={s.headerBtnIcon}>←</Text>
         </Pressable>
       ) : (
-        <Pressable onPress={() => setMenuOpen(true)} hitSlop={12} style={s.headerBtn} accessibilityLabel="Open menu">
+        <Pressable
+          onPress={() => setMenuOpen(true)}
+          hitSlop={12}
+          style={s.headerBtn}
+          accessibilityLabel={tr('shell.accessibility.openMenu')}
+        >
           <Text style={[s.headerBtnIcon, { color: colors.accent }]}>☰</Text>
         </Pressable>
       )}
@@ -166,7 +186,7 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
             onPress={() => router.push('/notifications' as never)}
             hitSlop={12}
             style={s.bellBtn}
-            accessibilityLabel="Notifications"
+            accessibilityLabel={tr('shell.accessibility.notifications')}
           >
             <Image
               source={BELL_ICON}
@@ -187,7 +207,7 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
           onPress={() => router.push('/(tabs)/profile' as never)}
           hitSlop={12}
           style={s.avatar}
-          accessibilityLabel="Profile"
+          accessibilityLabel={tr('shell.accessibility.profile')}
         >
           <Text style={[t.labelCaps, { color: colors.accent }]}>{initial}</Text>
         </Pressable>

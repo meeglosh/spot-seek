@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { SPORTS, searchTeams, type Sport } from '../../lib/sports-data';
 import { saveFavouritesBulk } from '../../lib/api';
 import { colors, palette, spacing, type as t } from '../../lib/theme';
@@ -19,6 +20,11 @@ export default function InterestsScreen() {
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
   // Land back on the screen that originally gated the user, or Discover.
   const target = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/(tabs)/discover';
+  // Scoped to the 'auth' namespace — tr()/t() calls below read
+  // locales/<lang>/auth.json. Aliased to `tr` because this file already
+  // uses `t` for theme.type tokens imported from ../../lib/theme. See
+  // lib/i18n.ts for the full key-naming convention.
+  const { t: tr } = useTranslation('auth');
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expandedSport, setExpandedSport] = useState<string | null>(null);
@@ -71,20 +77,20 @@ export default function InterestsScreen() {
       {/* Header */}
       <View style={s.header}>
         <View style={s.headerText}>
-          <Text style={[t.headlineMd, s.title]}>What do{'\n'}you follow?</Text>
+          <Text style={[t.headlineMd, s.title]}>{tr('interests.title')}</Text>
           <Text style={[t.bodySm, s.subtitle]}>
-            Pick your sports and teams. You can change these any time.
+            {tr('interests.subtitle')}
           </Text>
         </View>
         <Pressable onPress={() => router.replace(target as never)} hitSlop={8}>
-          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>Skip</Text>
+          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('interests.skip')}</Text>
         </Pressable>
       </View>
 
       {/* Team search — underline input per the design */}
       <TextInput
         style={[inputStyle, s.search, searchFocused && inputFocusedStyle]}
-        placeholder="Search for a team…"
+        placeholder={tr('interests.searchPlaceholder')}
         placeholderTextColor={colors.textTertiary}
         value={teamSearch}
         onChangeText={setTeamSearch}
@@ -97,7 +103,7 @@ export default function InterestsScreen() {
         {/* Team search results */}
         {searchResults.length > 0 ? (
           <View style={s.section}>
-            <Text style={[t.labelCaps, s.sectionLabel]}>Search results</Text>
+            <Text style={[t.labelCaps, s.sectionLabel]}>{tr('interests.searchResults')}</Text>
             <View style={s.chipGrid}>
               {searchResults.map((team) => {
                 const key = teamKey(team.name);
@@ -123,7 +129,7 @@ export default function InterestsScreen() {
           <>
             {/* Sport category selection */}
             <View style={s.section}>
-              <Text style={[t.labelCaps, s.sectionLabel]}>Sports</Text>
+              <Text style={[t.labelCaps, s.sectionLabel]}>{tr('interests.sports')}</Text>
               <View style={s.sportGrid}>
                 {SPORTS.map((sport) => {
                   const key = sportKey(sport);
@@ -180,9 +186,9 @@ export default function InterestsScreen() {
 
       {/* Save bar */}
       <View style={[s.saveBar, { paddingBottom: insets.bottom + spacing.md }]}>
-        <Text style={[t.monoData, s.selCount]}>{selected.size} selected</Text>
+        <Text style={[t.monoData, s.selCount]}>{tr('interests.selectedCount', { count: selected.size })}</Text>
         <Btn
-          label={saving ? 'Saving…' : 'Save & continue'}
+          label={saving ? tr('interests.savingLabel') : tr('interests.saveLabel')}
           onPress={handleSave}
           disabled={saving}
           style={s.saveBtn}

@@ -5,6 +5,8 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useAuth } from '../../../lib/auth';
 import {
   fetchProfile, fetchFollowCounts, fetchMyRsvps, fetchFavourites, fetchDashboard,
@@ -45,8 +47,12 @@ function monogram(name: string): string {
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
-function fmtEventDate(iso: string | null, venueTimezone: string | null = null): string {
-  if (!iso) return 'DATE TBC';
+function fmtEventDate(
+  iso: string | null,
+  tr: TFunction<'profile'>,
+  venueTimezone: string | null = null,
+): string {
+  if (!iso) return tr('saved.dateTbc');
   const { dateStr, timeStr } = formatEventDateTime(iso, venueTimezone);
   return `${dateStr} · ${timeStr}`.toUpperCase();
 }
@@ -55,6 +61,9 @@ export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+  // Scoped to 'profile' — see settings.tsx / lib/i18n.ts for the key-naming
+  // convention this follows.
+  const { t: tr } = useTranslation('profile');
 
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,8 +94,8 @@ export default function ProfileScreen() {
       <View style={s.container}>
         <AppHeader />
         <GuestGate
-          title="Personal Hub"
-          message="Sign in to track your RSVPs, teams, and hosting record."
+          title={tr('guestGate.title')}
+          message={tr('guestGate.message')}
           redirect="/(tabs)/profile"
         />
       </View>
@@ -123,7 +132,7 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textTertiary} />}
       >
-        <Text style={[t.headlineLg, s.pageTitle]}>Personal Hub</Text>
+        <Text style={[t.headlineLg, s.pageTitle]}>{tr('title')}</Text>
 
         {loading ? (
           <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing['2xl'] }} />
@@ -144,22 +153,26 @@ export default function ProfileScreen() {
               </View>
 
               <View style={s.chipRow}>
-                {data?.profile?.isVerified && <Chip label="Verified Host" active tone="volt" />}
-                <Chip label={`${data?.followers ?? 0} Followers`} active />
-                <Chip label={`${data?.following ?? 0} Following`} active />
+                {data?.profile?.isVerified && <Chip label={tr('hero.verifiedHost')} active tone="volt" />}
+                <Chip label={tr('hero.followers', { count: data?.followers ?? 0 })} active />
+                <Chip label={tr('hero.following', { count: data?.following ?? 0 })} active />
                 {data?.profile?.createdAt && (
-                  <Chip label={`Since ${new Date(data.profile.createdAt).getFullYear()}`} active tone="neutral" />
+                  <Chip
+                    label={tr('hero.since', { year: new Date(data.profile.createdAt).getFullYear() })}
+                    active
+                    tone="neutral"
+                  />
                 )}
               </View>
 
               <View style={s.milestone}>
                 <View style={s.milestoneHead}>
-                  <Text style={[t.labelCaps, { color: colors.accent }]}>Parties Attended</Text>
+                  <Text style={[t.labelCaps, { color: colors.accent }]}>{tr('hero.partiesAttended')}</Text>
                   <Text style={[t.monoData, { color: colors.textPrimary }]}>{attended} / {milestone}</Text>
                 </View>
                 <SegmentBar value={attended} max={milestone} segments={10} />
                 <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                  Next milestone: {milestone} parties attended.
+                  {tr('hero.nextMilestone', { count: milestone })}
                 </Text>
               </View>
             </View>
@@ -169,18 +182,18 @@ export default function ProfileScreen() {
               <View style={s.hostPlus}>
                 <Text style={[s.hostPlusGlyph, { fontFamily: fonts.display }]}>+</Text>
               </View>
-              <Text style={[t.headlineMd, { color: palette.black }]}>Host a Party</Text>
-              <Text style={[t.bodyMd, s.hostBody]}>Create a new event and invite your squad.</Text>
+              <Text style={[t.headlineMd, { color: palette.black }]}>{tr('hostCta.title')}</Text>
+              <Text style={[t.bodyMd, s.hostBody]}>{tr('hostCta.body')}</Text>
               <Pressable
                 style={({ pressed }) => [s.hostBtn, pressed && { opacity: 0.85 }]}
                 onPress={() => router.push('/(tabs)/parties/create' as never)}
               >
-                <Text style={[t.labelCaps, { color: palette.secondary }]}>Initialize Setup</Text>
+                <Text style={[t.labelCaps, { color: palette.secondary }]}>{tr('hostCta.button')}</Text>
               </Pressable>
             </View>
 
             {/* ── MY TEAMS (FAVORITES) ─────────────────────────────────────── */}
-            <SectionTitle>My Teams (Favorites)</SectionTitle>
+            <SectionTitle>{tr('teams.sectionTitle')}</SectionTitle>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -198,7 +211,7 @@ export default function ProfileScreen() {
                       {(resolved?.shortName ?? f.value).toUpperCase()}
                     </Text>
                     <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
-                      {resolved?.leagueName ?? f.sport ?? 'Following'}
+                      {resolved?.leagueName ?? f.sport ?? tr('teams.fallbackLeague')}
                     </Text>
                   </View>
                 );
@@ -208,7 +221,7 @@ export default function ProfileScreen() {
                 onPress={() => router.push('/(auth)/interests')}
               >
                 <Text style={[s.teamAddGlyph, { fontFamily: fonts.display }]}>+</Text>
-                <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>Find Teams</Text>
+                <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('teams.findTeams')}</Text>
               </Pressable>
             </ScrollView>
             {sportFavs.length > 0 && (
@@ -218,11 +231,11 @@ export default function ProfileScreen() {
             )}
 
             {/* ── SAVED PARTIES ────────────────────────────────────────────── */}
-            <SectionTitle>Saved Parties</SectionTitle>
+            <SectionTitle>{tr('saved.sectionTitle')}</SectionTitle>
             {upcoming.length === 0 ? (
               <Pressable style={s.emptyCard} onPress={() => router.push('/(tabs)/discover')}>
                 <Text style={[t.labelCaps, { color: colors.textSecondary }]}>
-                  No upcoming parties — browse events →
+                  {tr('saved.empty')}
                 </Text>
               </Pressable>
             ) : (
@@ -236,14 +249,14 @@ export default function ProfileScreen() {
                   >
                     <View style={s.rowBody}>
                       <Text style={[s.rowTitle, { fontFamily: fonts.labelBold }]} numberOfLines={1}>
-                        {(r.event?.title ?? 'Unknown event').toUpperCase()}
+                        {(r.event?.title ?? tr('saved.unknownEvent')).toUpperCase()}
                       </Text>
                       <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
-                        {fmtEventDate(r.event?.startsAt ?? null, r.event?.venueTimezone ?? null)}
+                        {fmtEventDate(r.event?.startsAt ?? null, tr, r.event?.venueTimezone ?? null)}
                       </Text>
                     </View>
                     {r.state === 'waitlisted' ? (
-                      <Badge label="Waitlist" tone="live" />
+                      <Badge label={tr('saved.waitlist')} tone="live" />
                     ) : (
                       <Text style={s.rowChevron}>›</Text>
                     )}
@@ -253,10 +266,10 @@ export default function ProfileScreen() {
             )}
 
             {/* ── HOSTING HISTORY ──────────────────────────────────────────── */}
-            <SectionTitle accent={colors.live}>Hosting History</SectionTitle>
+            <SectionTitle accent={colors.live}>{tr('hosting.sectionTitle')}</SectionTitle>
             {hostedPast.length === 0 ? (
               <Text style={[t.bodySm, { color: colors.textTertiary, marginBottom: spacing.xl }]}>
-                Nothing hosted yet. Your past events will show up here.
+                {tr('hosting.empty')}
               </Text>
             ) : (
               <View style={s.list}>
@@ -270,7 +283,7 @@ export default function ProfileScreen() {
                         {e.title.toUpperCase()}
                       </Text>
                       <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
-                        Completed · {e.rsvpCounts.going} attendee{e.rsvpCounts.going === 1 ? '' : 's'}
+                        {tr('hosting.attendee', { count: e.rsvpCounts.going })}
                       </Text>
                     </View>
                   </View>
@@ -280,7 +293,7 @@ export default function ProfileScreen() {
 
             {/* ── Sign out ─────────────────────────────────────────────────── */}
             <Btn
-              label="Sign Out"
+              label={tr('signOut')}
               variant="danger"
               small
               style={{ marginTop: spacing.xl }}

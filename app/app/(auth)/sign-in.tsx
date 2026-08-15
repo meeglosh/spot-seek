@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
 import { colors, fonts, palette, spacing, type as t } from '../../lib/theme';
 import { Badge, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
@@ -15,6 +16,11 @@ export default function SignInScreen() {
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
   // Where to land after auth — back to the gated screen, or Discover by default.
   const target = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/(tabs)/discover';
+  // Scoped to the 'auth' namespace — tr()/t() calls below read
+  // locales/<lang>/auth.json. Aliased to `tr` because this file already
+  // uses `t` for theme.type tokens imported from ../../lib/theme. See
+  // lib/i18n.ts for the full key-naming convention.
+  const { t: tr } = useTranslation('auth');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,7 +36,7 @@ export default function SignInScreen() {
       await signIn(email, password);
       router.replace(target as never);
     } catch (err) {
-      setError((err as Error).message || 'Invalid email or password.');
+      setError((err as Error).message || tr('signIn.errorFallback'));
     } finally {
       setLoading(false);
     }
@@ -47,19 +53,19 @@ export default function SignInScreen() {
       >
         {/* Back */}
         <Pressable onPress={() => router.back()} style={s.back} hitSlop={8}>
-          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>← Back</Text>
+          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('back')}</Text>
         </Pressable>
 
-        <Badge label="Secure connection" tone="live" />
-        <Text style={[t.headlineLg, s.title]}>Welcome{'\n'}back</Text>
-        <Text style={[t.bodyMd, s.subtitle]}>Sign in to your SpotSeek account.</Text>
+        <Badge label={tr('secureConnection')} tone="live" />
+        <Text style={[t.headlineLg, s.title]}>{tr('signIn.title')}</Text>
+        <Text style={[t.bodyMd, s.subtitle]}>{tr('signIn.subtitle')}</Text>
 
         <View style={s.form}>
           <View style={s.field}>
-            <FieldLabel>Email address</FieldLabel>
+            <FieldLabel>{tr('signIn.emailLabel')}</FieldLabel>
             <TextInput
               style={[inputStyle, focused === 'email' && inputFocusedStyle]}
-              placeholder="you@example.com"
+              placeholder={tr('signIn.emailPlaceholder')}
               placeholderTextColor={colors.textTertiary}
               value={email}
               onChangeText={setEmail}
@@ -72,10 +78,10 @@ export default function SignInScreen() {
             />
           </View>
           <View style={s.field}>
-            <FieldLabel>Password</FieldLabel>
+            <FieldLabel>{tr('signIn.passwordLabel')}</FieldLabel>
             <TextInput
               style={[inputStyle, focused === 'password' && inputFocusedStyle]}
-              placeholder="••••••••"
+              placeholder={tr('signIn.passwordPlaceholder')}
               placeholderTextColor={colors.textTertiary}
               value={password}
               onChangeText={setPassword}
@@ -98,7 +104,7 @@ export default function SignInScreen() {
 
         <View style={s.footer}>
           <Btn
-            label={loading ? 'Signing in…' : 'Sign in →'}
+            label={loading ? tr('signIn.submitLoading') : tr('signIn.submitLabel')}
             onPress={handleSignIn}
             disabled={loading}
           />
@@ -107,17 +113,17 @@ export default function SignInScreen() {
             hitSlop={8}
           >
             <Text style={[t.bodySm, s.switchText]}>
-              Don&apos;t have an account?{' '}
-              <Text style={s.switchLink}>Sign up</Text>
+              {tr('signIn.switchPrompt')}{' '}
+              <Text style={s.switchLink}>{tr('signIn.switchLink')}</Text>
             </Text>
           </Pressable>
           <Pressable
             onPress={() => router.replace(target as never)}
             hitSlop={8}
             style={s.skipLink}
-            accessibilityLabel="Skip for now"
+            accessibilityLabel={tr('skipForNow')}
           >
-            <Text style={[t.labelCaps, { color: colors.textSecondary }]}>Skip for now</Text>
+            <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('skipForNow')}</Text>
           </Pressable>
         </View>
       </ScrollView>

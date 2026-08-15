@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Modal, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { colors, palette, spacing, type as t } from '../lib/theme';
 import { Badge, Btn } from './ui';
 
@@ -26,14 +27,18 @@ export function GuestGate({
   redirect?: string;
 }) {
   const router = useRouter();
+  // Scoped to 'common' — this gate's own hardcoded strings live under the
+  // guestGate subtree of common.json (see lib/i18n.ts for the convention).
+  // Aliased to `tr` because `t` is already the theme.type import above.
+  const { t: tr } = useTranslation('common');
   return (
     <View style={s.center}>
-      <Badge label="Members only" tone="live" />
+      <Badge label={tr('guestGate.membersOnly')} tone="live" />
       <Text style={[t.headlineLg, s.gateTitle]}>{title}</Text>
       <Text style={[t.bodyMd, s.gateBody]}>{message}</Text>
       <View style={s.gateActions}>
-        <Btn label="Sign in" onPress={() => goToAuth(router, 'sign-in', redirect)} />
-        <Btn label="Create account" variant="secondary" onPress={() => goToAuth(router, 'sign-up', redirect)} />
+        <Btn label={tr('guestGate.signIn')} onPress={() => goToAuth(router, 'sign-in', redirect)} />
+        <Btn label={tr('guestGate.createAccount')} variant="secondary" onPress={() => goToAuth(router, 'sign-up', redirect)} />
       </View>
     </View>
   );
@@ -41,7 +46,7 @@ export function GuestGate({
 
 // Bottom-sheet gate for inline actions (e.g. tapping JOIN PARTY as a guest).
 export function AuthGateSheet({
-  visible, onClose, title = 'Join the action', message, redirect,
+  visible, onClose, title, message, redirect,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -51,6 +56,7 @@ export function AuthGateSheet({
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t: tr } = useTranslation('common');
 
   const go = (mode: 'sign-in' | 'sign-up') => {
     onClose();
@@ -61,15 +67,15 @@ export function AuthGateSheet({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={s.scrim} onPress={onClose} />
       <View style={[s.sheet, { paddingBottom: insets.bottom + spacing.xl }]}>
-        <Badge label="Members only" tone="live" />
-        <Text style={[t.headlineMd, s.gateTitle]}>{title}</Text>
+        <Badge label={tr('guestGate.membersOnly')} tone="live" />
+        <Text style={[t.headlineMd, s.gateTitle]}>{title ?? tr('guestGate.joinTheAction')}</Text>
         <Text style={[t.bodyMd, s.gateBody]}>{message}</Text>
         <View style={s.gateActions}>
-          <Btn label="Sign in" onPress={() => go('sign-in')} />
-          <Btn label="Create account" variant="secondary" onPress={() => go('sign-up')} />
+          <Btn label={tr('guestGate.signIn')} onPress={() => go('sign-in')} />
+          <Btn label={tr('guestGate.createAccount')} variant="secondary" onPress={() => go('sign-up')} />
         </View>
         <Pressable onPress={onClose} hitSlop={8} style={s.dismiss}>
-          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>Keep browsing</Text>
+          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('guestGate.keepBrowsing')}</Text>
         </Pressable>
       </View>
     </Modal>

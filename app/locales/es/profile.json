@@ -1,0 +1,41 @@
+{
+  "title": "Espacio personal",
+  "guestGate": {
+    "title": "Espacio personal",
+    "message": "Inicia sesión para seguir tus confirmaciones, equipos e historial como anfitrión."
+  },
+  "hero": {
+    "verifiedHost": "Anfitrión verificado",
+    "followers_one": "{{count}} seguidor",
+    "followers_other": "{{count}} seguidores",
+    "following_one": "{{count}} seguido",
+    "following_other": "{{count}} seguidos",
+    "since": "Desde {{year}}",
+    "partiesAttended": "Fiestas asistidas",
+    "nextMilestone": "Próximo hito: {{count}} fiestas asistidas."
+  },
+  "hostCta": {
+    "title": "Organiza una fiesta",
+    "body": "Crea un nuevo evento e invita a tu equipo.",
+    "button": "Iniciar configuración"
+  },
+  "teams": {
+    "sectionTitle": "Mis equipos (favoritos)",
+    "fallbackLeague": "Siguiendo",
+    "findTeams": "Buscar equipos"
+  },
+  "saved": {
+    "sectionTitle": "Fiestas guardadas",
+    "empty": "No hay fiestas próximas — explora eventos →",
+    "waitlist": "Lista de espera",
+    "unknownEvent": "Evento desconocido",
+    "dateTbc": "FECHA POR CONFIRMAR"
+  },
+  "hosting": {
+    "sectionTitle": "Historial como anfitrión",
+    "empty": "Aún no has organizado nada. Tus eventos pasados aparecerán aquí.",
+    "attendee_one": "Finalizada · {{count}} asistente",
+    "attendee_other": "Finalizada · {{count}} asistentes"
+  },
+  "signOut": "Cerrar sesión"
+}

@@ -1,0 +1,164 @@
+{
+  "myParties": {
+    "title": "My Parties",
+    "tabs": {
+      "attending": "attending",
+      "hosting": "hosting"
+    },
+    "waitlisted": "Waitlisted",
+    "tonight": "Tonight",
+    "upcoming": "Upcoming",
+    "tbd": "TBD",
+    "statusLabels": {
+      "published": "published",
+      "draft": "draft",
+      "completed": "completed",
+      "cancelled": "cancelled"
+    },
+    "getDirections": "Get Directions",
+    "manage": "Manage",
+    "stats": {
+      "going": "Going",
+      "waitlist": "Waitlist",
+      "interested": "Interested"
+    },
+    "guestGate": {
+      "title": "Get in the game",
+      "message": "Sign in to track your RSVPs and run your own watch parties."
+    },
+    "loading": "Loading",
+    "signalLost": "Signal lost",
+    "loadError": "Could not load your parties.",
+    "emptyAttending": {
+      "title": "No parties yet",
+      "body": "RSVP to a watch party and it will show up here.",
+      "cta": "Find a Party"
+    },
+    "emptyHosting": {
+      "title": "Host your first party",
+      "body": "Create a watch party and rally the squad.",
+      "cta": "Create Party"
+    },
+    "createFooter": "+ Create Party"
+  },
+  "dashboard": {
+    "guestGate": {
+      "title": "Command Center",
+      "message": "Sign in to create and manage your watch parties."
+    },
+    "noDateSet": "No date set",
+    "tonightAt": "Tonight @ {{time}}",
+    "dateAt": "{{date}} @ {{time}}",
+    "loading": "Loading",
+    "signalLost": "Signal lost",
+    "loadError": "Could not load dashboard.",
+    "hostDashboard": "Host Dashboard",
+    "commandCenter": "Command Center",
+    "totalRsvp": "Total RSVP",
+    "sponsorRev": "Sponsor Rev",
+    "activeParties": "Active Parties",
+    "emptyActive": "No live parties. Publish one to get on the board.",
+    "rsvps": "RSVPs",
+    "sponsored": "Sponsored",
+    "pendingSponsor": "Pending Sponsor",
+    "findSponsors": "Find Sponsors",
+    "manage": "Manage",
+    "drafts": "Drafts",
+    "emptyDrafts": "No drafts on the bench.",
+    "edited": "Edited {{date}}",
+    "completed": "Completed",
+    "emptyCompleted": "Nothing in the record books yet.",
+    "cancelled": "Cancelled",
+    "ended": "Ended {{date}}",
+    "endedNoDate": "Ended",
+    "attendees_one": "{{count}} attendee",
+    "attendees_other": "{{count}} attendees",
+    "createFooter": "+ Create Party"
+  },
+  "create": {
+    "guestGate": {
+      "title": "Host a Party",
+      "message": "Sign in to create watch parties, rally your crowd, and manage RSVPs."
+    },
+    "loadError": "Could not load event for editing.",
+    "outcome": {
+      "published": {
+        "title": "Party Published",
+        "body": "Your watch party is live on the Discover feed."
+      },
+      "draft": {
+        "title": "Draft Saved",
+        "body": "Pick it back up any time from your Command Center drafts."
+      },
+      "deleted": {
+        "title": "Party Deleted",
+        "body": "The party and its RSVPs have been removed."
+      },
+      "coverErrorLabel": "Cover image failed",
+      "coverUploadFailed": "Cover upload failed.",
+      "coverErrorBody": "{{error}} — you can retry from Edit Party.",
+      "viewParty": "View Party",
+      "shareParty": "Share Party",
+      "done": "Done"
+    },
+    "headline": {
+      "edit": "Edit Party",
+      "create": "Host a Party"
+    },
+    "subtitle": "Set up your watch party and rally the squad.",
+    "cover": {
+      "add": "+ Add Cover Photo",
+      "change": "Change Photo",
+      "label": "Cover Photo"
+    },
+    "basics": {
+      "sectionTitle": "The Basics",
+      "eventName": "Event Name",
+      "eventNamePlaceholder": "e.g. Arsenal v Chelsea watch party",
+      "whatIsBeingWatched": "What Is Being Watched",
+      "description": "Description",
+      "descriptionPlaceholder": "Tell people what to expect…",
+      "maxCapacity": "Max Capacity",
+      "unlimitedHint": "Blank = unlimited",
+      "capacityPlaceholder": "e.g. 30"
+    },
+    "timePlace": {
+      "sectionTitle": "Time & Place",
+      "starts": "Starts",
+      "startsPlaceholder": "Set date & time",
+      "ends": "Ends",
+      "endsPlaceholder": "Optional end time",
+      "addVenue": "Add a Venue",
+      "addVenueSub": "Let attendees know where to show up",
+      "venueName": "Venue Name",
+      "venueNamePlaceholder": "Venue name",
+      "address": "Address",
+      "pinnedOnMap": "Pinned on map",
+      "pickAddressHint": "Pick a suggested address to pin this party on the Discover map."
+    },
+    "privacy": {
+      "sectionTitle": "Privacy",
+      "public": "Public",
+      "publicSub": "Anyone can join",
+      "private": "Private",
+      "privateSub": "Invite only — address hidden until RSVP",
+      "venueHint": "Add a venue above to hide its address from non-attendees."
+    },
+    "actions": {
+      "saveAsDraft": "Save as Draft",
+      "saveAsDraftInstead": "Save as Draft Instead",
+      "deleteParty": "Delete Party",
+      "deleteConfirm": "Delete this party? This cannot be undone.",
+      "keepIt": "Keep It",
+      "yesDelete": "Yes, Delete",
+      "saving": "Saving…",
+      "saveChanges": "Save Changes",
+      "publishParty": "Publish Party"
+    },
+    "saveError": "Could not save event.",
+    "deleteError": "Could not delete the party.",
+    "share": {
+      "whenWithTime": "{{date}} at {{time}}"
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "statusLabels": {
+    "pending": "Pendente",
+    "active": "Ativo",
+    "rejected": "Rejeitado",
+    "cancelled": "Cancelado"
+  },
+  "browse": {
+    "title": "Centro de Patrocínios",
+    "subtitle": "Oportunidades de segmentação de alto rendimento.",
+    "guestGate": {
+      "title": "Centro de Patrocínios",
+      "message": "Inicia sessão para registares a tua marca, explorares festas de grande adesão e licitares em patrocínios."
+    },
+    "filters": {
+      "all": "Todos",
+      "today": "Hoje",
+      "week": "Esta Semana"
+    },
+    "dateTbc": "DATA A CONFIRMAR",
+    "register": {
+      "title": "Torna-te Patrocinador",
+      "description": "Regista a tua empresa para licitares em festas de visionamento. Os anfitriões aceitam ou rejeitam cada oferta — aplica-se uma taxa de plataforma de 15% às ofertas aceites.",
+      "companyName": "Nome da Empresa",
+      "companyNamePlaceholder": "ex. Voltage Drinks Co.",
+      "website": "Website (Opcional)",
+      "websitePlaceholder": "https://…",
+      "categories": "Categorias (Opcional)",
+      "budgetMin": "Orçamento Mín. (Opcional)",
+      "budgetMax": "Orçamento Máx. (Opcional)",
+      "budgetPlaceholder": "$",
+      "submit": "Registar como Patrocinador",
+      "errorRequired": "O nome da empresa é obrigatório.",
+      "errorSignIn": "Inicia sessão primeiro para te registares como patrocinador.",
+      "errorFailed": "Falha no registo. Tenta novamente."
+    },
+    "sponsorLabel": "Patrocinador · {{company}}",
+    "stats": {
+      "totalBids": "Total de Ofertas",
+      "active": "Ativas",
+      "totalSpend": "Gasto Total",
+      "reach": "Alcance"
+    },
+    "requests": {
+      "sectionTitle": "Pedidos de Patrocínio",
+      "fallbackEventTitle": "Evento",
+      "newRequest": "Novo Pedido",
+      "goingCount_one": "{{count}} participante",
+      "goingCount_other": "{{count}} participantes",
+      "decline": "Recusar",
+      "accept": "Aceitar"
+    },
+    "marketplace": {
+      "sectionTitle": "Aberto a Patrocínio",
+      "empty": "Nenhum evento publicado corresponde a este filtro.",
+      "privateVenue": "Local privado — revelado após confirmação",
+      "venueTbc": "Local a confirmar",
+      "date": "Data",
+      "capacity": "Capacidade",
+      "yourBid": "A tua oferta · {{amount}} · {{status}}",
+      "review": "Rever para Patrocínio"
+    }
+  },
+  "bid": {
+    "guestGate": {
+      "title": "Patrocina esta festa",
+      "message": "Inicia sessão para reveres os termos do patrocínio e fazeres uma oferta nesta festa de visionamento."
+    },
+    "loadError": "Não foi possível carregar este evento.",
+    "eventNotFound": "Evento não encontrado.",
+    "openForBids": "Aberto a Ofertas",
+    "facts": {
+      "date": "Data",
+      "venue": "Local",
+      "privateVenue": "PRIVADO — APÓS CONFIRMAÇÃO",
+      "venueTbc": "A CONFIRMAR",
+      "capacity": "Capacidade"
+    },
+    "dealTitle": "O Acordo",
+    "dealPoints": {
+      "yourBid": {
+        "title": "A Tua Oferta",
+        "body": "Propõe um valor de patrocínio para este evento. O anfitrião vê a tua oferta e a tua nota."
+      },
+      "platformFee": {
+        "title": "Taxa de Plataforma — 15%",
+        "body": "A SpotSeek fica com 15% de uma oferta aceite. O anfitrião recebe o restante."
+      },
+      "hostDecision": {
+        "title": "Decisão do Anfitrião",
+        "body": "O anfitrião aceita ou rejeita a tua oferta. Podes cancelá-la enquanto estiver pendente."
+      },
+      "payment": {
+        "title": "Pagamento",
+        "body": "Cobrado apenas depois de o anfitrião aceitar. Os pagamentos estão atualmente em modo de teste — nenhum valor real é movimentado."
+      }
+    },
+    "statusTitle": "Estado do Patrocínio",
+    "yourBid": "A Tua Oferta",
+    "platformFee": "Taxa de Plataforma (15%)",
+    "hostReceives": "O Anfitrião Recebe",
+    "placed": "Feita",
+    "note": "Nota: {{note}}",
+    "cancelBid": "Cancelar Oferta",
+    "hostAccepted": "O anfitrião aceitou esta oferta.",
+    "testNoteAccepted": "O pagamento só é processado depois de o anfitrião aceitar — os pagamentos estão em modo de teste, sem cobranças reais.",
+    "sponsorProfileNeeded": {
+      "title": "Perfil de Patrocinador Necessário",
+      "body": "Só patrocinadores registados podem licitar. Regista a tua empresa no Centro de Patrocínios e volta depois para fazer uma oferta.",
+      "cta": "Registar no Centro"
+    },
+    "lastBid": "Última oferta · {{amount}} · {{status}}",
+    "bidAmountLabel": "Valor da Oferta (USD)",
+    "bidAmountPlaceholder": "ex. 250",
+    "noteLabel": "Nota ao Anfitrião (Opcional)",
+    "notePlaceholder": "O que a tua marca traz à festa…",
+    "feeSummary": "TAXA DE PLATAFORMA (15%): {{fee}} · O ANFITRIÃO RECEBE: {{host}}",
+    "placeBid": "Fazer Oferta",
+    "testNotePending": "O pagamento só é processado depois de o anfitrião aceitar a tua oferta — os pagamentos estão em modo de teste, sem cobranças reais.",
+    "errors": {
+      "signIn": "Inicia sessão para fazeres uma oferta.",
+      "failed": "A oferta falhou. Tenta novamente.",
+      "cancelFailed": "Não foi possível cancelar a oferta. Tenta novamente."
+    }
+  }
+}

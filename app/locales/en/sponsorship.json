@@ -1,0 +1,126 @@
+{
+  "statusLabels": {
+    "pending": "Pending",
+    "active": "Active",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled"
+  },
+  "browse": {
+    "title": "Sponsorship Hub",
+    "subtitle": "High-yield targeting opportunities.",
+    "guestGate": {
+      "title": "Sponsorship Hub",
+      "message": "Sign in to register your brand, browse high-engagement watch parties, and bid on sponsorships."
+    },
+    "filters": {
+      "all": "All",
+      "today": "Today",
+      "week": "This Week"
+    },
+    "dateTbc": "DATE TBC",
+    "register": {
+      "title": "Become a Sponsor",
+      "description": "Register your company to bid on watch parties. Hosts accept or reject each bid — a 15% platform fee applies to accepted bids.",
+      "companyName": "Company Name",
+      "companyNamePlaceholder": "e.g. Voltage Drinks Co.",
+      "website": "Website (Optional)",
+      "websitePlaceholder": "https://…",
+      "categories": "Categories (Optional)",
+      "budgetMin": "Budget Min (Optional)",
+      "budgetMax": "Budget Max (Optional)",
+      "budgetPlaceholder": "$",
+      "submit": "Register as Sponsor",
+      "errorRequired": "Company name is required.",
+      "errorSignIn": "Sign in first to register as a sponsor.",
+      "errorFailed": "Registration failed. Try again."
+    },
+    "sponsorLabel": "Sponsor · {{company}}",
+    "stats": {
+      "totalBids": "Total Bids",
+      "active": "Active",
+      "totalSpend": "Total Spend",
+      "reach": "Reach"
+    },
+    "requests": {
+      "sectionTitle": "Sponsorship Requests",
+      "fallbackEventTitle": "Event",
+      "newRequest": "New Request",
+      "goingCount_one": "{{count}} going",
+      "goingCount_other": "{{count}} going",
+      "decline": "Decline",
+      "accept": "Accept"
+    },
+    "marketplace": {
+      "sectionTitle": "Open for Sponsorship",
+      "empty": "No published events match this filter.",
+      "privateVenue": "Private location — revealed after RSVP",
+      "venueTbc": "Venue TBC",
+      "date": "Date",
+      "capacity": "Capacity",
+      "yourBid": "Your bid · {{amount}} · {{status}}",
+      "review": "Review for Sponsorship"
+    }
+  },
+  "bid": {
+    "guestGate": {
+      "title": "Sponsor this party",
+      "message": "Sign in to review sponsorship terms and place a bid on this watch party."
+    },
+    "loadError": "Could not load this event.",
+    "eventNotFound": "Event not found.",
+    "openForBids": "Open for Bids",
+    "facts": {
+      "date": "Date",
+      "venue": "Venue",
+      "privateVenue": "PRIVATE — AFTER RSVP",
+      "venueTbc": "TBC",
+      "capacity": "Capacity"
+    },
+    "dealTitle": "The Deal",
+    "dealPoints": {
+      "yourBid": {
+        "title": "Your Bid",
+        "body": "Offer a sponsorship amount for this event. The host sees your bid and note."
+      },
+      "platformFee": {
+        "title": "Platform Fee — 15%",
+        "body": "SpotSeek keeps 15% of an accepted bid. The host receives the remainder."
+      },
+      "hostDecision": {
+        "title": "Host Decision",
+        "body": "The host accepts or rejects your bid. You can cancel while it is pending."
+      },
+      "payment": {
+        "title": "Payment",
+        "body": "Charged only after the host accepts. Payments are currently in test mode — no real money moves."
+      }
+    },
+    "statusTitle": "Sponsorship Status",
+    "yourBid": "Your Bid",
+    "platformFee": "Platform Fee (15%)",
+    "hostReceives": "Host Receives",
+    "placed": "Placed",
+    "note": "Note: {{note}}",
+    "cancelBid": "Cancel Bid",
+    "hostAccepted": "The host accepted this bid.",
+    "testNoteAccepted": "Payment is processed only after the host accepts — payments are in test mode, no real charges.",
+    "sponsorProfileNeeded": {
+      "title": "Sponsor Profile Needed",
+      "body": "Only registered sponsors can bid. Register your company in the Sponsorship Hub, then come back to place a bid.",
+      "cta": "Register in the Hub"
+    },
+    "lastBid": "Last bid · {{amount}} · {{status}}",
+    "bidAmountLabel": "Bid Amount (USD)",
+    "bidAmountPlaceholder": "e.g. 250",
+    "noteLabel": "Note to Host (Optional)",
+    "notePlaceholder": "What your brand brings to the party…",
+    "feeSummary": "PLATFORM FEE (15%): {{fee}} · HOST RECEIVES: {{host}}",
+    "placeBid": "Place Bid",
+    "testNotePending": "Payment is processed only after the host accepts your bid — payments are in test mode, no real charges.",
+    "errors": {
+      "signIn": "Sign in to place a bid.",
+      "failed": "Bid failed. Try again.",
+      "cancelFailed": "Could not cancel the bid. Try again."
+    }
+  }
+}

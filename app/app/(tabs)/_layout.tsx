@@ -5,6 +5,7 @@ import {
   type ImageSourcePropType, type LayoutChangeEvent,
 } from 'react-native';
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs/types';
+import { useTranslation } from 'react-i18next';
 import { colors, fonts, palette } from '../../lib/theme';
 
 // Rendered from the actual Material Symbols glyph outlines (explore /
@@ -150,6 +151,10 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
 }
 
 export default function TabsLayout() {
+  // Scoped to 'common' (the app's defaultNS) — tab labels live under
+  // common.json's `tabs` subtree since they're app-shell chrome, not
+  // specific to any one screen's namespace.
+  const { t: tr } = useTranslation('common');
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
@@ -162,25 +167,25 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="discover"
         options={{
-          title: 'Discover',
+          title: tr('tabs.discover'),
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="discover" />,
-          tabBarLabel: ({ focused }) => <TabLabel label="Discover" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label={tr('tabs.discover')} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="parties"
         options={{
-          title: 'My Parties',
+          title: tr('tabs.myParties'),
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="parties" />,
-          tabBarLabel: ({ focused }) => <TabLabel label="My Parties" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label={tr('tabs.myParties')} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: tr('tabs.profile'),
           tabBarIcon: ({ focused }) => <TabIcon focused={focused} icon="profile" />,
-          tabBarLabel: ({ focused }) => <TabLabel label="Profile" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label={tr('tabs.profile')} focused={focused} />,
         }}
       />
       {/* Sponsorship screens live behind the drawer, not the tab bar */}

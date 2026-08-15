@@ -1,0 +1,44 @@
+{
+  "title": "Settings",
+  "guestGate": {
+    "title": "Settings",
+    "message": "Sign in to manage your account and notification preferences."
+  },
+  "account": {
+    "title": "Account",
+    "signedInAs": "Signed in as",
+    "signOut": "Sign Out",
+    "deleteAccount": "Delete Account",
+    "deleteConfirm": "Delete your account? This cannot be undone. Hosts must delete their own events first.",
+    "keepIt": "Keep It",
+    "yesDelete": "Yes, Delete",
+    "deleteFallbackError": "Could not delete account."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "loadError": "Could not load notification settings.",
+    "email": "Email notifications",
+    "emailError": "Could not save email notifications — try again.",
+    "push": "Push notifications",
+    "radiusLabel": "Nearby alert radius",
+    "radiusValue": "{{miles}} mi / {{km}} km",
+    "radiusError": "Could not save radius — try again."
+  },
+  "language": {
+    "title": "Language",
+    "systemDefault": "System default"
+  },
+  "favourites": {
+    "title": "Favourites",
+    "manage": "Manage favourites"
+  },
+  "about": {
+    "title": "About",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "contactSupport": "Contact Support",
+    "comingSoonAlert": "Coming soon.",
+    "versionLabel": "Version {{version}}",
+    "versionLabelWithBuild": "Version {{version}} ({{build}})"
+  }
+}

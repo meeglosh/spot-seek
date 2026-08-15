@@ -1,0 +1,41 @@
+{
+  "title": "Persönlicher Bereich",
+  "guestGate": {
+    "title": "Persönlicher Bereich",
+    "message": "Melde dich an, um deine Zusagen, Teams und Gastgeber-Historie zu verfolgen."
+  },
+  "hero": {
+    "verifiedHost": "Verifizierter Gastgeber",
+    "followers_one": "{{count}} Follower",
+    "followers_other": "{{count}} Follower",
+    "following_one": "{{count}} Abo",
+    "following_other": "{{count}} Abos",
+    "since": "Seit {{year}}",
+    "partiesAttended": "Besuchte Partys",
+    "nextMilestone": "Nächster Meilenstein: {{count}} besuchte Partys."
+  },
+  "hostCta": {
+    "title": "Veranstalte eine Party",
+    "body": "Erstelle ein neues Event und lade deine Crew ein.",
+    "button": "Setup starten"
+  },
+  "teams": {
+    "sectionTitle": "Meine Teams (Favoriten)",
+    "fallbackLeague": "Gefolgt",
+    "findTeams": "Teams finden"
+  },
+  "saved": {
+    "sectionTitle": "Gespeicherte Partys",
+    "empty": "Keine bevorstehenden Partys — Events durchsuchen →",
+    "waitlist": "Warteliste",
+    "unknownEvent": "Unbekanntes Event",
+    "dateTbc": "DATUM OFFEN"
+  },
+  "hosting": {
+    "sectionTitle": "Gastgeber-Historie",
+    "empty": "Noch nichts veranstaltet. Deine vergangenen Events erscheinen hier.",
+    "attendee_one": "Abgeschlossen · {{count}} Teilnehmer",
+    "attendee_other": "Abgeschlossen · {{count}} Teilnehmer"
+  },
+  "signOut": "Abmelden"
+}

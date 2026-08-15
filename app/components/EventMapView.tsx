@@ -5,6 +5,7 @@ import {
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, palette, spacing, type as t } from '../lib/theme';
 import { Badge, Btn } from './ui';
 import type { EventItem } from './EventCard';
@@ -70,6 +71,7 @@ const DEFAULT_REGION = {
 
 export function EventMapView({ events, userLocation, initialRegion }: Props) {
   const router = useRouter();
+  const { t: tr } = useTranslation('discover');
 
   const [selected, setSelected] = useState<EventItem | null>(null);
   const [liveOnly, setLiveOnly] = useState(false);
@@ -109,7 +111,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
         ({ status } = await Location.requestForegroundPermissionsAsync());
       }
       if (status !== 'granted') {
-        Alert.alert('Location permission is needed to find you on the map.');
+        Alert.alert(tr('map.locationPermission'));
         return;
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
@@ -250,7 +252,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
       <View style={s.chipBar} pointerEvents="box-none">
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
           <MapChip
-            label="Live Now"
+            label={tr('map.liveNow')}
             tone={colors.live}
             active={liveOnly}
             onPress={() => {
@@ -279,7 +281,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
       {mappable.length === 0 && (
         <View style={s.emptyOverlay}>
           <Text style={[t.bodySm, s.emptyText]}>
-            No events with locations yet.{'\n'}Create an event with a venue to see it here.
+            {tr('map.noEventsText')}
           </Text>
         </View>
       )}
@@ -294,7 +296,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
         ]}
         onPress={centerOnMyLocation}
         disabled={locating}
-        accessibilityLabel="Center map on my location"
+        accessibilityLabel={tr('map.locateLabel')}
       >
         <Image
           source={LOCATE_ICON}
@@ -307,7 +309,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
       {mappable.length > 0 && (
         <View style={s.countBadge}>
           <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
-            {shown.length} of {mappable.length} on map
+            {tr('map.countBadge', { shown: shown.length, total: mappable.length })}
           </Text>
         </View>
       )}
@@ -320,7 +322,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
           {/* Subject tag */}
           <View style={s.cardSubjectRow}>
             <View style={s.cardBadges}>
-              {isLiveSoon(selected.startsAt) && <Badge label="Live Soon" tone="live" />}
+              {isLiveSoon(selected.startsAt) && <Badge label={tr('map.liveSoon')} tone="live" />}
               <Badge label={selected.broadcastSubject} tone="accent" dot={false} />
             </View>
             <Pressable onPress={dismiss} hitSlop={12}>
@@ -337,7 +339,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
           <View style={s.cardMeta}>
             {selected.venueName && (
               <Text style={[t.monoData, s.cardVenue]} numberOfLines={1}>
-                {selected.isPrivateLocation ? `${selected.venueName} — private` : selected.venueName}
+                {selected.isPrivateLocation ? tr('card.privateLocation', { venue: selected.venueName }) : selected.venueName}
               </Text>
             )}
             {selected.startsAt && (() => {
@@ -350,14 +352,14 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
             })()}
             {typeof selected.goingCount === 'number' && (
               <Text style={[t.labelCapsSm, { color: colors.volt }]}>
-                {selected.goingCount} going
+                {tr('card.goingCount', { count: selected.goingCount })}
               </Text>
             )}
           </View>
 
           {/* CTA */}
           <Btn
-            label="View Event"
+            label={tr('map.viewEvent')}
             onPress={() => {
               dismiss();
               router.push({ pathname: '/(tabs)/discover/[id]', params: { id: selected.id } });

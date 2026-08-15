@@ -13,6 +13,12 @@ import { SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts
 import { AuthProvider } from '../lib/auth';
 import { colors } from '../lib/theme';
 import LaunchSplash from '../components/LaunchSplash';
+// Side-effect import: initializes i18next synchronously (device-language
+// guess) before this component's first render — required by react-i18next's
+// convention of the i18n instance existing before any useTranslation() call
+// mounts. The (async) persisted-locale-override check below layers on top
+// once SecureStore resolves; the splash screen covers that gap.
+import { applyStoredLocaleOverride } from '../lib/i18n';
 
 // Hold the branded splash fully visible before starting the fade, then fade
 // over LaunchSplash's own ~350ms — total experience ≈1.5s. Chosen to mask
@@ -39,6 +45,12 @@ export default function RootLayout() {
   React.useEffect(() => {
     const timer = setTimeout(() => setDismissSplash(true), SPLASH_HOLD_MS);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Apply a persisted language override (if any) over the device-language
+  // guess i18n started with — see the import comment above.
+  React.useEffect(() => {
+    applyStoredLocaleOverride();
   }, []);
 
   if (!loaded) return null;

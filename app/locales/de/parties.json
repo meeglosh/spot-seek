@@ -1,0 +1,164 @@
+{
+  "myParties": {
+    "title": "Meine Partys",
+    "tabs": {
+      "attending": "Teilnahmen",
+      "hosting": "Veranstaltet"
+    },
+    "waitlisted": "Warteliste",
+    "tonight": "Heute Abend",
+    "upcoming": "Bevorstehend",
+    "tbd": "NOCH OFFEN",
+    "statusLabels": {
+      "published": "veröffentlicht",
+      "draft": "Entwurf",
+      "completed": "abgeschlossen",
+      "cancelled": "abgesagt"
+    },
+    "getDirections": "Route anzeigen",
+    "manage": "Verwalten",
+    "stats": {
+      "going": "Teilnehmer",
+      "waitlist": "Warteliste",
+      "interested": "Interessiert"
+    },
+    "guestGate": {
+      "title": "Steig ein",
+      "message": "Melde dich an, um deine Zusagen zu verfolgen und eigene Watch Partys zu veranstalten."
+    },
+    "loading": "Wird geladen",
+    "signalLost": "Signal verloren",
+    "loadError": "Deine Partys konnten nicht geladen werden.",
+    "emptyAttending": {
+      "title": "Noch keine Partys",
+      "body": "Sag einer Watch Party zu und sie erscheint hier.",
+      "cta": "Party finden"
+    },
+    "emptyHosting": {
+      "title": "Veranstalte deine erste Party",
+      "body": "Erstelle eine Watch Party und trommle die Crew zusammen.",
+      "cta": "Party erstellen"
+    },
+    "createFooter": "+ Party erstellen"
+  },
+  "dashboard": {
+    "guestGate": {
+      "title": "Kommandozentrale",
+      "message": "Melde dich an, um deine Watch Partys zu erstellen und zu verwalten."
+    },
+    "noDateSet": "Kein Datum festgelegt",
+    "tonightAt": "Heute Abend um {{time}}",
+    "dateAt": "{{date}} um {{time}}",
+    "loading": "Wird geladen",
+    "signalLost": "Signal verloren",
+    "loadError": "Dashboard konnte nicht geladen werden.",
+    "hostDashboard": "Gastgeber-Dashboard",
+    "commandCenter": "Kommandozentrale",
+    "totalRsvp": "Zusagen gesamt",
+    "sponsorRev": "Sponsoring-Umsatz",
+    "activeParties": "Aktive Partys",
+    "emptyActive": "Keine laufenden Partys. Veröffentliche eine, um hier zu erscheinen.",
+    "rsvps": "Zusagen",
+    "sponsored": "Gesponsert",
+    "pendingSponsor": "Sponsoring ausstehend",
+    "findSponsors": "Sponsoren finden",
+    "manage": "Verwalten",
+    "drafts": "Entwürfe",
+    "emptyDrafts": "Keine Entwürfe auf der Bank.",
+    "edited": "Bearbeitet am {{date}}",
+    "completed": "Abgeschlossen",
+    "emptyCompleted": "Noch nichts in den Büchern.",
+    "cancelled": "Abgesagt",
+    "ended": "Beendet am {{date}}",
+    "endedNoDate": "Beendet",
+    "attendees_one": "{{count}} Teilnehmer",
+    "attendees_other": "{{count}} Teilnehmer",
+    "createFooter": "+ Party erstellen"
+  },
+  "create": {
+    "guestGate": {
+      "title": "Veranstalte eine Party",
+      "message": "Melde dich an, um Watch Partys zu erstellen, deine Crowd zu versammeln und Zusagen zu verwalten."
+    },
+    "loadError": "Event konnte nicht zum Bearbeiten geladen werden.",
+    "outcome": {
+      "published": {
+        "title": "Party veröffentlicht",
+        "body": "Deine Watch Party ist jetzt im Entdecken-Feed live."
+      },
+      "draft": {
+        "title": "Entwurf gespeichert",
+        "body": "Setz jederzeit über die Entwürfe deiner Kommandozentrale fort."
+      },
+      "deleted": {
+        "title": "Party gelöscht",
+        "body": "Die Party und ihre Zusagen wurden entfernt."
+      },
+      "coverErrorLabel": "Titelbild fehlgeschlagen",
+      "coverUploadFailed": "Titelbild-Upload fehlgeschlagen.",
+      "coverErrorBody": "{{error}} — du kannst es über Party bearbeiten erneut versuchen.",
+      "viewParty": "Party ansehen",
+      "shareParty": "Party teilen",
+      "done": "Fertig"
+    },
+    "headline": {
+      "edit": "Party bearbeiten",
+      "create": "Veranstalte eine Party"
+    },
+    "subtitle": "Richte deine Watch Party ein und trommle die Crew zusammen.",
+    "cover": {
+      "add": "+ Titelbild hinzufügen",
+      "change": "Foto ändern",
+      "label": "Titelbild"
+    },
+    "basics": {
+      "sectionTitle": "Das Wichtigste",
+      "eventName": "Event-Name",
+      "eventNamePlaceholder": "z. B. Arsenal-Chelsea-Watch-Party",
+      "whatIsBeingWatched": "Was wird geschaut",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Sag den Leuten, was sie erwartet…",
+      "maxCapacity": "Maximale Kapazität",
+      "unlimitedHint": "Leer = unbegrenzt",
+      "capacityPlaceholder": "z. B. 30"
+    },
+    "timePlace": {
+      "sectionTitle": "Zeit & Ort",
+      "starts": "Beginn",
+      "startsPlaceholder": "Datum & Uhrzeit festlegen",
+      "ends": "Ende",
+      "endsPlaceholder": "Optionale Endzeit",
+      "addVenue": "Ort hinzufügen",
+      "addVenueSub": "Lass die Gäste wissen, wo sie hin müssen",
+      "venueName": "Name des Orts",
+      "venueNamePlaceholder": "Name des Orts",
+      "address": "Adresse",
+      "pinnedOnMap": "Auf der Karte markiert",
+      "pickAddressHint": "Wähle eine vorgeschlagene Adresse, um diese Party auf der Entdecken-Karte zu markieren."
+    },
+    "privacy": {
+      "sectionTitle": "Privatsphäre",
+      "public": "Öffentlich",
+      "publicSub": "Jeder kann beitreten",
+      "private": "Privat",
+      "privateSub": "Nur auf Einladung — Adresse bis zur Zusage verborgen",
+      "venueHint": "Füge oben einen Ort hinzu, um seine Adresse vor Nicht-Teilnehmern zu verbergen."
+    },
+    "actions": {
+      "saveAsDraft": "Als Entwurf speichern",
+      "saveAsDraftInstead": "Stattdessen als Entwurf speichern",
+      "deleteParty": "Party löschen",
+      "deleteConfirm": "Diese Party löschen? Das kann nicht rückgängig gemacht werden.",
+      "keepIt": "Behalten",
+      "yesDelete": "Ja, löschen",
+      "saving": "Wird gespeichert…",
+      "saveChanges": "Änderungen speichern",
+      "publishParty": "Party veröffentlichen"
+    },
+    "saveError": "Event konnte nicht gespeichert werden.",
+    "deleteError": "Party konnte nicht gelöscht werden.",
+    "share": {
+      "whenWithTime": "{{date}} um {{time}}"
+    }
+  }
+}

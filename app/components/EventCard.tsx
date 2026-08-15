@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, palette, spacing, type as t } from '../lib/theme';
 import { Badge, Btn } from './ui';
 
@@ -38,6 +39,7 @@ function startsToday(startsAt?: string | null): boolean {
 
 export function EventCard({ event, compact = false }: { event: EventItem; compact?: boolean }) {
   const router = useRouter();
+  const { t: tr } = useTranslation('discover');
 
   const { dateStr, timeStr } = event.startsAt
     ? formatEventDateTime(event.startsAt, event.venueTimezone ?? null)
@@ -52,7 +54,7 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
 
   const badges = (
     <View style={s.badgeRow}>
-      {today && <Badge label="Today" tone="live" />}
+      {today && <Badge label={tr('card.today')} tone="live" />}
       <Badge label={event.broadcastSubject} tone="accent" dot={false} />
     </View>
   );
@@ -85,7 +87,7 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
           <View style={s.meta}>
             {event.venueName && (
               <Text style={[t.monoData, s.venueText]} numberOfLines={1}>
-                {event.isPrivateLocation ? `${event.venueName} — private` : event.venueName}
+                {event.isPrivateLocation ? tr('card.privateLocation', { venue: event.venueName }) : event.venueName}
               </Text>
             )}
             {(dateStr || timeStr) && (
@@ -101,16 +103,16 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
           <View style={s.footerLeft}>
             {typeof event.goingCount === 'number' && (
               <Text style={[t.labelCaps, { color: colors.textPrimary }]}>
-                {event.goingCount} going
+                {tr('card.goingCount', { count: event.goingCount })}
               </Text>
             )}
             {event.hostName && (
               <Text style={[t.labelCapsSm, { color: colors.textTertiary }]} numberOfLines={1}>
-                Hosted by {event.hostName}
+                {tr('card.hostedBy', { name: event.hostName })}
               </Text>
             )}
           </View>
-          <Btn label="Join" variant="secondary" small onPress={goTo} />
+          <Btn label={tr('card.join')} variant="secondary" small onPress={goTo} />
         </View>
       </View>
     </Pressable>

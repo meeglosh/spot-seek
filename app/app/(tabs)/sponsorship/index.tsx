@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, palette, spacing, fonts, type as t } from '../../../lib/theme';
 import { Btn, Chip, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
@@ -44,8 +45,8 @@ function fmtUsd(cents: number): string {
   return `$${str.endsWith('.00') ? str.slice(0, -3) : str}`;
 }
 
-function fmtEventDate(iso: string | null, venueTimezone: string | null = null): string {
-  if (!iso) return 'DATE TBC';
+function fmtEventDate(iso: string | null, tr: (key: string) => string, venueTimezone: string | null = null): string {
+  if (!iso) return tr('browse.dateTbc');
   const { dateStr, timeStr } = formatEventDateTime(iso, venueTimezone);
   return `${dateStr} · ${timeStr}`.toUpperCase();
 }
@@ -67,6 +68,7 @@ export default function SponsorshipHubScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+  const { t: tr } = useTranslation('sponsorship');
 
   const [sponsor, setSponsor] = useState<ApiSponsorProfile | null>(null);
   const [analytics, setAnalytics] = useState<ApiSponsorAnalytics | null>(null);
@@ -112,7 +114,7 @@ export default function SponsorshipHubScreen() {
 
   async function handleRegister() {
     const name = companyName.trim();
-    if (!name) { setRegError('Company name is required.'); return; }
+    if (!name) { setRegError(tr('browse.register.errorRequired')); return; }
     setRegistering(true);
     setRegError('');
     try {
@@ -128,8 +130,8 @@ export default function SponsorshipHubScreen() {
     } catch (err) {
       setRegError(
         err instanceof Error && err.message === 'unauthorized'
-          ? 'Sign in first to register as a sponsor.'
-          : 'Registration failed. Try again.',
+          ? tr('browse.register.errorSignIn')
+          : tr('browse.register.errorFailed'),
       );
     } finally {
       setRegistering(false);
@@ -163,8 +165,8 @@ export default function SponsorshipHubScreen() {
       <View style={s.container}>
         <AppHeader />
         <GuestGate
-          title="Sponsorship Hub"
-          message="Sign in to register your brand, browse high-engagement watch parties, and bid on sponsorships."
+          title={tr('browse.guestGate.title')}
+          message={tr('browse.guestGate.message')}
           redirect="/(tabs)/sponsorship"
         />
       </View>
@@ -179,8 +181,8 @@ export default function SponsorshipHubScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textTertiary} />}
       >
-        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>Sponsorship Hub</Text>
-        <Text style={[t.bodyMd, s.subtitle]}>High-yield targeting opportunities.</Text>
+        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('browse.title')}</Text>
+        <Text style={[t.bodyMd, s.subtitle]}>{tr('browse.subtitle')}</Text>
 
         {loading ? (
           <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing['2xl'] }} />
@@ -189,16 +191,15 @@ export default function SponsorshipHubScreen() {
             {/* ── Sponsor identity / registration ─────────────────────────── */}
             {sponsor === null ? (
               <View style={s.registerCard}>
-                <Text style={[t.headlineSm, { color: colors.accent }]}>Become a Sponsor</Text>
+                <Text style={[t.headlineSm, { color: colors.accent }]}>{tr('browse.register.title')}</Text>
                 <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                  Register your company to bid on watch parties. Hosts accept or reject
-                  each bid — a 15% platform fee applies to accepted bids.
+                  {tr('browse.register.description')}
                 </Text>
                 <View style={s.field}>
-                  <FieldLabel>Company Name</FieldLabel>
+                  <FieldLabel>{tr('browse.register.companyName')}</FieldLabel>
                   <TextInput
                     style={[inputStyle, focusedField === 'company' && inputFocusedStyle]}
-                    placeholder="e.g. Voltage Drinks Co."
+                    placeholder={tr('browse.register.companyNamePlaceholder')}
                     placeholderTextColor={colors.textTertiary}
                     value={companyName}
                     onChangeText={setCompanyName}
@@ -207,10 +208,10 @@ export default function SponsorshipHubScreen() {
                   />
                 </View>
                 <View style={s.field}>
-                  <FieldLabel>Website (Optional)</FieldLabel>
+                  <FieldLabel>{tr('browse.register.website')}</FieldLabel>
                   <TextInput
                     style={[inputStyle, focusedField === 'website' && inputFocusedStyle]}
-                    placeholder="https://…"
+                    placeholder={tr('browse.register.websitePlaceholder')}
                     placeholderTextColor={colors.textTertiary}
                     value={website}
                     onChangeText={setWebsite}
@@ -221,7 +222,7 @@ export default function SponsorshipHubScreen() {
                   />
                 </View>
                 <View style={s.field}>
-                  <FieldLabel>Categories (Optional)</FieldLabel>
+                  <FieldLabel>{tr('browse.register.categories')}</FieldLabel>
                   <View style={s.categoryRow}>
                     {SPONSOR_CATEGORIES.map((cat) => (
                       <Chip key={cat} label={cat} active={categories.includes(cat)} onPress={() => toggleCategory(cat)} />
@@ -230,10 +231,10 @@ export default function SponsorshipHubScreen() {
                 </View>
                 <View style={s.budgetRow}>
                   <View style={[s.field, s.budgetField]}>
-                    <FieldLabel>Budget Min (Optional)</FieldLabel>
+                    <FieldLabel>{tr('browse.register.budgetMin')}</FieldLabel>
                     <TextInput
                       style={[inputStyle, focusedField === 'budgetMin' && inputFocusedStyle]}
-                      placeholder="$"
+                      placeholder={tr('browse.register.budgetPlaceholder')}
                       placeholderTextColor={colors.textTertiary}
                       value={budgetMin}
                       onChangeText={setBudgetMin}
@@ -243,10 +244,10 @@ export default function SponsorshipHubScreen() {
                     />
                   </View>
                   <View style={[s.field, s.budgetField]}>
-                    <FieldLabel>Budget Max (Optional)</FieldLabel>
+                    <FieldLabel>{tr('browse.register.budgetMax')}</FieldLabel>
                     <TextInput
                       style={[inputStyle, focusedField === 'budgetMax' && inputFocusedStyle]}
-                      placeholder="$"
+                      placeholder={tr('browse.register.budgetPlaceholder')}
                       placeholderTextColor={colors.textTertiary}
                       value={budgetMax}
                       onChangeText={setBudgetMax}
@@ -259,29 +260,29 @@ export default function SponsorshipHubScreen() {
                 {regError !== '' && (
                   <Text style={[t.bodySm, { color: colors.danger }]}>{regError}</Text>
                 )}
-                <Btn label="Register as Sponsor" onPress={handleRegister} disabled={registering} />
+                <Btn label={tr('browse.register.submit')} onPress={handleRegister} disabled={registering} />
               </View>
             ) : (
               <View style={s.sponsorBlock}>
                 <Text style={[t.labelCaps, { color: colors.volt }]}>
-                  Sponsor · {sponsor.companyName}
+                  {tr('browse.sponsorLabel', { company: sponsor.companyName })}
                 </Text>
                 {summary && (
                   <View style={s.tileGrid}>
                     <View style={s.tile}>
-                      <Text style={[t.labelCapsSm, s.tileLabel]}>Total Bids</Text>
+                      <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.totalBids')}</Text>
                       <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{summary.totalBids}</Text>
                     </View>
                     <View style={s.tile}>
-                      <Text style={[t.labelCapsSm, s.tileLabel]}>Active</Text>
+                      <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.active')}</Text>
                       <Text style={[t.headlineMd, { color: colors.volt }]}>{summary.activeBids}</Text>
                     </View>
                     <View style={s.tile}>
-                      <Text style={[t.labelCapsSm, s.tileLabel]}>Total Spend</Text>
+                      <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.totalSpend')}</Text>
                       <Text style={[t.headlineMd, { color: colors.accent }]}>{fmtUsd(summary.totalSpendCents)}</Text>
                     </View>
                     <View style={s.tile}>
-                      <Text style={[t.labelCapsSm, s.tileLabel]}>Reach</Text>
+                      <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.reach')}</Text>
                       <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{summary.totalReach}</Text>
                     </View>
                   </View>
@@ -292,20 +293,20 @@ export default function SponsorshipHubScreen() {
             {/* ── Incoming requests from hosts ─────────────────────────────── */}
             {sponsor && requests.length > 0 && (
               <>
-                <SectionTitle>Sponsorship Requests</SectionTitle>
+                <SectionTitle>{tr('browse.requests.sectionTitle')}</SectionTitle>
                 {requests.map((r) => (
                   <View key={r.id} style={s.requestCard}>
                     <View style={s.requestHeader}>
                       <Text style={[t.headlineSm, { color: colors.textPrimary }]} numberOfLines={1}>
-                        {r.event?.title ?? 'Event'}
+                        {r.event?.title ?? tr('browse.requests.fallbackEventTitle')}
                       </Text>
                       <Badge
-                        label={r.status === 'pending' ? 'New Request' : r.status}
+                        label={r.status === 'pending' ? tr('browse.requests.newRequest') : tr(`statusLabels.${r.status}`)}
                         tone={r.status === 'pending' ? 'volt' : r.status === 'active' ? 'accent' : 'neutral'}
                       />
                     </View>
                     <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                      {fmtEventDate(r.event?.startsAt ?? null, r.event?.venueTimezone ?? null)} · {r.goingCount} going
+                      {fmtEventDate(r.event?.startsAt ?? null, tr, r.event?.venueTimezone ?? null)} · {tr('browse.requests.goingCount', { count: r.goingCount })}
                     </Text>
                     <Text style={[t.headlineMd, { color: colors.accent }]}>{fmtUsd(r.amountCents)}</Text>
                     {r.note && (
@@ -314,7 +315,7 @@ export default function SponsorshipHubScreen() {
                     {r.status === 'pending' && (
                       <View style={s.requestActions}>
                         <Btn
-                          label="Decline"
+                          label={tr('browse.requests.decline')}
                           variant="ghost"
                           small
                           style={s.requestBtn}
@@ -322,7 +323,7 @@ export default function SponsorshipHubScreen() {
                           onPress={() => handleRequestAction(r.id, 'rejected')}
                         />
                         <Btn
-                          label={requestActionId === r.id ? '…' : 'Accept'}
+                          label={requestActionId === r.id ? '…' : tr('browse.requests.accept')}
                           small
                           style={s.requestBtn}
                           disabled={requestActionId === r.id}
@@ -336,12 +337,12 @@ export default function SponsorshipHubScreen() {
             )}
 
             {/* ── Marketplace ──────────────────────────────────────────────── */}
-            <SectionTitle>Open for Sponsorship</SectionTitle>
+            <SectionTitle>{tr('browse.marketplace.sectionTitle')}</SectionTitle>
             <View style={s.filterRow}>
               {FILTERS.map((f) => (
                 <Chip
                   key={f.key}
-                  label={f.label}
+                  label={tr(`browse.filters.${f.key}`)}
                   active={filter === f.key}
                   onPress={() => setFilter(f.key)}
                 />
@@ -350,7 +351,7 @@ export default function SponsorshipHubScreen() {
 
             {shown.length === 0 ? (
               <Text style={[t.bodySm, { color: colors.textTertiary }]}>
-                No published events match this filter.
+                {tr('browse.marketplace.empty')}
               </Text>
             ) : (
               shown.map((ev) => {
@@ -373,31 +374,31 @@ export default function SponsorshipHubScreen() {
                       <Text style={[t.headlineMd, { color: colors.accent }]}>{ev.title}</Text>
                       <Text style={[t.bodySm, { color: colors.textSecondary }]} numberOfLines={1}>
                         ◈ {ev.isPrivateLocation
-                          ? 'Private location — revealed after RSVP'
-                          : ev.venueName ?? 'Venue TBC'}
+                          ? tr('browse.marketplace.privateVenue')
+                          : ev.venueName ?? tr('browse.marketplace.venueTbc')}
                       </Text>
                       <View style={s.eventTiles}>
                         <View style={s.eventTile}>
-                          <Text style={[t.labelCapsSm, s.tileLabel]}>Date</Text>
+                          <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.marketplace.date')}</Text>
                           <Text style={[t.monoData, { color: colors.textPrimary }]}>
-                            {fmtEventDate(ev.startsAt, ev.venueTimezone)}
+                            {fmtEventDate(ev.startsAt, tr, ev.venueTimezone)}
                           </Text>
                         </View>
                         {ev.capacity != null && (
                           <View style={s.eventTile}>
-                            <Text style={[t.labelCapsSm, s.tileLabel]}>Capacity</Text>
+                            <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.marketplace.capacity')}</Text>
                             <Text style={[t.monoData, { color: colors.textPrimary }]}>{ev.capacity}</Text>
                           </View>
                         )}
                       </View>
                       {myBid && (
                         <Badge
-                          label={`Your bid · ${fmtUsd(myBid.amountCents)} · ${myBid.status}`}
+                          label={tr('browse.marketplace.yourBid', { amount: fmtUsd(myBid.amountCents), status: tr(`statusLabels.${myBid.status}`) })}
                           tone={BID_TONE[myBid.status]}
                         />
                       )}
                       <Btn
-                        label="Review for Sponsorship"
+                        label={tr('browse.marketplace.review')}
                         onPress={() => router.push(`/(tabs)/sponsorship/${ev.id}` as never)}
                       />
                     </View>

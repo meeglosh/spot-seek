@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, palette, spacing, fonts, type as t } from '../../../lib/theme';
 import { Btn, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
@@ -18,11 +19,11 @@ import { formatEventDateTime } from '../../../lib/dateFormat';
 
 const PLATFORM_FEE_RATE = 0.15;
 
-const BID_BADGE: Record<SponsorshipStatus, { label: string; tone: 'neutral' | 'volt' | 'live' }> = {
-  pending:   { label: 'Pending',   tone: 'neutral' },
-  active:    { label: 'Active',    tone: 'volt' },
-  rejected:  { label: 'Rejected',  tone: 'live' },
-  cancelled: { label: 'Cancelled', tone: 'neutral' },
+const BID_TONE: Record<SponsorshipStatus, 'neutral' | 'volt' | 'live'> = {
+  pending: 'neutral',
+  active: 'volt',
+  rejected: 'live',
+  cancelled: 'neutral',
 };
 
 function fmtUsd(cents: number): string {
@@ -30,36 +31,26 @@ function fmtUsd(cents: number): string {
   return `$${str.endsWith('.00') ? str.slice(0, -3) : str}`;
 }
 
-function fmtEventDate(iso: string | null, venueTimezone: string | null = null): string {
-  if (!iso) return 'DATE TBC';
+function fmtEventDate(iso: string | null, tr: (key: string) => string, venueTimezone: string | null = null): string {
+  if (!iso) return tr('browse.dateTbc');
   const { dateStr, timeStr } = formatEventDateTime(iso, venueTimezone);
   return `${dateStr} · ${timeStr}`.toUpperCase();
 }
 
-const DEAL_POINTS = [
-  {
-    title: 'Your Bid',
-    body: 'Offer a sponsorship amount for this event. The host sees your bid and note.',
-  },
-  {
-    title: 'Platform Fee — 15%',
-    body: 'SpotSeek keeps 15% of an accepted bid. The host receives the remainder.',
-  },
-  {
-    title: 'Host Decision',
-    body: 'The host accepts or rejects your bid. You can cancel while it is pending.',
-  },
-  {
-    title: 'Payment',
-    body: 'Charged only after the host accepts. Payments are currently in test mode — no real money moves.',
-  },
-] as const;
+const DEAL_POINT_KEYS = ['yourBid', 'platformFee', 'hostDecision', 'payment'] as const;
 
 export default function SponsorshipDetailsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const auth = useAuth();
+  const { t: tr } = useTranslation('sponsorship');
+  const { t: trCommon } = useTranslation('common');
+
+  const DEAL_POINTS = DEAL_POINT_KEYS.map((key) => ({
+    title: tr(`bid.dealPoints.${key}.title`),
+    body: tr(`bid.dealPoints.${key}.body`),
+  }));
 
   const [event, setEvent] = useState<ApiEvent | null>(null);
   const [bids, setBids] = useState<ApiSponsorBid[]>([]);
@@ -85,11 +76,11 @@ export default function SponsorshipDetailsScreen() {
       setBids(myBids.filter((b) => b.eventId === eventId)
         .sort((a, c) => c.createdAt.localeCompare(a.createdAt)));
     } catch {
-      setLoadError('Could not load this event.');
+      setLoadError(tr('bid.loadError'));
     } finally {
       setLoading(false);
     }
-  }, [eventId]);
+  }, [eventId, tr]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -114,8 +105,8 @@ export default function SponsorshipDetailsScreen() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg === 'not_a_sponsor') setNotSponsor(true);
-      else if (msg === 'unauthorized') setFormError('Sign in to place a bid.');
-      else setFormError('Bid failed. Try again.');
+      else if (msg === 'unauthorized') setFormError(tr('bid.errors.signIn'));
+      else setFormError(tr('bid.errors.failed'));
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +120,7 @@ export default function SponsorshipDetailsScreen() {
       await updateBidStatus(openBid.id, 'cancelled');
       await load();
     } catch {
-      setFormError('Could not cancel the bid. Try again.');
+      setFormError(tr('bid.errors.cancelFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -141,8 +132,8 @@ export default function SponsorshipDetailsScreen() {
       <View style={s.container}>
         <AppHeader back />
         <GuestGate
-          title="Sponsor this party"
-          message="Sign in to review sponsorship terms and place a bid on this watch party."
+          title={tr('bid.guestGate.title')}
+          message={tr('bid.guestGate.message')}
           redirect={eventId ? `/(tabs)/sponsorship/${eventId}` : '/(tabs)/sponsorship'}
         />
       </View>
@@ -164,9 +155,9 @@ export default function SponsorshipDetailsScreen() {
         <AppHeader back />
         <View style={s.center}>
           <Text style={[t.bodyMd, { color: colors.textSecondary }]}>
-            {loadError || 'Event not found.'}
+            {loadError || tr('bid.eventNotFound')}
           </Text>
-          <Btn label="Retry" variant="secondary" small onPress={() => { setLoading(true); load(); }} />
+          <Btn label={trCommon('retry')} variant="secondary" small onPress={() => { setLoading(true); load(); }} />
         </View>
       </View>
     );
@@ -198,7 +189,7 @@ export default function SponsorshipDetailsScreen() {
         </View>
 
         <View style={s.body}>
-          <Badge label="Open for Bids" tone="accent" />
+          <Badge label={tr('bid.openForBids')} tone="accent" />
           <Text style={[t.headlineLg, { color: colors.accent }]}>{event.title}</Text>
           {event.description != null && event.description !== '' && (
             <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{event.description}</Text>
@@ -207,23 +198,23 @@ export default function SponsorshipDetailsScreen() {
           {/* ── Event facts ──────────────────────────────────────────────── */}
           <View style={s.factsCard}>
             <View style={s.factRow}>
-              <Text style={[t.labelCaps, s.factLabel]}>Date</Text>
-              <Text style={[t.monoData, s.factValue]}>{fmtEventDate(event.startsAt, event.venueTimezone)}</Text>
+              <Text style={[t.labelCaps, s.factLabel]}>{tr('bid.facts.date')}</Text>
+              <Text style={[t.monoData, s.factValue]}>{fmtEventDate(event.startsAt, tr, event.venueTimezone)}</Text>
             </View>
             <View style={s.factDivider} />
             <View style={s.factRow}>
-              <Text style={[t.labelCaps, s.factLabel]}>Venue</Text>
+              <Text style={[t.labelCaps, s.factLabel]}>{tr('bid.facts.venue')}</Text>
               <Text style={[t.monoData, s.factValue]} numberOfLines={1}>
                 {event.isPrivateLocation
-                  ? 'PRIVATE — AFTER RSVP'
-                  : (event.venueName ?? 'TBC').toUpperCase()}
+                  ? tr('bid.facts.privateVenue')
+                  : (event.venueName ?? tr('bid.facts.venueTbc')).toUpperCase()}
               </Text>
             </View>
             {event.capacity != null && (
               <>
                 <View style={s.factDivider} />
                 <View style={s.factRow}>
-                  <Text style={[t.labelCaps, s.factLabel]}>Capacity</Text>
+                  <Text style={[t.labelCaps, s.factLabel]}>{tr('bid.facts.capacity')}</Text>
                   <Text style={[t.monoData, s.factValue]}>{event.capacity}</Text>
                 </View>
               </>
@@ -231,7 +222,7 @@ export default function SponsorshipDetailsScreen() {
           </View>
 
           {/* ── The deal (real auction mechanics) ────────────────────────── */}
-          <SectionTitle>The Deal</SectionTitle>
+          <SectionTitle>{tr('bid.dealTitle')}</SectionTitle>
           <View style={s.dealList}>
             {DEAL_POINTS.map((p) => (
               <View key={p.title} style={s.dealRow}>
@@ -242,62 +233,60 @@ export default function SponsorshipDetailsScreen() {
           </View>
 
           {/* ── Bid status / bid form ────────────────────────────────────── */}
-          <SectionTitle accent={colors.live}>Sponsorship Status</SectionTitle>
+          <SectionTitle accent={colors.live}>{tr('bid.statusTitle')}</SectionTitle>
 
           {openBid ? (
             <View style={s.statusCard}>
               <View style={s.statusHead}>
-                <Text style={[t.labelCaps, { color: colors.textSecondary }]}>Your Bid</Text>
-                <Badge label={BID_BADGE[openBid.status].label} tone={BID_BADGE[openBid.status].tone} />
+                <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('bid.yourBid')}</Text>
+                <Badge label={tr(`statusLabels.${openBid.status}`)} tone={BID_TONE[openBid.status]} />
               </View>
               <Text style={[t.headlineLg, { color: colors.textPrimary }]}>
                 {fmtUsd(openBid.amountCents)}
               </Text>
               <View style={s.statusRow}>
-                <Text style={[t.labelCapsSm, s.factLabel]}>Platform Fee (15%)</Text>
+                <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.platformFee')}</Text>
                 <Text style={[t.monoData, { color: colors.live }]}>{fmtUsd(openBid.platformFeeCents)}</Text>
               </View>
               <View style={s.statusRow}>
-                <Text style={[t.labelCapsSm, s.factLabel]}>Host Receives</Text>
+                <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.hostReceives')}</Text>
                 <Text style={[t.monoData, { color: colors.volt }]}>
                   {fmtUsd(openBid.amountCents - openBid.platformFeeCents)}
                 </Text>
               </View>
               <View style={s.statusRow}>
-                <Text style={[t.labelCapsSm, s.factLabel]}>Placed</Text>
+                <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.placed')}</Text>
                 <Text style={[t.monoData, s.factValue]}>
                   {new Date(openBid.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}
                 </Text>
               </View>
               {openBid.note != null && openBid.note !== '' && (
                 <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                  Note: {openBid.note}
+                  {tr('bid.note', { note: openBid.note })}
                 </Text>
               )}
               {openBid.status === 'pending' ? (
-                <Btn label="Cancel Bid" variant="danger" disabled={submitting} onPress={handleCancelBid} />
+                <Btn label={tr('bid.cancelBid')} variant="danger" disabled={submitting} onPress={handleCancelBid} />
               ) : (
                 <Text style={[t.bodySm, { color: colors.volt }]}>
-                  The host accepted this bid.
+                  {tr('bid.hostAccepted')}
                 </Text>
               )}
               {formError !== '' && (
                 <Text style={[t.bodySm, { color: colors.danger }]}>{formError}</Text>
               )}
               <Text style={[t.bodySm, s.testNote]}>
-                Payment is processed only after the host accepts — payments are in test
-                mode, no real charges.
+                {tr('bid.testNoteAccepted')}
               </Text>
             </View>
           ) : notSponsor ? (
             <View style={s.statusCard}>
-              <Text style={[t.headlineSm, { color: colors.live }]}>Sponsor Profile Needed</Text>
+              <Text style={[t.headlineSm, { color: colors.live }]}>{tr('bid.sponsorProfileNeeded.title')}</Text>
               <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                Only registered sponsors can bid. Register your company in the
-                Sponsorship Hub, then come back to place a bid.
+                {tr('bid.sponsorProfileNeeded.body')}
               </Text>
               <Btn
-                label="Register in the Hub"
+                label={tr('bid.sponsorProfileNeeded.cta')}
                 variant="secondary"
                 onPress={() => router.push('/(tabs)/sponsorship' as never)}
               />
@@ -306,15 +295,15 @@ export default function SponsorshipDetailsScreen() {
             <View style={s.statusCard}>
               {lastClosedBid && (
                 <Badge
-                  label={`Last bid · ${fmtUsd(lastClosedBid.amountCents)} · ${BID_BADGE[lastClosedBid.status].label}`}
-                  tone={BID_BADGE[lastClosedBid.status].tone}
+                  label={tr('bid.lastBid', { amount: fmtUsd(lastClosedBid.amountCents), status: tr(`statusLabels.${lastClosedBid.status}`) })}
+                  tone={BID_TONE[lastClosedBid.status]}
                 />
               )}
               <View>
-                <FieldLabel>Bid Amount (USD)</FieldLabel>
+                <FieldLabel>{tr('bid.bidAmountLabel')}</FieldLabel>
                 <TextInput
                   style={[inputStyle, focusedField === 'amount' && inputFocusedStyle]}
-                  placeholder="e.g. 250"
+                  placeholder={tr('bid.bidAmountPlaceholder')}
                   placeholderTextColor={colors.textTertiary}
                   value={amount}
                   onChangeText={setAmount}
@@ -324,10 +313,10 @@ export default function SponsorshipDetailsScreen() {
                 />
               </View>
               <View>
-                <FieldLabel>Note to Host (Optional)</FieldLabel>
+                <FieldLabel>{tr('bid.noteLabel')}</FieldLabel>
                 <TextInput
                   style={[inputStyle, s.noteInput, focusedField === 'note' && inputFocusedStyle]}
-                  placeholder="What your brand brings to the party…"
+                  placeholder={tr('bid.notePlaceholder')}
                   placeholderTextColor={colors.textTertiary}
                   value={note}
                   onChangeText={setNote}
@@ -338,20 +327,19 @@ export default function SponsorshipDetailsScreen() {
               </View>
               {amountCents > 0 && (
                 <Text style={[t.monoData, { color: colors.accent }]}>
-                  PLATFORM FEE (15%): {fmtUsd(feeCents)} · HOST RECEIVES: {fmtUsd(amountCents - feeCents)}
+                  {tr('bid.feeSummary', { fee: fmtUsd(feeCents), host: fmtUsd(amountCents - feeCents) })}
                 </Text>
               )}
               {formError !== '' && (
                 <Text style={[t.bodySm, { color: colors.danger }]}>{formError}</Text>
               )}
               <Btn
-                label="Place Bid"
+                label={tr('bid.placeBid')}
                 disabled={amountCents <= 0 || submitting}
                 onPress={handlePlaceBid}
               />
               <Text style={[t.bodySm, s.testNote]}>
-                Payment is processed only after the host accepts your bid — payments are
-                in test mode, no real charges.
+                {tr('bid.testNotePending')}
               </Text>
             </View>
           )}

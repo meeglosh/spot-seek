@@ -1,0 +1,40 @@
+{
+  "brand": {
+    "tagline": "NIE WIEDER ALLEIN SCHAUEN"
+  },
+  "seeker": {
+    "headline": "FIND DEINE CREW",
+    "body": "Entdecke lokale Watch Partys für die Events, die du liebst. Schau nie wieder allein.",
+    "chips": {
+      "liveSports": "LIVE-SPORT",
+      "awards": "AWARDS",
+      "bigEvents": "GROSSE EVENTS"
+    }
+  },
+  "host": {
+    "headline": "FÜHR DAS ERLEBNIS",
+    "body": "Veranstalte deine eigene Watch Party. Bau eine Community rund um deine Leidenschaft auf und führ den Spaß an.",
+    "chips": {
+      "yourVenue": "DEIN ORT",
+      "yourCrowd": "DEINE CREW",
+      "yourRules": "DEINE REGELN"
+    }
+  },
+  "sponsor": {
+    "headline": "BEFEUERE DIE LEIDENSCHAFT",
+    "body": "Werde Partner lokaler Events. Sponsere Watch Partys, erreiche die Crowd und sichere dir exklusive Vorteile.",
+    "chips": {
+      "vipAccess": "VIP-ZUGANG",
+      "gearDrops": "GEAR-DROPS",
+      "partnerDeals": "PARTNER-DEALS"
+    }
+  },
+  "cta": {
+    "next": "WEITER →",
+    "getStarted": "LOS GEHT'S →"
+  },
+  "skip": {
+    "label": "ÜBERSPRINGEN",
+    "a11y": "Einführung überspringen"
+  }
+}

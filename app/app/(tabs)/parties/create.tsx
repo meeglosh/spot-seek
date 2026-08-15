@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
 import { createEvent, fetchEvent, EVENT_SHARE_BASE, type ApiEvent } from '../../../lib/api';
@@ -58,6 +59,7 @@ export default function CreateEventScreen() {
   const { eventId, from } = useLocalSearchParams<{ eventId?: string; from?: string }>();
   const isEdit = !!eventId;
   const auth = useAuth();
+  const { t: tr } = useTranslation('parties');
 
   // Form state
   const [title, setTitle] = useState('');
@@ -109,9 +111,9 @@ export default function CreateEventScreen() {
         setIsPrivate(e.isPrivateLocation);
         setExistingCoverUrl(e.coverImageUrl);
       })
-      .catch(() => setError('Could not load event for editing.'))
+      .catch(() => setError(tr('create.loadError')))
       .finally(() => setInitialising(false));
-  }, [isEdit, eventId]);
+  }, [isEdit, eventId, tr]);
 
   // This screen is always presented as a modal (see parties/_layout.tsx).
   // router.back()/replace() only pop or swap the *current* stack's route —
@@ -147,7 +149,7 @@ export default function CreateEventScreen() {
     const { dateStr, timeStr } = startsAt
       ? formatEventDateTime(startsAt, null)
       : { dateStr: null, timeStr: null };
-    const when = dateStr ? `${dateStr}${timeStr ? ` at ${timeStr}` : ''}` : null;
+    const when = dateStr ? (timeStr ? tr('create.share.whenWithTime', { date: dateStr, time: timeStr }) : dateStr) : null;
     // On iOS, `url` already produces the rich link preview — keep it out of
     // `message` there, or Messages' link-detector previews it a second time.
     const iosMessage = [title, when].filter(Boolean).join('\n');
@@ -214,7 +216,7 @@ export default function CreateEventScreen() {
         try {
           await uploadEventCover(savedEvent.id, coverUri, coverMime);
         } catch (err) {
-          coverError = (err as Error).message || 'Cover upload failed.';
+          coverError = (err as Error).message || tr('create.outcome.coverUploadFailed');
         }
       }
 
@@ -222,7 +224,7 @@ export default function CreateEventScreen() {
     } catch (err) {
       const msg = (err as Error).message;
       if (msg === 'unauthorized') goToAuth(router, 'sign-in', '/(tabs)/parties/create');
-      else setError(msg || 'Could not save event.');
+      else setError(msg || tr('create.saveError'));
     } finally {
       setLoading(false);
     }
@@ -235,7 +237,7 @@ export default function CreateEventScreen() {
       await deleteEvent(eventId);
       setOutcome({ kind: 'deleted' });
     } catch (err) {
-      setError((err as Error).message || 'Could not delete the party.');
+      setError((err as Error).message || tr('create.deleteError'));
       setShowDeleteConfirm(false);
     } finally {
       setLoading(false);
@@ -248,8 +250,8 @@ export default function CreateEventScreen() {
       <View style={s.container}>
         <AppHeader back onBack={leaveCreate} />
         <GuestGate
-          title="Host a Party"
-          message="Sign in to create watch parties, rally your crowd, and manage RSVPs."
+          title={tr('create.guestGate.title')}
+          message={tr('create.guestGate.message')}
           redirect="/(tabs)/parties/create"
         />
       </View>
@@ -268,16 +270,16 @@ export default function CreateEventScreen() {
   if (outcome) {
     const copy = {
       published: {
-        title: 'Party Published',
-        body: 'Your watch party is live on the Discover feed.',
+        title: tr('create.outcome.published.title'),
+        body: tr('create.outcome.published.body'),
       },
       draft: {
-        title: 'Draft Saved',
-        body: 'Pick it back up any time from your Command Center drafts.',
+        title: tr('create.outcome.draft.title'),
+        body: tr('create.outcome.draft.body'),
       },
       deleted: {
-        title: 'Party Deleted',
-        body: 'The party and its RSVPs have been removed.',
+        title: tr('create.outcome.deleted.title'),
+        body: tr('create.outcome.deleted.body'),
       },
     }[outcome.kind];
 
@@ -293,9 +295,9 @@ export default function CreateEventScreen() {
 
           {outcome.coverError && (
             <View style={s.successWarn}>
-              <Text style={[t.labelCapsSm, { color: colors.live }]}>Cover image failed</Text>
+              <Text style={[t.labelCapsSm, { color: colors.live }]}>{tr('create.outcome.coverErrorLabel')}</Text>
               <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                {outcome.coverError} — you can retry from Edit Party.
+                {tr('create.outcome.coverErrorBody', { error: outcome.coverError })}
               </Text>
             </View>
           )}
@@ -303,7 +305,7 @@ export default function CreateEventScreen() {
           <View style={s.successActions}>
             {outcome.kind === 'published' && outcome.savedEventId && (
               <Btn
-                label="View Party"
+                label={tr('create.outcome.viewParty')}
                 onPress={() => {
                   // dismissTo() (used by leaveCreate(), above) maps to React
                   // Navigation's POP_TO — it can only return to a screen that
@@ -324,13 +326,13 @@ export default function CreateEventScreen() {
             )}
             {outcome.kind === 'published' && outcome.savedEventId && (
               <Btn
-                label="Share Party"
+                label={tr('create.outcome.shareParty')}
                 variant="secondary"
                 onPress={() => shareEvent(outcome.savedEventId!)}
               />
             )}
             <Btn
-              label="Done"
+              label={tr('create.outcome.done')}
               variant={outcome.kind === 'published' ? 'secondary' : 'primary'}
               onPress={leaveCreate}
             />
@@ -356,10 +358,10 @@ export default function CreateEventScreen() {
         {/* Headline */}
         <View style={s.headlineBlock}>
           <Text style={[t.headlineLg, { color: colors.textPrimary }]}>
-            {isEdit ? 'Edit Party' : 'Host a Party'}
+            {isEdit ? tr('create.headline.edit') : tr('create.headline.create')}
           </Text>
           <Text style={[t.bodyMd, { color: colors.textSecondary }]}>
-            Set up your watch party and rally the squad.
+            {tr('create.subtitle')}
           </Text>
         </View>
 
@@ -374,21 +376,21 @@ export default function CreateEventScreen() {
           {coverSource ? (
             <Image source={{ uri: coverSource }} style={s.coverPreview} resizeMode="cover" />
           ) : (
-            <Text style={[t.labelCaps, { color: colors.textTertiary }]}>+ Add Cover Photo</Text>
+            <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('create.cover.add')}</Text>
           )}
           <View style={s.coverOverlay}>
             <Text style={[t.labelCapsSm, { color: colors.accent }]}>
-              {coverSource ? 'Change Photo' : 'Cover Photo'}
+              {coverSource ? tr('create.cover.change') : tr('create.cover.label')}
             </Text>
           </View>
         </Pressable>
 
         {/* 01 — The basics */}
-        <FormSection num="01" title="The Basics">
+        <FormSection num="01" title={tr('create.basics.sectionTitle')}>
           <View style={s.field}>
-            <FieldLabel>Event Name</FieldLabel>
+            <FieldLabel>{tr('create.basics.eventName')}</FieldLabel>
             <Input
-              placeholder="e.g. Arsenal v Chelsea watch party"
+              placeholder={tr('create.basics.eventNamePlaceholder')}
               value={title}
               onChangeText={setTitle}
               autoFocus={!isEdit}
@@ -396,7 +398,7 @@ export default function CreateEventScreen() {
           </View>
 
           <View style={s.field}>
-            <FieldLabel>What Is Being Watched</FieldLabel>
+            <FieldLabel>{tr('create.basics.whatIsBeingWatched')}</FieldLabel>
             <BroadcastSubjectInput
               value={broadcastSubject}
               onChange={setBroadcastSubject}
@@ -404,10 +406,10 @@ export default function CreateEventScreen() {
           </View>
 
           <View style={s.field}>
-            <FieldLabel>Description</FieldLabel>
+            <FieldLabel>{tr('create.basics.description')}</FieldLabel>
             <Input
               style={s.textArea}
-              placeholder="Tell people what to expect…"
+              placeholder={tr('create.basics.descriptionPlaceholder')}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -418,11 +420,11 @@ export default function CreateEventScreen() {
 
           <View style={s.field}>
             <View style={s.labelRow}>
-              <FieldLabel>Max Capacity</FieldLabel>
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>Blank = unlimited</Text>
+              <FieldLabel>{tr('create.basics.maxCapacity')}</FieldLabel>
+              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{tr('create.basics.unlimitedHint')}</Text>
             </View>
             <Input
-              placeholder="e.g. 30"
+              placeholder={tr('create.basics.capacityPlaceholder')}
               value={capacity}
               onChangeText={setCapacity}
               keyboardType="numeric"
@@ -431,32 +433,32 @@ export default function CreateEventScreen() {
         </FormSection>
 
         {/* 02 — Time & place */}
-        <FormSection num="02" title="Time & Place">
+        <FormSection num="02" title={tr('create.timePlace.sectionTitle')}>
           <View style={s.field}>
-            <FieldLabel>Starts</FieldLabel>
+            <FieldLabel>{tr('create.timePlace.starts')}</FieldLabel>
             <DateTimePicker
               value={startsAt}
               onChange={setStartsAt}
-              placeholder="Set date & time"
+              placeholder={tr('create.timePlace.startsPlaceholder')}
               minimumDate={new Date()}
             />
           </View>
 
           <View style={s.field}>
-            <FieldLabel>Ends</FieldLabel>
+            <FieldLabel>{tr('create.timePlace.ends')}</FieldLabel>
             <DateTimePicker
               value={endsAt}
               onChange={setEndsAt}
-              placeholder="Optional end time"
+              placeholder={tr('create.timePlace.endsPlaceholder')}
               minimumDate={startsAt ?? new Date()}
             />
           </View>
 
           <View style={s.toggleRow}>
             <View style={s.toggleLabels}>
-              <Text style={[t.labelCaps, { color: colors.textPrimary }]}>Add a Venue</Text>
+              <Text style={[t.labelCaps, { color: colors.textPrimary }]}>{tr('create.timePlace.addVenue')}</Text>
               <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                Let attendees know where to show up
+                {tr('create.timePlace.addVenueSub')}
               </Text>
             </View>
             <Switch
@@ -470,11 +472,11 @@ export default function CreateEventScreen() {
           {hasVenue && (
             <View style={s.venueFields}>
               <View style={s.field}>
-                <FieldLabel>Venue Name</FieldLabel>
-                <Input placeholder="Venue name" value={venueName} onChangeText={setVenueName} />
+                <FieldLabel>{tr('create.timePlace.venueName')}</FieldLabel>
+                <Input placeholder={tr('create.timePlace.venueNamePlaceholder')} value={venueName} onChangeText={setVenueName} />
               </View>
               <View style={s.field}>
-                <FieldLabel>Address</FieldLabel>
+                <FieldLabel>{tr('create.timePlace.address')}</FieldLabel>
                 <AddressAutocompleteInput
                   value={venueAddress}
                   onChangeText={(text) => {
@@ -512,13 +514,13 @@ export default function CreateEventScreen() {
                     <Marker coordinate={venueCoords} pinColor={palette.secondary} />
                   </MapView>
                   <View style={s.mapPreviewBadge}>
-                    <Text style={[t.labelCapsSm, { color: colors.accent }]}>Pinned on map</Text>
+                    <Text style={[t.labelCapsSm, { color: colors.accent }]}>{tr('create.timePlace.pinnedOnMap')}</Text>
                   </View>
                 </View>
               )}
               {!venueCoords && venueAddress.trim().length > 0 && (
                 <Text style={[t.bodySm, { color: colors.textTertiary }]}>
-                  Pick a suggested address to pin this party on the Discover map.
+                  {tr('create.timePlace.pickAddressHint')}
                 </Text>
               )}
             </View>
@@ -526,30 +528,30 @@ export default function CreateEventScreen() {
         </FormSection>
 
         {/* 03 — Privacy (maps to isPrivateLocation) */}
-        <FormSection num="03" title="Privacy">
+        <FormSection num="03" title={tr('create.privacy.sectionTitle')}>
           <View style={s.privacyTiles}>
             <Pressable
               onPress={() => setIsPrivate(false)}
               style={[s.privacyTile, !isPrivate && s.privacyTileActive]}
             >
               <Text style={[t.labelCaps, { color: !isPrivate ? colors.live : colors.textPrimary }]}>
-                Public
+                {tr('create.privacy.public')}
               </Text>
-              <Text style={[t.bodySm, s.privacyTileSub]}>Anyone can join</Text>
+              <Text style={[t.bodySm, s.privacyTileSub]}>{tr('create.privacy.publicSub')}</Text>
             </Pressable>
             <Pressable
               onPress={() => setIsPrivate(true)}
               style={[s.privacyTile, isPrivate && s.privacyTileActive]}
             >
               <Text style={[t.labelCaps, { color: isPrivate ? colors.live : colors.textPrimary }]}>
-                Private
+                {tr('create.privacy.private')}
               </Text>
-              <Text style={[t.bodySm, s.privacyTileSub]}>Invite only — address hidden until RSVP</Text>
+              <Text style={[t.bodySm, s.privacyTileSub]}>{tr('create.privacy.privateSub')}</Text>
             </Pressable>
           </View>
           {isPrivate && !hasVenue && (
             <Text style={[t.bodySm, { color: colors.textTertiary }]}>
-              Add a venue above to hide its address from non-attendees.
+              {tr('create.privacy.venueHint')}
             </Text>
           )}
         </FormSection>
@@ -558,7 +560,7 @@ export default function CreateEventScreen() {
             sticky bar (see saveBar) so it's always reachable without
             scrolling; this keeps the secondary draft/delete actions. */}
         <Btn
-          label={isEdit ? 'Save as Draft' : 'Save as Draft Instead'}
+          label={isEdit ? tr('create.actions.saveAsDraft') : tr('create.actions.saveAsDraftInstead')}
           variant="secondary"
           onPress={() => handleSave('draft')}
           disabled={!canSave}
@@ -566,22 +568,22 @@ export default function CreateEventScreen() {
 
         {isEdit && (
           !showDeleteConfirm ? (
-            <Btn label="Delete Party" variant="danger" onPress={() => setShowDeleteConfirm(true)} />
+            <Btn label={tr('create.actions.deleteParty')} variant="danger" onPress={() => setShowDeleteConfirm(true)} />
           ) : (
             <View style={s.confirmBox}>
               <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
-                Delete this party? This cannot be undone.
+                {tr('create.actions.deleteConfirm')}
               </Text>
               <View style={s.confirmBtns}>
                 <Btn
-                  label="Keep It"
+                  label={tr('create.actions.keepIt')}
                   variant="ghost"
                   small
                   style={s.confirmBtn}
                   onPress={() => setShowDeleteConfirm(false)}
                 />
                 <Btn
-                  label={loading ? '…' : 'Yes, Delete'}
+                  label={loading ? '…' : tr('create.actions.yesDelete')}
                   variant="danger"
                   small
                   style={s.confirmBtn}
@@ -598,7 +600,7 @@ export default function CreateEventScreen() {
           to the bottom of a long form to find. */}
       <View style={[s.saveBar, { paddingBottom: insets.bottom + spacing.md }]}>
         <Btn
-          label={loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Publish Party'}
+          label={loading ? tr('create.actions.saving') : isEdit ? tr('create.actions.saveChanges') : tr('create.actions.publishParty')}
           onPress={() => handleSave('published')}
           disabled={!canSave}
         />

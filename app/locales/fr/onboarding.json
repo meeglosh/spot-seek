@@ -1,0 +1,40 @@
+{
+  "brand": {
+    "tagline": "NE PLUS JAMAIS REGARDER SEUL"
+  },
+  "seeker": {
+    "headline": "TROUVEZ VOTRE TRIBU",
+    "body": "Découvrez des soirées de visionnage locales pour les événements que vous aimez. Ne regardez plus jamais seul.",
+    "chips": {
+      "liveSports": "SPORT EN DIRECT",
+      "awards": "CÉRÉMONIES",
+      "bigEvents": "GRANDS ÉVÉNEMENTS"
+    }
+  },
+  "host": {
+    "headline": "MENEZ L'EXPÉRIENCE",
+    "body": "Organisez votre propre soirée de visionnage. Créez une communauté autour de votre passion et menez la fête.",
+    "chips": {
+      "yourVenue": "VOTRE LIEU",
+      "yourCrowd": "VOTRE PUBLIC",
+      "yourRules": "VOS RÈGLES"
+    }
+  },
+  "sponsor": {
+    "headline": "NOURRISSEZ LA PASSION",
+    "body": "Associez-vous à des événements locaux. Sponsorisez des soirées de visionnage pour toucher le public et débloquer des avantages exclusifs.",
+    "chips": {
+      "vipAccess": "ACCÈS VIP",
+      "gearDrops": "ÉQUIPEMENTS EXCLUSIFS",
+      "partnerDeals": "OFFRES PARTENAIRES"
+    }
+  },
+  "cta": {
+    "next": "SUIVANT →",
+    "getStarted": "COMMENCER →"
+  },
+  "skip": {
+    "label": "PASSER",
+    "a11y": "Passer l'introduction"
+  }
+}

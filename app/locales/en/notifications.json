@@ -1,0 +1,24 @@
+{
+  "title": "Notifications",
+  "guestGate": {
+    "title": "Notifications",
+    "message": "Sign in to see activity on your parties and sponsorships."
+  },
+  "loadError": "Could not load notifications.",
+  "empty": "No notifications yet — activity on your parties shows up here.",
+  "timeAgo": {
+    "justNow": "just now",
+    "minutes_one": "{{count}}m ago",
+    "minutes_other": "{{count}}m ago",
+    "hours_one": "{{count}}h ago",
+    "hours_other": "{{count}}h ago",
+    "days_one": "{{count}}d ago",
+    "days_other": "{{count}}d ago",
+    "weeks_one": "{{count}}w ago",
+    "weeks_other": "{{count}}w ago",
+    "months_one": "{{count}}mo ago",
+    "months_other": "{{count}}mo ago",
+    "years_one": "{{count}}y ago",
+    "years_other": "{{count}}y ago"
+  }
+}

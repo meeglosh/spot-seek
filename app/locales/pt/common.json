@@ -1,0 +1,45 @@
+{
+  "cancel": "Cancelar",
+  "save": "Guardar",
+  "back": "Voltar",
+  "done": "Concluído",
+  "retry": "Tentar novamente",
+  "delete": "Eliminar",
+  "edit": "Editar",
+  "close": "Fechar",
+  "loading": "A carregar…",
+  "comingSoon": "Brevemente",
+  "brand": {
+    "tagline": "NUNCA MAIS VEJAS SOZINHO"
+  },
+  "guestGate": {
+    "membersOnly": "Apenas para membros",
+    "signIn": "Iniciar sessão",
+    "createAccount": "Criar conta",
+    "keepBrowsing": "Continuar a explorar",
+    "joinTheAction": "Junta-te à ação"
+  },
+  "tabs": {
+    "discover": "Descobrir",
+    "myParties": "As Minhas Festas",
+    "profile": "Perfil"
+  },
+  "shell": {
+    "menu": {
+      "switchToHosting": "Mudar para modo Anfitrião",
+      "sponsorships": "Patrocínios",
+      "wallet": "Carteira",
+      "walletComingSoon": "Brevemente.",
+      "settings": "Definições",
+      "signOut": "Terminar sessão",
+      "signIn": "Iniciar sessão"
+    },
+    "guestName": "Fã",
+    "roleSeeker": "Fã",
+    "accessibility": {
+      "openMenu": "Abrir menu",
+      "notifications": "Notificações",
+      "profile": "Perfil"
+    }
+  }
+}
