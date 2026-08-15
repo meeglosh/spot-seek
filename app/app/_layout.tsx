@@ -12,6 +12,12 @@ import {
 import { SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { AuthProvider } from '../lib/auth';
 import { colors } from '../lib/theme';
+import LaunchSplash from '../components/LaunchSplash';
+
+// Hold the branded splash fully visible before starting the fade, then fade
+// over LaunchSplash's own ~350ms — total experience ≈1.5s. Chosen to mask
+// the auth-restore / root-redirect flicker in app/index.tsx underneath.
+const SPLASH_HOLD_MS = 1100;
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -23,6 +29,17 @@ export default function RootLayout() {
     SpaceGrotesk_500Medium,
     SpaceGrotesk_700Bold,
   });
+
+  // Mount-once state: this only ever goes true->false a single time for the
+  // lifetime of this component instance, so the splash shows on cold launch
+  // only — never on foreground-from-background or navigation.
+  const [showSplash, setShowSplash] = React.useState(true);
+  const [dismissSplash, setDismissSplash] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDismissSplash(true), SPLASH_HOLD_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   if (!loaded) return null;
 
@@ -41,6 +58,11 @@ export default function RootLayout() {
         <Stack.Screen name="notifications" />
         <Stack.Screen name="settings" />
       </Stack>
+      {/* Overlays the whole app (including the Stack above) during cold
+          launch, masking auth-restore and the root redirect underneath. */}
+      {showSplash && (
+        <LaunchSplash dismiss={dismissSplash} onDone={() => setShowSplash(false)} />
+      )}
     </AuthProvider>
   );
 }

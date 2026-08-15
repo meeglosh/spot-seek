@@ -276,12 +276,14 @@ export default function CommandCenterScreen() {
         </ScrollView>
       )}
 
-      {/* Floating CREATE PARTY action */}
+      {/* Sticky CREATE PARTY footer — mirrors the sticky footer pattern on
+          parties/index.tsx. */}
       {auth.status === 'authenticated' && !loading && (
-        <View style={[s.fabWrap, { bottom: insets.bottom + spacing.xl }]}>
+        <View style={[s.footerBar, { paddingBottom: insets.bottom + spacing.md }]}>
           <Btn
             label="+ Create Party"
             onPress={() => router.push({ pathname: '/(tabs)/parties/create', params: { from: 'dashboard' } } as never)}
+            style={s.footerBtn}
           />
         </View>
       )}
@@ -365,7 +367,13 @@ const s = StyleSheet.create({
   completedCard: { opacity: 0.7, backgroundColor: palette.surfaceMid },
   struck: { textDecorationLine: 'line-through' },
 
-  fabWrap: { position: 'absolute', right: spacing.lg },
+  footerBar: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    paddingHorizontal: spacing.lg, paddingTop: spacing.md,
+    backgroundColor: colors.bg,
+    borderTopWidth: 1, borderTopColor: colors.separator,
+  },
+  footerBtn: { width: '100%' },
 
   center: {
     flex: 1,
