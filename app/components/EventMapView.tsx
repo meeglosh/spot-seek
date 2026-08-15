@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, Image, Pressable, StyleSheet, Animated, ScrollView, Platform, Alert,
 } from 'react-native';
@@ -77,6 +77,28 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
   const [locating, setLocating] = useState(false);
   const slideAnim = useRef(new Animated.Value(200)).current;
   const mapRef = useRef<MapView>(null);
+  const prevUserLocation = useRef(userLocation);
+
+  // The map only reads `initialRegion` at mount, so when the permission
+  // prompt resolves *after* the map has already mounted (the common case —
+  // the map mounts on first switch to map mode, then the OS prompt resolves
+  // a moment later), the new coordinates would otherwise never be applied
+  // without an unmount/remount. Animate to it, but only on the null→value
+  // transition — not on every subsequent location refresh — and not while
+  // the user has a bottom card open, since that reads as active engagement
+  // with the current view.
+  useEffect(() => {
+    const had = prevUserLocation.current;
+    prevUserLocation.current = userLocation;
+    if (!had && userLocation && !selected) {
+      mapRef.current?.animateToRegion({
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      }, 350);
+    }
+  }, [userLocation, selected]);
 
   async function centerOnMyLocation() {
     if (locating) return;
