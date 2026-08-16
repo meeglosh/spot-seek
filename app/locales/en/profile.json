@@ -37,5 +37,9 @@
     "attendee_one": "Completed · {{count}} attendee",
     "attendee_other": "Completed · {{count}} attendees"
   },
+  "reviews": {
+    "sectionTitle": "Reviews",
+    "ratingSummary": "{{avg}} · {{count}}"
+  },
   "signOut": "Sign Out"
 }

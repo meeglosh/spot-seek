@@ -28,7 +28,8 @@ export type NotificationType =
   | 'reminder_1h'
   | 'event_cancelled'
   | 'venue_changed'
-  | 'favorite_nearby';
+  | 'favorite_nearby'
+  | 'review_request';
 
 const DEFAULT_PREFS = { emailEnabled: true, pushEnabled: false, radiusMiles: 100 };
 
@@ -189,6 +190,57 @@ async function fireReminderWindow(
   return sent;
 }
 
+// ─── Scheduled review requests (~2h after endsAt, or ~4h after startsAt when
+// endsAt is null) ────────────────────────────────────────────────────────────
+// Dedupe via the same alreadyNotified() check keyed on type='review_request'.
+
+function reviewMoment(event: Event): Date | null {
+  if (event.endsAt) return new Date(event.endsAt.getTime() + 2 * 60 * 60 * 1000);
+  if (event.startsAt) return new Date(event.startsAt.getTime() + 4 * 60 * 60 * 1000);
+  return null;
+}
+
+export async function runReviewSweep(
+  databaseUrl: string,
+  resendApiKey: string | undefined,
+): Promise<{ sent: number }> {
+  const db = drizzle(neon(databaseUrl), { schema });
+  const now = Date.now();
+  const MIN15 = 15 * 60 * 1000;
+  const windowStart = new Date(now - MIN15);
+  const windowEnd = new Date(now);
+
+  const events = await db.query.events.findMany({ where: eq(schema.events.status, 'published') });
+  const inWindow = events.filter((e) => {
+    const moment = reviewMoment(e);
+    return moment !== null && moment >= windowStart && moment < windowEnd;
+  });
+  if (inWindow.length === 0) return { sent: 0 };
+
+  let sent = 0;
+  for (const event of inWindow) {
+    const rsvps = await db.query.rsvps.findMany({
+      where: and(eq(schema.rsvps.eventId, event.id), eq(schema.rsvps.state, 'going')),
+    });
+    const title = `How was "${event.title}"?`;
+    const body = 'Rate the host and venue to help the next crowd.';
+
+    for (const rsvp of rsvps) {
+      if (rsvp.userId === event.hostId) continue;
+      if (await alreadyNotified(db, rsvp.userId, event.id, 'review_request')) continue;
+      await notify(db, resendApiKey, {
+        userId: rsvp.userId,
+        type: 'review_request',
+        title,
+        body,
+        eventId: event.id,
+      }).catch((err) => console.error('[notifications] review_request failed:', err));
+      sent += 1;
+    }
+  }
+  return { sent };
+}
+
 export async function runReminderSweep(
   databaseUrl: string,
   resendApiKey: string | undefined,
@@ -219,6 +271,7 @@ export async function runReminderSweep(
 
 export async function scheduled(_controller: ScheduledController, env: Env): Promise<void> {
   await runReminderSweep(env.DATABASE_URL, env.RESEND_API_KEY);
+  await runReviewSweep(env.DATABASE_URL, env.RESEND_API_KEY);
 }
 
 // ─── Router ────────────────────────────────────────────────────────────────────
@@ -331,5 +384,10 @@ notificationsRouter.put('/prefs', async (c) => {
 
 notificationsRouter.post('/run-reminders', async (c) => {
   const result = await runReminderSweep(c.env.DATABASE_URL, c.env.RESEND_API_KEY);
+  return c.json(result);
+});
+
+notificationsRouter.post('/run-reviews', async (c) => {
+  const result = await runReviewSweep(c.env.DATABASE_URL, c.env.RESEND_API_KEY);
   return c.json(result);
 });

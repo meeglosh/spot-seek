@@ -47,6 +47,9 @@ function routeFor(type: ApiNotificationType, eventId: string | null): string | n
   if (!eventId) return null;
   if (type === 'sponsor_bid' || type === 'rsvp') return '/(tabs)/parties/dashboard';
   if (type === 'sponsorship_request') return '/(tabs)/sponsorship';
+  // 'review_request' falls through to this default along with every other
+  // event-scoped type — the event detail screen is where the rate-this-event
+  // section lives, so that's always the right destination.
   return `/(tabs)/discover/${eventId}`;
 }
 

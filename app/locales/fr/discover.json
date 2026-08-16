@@ -91,6 +91,20 @@
     "genericError": "Une erreur est survenue. Veuillez réessayer.",
     "share": {
       "at": "à"
+    },
+    "reviews": {
+      "sectionTitle": "Avis",
+      "hostLabel": "Hôte",
+      "venueLabel": "Lieu",
+      "ratingSummary": "{{avg}} · {{count}}",
+      "rateSection": {
+        "title": "Notez cet événement",
+        "hostQuestion": "Comment était l'hôte ?",
+        "venueQuestion": "Comment était le lieu ?",
+        "commentPlaceholder": "Partagez votre expérience (facultatif)",
+        "submit": "Envoyer l'avis",
+        "update": "Modifier l'avis"
+      }
     }
   }
 }

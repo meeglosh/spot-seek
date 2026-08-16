@@ -91,6 +91,20 @@
     "genericError": "Algo salió mal. Inténtalo de nuevo.",
     "share": {
       "at": "a las"
+    },
+    "reviews": {
+      "sectionTitle": "Reseñas",
+      "hostLabel": "Anfitrión",
+      "venueLabel": "Lugar",
+      "ratingSummary": "{{avg}} · {{count}}",
+      "rateSection": {
+        "title": "Valora este evento",
+        "hostQuestion": "¿Qué tal el anfitrión?",
+        "venueQuestion": "¿Qué tal el lugar?",
+        "commentPlaceholder": "Cuéntanos más sobre tu experiencia (opcional)",
+        "submit": "Enviar reseña",
+        "update": "Actualizar reseña"
+      }
     }
   }
 }

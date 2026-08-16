@@ -9,13 +9,14 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useAuth } from '../../../lib/auth';
 import {
-  fetchProfile, fetchFollowCounts, fetchMyRsvps, fetchFavourites, fetchDashboard,
-  type ApiProfile, type ApiRsvp, type ApiFavourite, type ApiDashboardEvent,
+  fetchProfile, fetchFollowCounts, fetchMyRsvps, fetchFavourites, fetchDashboard, fetchHostReviews,
+  type ApiProfile, type ApiRsvp, type ApiFavourite, type ApiDashboardEvent, type ApiHostReviews,
 } from '../../../lib/api';
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, palette, spacing, fonts, type as t, hardShadow } from '../../../lib/theme';
 import { Btn, Chip, Badge, SegmentBar, SectionTitle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
+import { StarRating } from '../../../components/Stars';
 import { SPORTS } from '../../../lib/sports-data';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 
@@ -26,6 +27,7 @@ type ProfileData = {
   rsvps: ApiRsvp[];
   favourites: ApiFavourite[];
   hosted: ApiDashboardEvent[];
+  reviews: ApiHostReviews;
 };
 
 // Favourite teams are stored by name (see (auth)/interests.tsx) — resolve the
@@ -73,14 +75,15 @@ export default function ProfileScreen() {
 
   const load = useCallback(async () => {
     if (!userId) { setLoading(false); return; }
-    const [profile, counts, rsvps, favourites, hosted] = await Promise.all([
+    const [profile, counts, rsvps, favourites, hosted, reviews] = await Promise.all([
       fetchProfile(userId).catch(() => null),
       fetchFollowCounts(userId).catch(() => ({ followers: 0, following: 0 })),
       fetchMyRsvps().catch(() => [] as ApiRsvp[]),
       fetchFavourites().catch(() => [] as ApiFavourite[]),
       fetchDashboard().catch(() => [] as ApiDashboardEvent[]),
+      fetchHostReviews(userId).catch(() => ({ avg: 0, count: 0, recent: [] }) as ApiHostReviews),
     ]);
-    setData({ profile, followers: counts.followers, following: counts.following, rsvps, favourites, hosted });
+    setData({ profile, followers: counts.followers, following: counts.following, rsvps, favourites, hosted, reviews });
     setLoading(false);
     setRefreshing(false);
   }, [userId]);
@@ -149,6 +152,13 @@ export default function ProfileScreen() {
                 <View style={s.heroId}>
                   <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{user.name}</Text>
                   <Text style={[t.bodySm, { color: colors.textTertiary }]}>{user.email}</Text>
+                  {!!data?.reviews && data.reviews.count > 0 && (
+                    <StarRating
+                      value={data.reviews.avg}
+                      size={14}
+                      label={tr('reviews.ratingSummary', { avg: data.reviews.avg.toFixed(1), count: data.reviews.count })}
+                    />
+                  )}
                 </View>
               </View>
 
@@ -291,6 +301,29 @@ export default function ProfileScreen() {
               </View>
             )}
 
+            {/* ── RECENT REVIEWS ───────────────────────────────────────────── */}
+            {(data?.reviews.recent.length ?? 0) > 0 && (
+              <>
+                <SectionTitle>{tr('reviews.sectionTitle')}</SectionTitle>
+                <View style={s.list}>
+                  {data!.reviews.recent.map((r) => (
+                    <View key={r.id} style={s.reviewRow}>
+                      <View style={s.reviewHead}>
+                        <Text style={[s.rowTitle, { fontFamily: fonts.labelBold }]}>{r.reviewerName}</Text>
+                        <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </Text>
+                      </View>
+                      <StarRating value={r.hostRating} size={13} />
+                      {r.comment && (
+                        <Text style={[t.bodySm, { color: colors.textSecondary }]}>{r.comment}</Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+
             {/* ── Sign out ─────────────────────────────────────────────────── */}
             <Btn
               label={tr('signOut')}
@@ -431,4 +464,14 @@ const s = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.xl,
   },
+
+  // Recent reviews
+  reviewRow: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    padding: spacing.lg,
+    gap: spacing.xs,
+  },
+  reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

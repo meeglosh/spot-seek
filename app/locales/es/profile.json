@@ -37,5 +37,9 @@
     "attendee_one": "Finalizada · {{count}} asistente",
     "attendee_other": "Finalizada · {{count}} asistentes"
   },
+  "reviews": {
+    "sectionTitle": "Reseñas",
+    "ratingSummary": "{{avg}} · {{count}}"
+  },
   "signOut": "Cerrar sesión"
 }

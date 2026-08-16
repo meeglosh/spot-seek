@@ -91,6 +91,20 @@
     "genericError": "Something went wrong. Please try again.",
     "share": {
       "at": "at"
+    },
+    "reviews": {
+      "sectionTitle": "Reviews",
+      "hostLabel": "Host",
+      "venueLabel": "Venue",
+      "ratingSummary": "{{avg}} · {{count}}",
+      "rateSection": {
+        "title": "Rate this event",
+        "hostQuestion": "How was the host?",
+        "venueQuestion": "How was the venue?",
+        "commentPlaceholder": "Share more about your experience (optional)",
+        "submit": "Submit Review",
+        "update": "Update Review"
+      }
     }
   }
 }

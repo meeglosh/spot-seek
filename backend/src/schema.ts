@@ -290,6 +290,41 @@ export const notificationPrefs = pgTable('notification_prefs', {
 export type NotificationPrefs = typeof notificationPrefs.$inferSelect;
 export type NewNotificationPrefs = typeof notificationPrefs.$inferInsert;
 
+// ─── reviews ──────────────────────────────────────────────────────────────────
+// Post-event reviews: one per (event, reviewer), editable (upsert).
+// hostId is denormalized from event.hostId at write time so host aggregates
+// survive later event edits without a join back through events.
+// venueKey is a normalized venue identity captured at review time — venues
+// are not entities in this codebase by design, so identity is derived from
+// lower(trim(venueName)) + '|' + lower(trim(venueAddress)); null when the
+// event had no venue.
+
+export const reviews = pgTable(
+  'reviews',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    reviewerId: text('reviewer_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    hostId: text('host_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    venueKey: text('venue_key'),
+    hostRating: integer('host_rating').notNull(),
+    venueRating: integer('venue_rating'),
+    comment: text('comment'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [unique('reviews_event_reviewer_unique').on(table.eventId, table.reviewerId)],
+);
+
+export type ReviewRow = typeof reviews.$inferSelect;
+export type NewReview = typeof reviews.$inferInsert;
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Event = typeof events.$inferSelect;

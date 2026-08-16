@@ -37,5 +37,9 @@
     "attendee_one": "Abgeschlossen · {{count}} Teilnehmer",
     "attendee_other": "Abgeschlossen · {{count}} Teilnehmer"
   },
+  "reviews": {
+    "sectionTitle": "Bewertungen",
+    "ratingSummary": "{{avg}} · {{count}}"
+  },
   "signOut": "Abmelden"
 }

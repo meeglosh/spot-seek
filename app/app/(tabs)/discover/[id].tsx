@@ -1,20 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator,
-  Image, Linking, Platform, Share, ActionSheetIOS, Alert, type ImageSourcePropType,
+  Image, Linking, Platform, Share, ActionSheetIOS, Alert, TextInput, type ImageSourcePropType,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../lib/auth';
 import {
-  fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, API_BASE, EVENT_SHARE_BASE, type ApiEvent, type ApiRsvp,
+  fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, fetchProfile, fetchEventReviews, submitReview,
+  API_BASE, EVENT_SHARE_BASE, type ApiEvent, type ApiRsvp, type ApiProfile, type ApiEventReviews,
 } from '../../../lib/api';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 import { colors, palette, spacing, type as t, hardShadow } from '../../../lib/theme';
 import { AppHeader } from '../../../components/AppHeader';
-import { Badge, SectionTitle } from '../../../components/ui';
+import { Badge, SectionTitle, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { AuthGateSheet } from '../../../components/AuthGate';
+import { StarRating, StarInput } from '../../../components/Stars';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const SHARE_ICON: ImageSourcePropType = require('../../../assets/icons/icon-share.png');
@@ -45,6 +47,15 @@ export default function EventDetailScreen() {
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpError, setRsvpError] = useState('');
   const [gateOpen, setGateOpen] = useState(false);
+
+  const [hostProfile, setHostProfile] = useState<ApiProfile | null>(null);
+  const [reviewsCtx, setReviewsCtx] = useState<ApiEventReviews>({ myReview: null, host: null, venue: null, reviews: [] });
+  const [reviewHostRating, setReviewHostRating] = useState(0);
+  const [reviewVenueRating, setReviewVenueRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [commentFocused, setCommentFocused] = useState(false);
 
   // Reachable via replace() from the publish flow, where no history exists and
   // router.back() is a silent no-op — fall back to the feed so the back arrow
@@ -78,6 +89,60 @@ export default function EventDetailScreen() {
       .catch(() => { /* non-fatal: falls back to the join state */ });
     return () => { cancelled = true; };
   }, [id, auth.status]);
+
+  // Host identity for the "hosted by" row — the event payload only carries
+  // hostId, so a follow-up profile fetch is needed for a display name.
+  useEffect(() => {
+    if (!event?.hostId) return;
+    let cancelled = false;
+    fetchProfile(event.hostId)
+      .then((p) => { if (!cancelled) setHostProfile(p); })
+      .catch(() => { /* non-fatal: row falls back to no name */ });
+    return () => { cancelled = true; };
+  }, [event?.hostId]);
+
+  // Reviews context — host/venue aggregates, the caller's own review (if
+  // any, to pre-fill the rate form in edit mode), and the public list.
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    fetchEventReviews(id)
+      .then((ctx) => {
+        if (cancelled) return;
+        setReviewsCtx(ctx);
+        if (ctx.myReview) {
+          setReviewHostRating(ctx.myReview.hostRating);
+          setReviewVenueRating(ctx.myReview.venueRating ?? 0);
+          setReviewComment(ctx.myReview.comment ?? '');
+        }
+      })
+      .catch(() => { /* non-fatal: rating sections just stay hidden */ });
+    return () => { cancelled = true; };
+  }, [id]);
+
+  async function handleSubmitReview() {
+    if (!event || reviewHostRating < 1) return;
+    setReviewSubmitting(true);
+    setReviewError('');
+    try {
+      const review = await submitReview({
+        eventId: event.id,
+        hostRating: reviewHostRating,
+        venueRating: event.venueName ? (reviewVenueRating || null) : null,
+        comment: reviewComment.trim() || null,
+      });
+      setReviewsCtx((prev) => ({
+        ...prev,
+        myReview: review,
+        reviews: [review, ...prev.reviews.filter((r) => r.id !== review.id)],
+      }));
+    } catch (err) {
+      const msg = (err as Error).message;
+      setReviewError(msg || tr('detail.genericError'));
+    } finally {
+      setReviewSubmitting(false);
+    }
+  }
 
   async function handleRsvp() {
     if (auth.status !== 'authenticated') {
@@ -158,6 +223,25 @@ export default function EventDetailScreen() {
     : null;
 
   const liveTonight = startsToday(event.startsAt);
+
+  // Ended = endsAt in the past, or (no endsAt but startsAt already passed) —
+  // same rule the RSVP/status logic above implicitly assumes an event stops
+  // accepting new joins once it's over.
+  const now = new Date();
+  const hasEnded = event.endsAt
+    ? new Date(event.endsAt) < now
+    : event.startsAt
+      ? new Date(event.startsAt) < now
+      : false;
+  const isHost = auth.status === 'authenticated' && auth.user.id === event.hostId;
+  const canReview = hasEnded && isGoing && !isHost;
+
+  const hostRatingLabel = reviewsCtx.host
+    ? tr('detail.reviews.ratingSummary', { avg: reviewsCtx.host.avg.toFixed(1), count: reviewsCtx.host.count })
+    : null;
+  const venueRatingLabel = reviewsCtx.venue
+    ? tr('detail.reviews.ratingSummary', { avg: reviewsCtx.venue.avg.toFixed(1), count: reviewsCtx.venue.count })
+    : null;
 
   // STATUS tile — only real data: the viewer's own RSVP state, else capacity.
   const statusValue = isGoing
@@ -275,6 +359,16 @@ export default function EventDetailScreen() {
         </View>
 
         <View style={s.content}>
+          {/* Host row */}
+          {hostProfile && (
+            <View style={s.hostRow}>
+              <Text style={[t.bodySm, { color: colors.textSecondary }]}>
+                {tr('card.hostedBy', { name: hostProfile.displayName })}
+              </Text>
+              {hostRatingLabel && <StarRating value={reviewsCtx.host!.avg} size={13} label={hostRatingLabel} />}
+            </View>
+          )}
+
           {/* Meta tile grid */}
           <View style={s.tileRow}>
             <View style={s.tile}>
@@ -301,6 +395,7 @@ export default function EventDetailScreen() {
               {venueDetail && (
                 <Text style={[t.monoData, { color: colors.textSecondary }]}>{venueDetail}</Text>
               )}
+              {venueRatingLabel && <StarRating value={reviewsCtx.venue!.avg} size={13} label={venueRatingLabel} />}
               {canShowDirections && (
                 <Pressable
                   style={({ pressed }) => [s.directionsBtn, pressed && s.pressed]}
@@ -329,6 +424,82 @@ export default function EventDetailScreen() {
                 {tr('detail.authNudge')}
               </Text>
             </Pressable>
+          )}
+
+          {/* Rate this event — only once it's over, the caller actually went,
+              and they aren't reviewing their own event. */}
+          {canReview && (
+            <View style={s.section}>
+              <SectionTitle>{tr('detail.reviews.rateSection.title')}</SectionTitle>
+              <View style={s.rateCard}>
+                <View style={s.rateField}>
+                  <FieldLabel>{tr('detail.reviews.rateSection.hostQuestion')}</FieldLabel>
+                  <StarInput
+                    value={reviewHostRating}
+                    onChange={setReviewHostRating}
+                    accessibilityLabel={tr('detail.reviews.hostLabel')}
+                  />
+                </View>
+                {event.venueName && (
+                  <View style={s.rateField}>
+                    <FieldLabel>{tr('detail.reviews.rateSection.venueQuestion')}</FieldLabel>
+                    <StarInput
+                      value={reviewVenueRating}
+                      onChange={setReviewVenueRating}
+                      accessibilityLabel={tr('detail.reviews.venueLabel')}
+                    />
+                  </View>
+                )}
+                <View style={s.rateField}>
+                  <TextInput
+                    style={[inputStyle, s.textArea, commentFocused && inputFocusedStyle]}
+                    placeholder={tr('detail.reviews.rateSection.commentPlaceholder')}
+                    placeholderTextColor={colors.textTertiary}
+                    value={reviewComment}
+                    onChangeText={setReviewComment}
+                    onFocus={() => setCommentFocused(true)}
+                    onBlur={() => setCommentFocused(false)}
+                    multiline
+                    numberOfLines={4}
+                    maxLength={1000}
+                    textAlignVertical="top"
+                  />
+                </View>
+                {reviewError ? (
+                  <Text style={[t.bodySm, s.rsvpError]}>{reviewError}</Text>
+                ) : null}
+                <Btn
+                  label={reviewsCtx.myReview
+                    ? tr('detail.reviews.rateSection.update')
+                    : tr('detail.reviews.rateSection.submit')}
+                  onPress={handleSubmitReview}
+                  disabled={reviewSubmitting || reviewHostRating < 1}
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Reviews list */}
+          {reviewsCtx.reviews.length > 0 && (
+            <View style={s.section}>
+              <SectionTitle>{tr('detail.reviews.sectionTitle')}</SectionTitle>
+              <View style={s.reviewList}>
+                {reviewsCtx.reviews.map((r) => (
+                  <View key={r.id} style={s.reviewRow}>
+                    <View style={s.reviewHead}>
+                      <Text style={[t.bodySm, { color: colors.textPrimary }]}>{r.reviewerName}</Text>
+                      <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>
+                        {new Date(r.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <StarRating value={r.hostRating} size={13} />
+                    {r.comment && (
+                      <Text style={[t.bodySm, { color: colors.textSecondary }]}>{r.comment}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            </View>
           )}
         </View>
       </ScrollView>
@@ -455,4 +626,29 @@ const s = StyleSheet.create({
   rsvpBtn: { height: 56, alignItems: 'center', justifyContent: 'center' },
   rsvpError: { color: colors.danger, textAlign: 'center' },
   cancelText: { color: colors.textTertiary, textAlign: 'center' },
+
+  // Host row
+  hostRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },
+
+  // Rate this event
+  rateCard: {
+    backgroundColor: palette.surfaceMid,
+    borderWidth: 1,
+    borderColor: palette.surfaceHighest,
+    padding: spacing.lg,
+    gap: spacing.lg,
+  },
+  rateField: { gap: spacing.sm },
+  textArea: { minHeight: 96 },
+
+  // Reviews list
+  reviewList: { gap: spacing.md },
+  reviewRow: {
+    backgroundColor: palette.surfaceMid,
+    borderWidth: 1,
+    borderColor: palette.surfaceHighest,
+    padding: spacing.lg,
+    gap: spacing.xs,
+  },
+  reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

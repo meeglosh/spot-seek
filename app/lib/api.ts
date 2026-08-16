@@ -605,6 +605,71 @@ export async function fetchFollowCounts(id: string): Promise<{ followers: number
   return { followers: frs.followers.length, following: fing.following.length };
 }
 
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+
+export type ApiReview = {
+  id: string;
+  eventId: string;
+  reviewerId: string;
+  reviewerName: string;
+  hostRating: number;
+  venueRating: number | null;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ApiEventReviews = {
+  myReview: ApiReview | null;
+  host: { avg: number; count: number } | null;
+  venue: { avg: number; count: number } | null;
+  reviews: ApiReview[];
+};
+
+export type ApiHostReviews = {
+  avg: number;
+  count: number;
+  recent: ApiReview[];
+};
+
+// Returns the empty shape (rather than throwing) when signed out or when the
+// event has no reviews yet — this is read on every event detail visit, so a
+// non-fatal fallback keeps the rest of the screen rendering.
+export async function fetchEventReviews(eventId: string): Promise<ApiEventReviews> {
+  const empty: ApiEventReviews = { myReview: null, host: null, venue: null, reviews: [] };
+  const res = await apiFetch(`/api/reviews/event/${eventId}`);
+  if (res.status === 401) return empty;
+  if (!res.ok) throw new Error(`Event reviews fetch failed: ${res.status}`);
+  return await res.json() as ApiEventReviews;
+}
+
+export async function submitReview(input: {
+  eventId: string;
+  hostRating: number;
+  venueRating?: number | null;
+  comment?: string | null;
+}): Promise<ApiReview> {
+  const res = await apiFetch('/api/reviews', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? `Review submit failed: ${res.status}`);
+  }
+  const { review } = await res.json() as { review: ApiReview };
+  return review;
+}
+
+export async function fetchHostReviews(userId: string): Promise<ApiHostReviews> {
+  const empty: ApiHostReviews = { avg: 0, count: 0, recent: [] };
+  const res = await apiFetch(`/api/reviews/host/${userId}`);
+  if (res.status === 401) return empty;
+  if (!res.ok) throw new Error(`Host reviews fetch failed: ${res.status}`);
+  return await res.json() as ApiHostReviews;
+}
+
 // ─── Notifications ────────────────────────────────────────────────────────────
 
 export type ApiNotificationType =
@@ -617,7 +682,8 @@ export type ApiNotificationType =
   | 'reminder_1h'
   | 'event_cancelled'
   | 'venue_changed'
-  | 'favorite_nearby';
+  | 'favorite_nearby'
+  | 'review_request';
 
 export type ApiNotification = {
   id: string;

@@ -91,6 +91,20 @@
     "genericError": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
     "share": {
       "at": "um"
+    },
+    "reviews": {
+      "sectionTitle": "Bewertungen",
+      "hostLabel": "Gastgeber",
+      "venueLabel": "Location",
+      "ratingSummary": "{{avg}} · {{count}}",
+      "rateSection": {
+        "title": "Bewerte dieses Event",
+        "hostQuestion": "Wie war der Gastgeber?",
+        "venueQuestion": "Wie war die Location?",
+        "commentPlaceholder": "Erzähl mehr über deine Erfahrung (optional)",
+        "submit": "Bewertung abschicken",
+        "update": "Bewertung aktualisieren"
+      }
     }
   }
 }

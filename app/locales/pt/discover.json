@@ -91,6 +91,20 @@
     "genericError": "Algo correu mal. Tenta novamente.",
     "share": {
       "at": "às"
+    },
+    "reviews": {
+      "sectionTitle": "Avaliações",
+      "hostLabel": "Anfitrião",
+      "venueLabel": "Local",
+      "ratingSummary": "{{avg}} · {{count}}",
+      "rateSection": {
+        "title": "Avalia este evento",
+        "hostQuestion": "Como foi o anfitrião?",
+        "venueQuestion": "Como foi o local?",
+        "commentPlaceholder": "Conta mais sobre a tua experiência (opcional)",
+        "submit": "Enviar avaliação",
+        "update": "Atualizar avaliação"
+      }
     }
   }
 }
