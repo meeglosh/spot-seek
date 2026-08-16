@@ -151,6 +151,14 @@ export type ApiEvent = {
   isPrivateLocation: boolean;
   createdAt: string;
   updatedAt: string;
+  // Present on GET /api/events/:id (active sponsors, biggest bid first; []
+  // when none). Optional-with-fallback: feed items and older cached payloads
+  // may not carry it.
+  sponsors?: { companyName: string }[];
+  // Present on feed items (GET /api/feed) as a cheap summary of `sponsors`
+  // without the full list — same optional-with-fallback reasoning.
+  sponsorCount?: number;
+  topSponsor?: string | null;
 };
 
 export type ApiRsvp = {

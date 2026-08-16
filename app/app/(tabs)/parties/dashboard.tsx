@@ -39,6 +39,10 @@ function shortDate(iso: string, venueTimezone: string | null = null) {
   return formatEventDateTime(iso, venueTimezone).dateStr;
 }
 
+function sponsoredLabel(count: number, tr: (key: string, opts?: Record<string, unknown>) => string): string {
+  return count > 1 ? tr('dashboard.sponsoredCount', { count }) : tr('dashboard.sponsored');
+}
+
 // $0 / $840 / $4.2K — real cents in, compact label out.
 function fmtMoney(cents: number): string {
   const dollars = cents / 100;
@@ -180,7 +184,8 @@ export default function CommandCenterScreen() {
           ) : (
             activeParties.map((e) => {
               const stats = analytics[e.id];
-              const sponsored = (stats?.activeSponsorships ?? 0) > 0;
+              const sponsorCount = stats?.activeSponsorships ?? 0;
+              const sponsored = sponsorCount > 0;
               const pending = !sponsored && pendingBidEvents[e.id];
               const going = e.rsvpCounts.going;
               return (
@@ -209,7 +214,7 @@ export default function CommandCenterScreen() {
 
                   <View style={s.activeFooter}>
                     {sponsored ? (
-                      <Text style={[t.labelCaps, { color: colors.volt }]}>{tr('dashboard.sponsored')}</Text>
+                      <Text style={[t.labelCaps, { color: colors.volt }]}>{sponsoredLabel(sponsorCount, tr)}</Text>
                     ) : pending ? (
                       <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('dashboard.pendingSponsor')}</Text>
                     ) : (
@@ -251,7 +256,8 @@ export default function CommandCenterScreen() {
           ) : (
             completed.map((e) => {
               const stats = analytics[e.id];
-              const sponsored = (stats?.activeSponsorships ?? 0) > 0;
+              const sponsorCount = stats?.activeSponsorships ?? 0;
+              const sponsored = sponsorCount > 0;
               const attendees = stats?.confirmedAttendees ?? e.rsvpCounts.going;
               const endRef = e.endsAt ?? e.startsAt;
               return (
@@ -269,7 +275,7 @@ export default function CommandCenterScreen() {
                     </Text>
                   </View>
                   <View style={s.rowRight}>
-                    {sponsored && <Text style={[t.labelCapsSm, { color: colors.volt }]}>{tr('dashboard.sponsored')}</Text>}
+                    {sponsored && <Text style={[t.labelCapsSm, { color: colors.volt }]}>{sponsoredLabel(sponsorCount, tr)}</Text>}
                     <Text style={[t.monoData, { color: colors.textSecondary }]}>
                       {tr('dashboard.attendees', { count: attendees })}
                     </Text>

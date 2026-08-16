@@ -28,7 +28,9 @@
     "goingCount_one": "{{count}} going",
     "goingCount_other": "{{count}} going",
     "hostedBy": "Hosted by {{name}}",
-    "privateLocation": "{{venue}} — private"
+    "privateLocation": "{{venue}} — private",
+    "sponsorTag": "⚡ {{name}}",
+    "sponsorTagMore": "⚡ {{name}} +{{count}}"
   },
   "map": {
     "liveNow": "Live Now",
@@ -76,6 +78,7 @@
     "venue": "Venue",
     "privateLocation": "Private location",
     "shownAfterRsvp": "(shown after RSVP)",
+    "presentedBy": "Presented By",
     "getDirections": "Get Directions",
     "directions": {
       "appleMaps": "Apple Maps",

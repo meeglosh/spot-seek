@@ -73,7 +73,8 @@
     "endedNoDate": "Terminada",
     "attendees_one": "{{count}} participante",
     "attendees_other": "{{count}} participantes",
-    "createFooter": "+ Criar Festa"
+    "createFooter": "+ Criar Festa",
+    "sponsoredCount": "Patrocinada ×{{count}}"
   },
   "create": {
     "guestGate": {

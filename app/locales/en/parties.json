@@ -60,6 +60,7 @@
     "emptyActive": "No live parties. Publish one to get on the board.",
     "rsvps": "RSVPs",
     "sponsored": "Sponsored",
+  "sponsoredCount": "Sponsored ×{{count}}",
     "pendingSponsor": "Pending Sponsor",
     "findSponsors": "Find Sponsors",
     "manage": "Manage",

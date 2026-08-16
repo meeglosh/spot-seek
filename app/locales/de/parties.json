@@ -73,7 +73,8 @@
     "endedNoDate": "Beendet",
     "attendees_one": "{{count}} Teilnehmer",
     "attendees_other": "{{count}} Teilnehmer",
-    "createFooter": "+ Party erstellen"
+    "createFooter": "+ Party erstellen",
+    "sponsoredCount": "Gesponsert ×{{count}}"
   },
   "create": {
     "guestGate": {

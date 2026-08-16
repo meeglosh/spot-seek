@@ -84,8 +84,14 @@ export default function SponsorshipDetailsScreen() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const openBid = bids.find((b) => b.status === 'pending' || b.status === 'active') ?? null;
-  const lastClosedBid = openBid ? null : bids[0] ?? null;
+  // A sponsor can have more than one open bid on the same event (e.g. a
+  // pending bid on top of one already accepted) — surface every open bid
+  // rather than picking one and hiding the rest. Active bids sort first so
+  // the accepted deal always leads.
+  const openBids = bids
+    .filter((b) => b.status === 'pending' || b.status === 'active')
+    .sort((a, c) => (a.status === c.status ? 0 : a.status === 'active' ? -1 : 1));
+  const lastClosedBid = openBids.length === 0 ? bids[0] ?? null : null;
 
   const amountCents = (() => {
     const n = Number(amount.replace(/[^0-9.]/g, ''));
@@ -112,12 +118,11 @@ export default function SponsorshipDetailsScreen() {
     }
   }
 
-  async function handleCancelBid() {
-    if (!openBid) return;
+  async function handleCancelBid(bidId: string) {
     setSubmitting(true);
     setFormError('');
     try {
-      await updateBidStatus(openBid.id, 'cancelled');
+      await updateBidStatus(bidId, 'cancelled');
       await load();
     } catch {
       setFormError(tr('bid.errors.cancelFailed'));
@@ -235,50 +240,52 @@ export default function SponsorshipDetailsScreen() {
           {/* ── Bid status / bid form ────────────────────────────────────── */}
           <SectionTitle accent={colors.live}>{tr('bid.statusTitle')}</SectionTitle>
 
-          {openBid ? (
-            <View style={s.statusCard}>
-              <View style={s.statusHead}>
-                <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('bid.yourBid')}</Text>
-                <Badge label={tr(`statusLabels.${openBid.status}`)} tone={BID_TONE[openBid.status]} />
-              </View>
-              <Text style={[t.headlineLg, { color: colors.textPrimary }]}>
-                {fmtUsd(openBid.amountCents)}
-              </Text>
-              <View style={s.statusRow}>
-                <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.platformFee')}</Text>
-                <Text style={[t.monoData, { color: colors.live }]}>{fmtUsd(openBid.platformFeeCents)}</Text>
-              </View>
-              <View style={s.statusRow}>
-                <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.hostReceives')}</Text>
-                <Text style={[t.monoData, { color: colors.volt }]}>
-                  {fmtUsd(openBid.amountCents - openBid.platformFeeCents)}
+          {openBids.length > 0 ? (
+            openBids.map((bid) => (
+              <View key={bid.id} style={s.statusCard}>
+                <View style={s.statusHead}>
+                  <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('bid.yourBid')}</Text>
+                  <Badge label={tr(`statusLabels.${bid.status}`)} tone={BID_TONE[bid.status]} />
+                </View>
+                <Text style={[t.headlineLg, { color: colors.textPrimary }]}>
+                  {fmtUsd(bid.amountCents)}
+                </Text>
+                <View style={s.statusRow}>
+                  <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.platformFee')}</Text>
+                  <Text style={[t.monoData, { color: colors.live }]}>{fmtUsd(bid.platformFeeCents)}</Text>
+                </View>
+                <View style={s.statusRow}>
+                  <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.hostReceives')}</Text>
+                  <Text style={[t.monoData, { color: colors.volt }]}>
+                    {fmtUsd(bid.amountCents - bid.platformFeeCents)}
+                  </Text>
+                </View>
+                <View style={s.statusRow}>
+                  <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.placed')}</Text>
+                  <Text style={[t.monoData, s.factValue]}>
+                    {new Date(bid.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}
+                  </Text>
+                </View>
+                {bid.note != null && bid.note !== '' && (
+                  <Text style={[t.bodySm, { color: colors.textSecondary }]}>
+                    {tr('bid.note', { note: bid.note })}
+                  </Text>
+                )}
+                {bid.status === 'pending' ? (
+                  <Btn label={tr('bid.cancelBid')} variant="danger" disabled={submitting} onPress={() => handleCancelBid(bid.id)} />
+                ) : (
+                  <Text style={[t.bodySm, { color: colors.volt }]}>
+                    {tr('bid.hostAccepted')}
+                  </Text>
+                )}
+                {formError !== '' && (
+                  <Text style={[t.bodySm, { color: colors.danger }]}>{formError}</Text>
+                )}
+                <Text style={[t.bodySm, s.testNote]}>
+                  {tr('bid.testNoteAccepted')}
                 </Text>
               </View>
-              <View style={s.statusRow}>
-                <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.placed')}</Text>
-                <Text style={[t.monoData, s.factValue]}>
-                  {new Date(openBid.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}
-                </Text>
-              </View>
-              {openBid.note != null && openBid.note !== '' && (
-                <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                  {tr('bid.note', { note: openBid.note })}
-                </Text>
-              )}
-              {openBid.status === 'pending' ? (
-                <Btn label={tr('bid.cancelBid')} variant="danger" disabled={submitting} onPress={handleCancelBid} />
-              ) : (
-                <Text style={[t.bodySm, { color: colors.volt }]}>
-                  {tr('bid.hostAccepted')}
-                </Text>
-              )}
-              {formError !== '' && (
-                <Text style={[t.bodySm, { color: colors.danger }]}>{formError}</Text>
-              )}
-              <Text style={[t.bodySm, s.testNote]}>
-                {tr('bid.testNoteAccepted')}
-              </Text>
-            </View>
+            ))
           ) : notSponsor ? (
             <View style={s.statusCard}>
               <Text style={[t.headlineSm, { color: colors.live }]}>{tr('bid.sponsorProfileNeeded.title')}</Text>

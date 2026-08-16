@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, eq, gte, lte, isNull, or, sql, ilike } from 'drizzle-orm';
+import { and, eq, gte, lte, isNull, or, sql, ilike, inArray } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 
@@ -109,11 +109,42 @@ feedRouter.get('/', async (c) => {
     rsvpdEventIds = new Set(rsvps.map((r) => r.eventId));
   }
 
+  // Sponsor info for the page of events — one grouped query over active
+  // sponsorships joined to sponsorProfiles, merged in JS (mirrors the
+  // rsvp-count batching pattern used elsewhere; avoids per-event N+1).
+  let sponsorCountByEvent = new Map<string, number>();
+  let topSponsorByEvent = new Map<string, { companyName: string; amountCents: number }>();
+  if (rows.length > 0) {
+    const eventIds = rows.map((e) => e.id);
+    const sponsorRows = await db
+      .select({
+        eventId: schema.sponsorships.eventId,
+        companyName: schema.sponsorProfiles.companyName,
+        amountCents: schema.sponsorships.amountCents,
+      })
+      .from(schema.sponsorships)
+      .innerJoin(schema.sponsorProfiles, eq(schema.sponsorProfiles.id, schema.sponsorships.sponsorId))
+      .where(and(eq(schema.sponsorships.status, 'active'), inArray(schema.sponsorships.eventId, eventIds)));
+
+    for (const row of sponsorRows) {
+      sponsorCountByEvent.set(row.eventId, (sponsorCountByEvent.get(row.eventId) ?? 0) + 1);
+      const current = topSponsorByEvent.get(row.eventId);
+      if (!current || row.amountCents > current.amountCents) {
+        topSponsorByEvent.set(row.eventId, { companyName: row.companyName, amountCents: row.amountCents });
+      }
+    }
+  }
+
   const events = rows.map((e) => {
-    if (!e.isPrivateLocation) return e;
-    if (rsvpdEventIds.has(e.id)) return e;
-    // Mask exact address and coordinates for private-location events.
-    return { ...e, venueAddress: null, venueLat: null, venueLng: null };
+    const masked = !e.isPrivateLocation || rsvpdEventIds.has(e.id)
+      ? e
+      // Mask exact address and coordinates for private-location events.
+      : { ...e, venueAddress: null, venueLat: null, venueLng: null };
+    return {
+      ...masked,
+      sponsorCount: sponsorCountByEvent.get(e.id) ?? 0,
+      topSponsor: topSponsorByEvent.get(e.id)?.companyName ?? null,
+    };
   });
 
   return c.json({ events });

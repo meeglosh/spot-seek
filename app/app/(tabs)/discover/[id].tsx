@@ -14,7 +14,7 @@ import {
 import { formatEventDateTime } from '../../../lib/dateFormat';
 import { colors, palette, spacing, type as t, hardShadow } from '../../../lib/theme';
 import { AppHeader } from '../../../components/AppHeader';
-import { Badge, SectionTitle, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../../components/ui';
+import { Badge, SectionTitle, Btn, Chip, FieldLabel, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { AuthGateSheet } from '../../../components/AuthGate';
 import { StarRating, StarInput } from '../../../components/Stars';
 
@@ -407,6 +407,18 @@ export default function EventDetailScreen() {
             </View>
           )}
 
+          {/* Presented by — active sponsors, biggest bid first (array order) */}
+          {event.sponsors != null && event.sponsors.length > 0 && (
+            <View style={s.section}>
+              <SectionTitle accent={colors.volt}>{tr('detail.presentedBy')}</SectionTitle>
+              <View style={s.sponsorChips}>
+                {event.sponsors.map((sp, i) => (
+                  <Chip key={`${sp.companyName}-${i}`} label={sp.companyName} active tone="volt" />
+                ))}
+              </View>
+            </View>
+          )}
+
           {/* The Breakdown */}
           {event.description && (
             <View style={s.section}>
@@ -607,6 +619,7 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.82 },
 
   section: { gap: spacing.sm },
+  sponsorChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 
   authNudge: {
     backgroundColor: palette.surfaceMid,

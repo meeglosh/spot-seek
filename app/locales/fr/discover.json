@@ -28,7 +28,9 @@
     "goingCount_one": "{{count}} participant",
     "goingCount_other": "{{count}} participants",
     "hostedBy": "Organisé par {{name}}",
-    "privateLocation": "{{venue}} — privé"
+    "privateLocation": "{{venue}} — privé",
+    "sponsorTag": "⚡ {{name}}",
+    "sponsorTagMore": "⚡ {{name}} +{{count}}"
   },
   "map": {
     "liveNow": "En direct",
@@ -105,6 +107,7 @@
         "submit": "Envoyer l'avis",
         "update": "Modifier l'avis"
       }
-    }
+    },
+    "presentedBy": "Présenté par"
   }
 }

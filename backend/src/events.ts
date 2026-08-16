@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, desc } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { parseRRule, generateOccurrences } from './recurrence';
@@ -81,7 +81,16 @@ eventsRouter.get('/:id', async (c) => {
     where: eq(schema.events.id, c.req.param('id')),
   });
   if (!event) return c.json({ error: 'Not found' }, 404);
-  return c.json({ event });
+
+  // Active sponsors for this event, highest bid first.
+  const sponsorRows = await db
+    .select({ companyName: schema.sponsorProfiles.companyName })
+    .from(schema.sponsorships)
+    .innerJoin(schema.sponsorProfiles, eq(schema.sponsorProfiles.id, schema.sponsorships.sponsorId))
+    .where(and(eq(schema.sponsorships.eventId, event.id), eq(schema.sponsorships.status, 'active')))
+    .orderBy(desc(schema.sponsorships.amountCents));
+
+  return c.json({ event: { ...event, sponsors: sponsorRows } });
 });
 
 // PATCH /:id — host edits their own event.

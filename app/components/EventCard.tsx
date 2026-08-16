@@ -24,6 +24,8 @@ export type EventItem = {
   venueLng?: number | null;
   venueTimezone?: string | null;
   coverImageUrl?: string | null;
+  sponsorCount?: number;
+  topSponsor?: string | null;
 };
 
 function startsToday(startsAt?: string | null): boolean {
@@ -52,10 +54,17 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
   const today = startsToday(event.startsAt);
   const goTo = () => router.push({ pathname: '/(tabs)/discover/[id]', params: { id: event.id } });
 
+  const sponsorTag = event.topSponsor
+    ? (event.sponsorCount ?? 1) > 1
+      ? tr('card.sponsorTagMore', { name: event.topSponsor, count: (event.sponsorCount ?? 1) - 1 })
+      : tr('card.sponsorTag', { name: event.topSponsor })
+    : null;
+
   const badges = (
     <View style={s.badgeRow}>
       {today && <Badge label={tr('card.today')} tone="live" />}
       <Badge label={event.broadcastSubject} tone="accent" dot={false} />
+      {sponsorTag && <Badge label={sponsorTag} tone="volt" dot={false} />}
     </View>
   );
 
