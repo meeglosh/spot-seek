@@ -5,6 +5,8 @@ interface Env {
   BETTER_AUTH_URL?: string;
   RESEND_API_KEY?: string;
   ADMIN_SECRET?: string;
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
   CHAT_ROOMS: DurableObjectNamespace;
   SPOTSEEK_IMAGES: R2Bucket;
 }

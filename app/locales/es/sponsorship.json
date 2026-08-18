@@ -103,6 +103,15 @@
     "note": "Nota: {{note}}",
     "cancelBid": "Cancelar puja",
     "hostAccepted": "El anfitrión aceptó esta puja.",
+    "payment": {
+      "due": "Pago pendiente",
+      "payNow": "Pagar ahora",
+      "notLiveYet": "Los pagos aún no están activos — se te avisará cuando esto pueda completarse.",
+      "payError": "No se pudo iniciar el pago — inténtalo de nuevo.",
+      "paid": "Pagado · a la espera del evento",
+      "released": "Pagado al anfitrión",
+      "refunded": "Reembolsado"
+    },
     "testNoteAccepted": "El pago se procesa solo después de que el anfitrión acepte — los pagos están en modo de prueba, sin cargos reales.",
     "sponsorProfileNeeded": {
       "title": "Se necesita perfil de patrocinador",

@@ -440,6 +440,12 @@ export type ApiSponsorProfile = {
 export type SponsorshipStatus = 'pending' | 'active' | 'rejected' | 'cancelled';
 export type SponsorshipInitiator = 'sponsor' | 'host';
 
+// See PAYMENTS.md's money-state machine: unpaid (bid not yet accepted, or a
+// legacy row) → requires_payment (accepted; PaymentIntent created) → paid
+// (webhook-confirmed) → released (post-event transfer to host). refunded
+// branches off `paid` when the event is cancelled before release.
+export type PaymentStatus = 'unpaid' | 'requires_payment' | 'paid' | 'released' | 'refunded';
+
 export type ApiSponsorBid = {
   id: string;
   eventId: string;
@@ -451,6 +457,11 @@ export type ApiSponsorBid = {
   requestedBy: SponsorshipInitiator;
   createdAt: string;
   updatedAt: string;
+  // Optional-with-fallback, like `sponsors`/`sponsorCount` on ApiEvent above —
+  // older cached payloads and non-payments-aware routes may not carry these.
+  paymentStatus?: PaymentStatus;
+  paidAt?: string | null;
+  releasedAt?: string | null;
 };
 
 // A host-initiated request, as seen from the sponsor's inbox — same row as
@@ -605,6 +616,45 @@ export async function fetchSponsorAnalytics(): Promise<ApiSponsorAnalytics | nul
   return await res.json() as ApiSponsorAnalytics;
 }
 
+// ─── Payments (Stripe Connect, test mode — see PAYMENTS.md) ──────────────────
+
+export type ApiConnectStatus = {
+  accountId: string | null;
+  payoutsEnabled: boolean;
+  configured: boolean;
+};
+
+// Never 503 per the contract, but a host who hasn't signed in yet still hits
+// the same fallback shape as the other prefs-style fetchers on this file.
+export async function fetchConnectStatus(): Promise<ApiConnectStatus | null> {
+  const res = await apiFetch('/api/payments/connect/status');
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error(`Connect status fetch failed: ${res.status}`);
+  return await res.json() as ApiConnectStatus;
+}
+
+// Returns null when payments aren't configured yet (503 { error:
+// 'payments_not_configured' }) — the caller shows a "not live yet" notice
+// instead of treating it as a hard failure.
+export async function startConnectOnboarding(): Promise<{ url: string } | null> {
+  const res = await apiFetch('/api/payments/connect/onboard', { method: 'POST' });
+  if (res.status === 503) return null;
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) throw new Error(`Connect onboarding failed: ${res.status}`);
+  return await res.json() as { url: string };
+}
+
+// Returns null on the same unconfigured-503 as startConnectOnboarding above.
+// This pass doesn't consume clientSecret (no PaymentSheet yet) — a successful
+// call just confirms the PaymentIntent was created server-side.
+export async function paySponsorship(sponsorshipId: string): Promise<{ clientSecret: string } | null> {
+  const res = await apiFetch(`/api/payments/sponsorships/${sponsorshipId}/pay`, { method: 'POST' });
+  if (res.status === 503) return null;
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) throw new Error(`Sponsorship payment failed: ${res.status}`);
+  return await res.json() as { clientSecret: string };
+}
+
 export async function fetchFollowCounts(id: string): Promise<{ followers: number; following: number }> {
   const [frs, fing] = await Promise.all([
     apiFetch(`/api/profiles/${id}/followers`).then((r) => r.json() as Promise<{ followers: unknown[] }>),
@@ -691,7 +741,11 @@ export type ApiNotificationType =
   | 'event_cancelled'
   | 'venue_changed'
   | 'favorite_nearby'
-  | 'review_request';
+  | 'review_request'
+  | 'payment_due'
+  | 'payment_received'
+  | 'payout_sent'
+  | 'payment_refunded';
 
 export type ApiNotification = {
   id: string;

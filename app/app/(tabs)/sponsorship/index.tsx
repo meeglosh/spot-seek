@@ -15,7 +15,7 @@ import {
   fetchMySponsorProfile, fetchSponsorAnalytics, fetchFeed, fetchMyBids, registerSponsor, resolveImageUrl,
   fetchMySponsorRequests, updateBidStatus,
   type ApiSponsorProfile, type ApiSponsorAnalytics, type ApiEvent, type ApiSponsorBid,
-  type ApiSponsorRequest, type SponsorshipStatus,
+  type ApiSponsorRequest, type SponsorshipStatus, type PaymentStatus,
 } from '../../../lib/api';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 
@@ -49,6 +49,18 @@ function fmtEventDate(iso: string | null, tr: (key: string) => string, venueTime
   if (!iso) return tr('browse.dateTbc');
   const { dateStr, timeStr } = formatEventDateTime(iso, venueTimezone);
   return `${dateStr} · ${timeStr}`.toUpperCase();
+}
+
+// Mirrors the payment-status text on the bid detail screen
+// ((tabs)/sponsorship/[eventId].tsx), minus the "Pay now" affordance — this
+// is a compact list row, not the full status card. 'unpaid'/undefined (a bid
+// not yet accepted, or an older payload without the field) renders nothing.
+function paymentStatusLabel(status: PaymentStatus | undefined, tr: (key: string) => string): string | null {
+  if (status === 'requires_payment') return tr('bid.payment.due');
+  if (status === 'paid') return tr('bid.payment.paid');
+  if (status === 'released') return tr('bid.payment.released');
+  if (status === 'refunded') return tr('bid.payment.refunded');
+  return null;
 }
 
 function applyFilter(events: ApiEvent[], filter: FilterKey): ApiEvent[] {
@@ -396,6 +408,9 @@ export default function SponsorshipHubScreen() {
                           label={tr('browse.marketplace.yourBid', { amount: fmtUsd(myBid.amountCents), status: tr(`statusLabels.${myBid.status}`) })}
                           tone={BID_TONE[myBid.status]}
                         />
+                      )}
+                      {myBid?.status === 'active' && paymentStatusLabel(myBid.paymentStatus, tr) && (
+                        <Text style={[t.labelCapsSm, s.tileLabel]}>{paymentStatusLabel(myBid.paymentStatus, tr)}</Text>
                       )}
                       <Btn
                         label={tr('browse.marketplace.review')}

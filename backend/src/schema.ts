@@ -47,6 +47,11 @@ export const users = pgTable('users', {
   lastLat: doublePrecision('last_lat'),
   lastLng: doublePrecision('last_lng'),
   locationUpdatedAt: timestamp('location_updated_at', { withTimezone: true }),
+
+  // Stripe Connect Express account for hosts receiving sponsorship payouts.
+  // See PAYMENTS.md — null/false until the host completes onboarding.
+  stripeAccountId: text('stripe_account_id'),
+  stripePayoutsEnabled: boolean('stripe_payouts_enabled').notNull().default(false),
 });
 
 // ─── events ───────────────────────────────────────────────────────────────────
@@ -157,6 +162,14 @@ export const sponsorships = pgTable('sponsorships', {
   note: text('note'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+
+  // Payments (PAYMENTS.md) — money-state machine independent of `status`:
+  // unpaid -> requires_payment -> paid -> released | refunded.
+  paymentStatus: text('payment_status').notNull().default('unpaid'),
+  paymentIntentId: text('payment_intent_id'),
+  transferId: text('transfer_id'),
+  paidAt: timestamp('paid_at', { withTimezone: true }),
+  releasedAt: timestamp('released_at', { withTimezone: true }),
 });
 
 // Promo offer attached to a sponsorship — shown to event attendees.
@@ -180,6 +193,7 @@ export type NewSponsorship = typeof sponsorships.$inferInsert;
 export type SponsorOffer = typeof sponsorOffers.$inferSelect;
 export type NewSponsorOffer = typeof sponsorOffers.$inferInsert;
 export type SponsorshipStatus = (typeof sponsorshipStatusEnum.enumValues)[number];
+export type PaymentStatus = 'unpaid' | 'requires_payment' | 'paid' | 'released' | 'refunded';
 
 // ─── user_favourites ─────────────────────────────────────────────────────────
 // Stores sports, teams, and venues a user wants to quick-filter by.

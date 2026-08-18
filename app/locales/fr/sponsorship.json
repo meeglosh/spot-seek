@@ -103,6 +103,15 @@
     "note": "Note : {{note}}",
     "cancelBid": "Annuler l'offre",
     "hostAccepted": "L'hôte a accepté cette offre.",
+    "payment": {
+      "due": "Paiement dû",
+      "payNow": "Payer maintenant",
+      "notLiveYet": "Les paiements ne sont pas encore actifs — vous serez averti dès que cela sera possible.",
+      "payError": "Impossible de démarrer le paiement — réessayez.",
+      "paid": "Payé · en attente de l'événement",
+      "released": "Versé à l'hôte",
+      "refunded": "Remboursé"
+    },
     "testNoteAccepted": "Le paiement n'est traité qu'après acceptation par l'hôte — les paiements sont en mode test, aucun débit réel.",
     "sponsorProfileNeeded": {
       "title": "Profil de sponsor requis",

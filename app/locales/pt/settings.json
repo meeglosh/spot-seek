@@ -28,6 +28,14 @@
     "title": "Idioma",
     "systemDefault": "Idioma do sistema"
   },
+  "payouts": {
+    "title": "Pagamentos",
+    "notConfigured": "Os pagamentos ainda não estão configurados.",
+    "setup": "Configurar pagamentos",
+    "setupError": "Não foi possível iniciar a configuração de pagamentos — tenta novamente.",
+    "notLiveYet": "Os pagamentos ainda não estão ativos — serás notificado quando isto puder ser concluído.",
+    "enabledLabel": "Pagamentos ativados"
+  },
   "favourites": {
     "title": "Favoritos",
     "manage": "Gerir favoritos"

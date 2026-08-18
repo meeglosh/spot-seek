@@ -103,6 +103,15 @@
     "note": "Notiz: {{note}}",
     "cancelBid": "Gebot stornieren",
     "hostAccepted": "Der Gastgeber hat dieses Gebot angenommen.",
+    "payment": {
+      "due": "Zahlung fällig",
+      "payNow": "Jetzt bezahlen",
+      "notLiveYet": "Zahlungen sind noch nicht aktiv — du wirst benachrichtigt, sobald dies abgeschlossen werden kann.",
+      "payError": "Zahlung konnte nicht gestartet werden — bitte erneut versuchen.",
+      "paid": "Bezahlt · wartet auf Event",
+      "released": "An Gastgeber ausgezahlt",
+      "refunded": "Erstattet"
+    },
     "testNoteAccepted": "Die Zahlung wird erst verarbeitet, nachdem der Gastgeber zustimmt — Zahlungen laufen im Testmodus, keine echten Belastungen.",
     "sponsorProfileNeeded": {
       "title": "Sponsor-Profil erforderlich",

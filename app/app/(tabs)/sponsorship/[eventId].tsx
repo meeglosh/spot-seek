@@ -12,7 +12,7 @@ import { Btn, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } f
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
-  fetchEvent, fetchMyBids, placeSponsorBid, updateBidStatus, resolveImageUrl,
+  fetchEvent, fetchMyBids, placeSponsorBid, updateBidStatus, resolveImageUrl, paySponsorship,
   type ApiEvent, type ApiSponsorBid, type SponsorshipStatus,
 } from '../../../lib/api';
 import { formatEventDateTime } from '../../../lib/dateFormat';
@@ -63,6 +63,11 @@ export default function SponsorshipDetailsScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [notSponsor, setNotSponsor] = useState(false);
+
+  // Payment (Stripe Connect, test mode — see PAYMENTS.md). Keyed by bid id so
+  // more than one open bid can be paid independently without shared state.
+  const [payingBidId, setPayingBidId] = useState<string | null>(null);
+  const [paymentNotice, setPaymentNotice] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     if (!eventId) return;
@@ -115,6 +120,27 @@ export default function SponsorshipDetailsScreen() {
       else setFormError(tr('bid.errors.failed'));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handlePayNow(bidId: string) {
+    setPayingBidId(bidId);
+    setPaymentNotice((prev) => ({ ...prev, [bidId]: '' }));
+    try {
+      const result = await paySponsorship(bidId);
+      if (!result) {
+        setPaymentNotice((prev) => ({ ...prev, [bidId]: tr('bid.payment.notLiveYet') }));
+        return;
+      }
+      // No PaymentSheet in this pass (see PAYMENTS.md Phase 2) — a successful
+      // call just confirms the PaymentIntent exists server-side. Refresh so
+      // the card's paymentStatus reflects requires_payment → whatever the
+      // backend moved it to.
+      await load();
+    } catch {
+      setPaymentNotice((prev) => ({ ...prev, [bidId]: tr('bid.payment.payError') }));
+    } finally {
+      setPayingBidId(null);
     }
   }
 
@@ -278,6 +304,30 @@ export default function SponsorshipDetailsScreen() {
                     {tr('bid.hostAccepted')}
                   </Text>
                 )}
+                {bid.status === 'active' && (
+                  <View style={s.paymentBlock}>
+                    {bid.paymentStatus === 'paid' ? (
+                      <Text style={[t.bodySm, { color: colors.volt }]}>{tr('bid.payment.paid')}</Text>
+                    ) : bid.paymentStatus === 'released' ? (
+                      <Text style={[t.bodySm, { color: colors.volt }]}>{tr('bid.payment.released')}</Text>
+                    ) : bid.paymentStatus === 'refunded' ? (
+                      <Text style={[t.bodySm, { color: colors.textSecondary }]}>{tr('bid.payment.refunded')}</Text>
+                    ) : (
+                      <>
+                        <Text style={[t.bodySm, { color: colors.live }]}>{tr('bid.payment.due')}</Text>
+                        <Btn
+                          label={payingBidId === bid.id ? '…' : tr('bid.payment.payNow')}
+                          small
+                          disabled={payingBidId === bid.id}
+                          onPress={() => handlePayNow(bid.id)}
+                        />
+                      </>
+                    )}
+                    {paymentNotice[bid.id] ? (
+                      <Text style={[t.bodySm, { color: colors.textSecondary }]}>{paymentNotice[bid.id]}</Text>
+                    ) : null}
+                  </View>
+                )}
                 {formError !== '' && (
                   <Text style={[t.bodySm, { color: colors.danger }]}>{formError}</Text>
                 )}
@@ -408,6 +458,7 @@ const s = StyleSheet.create({
   },
   statusHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  paymentBlock: { gap: spacing.sm },
   noteInput: { minHeight: 80, textAlignVertical: 'top' },
   testNote: { color: colors.textTertiary },
 });

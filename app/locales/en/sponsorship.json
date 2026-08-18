@@ -103,6 +103,15 @@
     "note": "Note: {{note}}",
     "cancelBid": "Cancel Bid",
     "hostAccepted": "The host accepted this bid.",
+    "payment": {
+      "due": "Payment due",
+      "payNow": "Pay now",
+      "notLiveYet": "Payments aren't live yet — you'll be notified when this can be completed.",
+      "payError": "Could not start payment — try again.",
+      "paid": "Paid · awaiting event",
+      "released": "Paid out to host",
+      "refunded": "Refunded"
+    },
     "testNoteAccepted": "Payment is processed only after the host accepts — payments are in test mode, no real charges.",
     "sponsorProfileNeeded": {
       "title": "Sponsor Profile Needed",

@@ -45,8 +45,15 @@ function timeAgo(iso: string, tr: TFunction<'notifications'>): string {
 
 function routeFor(type: ApiNotificationType, eventId: string | null): string | null {
   if (!eventId) return null;
-  if (type === 'sponsor_bid' || type === 'rsvp') return '/(tabs)/parties/dashboard';
+  // Host-facing: a bid landed, an RSVP came in, or a sponsor's payment/payout
+  // cleared — all live in the Command Center.
+  if (type === 'sponsor_bid' || type === 'rsvp' || type === 'payment_received' || type === 'payout_sent') {
+    return '/(tabs)/parties/dashboard';
+  }
   if (type === 'sponsorship_request') return '/(tabs)/sponsorship';
+  // Sponsor-facing payment states land on the bid detail screen — that's
+  // where the "Pay now" affordance and payment-status line live.
+  if (type === 'payment_due' || type === 'payment_refunded') return `/(tabs)/sponsorship/${eventId}`;
   // 'review_request' falls through to this default along with every other
   // event-scoped type — the event detail screen is where the rate-this-event
   // section lives, so that's always the right destination.

@@ -87,3 +87,23 @@ The agents write here instead of guessing. Read this each morning. Empty is good
   while they own events (protects attendees). `rsvps.user_id` ON DELETE CASCADE —
   deleting a user removes their RSVP rows (they were an attendee, not the owner).
 - Applied via scripts/migrate-cascade.ts against the Neon dev branch.
+
+## PAYMENTS — needs owner action: Stripe account + test keys (2026-08-17)
+
+- Task: sponsorship payments via Stripe Connect (design: PAYMENTS.md).
+  Test-mode implementation is being built now; it runs in a graceful
+  "payments_not_configured" mode until keys exist.
+- What the owner must do (in order):
+  1. Create a Stripe account for GAPCO Limited Liability Company and enable
+     Connect (Express) in TEST mode — no business verification needed for
+     test mode.
+  2. Provide the TEST keys only: `sk_test_...` (wrangler secret
+     STRIPE_SECRET_KEY), `pk_test_...` (app config), and after creating the
+     webhook endpoint (`https://spot-seek-api.dry-base-037d.workers.dev/api/payments/webhook`)
+     the signing secret `whsec_...` (wrangler secret STRIPE_WEBHOOK_SECRET).
+  3. Confirm the platform fee: code currently uses 15% (PLATFORM_FEE_RATE,
+     backend/src/sponsors.ts). Say the word if it should differ.
+  4. Decide the refund policy fine print (current build: full refund if the
+     event is cancelled before funds are released to the host).
+- Explicitly NOT happening without a separate owner decision: live-mode
+  keys, real charges, live Connect onboarding. Per CLAUDE.md hard stops.

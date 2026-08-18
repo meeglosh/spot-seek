@@ -2,7 +2,7 @@
  * Settings — account, notification prefs, favourites, and about.
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Switch, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,7 +11,8 @@ import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../lib/auth';
 import {
-  fetchNotificationPrefs, updateNotificationPrefs, deleteAccount, getStoredLocale, type ApiNotificationPrefs,
+  fetchNotificationPrefs, updateNotificationPrefs, deleteAccount, getStoredLocale,
+  fetchConnectStatus, startConnectOnboarding, type ApiNotificationPrefs, type ApiConnectStatus,
 } from '../lib/api';
 import { colors, palette, spacing, type as t } from '../lib/theme';
 import { AppHeader } from '../components/AppHeader';
@@ -97,6 +98,39 @@ export default function SettingsScreen() {
   }, [auth.status, tr]);
 
   useEffect(() => { loadPrefs(); }, [loadPrefs]);
+
+  // ── Payouts (Stripe Connect, test mode — see PAYMENTS.md) ────────────────
+  const [connectStatus, setConnectStatus] = useState<ApiConnectStatus | null>(null);
+  const [onboarding, setOnboarding] = useState(false);
+  const [payoutsError, setPayoutsError] = useState('');
+
+  const loadConnectStatus = useCallback(async () => {
+    if (auth.status !== 'authenticated') return;
+    try {
+      setConnectStatus(await fetchConnectStatus());
+    } catch {
+      // Non-fatal — the section just stays blank until the next load.
+    }
+  }, [auth.status]);
+
+  useEffect(() => { loadConnectStatus(); }, [loadConnectStatus]);
+
+  async function handleSetupPayouts() {
+    setOnboarding(true);
+    setPayoutsError('');
+    try {
+      const result = await startConnectOnboarding();
+      if (!result) {
+        setPayoutsError(tr('payouts.notLiveYet'));
+        return;
+      }
+      await Linking.openURL(result.url);
+    } catch {
+      setPayoutsError(tr('payouts.setupError'));
+    } finally {
+      setOnboarding(false);
+    }
+  }
 
   useEffect(() => {
     if (auth.status !== 'authenticated' || locationReportedRef.current) return;
@@ -297,6 +331,32 @@ export default function SettingsScreen() {
               ) : null}
             </Pressable>
           ))}
+        </View>
+
+        {/* PAYOUTS */}
+        <View style={s.section}>
+          <SectionTitle>{tr('payouts.title')}</SectionTitle>
+          {connectStatus?.configured === false ? (
+            <Text style={[t.bodySm, { color: colors.textSecondary }]}>
+              {tr('payouts.notConfigured')}
+            </Text>
+          ) : connectStatus?.payoutsEnabled ? (
+            <SettingsRow
+              label={tr('payouts.enabledLabel')}
+              right={<Text style={[t.labelCapsSm, { color: colors.volt }]}>✓</Text>}
+            />
+          ) : connectStatus ? (
+            <>
+              <Btn
+                label={onboarding ? '…' : tr('payouts.setup')}
+                variant="secondary"
+                onPress={handleSetupPayouts}
+                disabled={onboarding}
+                style={s.fullBtn}
+              />
+              {payoutsError !== '' && <Text style={[t.bodySm, { color: colors.danger }]}>{payoutsError}</Text>}
+            </>
+          ) : null}
         </View>
 
         {/* FAVOURITES */}

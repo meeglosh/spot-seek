@@ -13,8 +13,9 @@ import { sponsorsRouter } from './sponsors';
 import { favouritesRouter } from './favourites';
 import { geocodeRouter } from './geocode';
 import { deeplinksRouter } from './deeplinks';
-import { notificationsRouter, scheduled } from './notifications';
+import { notificationsRouter, scheduled as notificationsScheduled } from './notifications';
 import { reviewsRouter } from './reviews';
+import { paymentsRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -36,6 +37,7 @@ app.route('/api/favourites', favouritesRouter);
 app.route('/api/geocode', geocodeRouter);
 app.route('/api/notifications', notificationsRouter);
 app.route('/api/reviews', reviewsRouter);
+app.route('/api/payments', paymentsRouter);
 app.route('/', deeplinksRouter);
 
 // GET /api/images/:key — serve R2 images through the Worker.
@@ -49,6 +51,13 @@ app.get('/api/images/*', async (c) => {
 });
 
 app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
+
+// Combines the notifications sweep (reminders/reviews) with the payments
+// sweep (release/refund) into a single cron handler.
+async function scheduled(controller: ScheduledController, env: Env): Promise<void> {
+  await notificationsScheduled(controller, env);
+  await runPaymentSweeps(env);
+}
 
 export default { fetch: app.fetch, scheduled };
 

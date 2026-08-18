@@ -11,8 +11,8 @@ import { Btn, SegmentBar } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
-  API_BASE, fetchDashboard, fetchHostAnalytics, fetchEventBids,
-  type ApiDashboardEvent, type ApiHostAnalyticsEvent,
+  API_BASE, fetchDashboard, fetchHostAnalytics, fetchEventBids, fetchConnectStatus,
+  type ApiDashboardEvent, type ApiHostAnalyticsEvent, type ApiConnectStatus,
 } from '../../../lib/api';
 import { colors, palette, spacing, type as t } from '../../../lib/theme';
 import { formatEventDateTime } from '../../../lib/dateFormat';
@@ -66,6 +66,7 @@ export default function CommandCenterScreen() {
   const [events, setEvents] = useState<ApiDashboardEvent[]>([]);
   const [analytics, setAnalytics] = useState<Record<string, ApiHostAnalyticsEvent>>({});
   const [pendingBidEvents, setPendingBidEvents] = useState<Record<string, boolean>>({});
+  const [connectStatus, setConnectStatus] = useState<ApiConnectStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -78,12 +79,14 @@ export default function CommandCenterScreen() {
     }
     if (!silent) setError('');
     try {
-      const [dash, hostAnalytics] = await Promise.all([
+      const [dash, hostAnalytics, connect] = await Promise.all([
         fetchDashboard(),
         fetchHostAnalytics().catch(() => [] as ApiHostAnalyticsEvent[]),
+        fetchConnectStatus().catch(() => null),
       ]);
       setEvents(dash);
       setAnalytics(Object.fromEntries(hostAnalytics.map((e) => [e.id, e])));
+      setConnectStatus(connect);
 
       // Pending-sponsor status: real bids only, fetched per active event.
       const active = dash.filter((e) => e.status === 'published' && !isPast(e));
@@ -131,6 +134,11 @@ export default function CommandCenterScreen() {
   const totalRsvp = events.reduce((sum, e) => sum + e.rsvpCounts.going, 0);
   const sponsorRevCents = Object.values(analytics).reduce((sum, e) => sum + e.sponsorRevenueCents, 0);
 
+  // Only worth surfacing once there's real sponsor revenue at stake — a host
+  // with zero active sponsorships has nothing to be paid out for yet.
+  const hasActiveSponsorship = Object.values(analytics).some((e) => e.activeSponsorships > 0);
+  const showPayoutBanner = hasActiveSponsorship && connectStatus?.configured === true && !connectStatus.payoutsEnabled;
+
   return (
     <View style={s.container}>
       <AppHeader back />
@@ -156,6 +164,13 @@ export default function CommandCenterScreen() {
           <View style={s.headerBlock}>
             <Text style={[t.labelCaps, { color: colors.live }]}>{tr('dashboard.hostDashboard')}</Text>
             <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('dashboard.commandCenter')}</Text>
+
+            {showPayoutBanner && (
+              <Pressable style={s.payoutBanner} onPress={() => router.push('/settings' as never)}>
+                <Text style={[t.bodySm, s.payoutBannerText]}>{tr('dashboard.payoutBanner')}</Text>
+                <Text style={[t.labelCapsSm, { color: colors.accent }]}>›</Text>
+              </Pressable>
+            )}
 
             <View style={s.statTiles}>
               <View style={s.statTile}>
@@ -312,6 +327,18 @@ const s = StyleSheet.create({
     borderBottomColor: palette.surfaceHighest,
     paddingBottom: spacing.xl,
   },
+  payoutBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.accentDim,
+    backgroundColor: palette.surfaceMid,
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  payoutBannerText: { color: colors.textPrimary, flex: 1 },
   statTiles: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
   statTile: {
     flex: 1,

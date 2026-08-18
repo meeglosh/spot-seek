@@ -28,6 +28,14 @@
     "title": "Langue",
     "systemDefault": "Langue du système"
   },
+  "payouts": {
+    "title": "Versements",
+    "notConfigured": "Les paiements ne sont pas encore configurés.",
+    "setup": "Configurer les versements",
+    "setupError": "Impossible de démarrer la configuration des versements — réessayez.",
+    "notLiveYet": "Les paiements ne sont pas encore actifs — vous serez averti dès que cela sera possible.",
+    "enabledLabel": "Versements activés"
+  },
   "favourites": {
     "title": "Favoris",
     "manage": "Gérer les favoris"

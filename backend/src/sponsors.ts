@@ -296,12 +296,31 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
   if (isInitiator && status !== 'cancelled')
     return c.json({ error: 'Only the reviewer may accept or reject — you may only cancel' }, 400);
 
-  // Stub: payment processing on 'active' → see BLOCKED.md (Stripe).
+  // Acceptance hook (PAYMENTS.md): moving to 'active' puts the sponsorship
+  // into the money-state machine (unpaid -> requires_payment -> ...); the
+  // sponsor triggers the actual charge via POST /api/payments/sponsorships/:id/pay.
+  const updateValues: { status: schema.SponsorshipStatus; updatedAt: Date; paymentStatus?: string } = {
+    status,
+    updatedAt: new Date(),
+  };
+  if (status === 'active') updateValues.paymentStatus = 'requires_payment';
+
   const [updated] = await db
     .update(schema.sponsorships)
-    .set({ status, updatedAt: new Date() })
+    .set(updateValues)
     .where(eq(schema.sponsorships.id, bid.id))
     .returning();
+
+  if (event && status === 'active') {
+    const amount = (bid.amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    await notify(db, c.env.RESEND_API_KEY, {
+      userId: bid.sponsorId,
+      type: 'payment_due',
+      title: `Payment due for "${event.title}"`,
+      body: `Your ${amount} sponsorship for "${event.title}" was accepted. Complete payment in the app to confirm your slot.`,
+      eventId: event.id,
+    }).catch((err) => console.error('[sponsors] payment_due notify failed:', err));
+  }
 
   if (event && (status === 'active' || status === 'rejected')) {
     // Notify whichever party did NOT just act: if the host acted, notify the

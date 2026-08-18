@@ -28,6 +28,14 @@
     "title": "Language",
     "systemDefault": "System default"
   },
+  "payouts": {
+    "title": "Payouts",
+    "notConfigured": "Payments are not configured yet.",
+    "setup": "Set up payouts",
+    "setupError": "Could not start payout setup — try again.",
+    "notLiveYet": "Payments aren't live yet — you'll be notified when this can be completed.",
+    "enabledLabel": "Payouts enabled"
+  },
   "favourites": {
     "title": "Favourites",
     "manage": "Manage favourites"

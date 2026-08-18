@@ -103,6 +103,15 @@
     "note": "Nota: {{note}}",
     "cancelBid": "Cancelar Oferta",
     "hostAccepted": "O anfitrião aceitou esta oferta.",
+    "payment": {
+      "due": "Pagamento pendente",
+      "payNow": "Pagar agora",
+      "notLiveYet": "Os pagamentos ainda não estão ativos — serás notificado quando isto puder ser concluído.",
+      "payError": "Não foi possível iniciar o pagamento — tenta novamente.",
+      "paid": "Pago · a aguardar o evento",
+      "released": "Pago ao anfitrião",
+      "refunded": "Reembolsado"
+    },
     "testNoteAccepted": "O pagamento só é processado depois de o anfitrião aceitar — os pagamentos estão em modo de teste, sem cobranças reais.",
     "sponsorProfileNeeded": {
       "title": "Perfil de Patrocinador Necessário",

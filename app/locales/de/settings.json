@@ -28,6 +28,14 @@
     "title": "Sprache",
     "systemDefault": "Systemsprache"
   },
+  "payouts": {
+    "title": "Auszahlungen",
+    "notConfigured": "Zahlungen sind noch nicht konfiguriert.",
+    "setup": "Auszahlungen einrichten",
+    "setupError": "Einrichtung der Auszahlungen konnte nicht gestartet werden — bitte erneut versuchen.",
+    "notLiveYet": "Zahlungen sind noch nicht aktiv — du wirst benachrichtigt, sobald dies abgeschlossen werden kann.",
+    "enabledLabel": "Auszahlungen aktiviert"
+  },
   "favourites": {
     "title": "Favoriten",
     "manage": "Favoriten verwalten"

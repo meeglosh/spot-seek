@@ -29,7 +29,11 @@ export type NotificationType =
   | 'event_cancelled'
   | 'venue_changed'
   | 'favorite_nearby'
-  | 'review_request';
+  | 'review_request'
+  | 'payment_due'
+  | 'payment_received'
+  | 'payout_sent'
+  | 'payment_refunded';
 
 const DEFAULT_PREFS = { emailEnabled: true, pushEnabled: false, radiusMiles: 100 };
 
