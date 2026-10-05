@@ -156,14 +156,14 @@ export function v2AccountCanReceiveTransfers(acct: Record<string, unknown>): boo
 // (constant-time) against the `v1` signature(s) in the Stripe-Signature
 // header. 5-minute tolerance on the timestamp. Pure Web Crypto — no SDK.
 
-function timingSafeEqualHex(a: string, b: string): boolean {
+export function timingSafeEqualHex(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
 }
 
-function bufferToHex(buf: ArrayBuffer): string {
+export function bufferToHex(buf: ArrayBuffer): string {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 

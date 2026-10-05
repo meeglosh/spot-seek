@@ -15,6 +15,7 @@ import type { Event, Notification } from './schema';
 import { createAuth } from './auth';
 import { sendEmail } from './reminders';
 import { formatEventDateTime } from './timezone';
+import { requireAdmin } from './admin';
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -324,6 +325,19 @@ type AppEnv = { Bindings: Env; Variables: { userId: string } };
 
 export const notificationsRouter = new Hono<AppEnv>();
 
+// Manual job triggers are admin-only (ADMIN_SECRET bearer) — NOT user-session
+// routes. Registered before the session middleware below so a signed-in user's
+// cookie is neither required nor sufficient. Cron calls the sweeps directly.
+notificationsRouter.post('/run-reminders', requireAdmin, async (c) => {
+  const result = await runReminderSweep(c.env.DATABASE_URL, c.env.RESEND_API_KEY);
+  return c.json(result);
+});
+
+notificationsRouter.post('/run-reviews', requireAdmin, async (c) => {
+  const result = await runReviewSweep(c.env.DATABASE_URL, c.env.RESEND_API_KEY);
+  return c.json(result);
+});
+
 // All notification routes require auth.
 notificationsRouter.use('*', async (c, next) => {
   const auth = createAuth(neon(c.env.DATABASE_URL));
@@ -424,14 +438,4 @@ notificationsRouter.put('/prefs', async (c) => {
       lastLng: user?.lastLng ?? null,
     },
   });
-});
-
-notificationsRouter.post('/run-reminders', async (c) => {
-  const result = await runReminderSweep(c.env.DATABASE_URL, c.env.RESEND_API_KEY);
-  return c.json(result);
-});
-
-notificationsRouter.post('/run-reviews', async (c) => {
-  const result = await runReviewSweep(c.env.DATABASE_URL, c.env.RESEND_API_KEY);
-  return c.json(result);
 });

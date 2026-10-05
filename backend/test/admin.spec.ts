@@ -30,15 +30,12 @@ let userId: string;
 beforeAll(async () => { userId = await signUp(); });
 
 describe('host verification', () => {
-  it('admin endpoint returns 503 when ADMIN_SECRET not configured (test env)', async () => {
-    // In test env, ADMIN_SECRET is not set in wrangler.jsonc so the worker returns 503.
+  it('admin endpoint rejects a wrong bearer with 401 (test env provides ADMIN_SECRET via vitest.config.mts)', async () => {
     const res = await SELF.fetch(`${ADMIN}/verify/${userId}`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${ADMIN_SECRET}` },
+      headers: { Authorization: `Bearer ${ADMIN_SECRET}-wrong` },
     });
-    // 503 = secret not configured; 401 = wrong secret; 404 = user not found.
-    // All indicate the route is live and guarded.
-    expect([401, 503, 404]).toContain(res.status);
+    expect(res.status).toBe(401);
   });
 
   it('public profile shows isVerified field', async () => {

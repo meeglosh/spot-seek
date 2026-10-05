@@ -286,7 +286,7 @@ describe('review_request sweep', () => {
     await rsvpGoing(attendee.cookie, event.id);
 
     const run1 = await SELF.fetch(`${NOTIFICATIONS}/run-reviews`, {
-      method: 'POST', headers: { Cookie: attendee.cookie },
+      method: 'POST', headers: { Authorization: 'Bearer test-admin-secret' },
     });
     expect(run1.status).toBe(200);
 
@@ -304,7 +304,7 @@ describe('review_request sweep', () => {
 
     // Second run does not duplicate.
     const run2 = await SELF.fetch(`${NOTIFICATIONS}/run-reviews`, {
-      method: 'POST', headers: { Cookie: attendee.cookie },
+      method: 'POST', headers: { Authorization: 'Bearer test-admin-secret' },
     });
     expect(run2.status).toBe(200);
     const attNotifs2 = await (await SELF.fetch(NOTIFICATIONS, { headers: { Cookie: attendee.cookie } })).json() as {

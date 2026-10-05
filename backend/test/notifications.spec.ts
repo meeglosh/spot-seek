@@ -285,7 +285,7 @@ describe('scheduled reminder sweep', () => {
     });
 
     const run1 = await SELF.fetch(`${NOTIFICATIONS}/run-reminders`, {
-      method: 'POST', headers: { Cookie: attendee.cookie },
+      method: 'POST', headers: { Authorization: 'Bearer test-admin-secret' },
     });
     expect(run1.status).toBe(200);
 
@@ -295,7 +295,7 @@ describe('scheduled reminder sweep', () => {
     expect(reminders1).toHaveLength(1);
 
     const run2 = await SELF.fetch(`${NOTIFICATIONS}/run-reminders`, {
-      method: 'POST', headers: { Cookie: attendee.cookie },
+      method: 'POST', headers: { Authorization: 'Bearer test-admin-secret' },
     });
     expect(run2.status).toBe(200);
 

@@ -122,9 +122,9 @@ function mockV2Account(id: string, transfers: 'active' | 'pending' | 'restricted
 // Runs the payment sweeps scoped to the given sponsorships only. The sweep
 // otherwise processes EVERY paid row in the shared dev DB, and the one-shot
 // Stripe interceptors/counts would be consumed by other tests' leftover rows.
-const runSweepsFor = (cookie: string, ...sponsorshipIds: string[]) =>
+const runSweepsFor = (_cookie: string, ...sponsorshipIds: string[]) =>
   SELF.fetch(`${PAYMENTS}/run-sweeps`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer test-admin-secret' },
     body: JSON.stringify({ sponsorshipIds }),
   });
 

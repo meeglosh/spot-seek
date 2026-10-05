@@ -18,6 +18,7 @@
  */
 import { Hono } from 'hono';
 import type { Context, Next } from 'hono';
+import { requireAdmin } from './admin';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, and, inArray } from 'drizzle-orm';
@@ -323,9 +324,9 @@ async function handleAccountUpdated(
   await refreshAccountReadiness(db, client, accountId, object);
 }
 
-// POST /run-sweeps — manual trigger (authed) mirroring
+// POST /run-sweeps — manual trigger (ADMIN_SECRET bearer only) mirroring
 // /api/notifications/run-reminders, for tests and ops.
-paymentsRouter.post('/run-sweeps', requireAuth, async (c) => {
+paymentsRouter.post('/run-sweeps', requireAdmin, async (c) => {
   // Optional { sponsorshipIds: string[] } narrows the sweep to those rows
   // (tests/ops). Absent or malformed => the full sweep, as the cron runs it.
   const body = await c.req.json().catch(() => null) as { sponsorshipIds?: unknown } | null;
