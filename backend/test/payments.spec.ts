@@ -119,6 +119,15 @@ function mockV2Account(id: string, transfers: 'active' | 'pending' | 'restricted
     });
 }
 
+// Runs the payment sweeps scoped to the given sponsorships only. The sweep
+// otherwise processes EVERY paid row in the shared dev DB, and the one-shot
+// Stripe interceptors/counts would be consumed by other tests' leftover rows.
+const runSweepsFor = (cookie: string, ...sponsorshipIds: string[]) =>
+  SELF.fetch(`${PAYMENTS}/run-sweeps`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    body: JSON.stringify({ sponsorshipIds }),
+  });
+
 async function notificationsFor(cookie: string) {
   const res = await SELF.fetch(NOTIFICATIONS, { headers: { Cookie: cookie } });
   const { notifications } = await res.json() as { notifications: { type: string; eventId: string | null }[] };
@@ -525,7 +534,7 @@ describe('configured mode', () => {
         return { id: 'tr_rel_1' };
       });
 
-      const run1 = await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      const run1 = await runSweepsFor(host.cookie, accepted.id);
       expect(run1.status).toBe(200);
       expect(await run1.json()).toEqual({ released: 1, refunded: 0 });
       expect(transferBody).not.toBeNull();
@@ -536,7 +545,7 @@ describe('configured mode', () => {
       expect(hostNotifs.some((n) => n.type === 'payout_sent' && n.eventId === event.id)).toBe(true);
 
       // Rerun: sponsorship is no longer 'paid', so no second transfer call is made.
-      const run2 = await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      const run2 = await runSweepsFor(host.cookie, accepted.id);
       expect(run2.status).toBe(200);
       expect(await run2.json()).toEqual({ released: 0, refunded: 0 });
     });
@@ -562,7 +571,7 @@ describe('configured mode', () => {
 
       // No /v1/transfers interceptor registered — if the sweep tried to
       // transfer, fetchMock would reject the outbound call.
-      const run = await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      const run = await runSweepsFor(host.cookie, accepted.id);
       expect(run.status).toBe(200);
       const body = await run.json() as { released: number };
       expect(body.released).toBe(0);
@@ -591,7 +600,7 @@ describe('configured mode', () => {
       expect(cancelRes.status).toBe(200);
 
       mockStripe('/v1/refunds', { id: 're_ref_1' });
-      const run1 = await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      const run1 = await runSweepsFor(host.cookie, accepted.id);
       expect(run1.status).toBe(200);
       expect(await run1.json()).toEqual({ released: 0, refunded: 1 });
 
@@ -599,7 +608,7 @@ describe('configured mode', () => {
       expect(sponsorNotifs.some((n) => n.type === 'payment_refunded' && n.eventId === event.id)).toBe(true);
 
       // Rerun: sponsorship is now 'refunded', not 'paid' — no second refund call.
-      const run2 = await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      const run2 = await runSweepsFor(host.cookie, accepted.id);
       expect(run2.status).toBe(200);
       expect(await run2.json()).toEqual({ released: 0, refunded: 0 });
     });
@@ -673,9 +682,9 @@ describe('configured mode', () => {
       });
       expect(cancelRes.status).toBe(200);
       mockStripe('/v1/refunds', { id: 're_refpol_hostcancel' });
-      const run = await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      const run = await runSweepsFor(host.cookie, bidId);
       expect(run.status).toBe(200);
-      expect((await run.json() as { refunded: number }).refunded).toBeGreaterThanOrEqual(1);
+      expect((await run.json() as { refunded: number }).refunded).toBe(1);
       expect(await paymentStatusOf(host, event.id, bidId)).toBe('refunded');
       const notifs = await notificationsFor(sponsor.cookie);
       expect(notifs.some((n) => n.type === 'payment_refunded' && n.eventId === event.id)).toBe(true);
@@ -691,14 +700,14 @@ describe('configured mode', () => {
       mockV2Account(`acct_refpol_${TS}`, 'active');
       await fireWebhook({ type: 'account.updated', data: { object: { id: `acct_refpol_${TS}`, payouts_enabled: true } } });
       mockStripe('/v1/transfers', { id: `tr_refpol_${TS}` });
-      await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      await runSweepsFor(host.cookie, bidId);
       expect(await paymentStatusOf(host, event.id, bidId)).toBe('released');
 
       // No /v1/refunds interceptor: a refund attempt would fail the call.
       const res = await patchBid(sponsor.cookie, bidId, 'cancelled');
       expect(res.status).toBe(409);
       expect(await res.json()).toEqual({ error: 'already_released' });
-      const run = await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      const run = await runSweepsFor(host.cookie, bidId);
       expect((await run.json() as { refunded: number }).refunded).toBe(0);
       expect(await paymentStatusOf(host, event.id, bidId)).toBe('released');
     });

@@ -326,7 +326,13 @@ async function handleAccountUpdated(
 // POST /run-sweeps — manual trigger (authed) mirroring
 // /api/notifications/run-reminders, for tests and ops.
 paymentsRouter.post('/run-sweeps', requireAuth, async (c) => {
-  const result = await runPaymentSweeps(c.env);
+  // Optional { sponsorshipIds: string[] } narrows the sweep to those rows
+  // (tests/ops). Absent or malformed => the full sweep, as the cron runs it.
+  const body = await c.req.json().catch(() => null) as { sponsorshipIds?: unknown } | null;
+  const ids = Array.isArray(body?.sponsorshipIds) && body.sponsorshipIds.every((x) => typeof x === 'string')
+    ? (body.sponsorshipIds as string[])
+    : undefined;
+  const result = await runPaymentSweeps(c.env, ids ? { sponsorshipIds: ids } : undefined);
   return c.json(result);
 });
 
@@ -341,12 +347,21 @@ paymentsRouter.post('/run-sweeps', requireAuth, async (c) => {
 // Idempotent by construction: both branches only ever act on rows still in
 // paymentStatus 'paid'; once moved to released/refunded a rerun skips them.
 
-export async function runPaymentSweeps(env: Env): Promise<{ released: number; refunded: number }> {
+export async function runPaymentSweeps(
+  env: Env,
+  opts?: { sponsorshipIds?: string[] },
+): Promise<{ released: number; refunded: number }> {
   const client = getClient(env);
   if (!client) return { released: 0, refunded: 0 }; // graceful no-op, unconfigured
 
   const db = drizzle(neon(env.DATABASE_URL), { schema });
-  const paid = await db.query.sponsorships.findMany({ where: eq(schema.sponsorships.paymentStatus, 'paid') });
+  const scope = opts?.sponsorshipIds;
+  if (scope && scope.length === 0) return { released: 0, refunded: 0 };
+  const paid = await db.query.sponsorships.findMany({
+    where: scope
+      ? and(eq(schema.sponsorships.paymentStatus, 'paid'), inArray(schema.sponsorships.id, scope))
+      : eq(schema.sponsorships.paymentStatus, 'paid'),
+  });
   if (paid.length === 0) return { released: 0, refunded: 0 };
 
   const eventIds = [...new Set(paid.map((s) => s.eventId))];
