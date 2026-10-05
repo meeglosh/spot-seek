@@ -31,6 +31,7 @@ import type { StripeClient } from './stripe';
 // at bid time (sponsors.ts PLATFORM_FEE_RATE) — payments only ever reads it
 // back to size the transfer, so no rate constant is needed here.
 const CURRENCY = 'usd';
+const PAYABLE_INTENT_STATUSES = new Set(['requires_payment_method', 'requires_confirmation', 'requires_action']);
 const RELEASE_DELAY_MS = 24 * 60 * 60 * 1000; // 24h dispute window post-event
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
@@ -104,7 +105,7 @@ paymentsRouter.post('/connect/onboard', requireAuth, async (c) => {
   const base = c.env.BETTER_AUTH_URL ?? 'http://localhost:8787';
   const link = await client.createAccountLink(
     accountId,
-    `${base}/payments/onboard/refresh`,
+    `${base}/payments/onboard/refresh?account=${encodeURIComponent(accountId)}`,
     `${base}/payments/onboard/return`,
   );
   return c.json({ url: link.url });
@@ -157,14 +158,34 @@ paymentsRouter.post('/sponsorships/:id/pay', requireAuth, async (c) => {
   });
   if (!sponsorship) return c.json({ error: 'Not found' }, 404);
   if (sponsorship.sponsorId !== sponsorId) return c.json({ error: 'Forbidden' }, 403);
+  if (['paid', 'released', 'refunded'].includes(sponsorship.paymentStatus)) {
+    return c.json({ error: `Sponsorship already ${sponsorship.paymentStatus}` }, 409);
+  }
   if (sponsorship.paymentStatus !== 'requires_payment') {
     return c.json({ error: 'Sponsorship is not awaiting payment' }, 400);
   }
 
+  // Idempotent: reuse the existing PaymentIntent while it is still payable.
+  const oldId = sponsorship.paymentIntentId;
+  if (oldId) {
+    const existing = await client.retrievePaymentIntent(oldId);
+    if (PAYABLE_INTENT_STATUSES.has(existing.status)) {
+      return c.json({ clientSecret: existing.clientSecret });
+    }
+    if (existing.status !== 'canceled') {
+      // processing / requires_capture / succeeded: payment is in flight or done
+      // (the webhook will flip the row to paid). Never create a second charge.
+      return c.json({ error: `Payment is ${existing.status}` }, 409);
+    }
+  }
+
+  // Key is derived from the sponsorship + the PI being replaced, so concurrent
+  // double-taps in the same state collapse to one PaymentIntent at Stripe.
   const intent = await client.createPaymentIntent({
     amountCents: sponsorship.amountCents,
     currency: CURRENCY,
     metadata: { sponsorshipId: sponsorship.id },
+    idempotencyKey: `pay-${sponsorship.id}-${oldId ?? 'first'}`,
   });
   await db
     .update(schema.sponsorships)
@@ -399,3 +420,92 @@ export async function runPaymentSweeps(env: Env): Promise<{ released: number; re
 
   return { released, refunded };
 }
+
+// ─── Public Stripe onboarding landing pages ───────────────────────────────────
+// Mounted at /payments (NOT /api/payments) in index.ts. Public by design:
+// nothing secret is rendered. Stripe adds no account id to the return URL.
+
+export const onboardPagesRouter = new Hono<AppEnv>();
+
+// Expo Router route app/app/settings.tsx (root Stack screen "settings").
+export const SETTINGS_DEEP_LINK = 'spotseek://settings';
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function onboardPage(opts: { title: string; body: string; ctaHref: string; ctaLabel: string; redirect?: boolean }): string {
+  const href = escapeHtml(opts.ctaHref);
+  return `<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>${escapeHtml(opts.title)} · SpotSeek</title>
+${opts.redirect ? `<meta http-equiv="refresh" content="1;url=${href}">` : ''}
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#0F0F12;color:#fff;font-family:-apple-system,Helvetica,Arial,sans-serif}
+  main{width:100%;max-width:420px;border:2px solid #00e5ff;padding:32px 24px}
+  h1{margin:0 0 16px;font-size:34px;line-height:1.05;letter-spacing:.02em;text-transform:uppercase;font-weight:900}
+  p{margin:0 0 28px;color:#c9c9d1;font-size:16px;line-height:1.5}
+  a.cta{display:block;text-align:center;padding:16px;background:#00e5ff;color:#0F0F12;text-decoration:none;text-transform:uppercase;font-weight:800;letter-spacing:.06em;border-radius:0;box-shadow:4px 4px 0 #fff}
+</style></head>
+<body><main>
+<h1>${escapeHtml(opts.title)}</h1>
+<p>${escapeHtml(opts.body)}</p>
+<a class="cta" href="${href}">${escapeHtml(opts.ctaLabel)}</a>
+</main>${opts.redirect ? `<script>setTimeout(function(){location.href=${JSON.stringify(opts.ctaHref).replace(/</g, '\\u003c')}},400)</script>` : ''}</body></html>`;
+}
+
+onboardPagesRouter.get('/onboard/return', (c) => {
+  c.header('Cache-Control', 'no-store');
+  return c.html(
+    onboardPage({
+      title: 'Payouts connected',
+      body: "You're all set — head back to SpotSeek. If anything is still needed, the app will tell you.",
+      ctaHref: SETTINGS_DEEP_LINK,
+      ctaLabel: 'Open SpotSeek',
+      redirect: true,
+    }),
+  );
+});
+
+function onboardFallbackPage(): string {
+  return onboardPage({
+    title: 'Link expired',
+    body: 'This onboarding link is no longer valid. Open the SpotSeek app and tap "Set up payouts" again.',
+    ctaHref: SETTINGS_DEEP_LINK,
+    ctaLabel: 'Open SpotSeek',
+  });
+}
+
+onboardPagesRouter.get('/onboard/refresh', async (c) => {
+  c.header('Cache-Control', 'no-store');
+  const accountId = c.req.query('account');
+  const client = getClient(c.env);
+  if (!accountId || !client) return c.html(onboardFallbackPage());
+
+  // Only regenerate for accounts we created (belongs to a user row).
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const user = await db.query.users.findFirst({ where: eq(schema.users.stripeAccountId, accountId) });
+  if (!user) return c.html(onboardFallbackPage());
+
+  try {
+    const base = c.env.BETTER_AUTH_URL ?? 'http://localhost:8787';
+    const link = await client.createAccountLink(
+      accountId,
+      `${base}/payments/onboard/refresh?account=${encodeURIComponent(accountId)}`,
+      `${base}/payments/onboard/return`,
+    );
+    return c.redirect(link.url, 302);
+  } catch (err) {
+    console.error('[payments] onboard refresh failed:', err);
+    return c.html(onboardFallbackPage());
+  }
+});

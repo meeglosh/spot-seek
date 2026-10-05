@@ -18,6 +18,7 @@ const STRIPE_V2_API_VERSION = '2026-09-30.endive';
 
 export type StripeAccount = { id: string; payoutsEnabled: boolean };
 export type StripePaymentIntent = { id: string; clientSecret: string };
+export type StripePaymentIntentState = StripePaymentIntent & { status: string };
 export type StripeTransfer = { id: string };
 export type StripeRefund = { id: string };
 // Two payload styles share this type:
@@ -42,7 +43,11 @@ export type StripeClient = {
     amountCents: number;
     currency: string;
     metadata: Record<string, string>;
+    // Sent as the Stripe `Idempotency-Key` header so retries/double-taps with
+    // the same key return the same PaymentIntent instead of creating another.
+    idempotencyKey?: string;
   }): Promise<StripePaymentIntent>;
+  retrievePaymentIntent(id: string): Promise<StripePaymentIntentState>;
   createTransfer(params: {
     amountCents: number;
     currency: string;
@@ -80,12 +85,14 @@ async function stripeRequest(
   method: 'GET' | 'POST',
   path: string,
   params?: Record<string, unknown>,
+  idempotencyKey?: string,
 ): Promise<Record<string, unknown>> {
   const res = await fetch(`${STRIPE_API_BASE}${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${secretKey}`,
       'Stripe-Version': STRIPE_API_VERSION,
+      ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
       ...(method === 'POST' ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
     },
     body: method === 'POST' ? encodeForm(params ?? {}) : undefined,
@@ -261,13 +268,20 @@ export function realStripe(secretKey: string): StripeClient {
       return { id: acct.id as string, payoutsEnabled: v2AccountCanReceiveTransfers(acct) };
     },
 
-    async createPaymentIntent({ amountCents, currency, metadata }) {
-      const pi = await stripeRequest(secretKey, 'POST', '/payment_intents', {
-        amount: amountCents,
-        currency,
-        metadata,
-      });
+    async createPaymentIntent({ amountCents, currency, metadata, idempotencyKey }) {
+      const pi = await stripeRequest(
+        secretKey,
+        'POST',
+        '/payment_intents',
+        { amount: amountCents, currency, metadata },
+        idempotencyKey,
+      );
       return { id: pi.id as string, clientSecret: pi.client_secret as string };
+    },
+
+    async retrievePaymentIntent(id) {
+      const pi = await stripeRequest(secretKey, 'GET', `/payment_intents/${encodeURIComponent(id)}`);
+      return { id: pi.id as string, clientSecret: pi.client_secret as string, status: pi.status as string };
     },
 
     async createTransfer({ amountCents, currency, destination, metadata }) {

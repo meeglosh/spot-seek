@@ -231,7 +231,7 @@ describe('configured mode', () => {
     expect(linkReq!.body.use_case.type).toBe('account_onboarding');
     // `configurations` is response-only on v2 account links; sending it is a 400.
     expect(linkReq!.body.use_case.account_onboarding.configurations).toBeUndefined();
-    expect(linkReq!.body.use_case.account_onboarding.refresh_url).toMatch(/\/payments\/onboard\/refresh$/);
+    expect(linkReq!.body.use_case.account_onboarding.refresh_url).toMatch(/\/payments\/onboard\/refresh\?account=acct_shape_1$/);
     expect(linkReq!.body.use_case.account_onboarding.return_url).toMatch(/\/payments\/onboard\/return$/);
   });
 
@@ -269,6 +269,43 @@ describe('configured mode', () => {
       });
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ clientSecret: 'pi_pay_1_secret' });
+    });
+
+    it('is idempotent: reuses a payable PaymentIntent, replaces a canceled one, 409s once paid', async () => {
+      const host = await signIn('conf-pay-idem-host');
+      const sponsor = await signIn('conf-pay-idem-sponsor');
+      await registerSponsor(sponsor.cookie, 'Idem Co');
+      const event = await createEvent(host.cookie);
+      const accepted = await bidAndAccept(host.cookie, sponsor.cookie, event.id, 5000);
+      const pay = () => SELF.fetch(`${PAYMENTS}/sponsorships/${accepted.id}/pay`, { method: 'POST', headers: { Cookie: sponsor.cookie } });
+      const headersOf = (opts: { headers?: unknown }) =>
+        Object.fromEntries(Object.entries((opts.headers ?? {}) as Record<string, string>).map(([k, v]) => [k.toLowerCase(), String(v)]));
+
+      let key1 = '';
+      fetchMock.get('https://api.stripe.com').intercept({ path: '/v1/payment_intents', method: 'POST' }).reply(200, (opts) => {
+        key1 = headersOf(opts)['idempotency-key'];
+        return { id: 'pi_idem_1', client_secret: 'pi_idem_1_secret' };
+      });
+      expect(await (await pay()).json()).toEqual({ clientSecret: 'pi_idem_1_secret' });
+      expect(key1).toBe(`pay-${accepted.id}-first`);
+
+      // Second tap: PI still payable -> retrieved, no create call.
+      mockStripe('/v1/payment_intents/pi_idem_1', { id: 'pi_idem_1', client_secret: 'pi_idem_1_secret', status: 'requires_payment_method' }, 'GET');
+      expect(await (await pay()).json()).toEqual({ clientSecret: 'pi_idem_1_secret' });
+
+      // Canceled -> a new PI is created with a key derived from the old PI id.
+      mockStripe('/v1/payment_intents/pi_idem_1', { id: 'pi_idem_1', client_secret: 'pi_idem_1_secret', status: 'canceled' }, 'GET');
+      let key2 = '';
+      fetchMock.get('https://api.stripe.com').intercept({ path: '/v1/payment_intents', method: 'POST' }).reply(200, (opts) => {
+        key2 = headersOf(opts)['idempotency-key'];
+        return { id: 'pi_idem_2', client_secret: 'pi_idem_2_secret' };
+      });
+      expect(await (await pay()).json()).toEqual({ clientSecret: 'pi_idem_2_secret' });
+      expect(key2).toBe(`pay-${accepted.id}-pi_idem_1`);
+
+      // Paid -> 409.
+      await fireWebhook({ type: 'payment_intent.succeeded', data: { object: { id: 'pi_idem_2', metadata: { sponsorshipId: accepted.id } } } });
+      expect((await pay()).status).toBe(409);
     });
 
     it('rejects the wrong caller', async () => {
@@ -664,6 +701,59 @@ describe('configured mode', () => {
       const run = await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
       expect((await run.json() as { refunded: number }).refunded).toBe(0);
       expect(await paymentStatusOf(host, event.id, bidId)).toBe('released');
+    });
+  });
+});
+
+// ─── Public onboarding landing pages ──────────────────────────────────────────
+
+describe('onboarding return/refresh pages', () => {
+  const PAGES = 'https://example.com/payments/onboard';
+
+  it('GET /return renders the branded page with the settings deep link', async () => {
+    const res = await SELF.fetch(`${PAGES}/return`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/html');
+    const html = await res.text();
+    expect(html).toContain('Payouts connected');
+    expect(html).toContain('href="spotseek://settings"');
+    expect(html).toContain('#0F0F12');
+    expect(html).toContain('#00e5ff');
+  });
+
+  describe('refresh', () => {
+    beforeAll(() => {
+      __setTestStripeConfig({ secretKey: STRIPE_SECRET_KEY, webhookSecret: STRIPE_WEBHOOK_SECRET });
+    });
+
+    it('302s to a fresh account link for a known account', async () => {
+      const host = await signIn('onboard-refresh');
+      mockStripe('/v2/core/accounts', { id: 'acct_refresh_1' });
+      mockStripe('/v2/core/account_links', { url: 'https://connect.stripe.com/setup/first' });
+      await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+
+      let linkBody: Record<string, any> | null = null;
+      fetchMock.get('https://api.stripe.com').intercept({ path: '/v2/core/account_links', method: 'POST' }).reply(200, (opts) => {
+        linkBody = JSON.parse(String(opts.body));
+        return { url: 'https://connect.stripe.com/setup/fresh' };
+      });
+      const res = await SELF.fetch(`${PAGES}/refresh?account=acct_refresh_1`, { redirect: 'manual' });
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBe('https://connect.stripe.com/setup/fresh');
+      expect(linkBody!.account).toBe('acct_refresh_1');
+      expect(linkBody!.use_case.account_onboarding.refresh_url).toMatch(/\/payments\/onboard\/refresh\?account=acct_refresh_1$/);
+    });
+
+    it('shows the fallback page for an unknown account (and does not call Stripe)', async () => {
+      const res = await SELF.fetch(`${PAGES}/refresh?account=acct_nobody_${TS}`, { redirect: 'manual' });
+      expect(res.status).toBe(200);
+      expect(await res.text()).toContain('Set up payouts');
+    });
+
+    it('shows the fallback page when the account param is missing', async () => {
+      const res = await SELF.fetch(`${PAGES}/refresh`, { redirect: 'manual' });
+      expect(res.status).toBe(200);
+      expect(await res.text()).toContain('Set up payouts');
     });
   });
 });

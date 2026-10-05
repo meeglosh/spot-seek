@@ -16,7 +16,7 @@ import { deeplinksRouter } from './deeplinks';
 import { notificationsRouter, scheduled as notificationsScheduled } from './notifications';
 import { reviewsRouter } from './reviews';
 import { EMAIL_LOGO_PNG_BASE64 } from './email-logo';
-import { paymentsRouter, runPaymentSweeps } from './payments';
+import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -39,6 +39,7 @@ app.route('/api/geocode', geocodeRouter);
 app.route('/api/notifications', notificationsRouter);
 app.route('/api/reviews', reviewsRouter);
 app.route('/api/payments', paymentsRouter);
+app.route('/payments', onboardPagesRouter);
 app.route('/', deeplinksRouter);
 
 // GET /api/images/:key — serve R2 images through the Worker.
