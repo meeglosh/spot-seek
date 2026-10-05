@@ -63,9 +63,10 @@ export async function notify(
 
   if (emailEnabled && user?.email) {
     if (resendApiKey) {
-      await sendEmail(user.email, args.title, args.body, resendApiKey).catch((err) =>
-        console.error('[notifications] email send failed:', err),
-      );
+      await sendEmail(user.email, args.title, args.body, resendApiKey, {
+        type: args.type,
+        eventId: args.eventId,
+      }).catch((err) => console.error('[notifications] email send failed:', err));
     } else {
       console.log(`[DEV NOTIFICATION] to=${user.email} type=${args.type} title="${args.title}"`);
     }

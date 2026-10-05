@@ -16,30 +16,50 @@ import { and, eq } from 'drizzle-orm';
 import * as schema from './schema';
 import type { Event, Rsvp } from './schema';
 import { createAuth } from './auth';
+import { renderEmailHtml, renderEmailText, REPLY_TO } from './email';
 
 // ─── Email sender via Resend ──────────────────────────────────────────────────
+export interface SendEmailOptions {
+  type?: string;
+  eventId?: string;
+  baseUrl?: string;
+}
+
+/**
+ * Sends a branded HTML email (with plain-text fallback). Never throws: a
+ * non-2xx Resend response or network error is logged with console.error so
+ * the request path is unaffected.
+ */
 export async function sendEmail(
   to: string,
   subject: string,
   text: string,
   apiKey: string,
+  opts: SendEmailOptions = {},
 ): Promise<void> {
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: 'SpotSeek <reminders@spotseek.app>',
-      to,
-      subject,
-      text,
-    }),
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Resend error ${res.status}: ${err}`);
+  const content = { type: opts.type, title: subject, body: text, eventId: opts.eventId, baseUrl: opts.baseUrl };
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'SpotSeek <reminders@spotseek.app>',
+        to,
+        reply_to: REPLY_TO,
+        subject,
+        html: renderEmailHtml(content),
+        text: renderEmailText(content),
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.text().catch(() => '');
+      console.error(`[email] Resend error ${res.status}: ${err}`);
+    }
+  } catch (err) {
+    console.error('[email] Resend request failed:', err);
   }
 }
 
@@ -88,7 +108,7 @@ export async function sendSponsorshipRequestEmail(
     'Review and respond in the SpotSeek app under Sponsorship > Requests.';
 
   if (resendApiKey) {
-    await sendEmail(sponsorEmail, subject, text, resendApiKey);
+    await sendEmail(sponsorEmail, subject, text, resendApiKey, { type: 'sponsorship_request' });
     return;
   }
   console.log(`[DEV SPONSOR REQUEST] to=${sponsorEmail} event="${eventTitle}" amount=${amount}`);
@@ -108,7 +128,7 @@ async function sendReminder(
     (event.venueAddress && !event.isPrivateLocation ? `Address: ${event.venueAddress}\n` : '');
 
   if (resendApiKey && userEmail) {
-    await sendEmail(userEmail, subject, text, resendApiKey);
+    await sendEmail(userEmail, subject, text, resendApiKey, { type: 'reminder_1h', eventId: event.id });
     return;
   }
 

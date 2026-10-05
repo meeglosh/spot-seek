@@ -15,6 +15,7 @@ import { geocodeRouter } from './geocode';
 import { deeplinksRouter } from './deeplinks';
 import { notificationsRouter, scheduled as notificationsScheduled } from './notifications';
 import { reviewsRouter } from './reviews';
+import { EMAIL_LOGO_PNG_BASE64 } from './email-logo';
 import { paymentsRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -48,6 +49,13 @@ app.get('/api/images/*', async (c) => {
   if (!obj) return c.json({ error: 'Not found' }, 404);
   const contentType = obj.httpMetadata?.contentType ?? 'image/jpeg';
   return new Response(obj.body, { headers: { 'Content-Type': contentType, 'Cache-Control': 'public, max-age=31536000' } });
+});
+
+// Public logo used by transactional emails (derived from app/assets/icon.png).
+app.get('/static/email-logo.png', () => {
+  const bin = atob(EMAIL_LOGO_PNG_BASE64);
+  const bytes = Uint8Array.from(bin, (ch) => ch.charCodeAt(0));
+  return new Response(bytes, { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' } });
 });
 
 app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
