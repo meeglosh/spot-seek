@@ -229,6 +229,8 @@ describe('configured mode', () => {
     expect(linkReq!.headers['stripe-version']).toBe('2026-09-30.endive');
     expect(linkReq!.body.account).toBe('acct_shape_1');
     expect(linkReq!.body.use_case.type).toBe('account_onboarding');
+    // `configurations` is response-only on v2 account links; sending it is a 400.
+    expect(linkReq!.body.use_case.account_onboarding.configurations).toBeUndefined();
     expect(linkReq!.body.use_case.account_onboarding.refresh_url).toMatch(/\/payments\/onboard\/refresh$/);
     expect(linkReq!.body.use_case.account_onboarding.return_url).toMatch(/\/payments\/onboard\/return$/);
   });
