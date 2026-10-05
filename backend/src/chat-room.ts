@@ -3,7 +3,7 @@
  * Uses the Hibernation API so idle rooms don't consume memory.
  *
  * Protocol:
- *   Client connects via WS: GET /api/chat/:eventId/ws?token=<better-auth-session-token>
+ *   Client connects via WS: GET /api/chat/:eventId/ws with a Better Auth session (cookie or Bearer); 401 otherwise
  *   Client sends:  JSON { type: "message", body: "text" }
  *   Server broadcasts: JSON { type: "message", userId, body, timestamp }
  *   Server sends:  JSON { type: "history", comments: [...] } on connect
@@ -12,6 +12,9 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, asc } from 'drizzle-orm';
 import * as schema from './schema';
+
+// Set by the Worker (chat.ts) from the verified session; never trusted from clients.
+export const CHAT_USER_HEADER = 'x-spotseek-user-id';
 
 type WsAttachment = { userId: string; eventId: string };
 
@@ -27,7 +30,8 @@ export class ChatRoom implements DurableObject {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const eventId = url.searchParams.get('eventId') ?? '';
-    const userId = url.searchParams.get('userId') ?? 'anonymous';
+    const userId = request.headers.get(CHAT_USER_HEADER);
+    if (!userId) return new Response('Unauthorized', { status: 401 });
 
     const upgradeHeader = request.headers.get('Upgrade');
     if (upgradeHeader?.toLowerCase() !== 'websocket') {

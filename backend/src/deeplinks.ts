@@ -64,7 +64,11 @@ deeplinksRouter.get('/e/:id', async (c) => {
       weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
     })} UTC`
     : null;
-  const description = escapeHtml([when, event.venueName].filter(Boolean).join(' — ') || 'Join this watch party on SpotSeek.');
+  // /e/:id is fully public (no session) and its HTML is scraped by link-preview
+  // bots, so a private-location event must not leak its venue name or address
+  // here — only exact-location visitors (RSVP'd users) see it, in the app.
+  const publicVenueName = event.isPrivateLocation ? null : event.venueName;
+  const description = escapeHtml([when, publicVenueName].filter(Boolean).join(' — ') || 'Join this watch party on SpotSeek.');
 
   // Resolve to an absolute URL — Messages/WhatsApp/Slack/etc. fetch this
   // page server-side to build the link-preview card, so a relative
@@ -122,7 +126,7 @@ deeplinksRouter.get('/e/:id', async (c) => {
       var when = startsAt.toLocaleString(undefined, {
         weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
       });
-      var venue = ${JSON.stringify(event.venueName ?? null)};
+      var venue = ${JSON.stringify(publicVenueName ?? null).replace(/</g, '\\u003c')};
       document.getElementById('when').textContent = venue ? (when + ' — ' + venue) : when;
     })();
   </script>` : ''}

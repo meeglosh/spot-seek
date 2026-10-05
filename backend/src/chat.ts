@@ -10,6 +10,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { and, eq, asc } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
+import { CHAT_USER_HEADER } from './chat-room';
 export { ChatRoom } from './chat-room';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
@@ -66,22 +67,26 @@ chatRouter.post('/:eventId', async (c) => {
 });
 
 // GET /api/chat/:eventId/ws — WebSocket upgrade, forwarded to ChatRoom DO.
+// A valid session is REQUIRED (401 otherwise). The Worker derives the userId
+// from the session and hands it to the DO on a request it builds itself, so
+// no client-supplied header or query param can influence identity.
 chatRouter.get('/:eventId/ws', async (c) => {
-  const eventId = c.req.param('eventId');
-  // Resolve authenticated userId from session (anonymous allowed as fallback).
-  let userId = 'anonymous';
-  try {
-    const auth = createAuth(neon(c.env.DATABASE_URL));
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
-    if (session?.user) userId = session.user.id;
-  } catch { /* anonymous */ }
+  const userId = c.get('userId');
+  if (!userId) return c.json({ error: 'Unauthorized' }, 401);
 
+  const eventId = c.req.param('eventId');
   const id = c.env.CHAT_ROOMS.idFromName(eventId);
   const stub = c.env.CHAT_ROOMS.get(id);
+
+  // Rebuild the URL and headers from scratch: drop every client query param
+  // and any client-sent copy of the internal identity header.
   const url = new URL(c.req.url);
+  url.search = '';
   url.searchParams.set('eventId', eventId);
-  url.searchParams.set('userId', userId);
-  return stub.fetch(new Request(url.toString(), c.req.raw));
+  const headers = new Headers(c.req.raw.headers);
+  headers.delete(CHAT_USER_HEADER);
+  headers.set(CHAT_USER_HEADER, userId);
+  return stub.fetch(new Request(url.toString(), { method: 'GET', headers }));
 });
 
 // DELETE /api/chat/:eventId/:commentId — delete own comment or host deletes any.

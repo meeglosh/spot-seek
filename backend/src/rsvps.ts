@@ -5,6 +5,7 @@ import { and, count, eq, sql } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { notify } from './notifications';
+import { allowRequest, tooManyRequests, RSVP_LIMIT_PER_MIN } from './ratelimit';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
 
@@ -16,6 +17,10 @@ rsvpsRouter.use('*', async (c, next) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) return c.json({ error: 'Unauthorized' }, 401);
   c.set('userId', session.user.id);
+  // Rate limit RSVP writes (create / state change) to 30/min per user.
+  if (c.req.method !== 'GET' && !(await allowRequest(c.env.RSVP_LIMITER, `rsvp:${session.user.id}`, RSVP_LIMIT_PER_MIN))) {
+    return tooManyRequests();
+  }
   await next();
 });
 
@@ -139,6 +144,52 @@ rsvpsRouter.patch('/:id', async (c) => {
   const { state } = await c.req.json<{ state: schema.RsvpState }>();
   if (!['going', 'interested', 'waitlisted', 'cancelled'].includes(state)) {
     return c.json({ error: 'Invalid state' }, 400);
+  }
+
+  // Moving into 'going' must respect capacity just like the POST insert path
+  // (previously a waitlisted/cancelled/interested user could PATCH themselves
+  // straight to 'going' on a full event). The capacity guard is part of the
+  // UPDATE's WHERE clause; a no-op transition (already going) is always allowed.
+  if (state === 'going' && rsvp.state !== 'going') {
+    const event = await db.query.events.findFirst({ where: eq(schema.events.id, rsvp.eventId) });
+    const capacity = event?.capacity ?? null;
+    const rows = await db.execute(sql`
+      UPDATE rsvps SET state = 'going'::rsvp_state, updated_at = now()
+      WHERE id = ${rsvp.id}
+        AND ${capacity === null
+          ? sql`TRUE`
+          : sql`(SELECT COUNT(*) FROM rsvps WHERE event_id = ${rsvp.eventId} AND state = 'going') < ${capacity}`}
+      RETURNING *
+    `);
+    if (!rows.rows || rows.rows.length === 0) {
+      return c.json({ error: 'Event is full' }, 409);
+    }
+    // Concurrent PATCHes can both pass the guard above (same snapshot). Verify
+    // after the write and roll this row back if capacity was exceeded.
+    if (capacity !== null) {
+      const [goingRow] = await db
+        .select({ total: count() })
+        .from(schema.rsvps)
+        .where(and(eq(schema.rsvps.eventId, rsvp.eventId), eq(schema.rsvps.state, 'going')));
+      if (Number(goingRow?.total ?? 0) > capacity) {
+        await db
+          .update(schema.rsvps)
+          .set({ state: rsvp.state, updatedAt: new Date() })
+          .where(eq(schema.rsvps.id, rsvp.id));
+        return c.json({ error: 'Event is full' }, 409);
+      }
+    }
+    const row = rows.rows[0] as Record<string, unknown>;
+    return c.json({
+      rsvp: {
+        id: row['id'],
+        eventId: row['event_id'],
+        userId: row['user_id'],
+        state: row['state'],
+        createdAt: row['created_at'],
+        updatedAt: row['updated_at'],
+      },
+    });
   }
 
   const [updated] = await db
