@@ -25,6 +25,16 @@
 			"preview_bucket_name": "spotseek-images-preview"
 		}
 	],
+	// Rate limiting (Cloudflare Rate Limiting binding). Declared via `unsafe`
+	// because the installed wrangler (3.x) predates the top-level `ratelimits`
+	// field; when wrangler is upgraded this can move to `ratelimits`.
+	// period must be 10 or 60; namespace_id is an account-unique integer. OWNER REVIEW.
+	"unsafe": {
+		"bindings": [
+			{ "name": "AUTH_LIMITER", "type": "ratelimit", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
+			{ "name": "RSVP_LIMITER", "type": "ratelimit", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } }
+		]
+	},
 	"triggers": {
 		"crons": ["*/15 * * * *"]
 	},

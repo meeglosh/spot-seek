@@ -7,6 +7,10 @@ interface Env {
   ADMIN_SECRET?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  // Cloudflare Rate Limiting bindings (wrangler.jsonc `ratelimits`). Optional so
+  // the code degrades to a per-isolate in-memory limiter if a binding is absent.
+  AUTH_LIMITER?: RateLimit;
+  RSVP_LIMITER?: RateLimit;
   CHAT_ROOMS: DurableObjectNamespace;
   SPOTSEEK_IMAGES: R2Bucket;
 }

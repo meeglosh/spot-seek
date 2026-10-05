@@ -15,12 +15,25 @@ import { geocodeRouter } from './geocode';
 import { deeplinksRouter } from './deeplinks';
 import { notificationsRouter, scheduled as notificationsScheduled } from './notifications';
 import { reviewsRouter } from './reviews';
+import { allowRequest, tooManyRequests, AUTH_LIMIT_PER_MIN } from './ratelimit';
 import { EMAIL_LOGO_PNG_BASE64 } from './email-logo';
 import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.all('/api/auth/*', (c) => {
+// Sign-up / sign-in attempts are rate limited per client IP (10/min). This is a
+// guard in front of Better Auth's handler — Better Auth's own config is untouched.
+// cf-connecting-ip is always set by Cloudflare at the edge (and overwritten if a
+// client sends it); when absent (local/test harness) there is no IP to key on.
+const AUTH_RATE_LIMITED = /^\/api\/auth\/(sign-up|sign-in)(\/|$)/;
+
+app.all('/api/auth/*', async (c) => {
+  if (c.req.method === 'POST' && AUTH_RATE_LIMITED.test(c.req.path)) {
+    const ip = c.req.header('cf-connecting-ip');
+    if (ip && !(await allowRequest(c.env.AUTH_LIMITER, `auth:${ip}`, AUTH_LIMIT_PER_MIN))) {
+      return tooManyRequests();
+    }
+  }
   const auth = createAuth(neon(c.env.DATABASE_URL), { baseURL: c.env.BETTER_AUTH_URL });
   return auth.handler(c.req.raw);
 });
