@@ -9,7 +9,7 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, lt, or } from 'drizzle-orm';
 import * as schema from './schema';
 import type { Event, Notification } from './schema';
 import { createAuth } from './auth';
@@ -205,6 +205,8 @@ function reviewMoment(event: Event): Date | null {
   return null;
 }
 
+const REVIEW_NOTIFY_CONCURRENCY = 10;
+
 export async function runReviewSweep(
   databaseUrl: string,
   resendApiKey: string | undefined,
@@ -212,38 +214,75 @@ export async function runReviewSweep(
   const db = drizzle(neon(databaseUrl), { schema });
   const now = Date.now();
   const MIN15 = 15 * 60 * 1000;
-  const windowStart = new Date(now - MIN15);
-  const windowEnd = new Date(now);
+  const HOUR = 60 * 60 * 1000;
+  const windowStart = now - MIN15;
+  const windowEnd = now;
 
-  const events = await db.query.events.findMany({ where: eq(schema.events.status, 'published') });
-  const inWindow = events.filter((e) => {
+  // Bounded, indexed-friendly scan: only events whose review moment
+  // (endsAt + 2h, or startsAt + 4h when endsAt is null) falls in the window.
+  // reviewMoment() is re-checked below as the single source of truth.
+  const candidates = await db.query.events.findMany({
+    where: and(
+      eq(schema.events.status, 'published'),
+      or(
+        and(
+          gte(schema.events.endsAt, new Date(windowStart - 2 * HOUR)),
+          lt(schema.events.endsAt, new Date(windowEnd - 2 * HOUR)),
+        ),
+        and(
+          isNull(schema.events.endsAt),
+          gte(schema.events.startsAt, new Date(windowStart - 4 * HOUR)),
+          lt(schema.events.startsAt, new Date(windowEnd - 4 * HOUR)),
+        ),
+      ),
+    ),
+  });
+  const inWindow = candidates.filter((e) => {
     const moment = reviewMoment(e);
-    return moment !== null && moment >= windowStart && moment < windowEnd;
+    return moment !== null && moment.getTime() >= windowStart && moment.getTime() < windowEnd;
   });
   if (inWindow.length === 0) return { sent: 0 };
 
-  let sent = 0;
-  for (const event of inWindow) {
-    const rsvps = await db.query.rsvps.findMany({
-      where: and(eq(schema.rsvps.eventId, event.id), eq(schema.rsvps.state, 'going')),
-    });
-    const title = `How was "${event.title}"?`;
-    const body = 'Rate the host and venue to help the next crowd.';
+  const eventIds = inWindow.map((e) => e.id);
+  const [rsvps, existing] = await Promise.all([
+    db.query.rsvps.findMany({
+      where: and(inArray(schema.rsvps.eventId, eventIds), eq(schema.rsvps.state, 'going')),
+    }),
+    db.query.notifications.findMany({
+      where: and(
+        inArray(schema.notifications.eventId, eventIds),
+        eq(schema.notifications.type, 'review_request'),
+      ),
+    }),
+  ]);
+  const done = new Set(existing.map((n) => `${n.eventId}:${n.userId}`));
+  const eventsById = new Map(inWindow.map((e) => [e.id, e]));
 
-    for (const rsvp of rsvps) {
-      if (rsvp.userId === event.hostId) continue;
-      if (await alreadyNotified(db, rsvp.userId, event.id, 'review_request')) continue;
-      await notify(db, resendApiKey, {
-        userId: rsvp.userId,
-        type: 'review_request',
-        title,
-        body,
-        eventId: event.id,
-      }).catch((err) => console.error('[notifications] review_request failed:', err));
-      sent += 1;
-    }
+  const jobs: { event: Event; userId: string }[] = [];
+  for (const rsvp of rsvps) {
+    const event = eventsById.get(rsvp.eventId);
+    if (!event || rsvp.userId === event.hostId) continue;
+    const key = `${event.id}:${rsvp.userId}`;
+    if (done.has(key)) continue;
+    done.add(key);
+    jobs.push({ event, userId: rsvp.userId });
   }
-  return { sent };
+
+  const body = 'Rate the host and venue to help the next crowd.';
+  for (let i = 0; i < jobs.length; i += REVIEW_NOTIFY_CONCURRENCY) {
+    await Promise.all(
+      jobs.slice(i, i + REVIEW_NOTIFY_CONCURRENCY).map(({ event, userId }) =>
+        notify(db, resendApiKey, {
+          userId,
+          type: 'review_request',
+          title: `How was "${event.title}"?`,
+          body,
+          eventId: event.id,
+        }).catch((err) => console.error('[notifications] review_request failed:', err)),
+      ),
+    );
+  }
+  return { sent: jobs.length };
 }
 
 export async function runReminderSweep(
