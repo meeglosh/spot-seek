@@ -1,6 +1,6 @@
 # SpotSeek — Session Handoff
 
-_Last updated: 2026-08-25. Read this first when resuming in a new session._
+_Last updated: 2026-10-05. Read this first when resuming in a new session._
 
 This is a running snapshot of where the project stands so work can continue
 without re-deriving context. For the immutable operating rules see `CLAUDE.md`;
@@ -8,7 +8,9 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
 `BLOCKED.md`.
 
 **Working conventions (standing):**
-- Commit directly to `main`, no feature branches.
+- Branch per task (per CLAUDE.md); the orchestrator verifies checks; the owner
+  runs merges into `main` and `npm run deploy`, because the agent permission
+  classifier blocks them in this environment.
 - The session owner acts as **orchestrator**: implementation is delegated to
   Sonnet subagents with precise specs; the orchestrator verifies (checks +
   on-simulator screenshots + live API probes) and commits. Trivial config
@@ -80,14 +82,37 @@ Latest build: **28** (2026-08-17). Deployed backend: dev/preview worker at
 https://spot-seek-api.dry-base-037d.workers.dev (cron `*/15 * * * *`).
 
 Shipped since the last snapshot, newest first:
+- **Refund rule** — sponsors can withdraw for a full refund before the event
+  starts. After the start, a refund happens only if the host cancels. The 15%
+  platform fee is confirmed.
+- **Branded HTML emails via Resend** — sent from reminders@spotseek.app with
+  reply-to hello@spotseek.app. spotseek.app is verified in Resend, inbound mail
+  goes through Cloudflare Email Routing, and `RESEND_API_KEY` is set.
+- **Stripe (sandbox)** — configured in a dedicated "SpotSeek" Stripe account's
+  SANDBOX. The owner's other Stripe account is live and must never be touched.
+  - Connect model is "You collect payments and pay recipients".
+  - Connected accounts were migrated to Accounts v2 (recipient config, v2
+    account links, thin events), because Stripe blocks v1 account creation for
+    new platforms.
+  - Two webhook destinations (platform snapshot `payment_intent.succeeded`, and
+    thin v2 account events) plus the legacy Connected-accounts one.
+    `STRIPE_WEBHOOK_SECRET` is a comma-separated list.
+  - Sandbox end-to-end flow verified 2026-10-05: onboarding, pay, webhook marks
+    it paid, and the release sweep transfers $17 of $20
+    (tr_1UNKPxLdvtHgxDqEvOMShuT5).
+  - Onboarding return/refresh pages exist at `/payments/onboard/*`, and "Pay
+    now" is idempotent.
+- **Review sweep bounded and batched** — before, an unbounded scan plus N+1
+  queries made a test time out.
+- **Payments tests scope sweeps to their own sponsorships**, so the shared-DB
+  flakes are fixed.
 - **Payments scaffolding (test-mode)** — `PAYMENTS.md` is the spec. Stripe
   Connect separate-charges-&-transfers model; payment state machine on
   `sponsorships`; `/api/payments` routes; release/refund cron sweeps; fetch-
-  based Stripe client with real webhook signature verify. Runs in graceful
-  `payments_not_configured` mode — **no Stripe keys of any kind exist yet**
-  (owner action in BLOCKED.md). App: PAYOUTS section in Settings, Command
+  based Stripe client with real webhook signature verify. Now runs against the
+  Stripe sandbox (see the Stripe entry above). App: PAYOUTS section in Settings, Command
   Center payout banner, per-bid payment status + Pay-now (503-aware).
-  Phase 2 (native PaymentSheet, needs pk_test + new build) not started.
+  Phase 2 (native PaymentSheet, needs a new build) not started.
 - **Multi-sponsor display** — sponsors[] on event detail (active, amount
   desc), sponsorCount/topSponsor on feed items (batched); PRESENTED BY chips
   on event page, ⚡ tag on cards, SPONSORED ×n on dashboard.
@@ -119,12 +144,12 @@ Shipped since the last snapshot, newest first:
 - **Share fix** — iOS share sheet no longer double-renders link previews
   (link lives only in `url`, not also in the message).
 - **Notification system** (build 19) — in-app Notification Center + emails
-  (Resend; **RESEND_API_KEY still unset** → console fallback), prefs +
+  (Resend; console fallback when no key — key is now set), prefs +
   radius slider in Settings, reminder sweeps, favourite-nearby geofencing.
 - **Auth persistence fix** — root `app/app/index.tsx` redirect (the
   historical "signed out every launch" bug); 1-year rolling sessions.
 
-Backend test suite: **138 tests / 20 files**, re-run-safe against the shared
+Backend test suite: **160 backend tests**, re-run-safe against the shared
 Neon dev DB (timestamped unique fixtures — keep doing this; two suites had
 accumulation flakes that had to be fixed). App jest: 5 theme tests.
 
@@ -207,11 +232,10 @@ BLOCKED.md flag · money/schema/product ambiguities → BLOCKED.md.
 
 ## 9. Waiting on the owner (see BLOCKED.md for full details)
 
-- **Stripe**: GAPCO Stripe account + TEST keys (sk_test → wrangler secret
-  STRIPE_SECRET_KEY, pk_test for the app, whsec → STRIPE_WEBHOOK_SECRET);
-  confirm 15% fee; refund policy. Unblocks payments Phase 2.
-- **RESEND_API_KEY** (wrangler secret) — emails currently console-only.
 - Native-speaker review of FR/ES/DE/PT translations before public launch.
+- **Auth config warnings — owner review** (BLOCKED.md): Better Auth "Base URL
+  is not set" warning and the `disableOriginCheck` / CSRF deprecation. No
+  change made; needs human review per CLAUDE.md.
 
 ## 10. TestFlight / iOS release pipeline
 
@@ -317,18 +341,38 @@ Claude Code plugin (`cloudflare@cloudflare`) is installed. Wrangler is v3 (v4
 upgrade is a pending follow-up — see §11).
 
 
-## 11. Next steps (not started)
+## 11. Next steps
 
-- **Payments Phase 2** once test keys land: `@stripe/stripe-react-native`
-  PaymentSheet (native module → new build), end-to-end test-money flow,
+- **Payments Phase 2: in-app PaymentSheet** (`@stripe/stripe-react-native`,
+  native module, so it needs a new build). Publishable key (public, OK to
+  commit):
+  `pk_test_51UNDiHLdvtHgxDqEjzepUk5FpS6b7IDeRUjHC5Q3O068UWRgl2RTwUSVIaF1kPVvnmtsFZr9sOKh3C5Lpc2sFd7r00T7jLRDRt`.
   Apple Pay later.
-- Push notifications (deferred at notification-system build; prefs toggle
-  already exists, disabled "Coming soon").
+- **Security hardening** is in progress on `task/security-hardening`.
+- **Go-live checklist** (payments):
+  - Radar Standard.
+  - Sales-tax decision with the accountant (Stripe Tax was skipped; the
+    category should be advertising/services, not software).
+  - Live keys and webhooks.
+  - `run-sweeps` gated to admin.
+  - The hard-coded host country `us` in v2 account creation.
+  - Review-sweep concurrent double-send caveat.
+- **Growth and monetization priorities** (2026-10-05 review):
+  - Link-first web RSVP on `/e/:id`, with a custom domain and JSON-LD.
+  - Push notifications (deferred at notification-system build; prefs toggle
+    already exists, disabled "Coming soon").
+  - Calendar add.
+  - An "I'm going" share card.
+  - A public host page (host ratings currently show on event pages and own
+    profile only).
+  - A host-confirmed "showing this game" flag.
+  - Tentpole templates (Super Bowl on Feb 14 2027; March Madness Mar 14 to
+    Apr 5 2027).
+  - Proof-of-attendance check-in for sponsors.
+  - A supporter-group "home bar" program.
 - Localize notification/email content (needs per-user locale server-side).
 - `DELETE /api/account` backend route (Settings delete button currently
   surfaces the server error gracefully).
-- Public host profile route (host ratings currently show on event pages and
-  own profile only — no public host page exists).
 - Sponsor logos (upload flow + R2, slots into existing chip components).
 - Event chat UI (backend DO exists at `GET /api/chat/:eventId/ws`; no entry
   point in the redesigned UI).

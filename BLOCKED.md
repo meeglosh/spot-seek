@@ -93,7 +93,11 @@ The agents write here instead of guessing. Read this each morning. Empty is good
   deleting a user removes their RSVP rows (they were an attendee, not the owner).
 - Applied via scripts/migrate-cascade.ts against the Neon dev branch.
 
-## PAYMENTS — needs owner action: Stripe account + test keys (2026-08-17)
+## PAYMENTS — RESOLVED 2026-10-05 (test keys): Stripe account + test keys (2026-08-17)
+
+- RESOLVED 2026-10-05: Stripe test keys are in place (dedicated "SpotSeek"
+  Stripe account, SANDBOX). Sandbox end-to-end flow verified. The live-mode
+  restriction below still stands.
 
 - Task: sponsorship payments via Stripe Connect (design: PAYMENTS.md).
   Test-mode implementation is being built now; it runs in a graceful
@@ -114,3 +118,19 @@ The agents write here instead of guessing. Read this each morning. Empty is good
      sponsorship). Implemented; see PAYMENTS.md "Refund policy".
 - Explicitly NOT happening without a separate owner decision: live-mode
   keys, real charges, live Connect onboarding. Per CLAUDE.md hard stops.
+
+## Auth config warnings — owner review (2026-10-05)
+
+- What it needs: human review of two Better Auth config warnings. No change has
+  been made; per CLAUDE.md, auth/security config changes need human review.
+- Why it is blocked: CLAUDE.md hard stop — no auth or security config changes
+  (Better Auth provider config, session/cookie settings, CORS, secrets) without
+  a BLOCKED.md flag.
+- Items:
+  1. Better Auth warns "Base URL is not set" even though BETTER_AUTH_URL is
+     reportedly a wrangler var. Verify how `backend/src/auth.ts` passes
+     `baseURL`.
+  2. Better Auth deprecation: `disableOriginCheck: true` currently also
+     disables CSRF, and future versions need `disableCSRFCheck: true` for that.
+     Web pages now exist (`/e/:id` and the onboarding pages), so the
+     origin/CSRF stance should be re-evaluated.
