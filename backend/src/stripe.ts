@@ -11,17 +11,31 @@
 
 const STRIPE_API_BASE = 'https://api.stripe.com/v1';
 const STRIPE_API_VERSION = '2024-06-20';
+// Accounts v2 (/v2/core/*) is versioned separately; the GA version string
+// shown in the current docs (docs.stripe.com/api/v2/core/accounts/create).
+const STRIPE_API_BASE_V2 = 'https://api.stripe.com/v2';
+const STRIPE_V2_API_VERSION = '2026-09-30.endive';
 
 export type StripeAccount = { id: string; payoutsEnabled: boolean };
 export type StripePaymentIntent = { id: string; clientSecret: string };
 export type StripeTransfer = { id: string };
 export type StripeRefund = { id: string };
-// `account` is present only on events from a Connect destination ("Connected
-// accounts"); platform ("Your account") events omit it.
-export type StripeEvent = { id?: string; account?: string; type: string; data: { object: Record<string, unknown> } };
+// Two payload styles share this type:
+//  - snapshot (v1) events: `data.object` holds the resource; `account` is
+//    present only on events from a "Connected accounts" destination.
+//  - thin (v2) event notifications: no `data`; `related_object.id` is the
+//    resource id (e.g. the v2 account) and the resource must be re-fetched.
+export type StripeEvent = {
+  id?: string;
+  account?: string;
+  type: string;
+  data?: { object: Record<string, unknown> };
+  related_object?: { id: string; type?: string; url?: string };
+};
 
 export type StripeClient = {
-  createAccount(): Promise<{ id: string }>;
+  // Accounts v2 recipient account (receives platform transfers).
+  createAccount(params?: { email?: string; displayName?: string }): Promise<{ id: string }>;
   createAccountLink(accountId: string, refreshUrl: string, returnUrl: string): Promise<{ url: string }>;
   getAccount(accountId: string): Promise<StripeAccount>;
   createPaymentIntent(params: {
@@ -85,6 +99,49 @@ async function stripeRequest(
     throw new Error(`Stripe error ${res.status}: ${message}`);
   }
   return body;
+}
+
+// Accounts v2 speaks JSON (not form encoding) under /v2 with its own version.
+async function stripeV2Request(
+  secretKey: string,
+  method: 'GET' | 'POST',
+  path: string,
+  body?: Record<string, unknown>,
+  query?: string,
+): Promise<Record<string, unknown>> {
+  const res = await fetch(`${STRIPE_API_BASE_V2}${path}${query ? `?${query}` : ''}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${secretKey}`,
+      'Stripe-Version': STRIPE_V2_API_VERSION,
+      ...(method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: method === 'POST' ? JSON.stringify(body ?? {}) : undefined,
+  });
+  const json = (await res.json()) as Record<string, unknown>;
+  if (!res.ok) {
+    const message =
+      typeof json?.error === 'object' && json.error && 'message' in json.error
+        ? String((json.error as { message?: unknown }).message)
+        : JSON.stringify(json);
+    throw new Error(`Stripe error ${res.status}: ${message}`);
+  }
+  return json;
+}
+
+// A v2 recipient account can receive /v1/transfers once its
+// configuration.recipient...stripe_transfers capability is `active`.
+// Requires the account to have been fetched with include=configuration.recipient.
+export function v2AccountCanReceiveTransfers(acct: Record<string, unknown>): boolean {
+  if (acct.closed === true) return false;
+  const status = (
+    acct as {
+      configuration?: {
+        recipient?: { capabilities?: { stripe_balance?: { stripe_transfers?: { status?: string } } } };
+      };
+    }
+  ).configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers?.status;
+  return status === 'active';
 }
 
 // ─── Webhook signature verification (Stripe's v1 scheme) ─────────────────────
@@ -157,27 +214,52 @@ export async function verifyStripeSignature(
 
 export function realStripe(secretKey: string): StripeClient {
   return {
-    async createAccount() {
-      const acct = await stripeRequest(secretKey, 'POST', '/accounts', {
-        type: 'express',
-        capabilities: { transfers: { requested: 'true' } },
+    async createAccount(params) {
+      // Accounts v2: recipient configuration + Stripe-balance transfers
+      // (separate charges & transfers). Express dashboard = Stripe-hosted
+      // Express-like experience. Platform owns fees and losses (losses_collector
+      // 'application' requires fees_collector 'application').
+      const acct = await stripeV2Request(secretKey, 'POST', '/core/accounts', {
+        ...(params?.email ? { contact_email: params.email } : {}),
+        ...(params?.displayName ? { display_name: params.displayName } : {}),
+        identity: { country: 'us' },
+        dashboard: 'express',
+        defaults: {
+          currency: 'usd',
+          responsibilities: { fees_collector: 'application', losses_collector: 'application' },
+        },
+        configuration: {
+          recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } },
+        },
+        include: ['configuration.recipient', 'defaults'],
       });
       return { id: acct.id as string };
     },
 
     async createAccountLink(accountId, refreshUrl, returnUrl) {
-      const link = await stripeRequest(secretKey, 'POST', '/account_links', {
+      const link = await stripeV2Request(secretKey, 'POST', '/core/account_links', {
         account: accountId,
-        refresh_url: refreshUrl,
-        return_url: returnUrl,
-        type: 'account_onboarding',
+        use_case: {
+          type: 'account_onboarding',
+          account_onboarding: {
+            configurations: ['recipient'],
+            refresh_url: refreshUrl,
+            return_url: returnUrl,
+          },
+        },
       });
       return { url: link.url as string };
     },
 
     async getAccount(accountId) {
-      const acct = await stripeRequest(secretKey, 'GET', `/accounts/${accountId}`);
-      return { id: acct.id as string, payoutsEnabled: !!acct.payouts_enabled };
+      const acct = await stripeV2Request(
+        secretKey,
+        'GET',
+        `/core/accounts/${accountId}`,
+        undefined,
+        'include%5B0%5D=configuration.recipient',
+      );
+      return { id: acct.id as string, payoutsEnabled: v2AccountCanReceiveTransfers(acct) };
     },
 
     async createPaymentIntent({ amountCents, currency, metadata }) {

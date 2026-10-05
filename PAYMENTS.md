@@ -8,10 +8,19 @@ against Stripe test mode until the human steps in BLOCKED.md are done.
 
 Stripe Connect marketplace, **separate charges & transfers**:
 
-1. **Host onboarding.** Hosts create a Stripe Connect **Express** account via
-   Stripe-hosted onboarding ("Set up payouts" in the app opens an account
-   link URL). Stripe owns KYC, bank details, and tax reporting. We store only
-   the account id and its payouts-enabled state.
+1. **Host onboarding.** Hosts get a Stripe **Accounts v2** connected account
+   (`POST /v2/core/accounts`) with the **recipient** configuration and the
+   `stripe_balance.stripe_transfers` capability, `dashboard: express` (the
+   Express-like Stripe-hosted experience), and platform-owned fees and losses
+   (`fees_collector` and `losses_collector` both `application`). "Set up
+   payouts" in the app opens a v2 account-link URL (`POST
+   /v2/core/account_links`, `use_case.type = account_onboarding`,
+   `configurations: ['recipient']`). Stripe owns KYC, bank details, and tax
+   reporting. We store only the account id and a readiness flag (the
+   `stripePayoutsEnabled` column; it now means "recipient transfers capability
+   is active"). Accounts v1 (`/v1/accounts`, `type=express`) is rejected by
+   Stripe for new Connect integrations ("Stripe no longer recommends Accounts
+   v1...").
 2. **Charge on acceptance.** When a host accepts a bid, the sponsor pays the
    full `amountCents` via a PaymentIntent. Funds land in the **platform
    balance** (GAPCO's Stripe account) — not the host's.
@@ -63,7 +72,10 @@ unpaid → requires_payment → paid → released
 ## Backend pieces
 
 - `backend/src/stripe.ts` — thin fetch-based Stripe REST client (no SDK
-  dependency; Workers-friendly). **Graceful unconfigured mode**: when
+  dependency; Workers-friendly). v1 endpoints (PaymentIntents, Transfers,
+  Refunds) are form-encoded with `Stripe-Version: 2024-06-20`; v2 endpoints
+  (`/v2/core/accounts`, `/v2/core/account_links`) are JSON with
+  `Stripe-Version: 2026-09-30.endive`. **Graceful unconfigured mode**: when
   `STRIPE_SECRET_KEY` is absent, payment endpoints return
   `503 { error: 'payments_not_configured' }` and the sweep no-ops —
   mirroring the `RESEND_API_KEY` fallback pattern.
@@ -71,19 +83,24 @@ unpaid → requires_payment → paid → released
   `sponsorships.paymentStatus`, `.paymentIntentId`, `.transferId`,
   `.paidAt`, `.releasedAt`.
 - Routes (`/api/payments`):
-  - `POST /connect/onboard` (host) → creates/reuses Express account,
-    returns a fresh account-link URL.
-  - `GET /connect/status` (host) → `{ accountId, payoutsEnabled }`.
+  - `POST /connect/onboard` (host) → creates/reuses the v2 recipient
+    account, returns a fresh v2 account-link URL.
+  - `GET /connect/status` (host) → `{ accountId, payoutsEnabled, configured }`.
+    Re-checks the live v2 account (best effort; falls back to the stored
+    flag on a Stripe error) so a host returning from onboarding sees the
+    right state even before a webhook lands.
   - `POST /sponsorships/:id/pay` (sponsor) → creates the PaymentIntent,
     returns `{ clientSecret }` (consumed by the future in-app pay sheet).
-  - `POST /webhook` — Stripe webhook (signature-verified with
-    `STRIPE_WEBHOOK_SECRET`): `payment_intent.succeeded` → `paid` (+
-    notifications to both parties), `account.updated` → payouts flag.
-    `STRIPE_WEBHOOK_SECRET` may be a comma-separated list (one signing
-    secret per destination: a "Your account" destination for
-    `payment_intent.succeeded`, a "Connected accounts" one for
-    `account.updated`). `payment_intent.succeeded` is ignored when the event
-    carries a connected `account`.
+  - `POST /webhook` — signature-verified with `STRIPE_WEBHOOK_SECRET`, a
+    comma-separated list (one signing secret per destination). Thin (v2) and
+    snapshot (v1) payloads use the same `Stripe-Signature` HMAC scheme.
+    Handles: `payment_intent.succeeded` → `paid` (+ notifications; ignored if
+    the event carries a connected `account`); v2 thin events
+    `v2.core.account[configuration.recipient].capability_status_updated`,
+    `v2.core.account[configuration.recipient].updated`,
+    `v2.core.account[requirements].updated`, `v2.core.account.closed` →
+    re-fetch the v2 account and set the readiness flag; v1 `account.updated`
+    (backup) → same re-fetch (payload fallback only if no API key).
 - Cron sweep: `paid` sponsorships whose event ended ≥24h ago and host has
   payouts enabled → Stripe Transfer of the host share → `released` (+
   notification). Event cancelled while `paid` → refund → `refunded`.
@@ -110,3 +127,48 @@ unpaid → requires_payment → paid → released
   BLOCKED.md.
 - The fee stays parameterized in one place (`PLATFORM_FEE_RATE`).
 - No auth/security config changes ride along with payment work.
+
+## Accounts v2 specifics (researched 2026-10-05)
+
+Docs relied on: docs.stripe.com/connect/accounts-v2,
+/connect/accounts-v2/connected-account-configuration,
+/connect/accounts-v2/migrate-integration (webhook scopes),
+/api/v2/core/accounts/create, /retrieve, /api/v2/core/account-links/create,
+/event-destinations, /api/v2/core/events/event-types,
+/connect/account-capabilities?accounts-namespace=v2.
+
+- **Readiness**: `GET /v2/core/accounts/:id?include[0]=configuration.recipient`;
+  ready when
+  `configuration.recipient.capabilities.stripe_balance.stripe_transfers.status
+  == "active"` and `closed` is not true. The hosted onboarding flow collects
+  the payout bank account. The recipient configuration documents no separate
+  payouts capability (that is on `merchant`), so transfers-active is the gate
+  for both `/connect/status` and the release sweep.
+- **Transfers**: `POST /v1/transfers` with `destination=acct_...` is unchanged;
+  the docs state a v2 account id can be used in v1 endpoints and that
+  `stripe_transfers` "enables this Account to receive /v1/transfers".
+- **Sandboxes may not enforce capability status**, so a transfer can succeed
+  in test mode before `active`; production gating still uses the flag.
+- **Events**: a v2 account emits BOTH v1 snapshot events (`account.updated`,
+  scope "Connected accounts") and v2 thin events (scope "Your account").
+  `v2.core.account.updated` fires only for top-level props, so the specific
+  `[configuration.recipient]` and `[requirements]` events are the ones we use.
+
+### Webhook destinations the owner must create (Dashboard > Developers >
+Workbench > Webhooks, test mode/sandbox)
+
+1. **Payments (snapshot)** — Events from: **Your account**; Payload style:
+   **Snapshot**; Event: `payment_intent.succeeded`; URL:
+   `https://spot-seek-api.dry-base-037d.workers.dev/api/payments/webhook`.
+   (Likely already exists; keep it.)
+2. **Connect accounts (thin)** — Events from: **Your account** (v2 events use
+   this scope, even for connected accounts); Payload style: **Thin**; Events:
+   - `v2.core.account[configuration.recipient].capability_status_updated`
+   - `v2.core.account[configuration.recipient].updated`
+   - `v2.core.account[requirements].updated`
+   - `v2.core.account.closed`
+   Same URL as above.
+3. Append each destination's signing secret (`whsec_...`) to the comma-separated
+   `STRIPE_WEBHOOK_SECRET` Worker secret.
+4. The old "Connected accounts" snapshot `account.updated` destination is now
+   optional (backup); it still works.

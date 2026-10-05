@@ -82,8 +82,9 @@ async function requireAuth(c: Context<AppEnv>, next: Next) {
   await next();
 }
 
-// POST /connect/onboard (host) — creates/reuses a Stripe Connect Express
-// account and returns a fresh account-link URL for Stripe-hosted onboarding.
+// POST /connect/onboard (host) — creates/reuses a Stripe Accounts v2 connected
+// account (recipient configuration, Express dashboard) and returns a fresh v2
+// account-link URL for Stripe-hosted onboarding.
 paymentsRouter.post('/connect/onboard', requireAuth, async (c) => {
   const client = getClient(c.env);
   if (!client) return c.json({ error: 'payments_not_configured' }, 503);
@@ -95,7 +96,7 @@ paymentsRouter.post('/connect/onboard', requireAuth, async (c) => {
 
   let accountId = user.stripeAccountId;
   if (!accountId) {
-    const account = await client.createAccount();
+    const account = await client.createAccount({ email: user.email, displayName: user.displayName });
     accountId = account.id;
     await db.update(schema.users).set({ stripeAccountId: accountId }).where(eq(schema.users.id, userId));
   }
@@ -118,9 +119,24 @@ paymentsRouter.get('/connect/status', requireAuth, async (c) => {
   const userId = c.get('userId');
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
   const user = await db.query.users.findFirst({ where: eq(schema.users.id, userId) });
+  let payoutsEnabled = user?.stripePayoutsEnabled ?? false;
+  // The host just returned from hosted onboarding (or is polling): re-check the
+  // v2 account directly rather than relying only on the webhook having landed.
+  // Best-effort — on a Stripe error we serve the stored flag.
+  if (user?.stripeAccountId) {
+    try {
+      const live = await client.getAccount(user.stripeAccountId);
+      if (live.payoutsEnabled !== payoutsEnabled) {
+        payoutsEnabled = live.payoutsEnabled;
+        await db.update(schema.users).set({ stripePayoutsEnabled: payoutsEnabled }).where(eq(schema.users.id, userId));
+      }
+    } catch (err) {
+      console.error('[payments] live account status check failed:', err);
+    }
+  }
   return c.json({
     accountId: user?.stripeAccountId ?? null,
-    payoutsEnabled: user?.stripePayoutsEnabled ?? false,
+    payoutsEnabled,
     configured: true,
   });
 });
@@ -180,10 +196,17 @@ paymentsRouter.post('/webhook', async (c) => {
   // succeeded is only trusted from the platform source; a PaymentIntent on a
   // connected account is not ours. account.updated for a connected account
   // is keyed by event.account (falling back to object.id).
+  //
+  // Account readiness arrives two ways for a v2 account (see PAYMENTS.md):
+  // v2 thin notifications (primary; no payload, re-fetch the account) and the
+  // v1 snapshot `account.updated` (backup; also re-fetched when we can).
   if (event.type === 'payment_intent.succeeded') {
-    if (!event.account) await handlePaymentIntentSucceeded(db, c.env.RESEND_API_KEY, event.data.object);
+    if (!event.account && event.data) await handlePaymentIntentSucceeded(db, c.env.RESEND_API_KEY, event.data.object);
   } else if (event.type === 'account.updated') {
-    await handleAccountUpdated(db, event.data.object, event.account);
+    await handleAccountUpdated(db, getClient(c.env), event.data?.object ?? {}, event.account);
+  } else if (V2_ACCOUNT_REFRESH_EVENTS.has(event.type)) {
+    const accountId = event.related_object?.id;
+    if (accountId) await refreshAccountReadiness(db, getClient(c.env), accountId);
   }
 
   return c.json({ received: true });
@@ -231,17 +254,52 @@ async function handlePaymentIntentSucceeded(
   ]);
 }
 
+// v2 thin events that can change whether a recipient account may receive
+// transfers. All are handled by re-fetching the account (thin payloads carry
+// no state). account.closed makes the re-fetch report not-ready.
+const V2_ACCOUNT_REFRESH_EVENTS = new Set([
+  'v2.core.account[configuration.recipient].capability_status_updated',
+  'v2.core.account[configuration.recipient].updated',
+  'v2.core.account[requirements].updated',
+  'v2.core.account.closed',
+]);
+
+// Source of truth is the v2 account (recipient stripe_transfers capability).
+// If no API client is available (webhook secret set but no secret key) fall
+// back to the v1-shaped snapshot payload.
+async function refreshAccountReadiness(
+  db: Db,
+  client: StripeClient | null,
+  accountId: string,
+  snapshot?: Record<string, unknown>,
+): Promise<void> {
+  let ready: boolean;
+  if (client) {
+    try {
+      ready = (await client.getAccount(accountId)).payoutsEnabled;
+    } catch (err) {
+      console.error('[payments] account refresh failed for', accountId, err);
+      return; // leave state unchanged; Stripe retries the webhook on 5xx only, a later event will resync
+    }
+  } else {
+    const caps = snapshot?.capabilities as { transfers?: string } | undefined;
+    ready = caps?.transfers === 'active' || (caps === undefined && !!snapshot?.payouts_enabled);
+  }
+  await db
+    .update(schema.users)
+    .set({ stripePayoutsEnabled: ready })
+    .where(eq(schema.users.stripeAccountId, accountId));
+}
+
 async function handleAccountUpdated(
   db: Db,
+  client: StripeClient | null,
   object: Record<string, unknown>,
   eventAccount?: string,
 ): Promise<void> {
   const accountId = eventAccount ?? (object.id as string | undefined);
   if (!accountId) return;
-  await db
-    .update(schema.users)
-    .set({ stripePayoutsEnabled: !!object.payouts_enabled })
-    .where(eq(schema.users.stripeAccountId, accountId));
+  await refreshAccountReadiness(db, client, accountId, object);
 }
 
 // POST /run-sweeps — manual trigger (authed) mirroring

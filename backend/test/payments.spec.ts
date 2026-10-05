@@ -102,6 +102,23 @@ function mockStripe(path: string, response: Record<string, unknown>, method = 'P
   fetchMock.get('https://api.stripe.com').intercept({ path, method }).reply(200, response);
 }
 
+// v2 account retrieval (GET /v2/core/accounts/:id?include[0]=...). `transfers`
+// is the recipient stripe_transfers capability status.
+function mockV2Account(id: string, transfers: 'active' | 'pending' | 'restricted', extra: Record<string, unknown> = {}) {
+  fetchMock
+    .get('https://api.stripe.com')
+    .intercept({ path: (p: string) => p.startsWith(`/v2/core/accounts/${id}`), method: 'GET' })
+    .reply(200, {
+      id,
+      object: 'v2.core.account',
+      applied_configurations: ['recipient'],
+      configuration: {
+        recipient: { capabilities: { stripe_balance: { stripe_transfers: { status: transfers, status_details: [] } } } },
+      },
+      ...extra,
+    });
+}
+
 async function notificationsFor(cookie: string) {
   const res = await SELF.fetch(NOTIFICATIONS, { headers: { Cookie: cookie } });
   const { notifications } = await res.json() as { notifications: { type: string; eventId: string | null }[] };
@@ -182,10 +199,44 @@ describe('configured mode', () => {
     expect(body).toEqual({ accountId: null, payoutsEnabled: false, configured: true });
   });
 
+  it('POST /connect/onboard sends the Accounts v2 request shape (JSON, version header, recipient config)', async () => {
+    const host = await signIn('conf-onboard-shape');
+    let createReq: { headers: Record<string, string>; body: Record<string, any> } | null = null;
+    let linkReq: { headers: Record<string, string>; body: Record<string, any> } | null = null;
+    const capture = (sink: 'create' | 'link') => (opts: { headers?: unknown; body?: unknown }) => {
+      const h = Object.fromEntries(
+        Object.entries((opts.headers ?? {}) as Record<string, string>).map(([k, v]) => [k.toLowerCase(), String(v)]),
+      );
+      const rec = { headers: h, body: JSON.parse(String(opts.body)) };
+      if (sink === 'create') createReq = rec; else linkReq = rec;
+      return sink === 'create'
+        ? { id: 'acct_shape_1' }
+        : { url: 'https://connect.stripe.com/setup/shape', object: 'v2.core.account_link' };
+    };
+    fetchMock.get('https://api.stripe.com').intercept({ path: '/v2/core/accounts', method: 'POST' }).reply(200, capture('create'));
+    fetchMock.get('https://api.stripe.com').intercept({ path: '/v2/core/account_links', method: 'POST' }).reply(200, capture('link'));
+
+    const res = await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ url: 'https://connect.stripe.com/setup/shape' });
+
+    expect(createReq!.headers['content-type']).toBe('application/json');
+    expect(createReq!.headers['stripe-version']).toBe('2026-09-30.endive');
+    expect(createReq!.body.dashboard).toBe('express');
+    expect(createReq!.body.defaults.responsibilities).toEqual({ fees_collector: 'application', losses_collector: 'application' });
+    expect(createReq!.body.configuration.recipient.capabilities.stripe_balance.stripe_transfers).toEqual({ requested: true });
+    expect(createReq!.body.configuration.merchant).toBeUndefined();
+    expect(linkReq!.headers['stripe-version']).toBe('2026-09-30.endive');
+    expect(linkReq!.body.account).toBe('acct_shape_1');
+    expect(linkReq!.body.use_case.type).toBe('account_onboarding');
+    expect(linkReq!.body.use_case.account_onboarding.refresh_url).toMatch(/\/payments\/onboard\/refresh$/);
+    expect(linkReq!.body.use_case.account_onboarding.return_url).toMatch(/\/payments\/onboard\/return$/);
+  });
+
   it('POST /connect/onboard creates an account once and returns a link', async () => {
     const host = await signIn('conf-onboard');
-    mockStripe('/v1/accounts', { id: 'acct_onboard_1' });
-    mockStripe('/v1/account_links', { url: 'https://connect.stripe.com/setup/onboard1' });
+    mockStripe('/v2/core/accounts', { id: 'acct_onboard_1' });
+    mockStripe('/v2/core/account_links', { url: 'https://connect.stripe.com/setup/onboard1' });
 
     const res = await SELF.fetch(`${PAYMENTS}/connect/onboard`, {
       method: 'POST', headers: { Cookie: host.cookie },
@@ -194,7 +245,7 @@ describe('configured mode', () => {
     expect(await res.json()).toEqual({ url: 'https://connect.stripe.com/setup/onboard1' });
 
     // Second call reuses the stored account — only account_links is called again.
-    mockStripe('/v1/account_links', { url: 'https://connect.stripe.com/setup/onboard2' });
+    mockStripe('/v2/core/account_links', { url: 'https://connect.stripe.com/setup/onboard2' });
     const res2 = await SELF.fetch(`${PAYMENTS}/connect/onboard`, {
       method: 'POST', headers: { Cookie: host.cookie },
     });
@@ -335,12 +386,70 @@ describe('configured mode', () => {
 
     it('account.updated uses event.account to find the host', async () => {
       const host = await signIn('conf-src-acct-host');
-      mockStripe('/v1/accounts', { id: 'acct_src_1' });
-      mockStripe('/v1/account_links', { url: 'https://connect.stripe.com/setup/src' });
+      mockStripe('/v2/core/accounts', { id: 'acct_src_1' });
+      mockStripe('/v2/core/account_links', { url: 'https://connect.stripe.com/setup/src' });
       await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+      mockV2Account('acct_src_1', 'active');
       await fireWebhook({ type: 'account.updated', account: 'acct_src_1', data: { object: { id: 'acct_src_1', payouts_enabled: true } } });
+      mockV2Account('acct_src_1', 'active'); // /connect/status re-checks the live v2 account
       const res = await SELF.fetch(`${PAYMENTS}/connect/status`, { headers: { Cookie: host.cookie } });
       expect(await res.json()).toMatchObject({ accountId: 'acct_src_1', payoutsEnabled: true });
+    });
+
+    it('v2 thin event re-fetches the account and sets payouts from the recipient capability', async () => {
+      const host = await signIn('conf-thin-host');
+      mockStripe('/v2/core/accounts', { id: 'acct_thin_1' });
+      mockStripe('/v2/core/account_links', { url: 'https://connect.stripe.com/setup/thin' });
+      await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+
+      const thin = (type: string) => ({
+        id: 'evt_test_thin', object: 'v2.core.event', type, livemode: false, context: null,
+        related_object: { id: 'acct_thin_1', type: 'v2.core.account', url: '/v2/core/accounts/acct_thin_1' },
+      });
+      const status = async () => {
+        mockV2Account('acct_thin_1', 'pending'); // status endpoint's own live check
+        const res = await SELF.fetch(`${PAYMENTS}/connect/status`, { headers: { Cookie: host.cookie } });
+        return (await res.json() as { payoutsEnabled: boolean }).payoutsEnabled;
+      };
+
+      mockV2Account('acct_thin_1', 'active');
+      const ok = await fireWebhook(thin('v2.core.account[configuration.recipient].capability_status_updated'));
+      expect(ok.status).toBe(200);
+      // Stored flag is now true; confirm via DB-backed status with a matching live answer.
+      mockV2Account('acct_thin_1', 'active');
+      let res = await SELF.fetch(`${PAYMENTS}/connect/status`, { headers: { Cookie: host.cookie } });
+      expect(await res.json()).toMatchObject({ payoutsEnabled: true });
+
+      // Capability regresses -> requirements.updated thin event flips it off.
+      mockV2Account('acct_thin_1', 'restricted');
+      await fireWebhook(thin('v2.core.account[requirements].updated'));
+      expect(await status()).toBe(false);
+
+      // Unrelated v2 event types are ignored (no account fetch -> no mock needed).
+      await fireWebhook(thin('v2.core.account[identity].updated'));
+    });
+
+    it('a pending transfers capability is not payout-ready', async () => {
+      const host = await signIn('conf-pending-host');
+      mockStripe('/v2/core/accounts', { id: 'acct_pend_1' });
+      mockStripe('/v2/core/account_links', { url: 'https://connect.stripe.com/setup/pend' });
+      await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+      mockV2Account('acct_pend_1', 'pending');
+      const res = await SELF.fetch(`${PAYMENTS}/connect/status`, { headers: { Cookie: host.cookie } });
+      expect(await res.json()).toMatchObject({ accountId: 'acct_pend_1', payoutsEnabled: false });
+    });
+
+    it('/connect/status serves the stored flag when the live check fails', async () => {
+      const host = await signIn('conf-livefail-host');
+      mockStripe('/v2/core/accounts', { id: 'acct_lf_1' });
+      mockStripe('/v2/core/account_links', { url: 'https://connect.stripe.com/setup/lf' });
+      await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+      fetchMock.get('https://api.stripe.com')
+        .intercept({ path: (p: string) => p.startsWith('/v2/core/accounts/acct_lf_1'), method: 'GET' })
+        .reply(500, { error: { message: 'boom' } });
+      const res = await SELF.fetch(`${PAYMENTS}/connect/status`, { headers: { Cookie: host.cookie } });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({ accountId: 'acct_lf_1', payoutsEnabled: false });
     });
   });
 
@@ -365,9 +474,10 @@ describe('configured mode', () => {
       });
 
       // Host onboards, then Stripe confirms payouts are enabled.
-      mockStripe('/v1/accounts', { id: 'acct_rel_1' });
-      mockStripe('/v1/account_links', { url: 'https://connect.stripe.com/setup/rel' });
+      mockStripe('/v2/core/accounts', { id: 'acct_rel_1' });
+      mockStripe('/v2/core/account_links', { url: 'https://connect.stripe.com/setup/rel' });
       await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+      mockV2Account('acct_rel_1', 'active');
       await fireWebhook({ type: 'account.updated', data: { object: { id: 'acct_rel_1', payouts_enabled: true } } });
 
       let transferBody: Record<string, unknown> | null = null;
@@ -536,9 +646,10 @@ describe('configured mode', () => {
       const { host, sponsor, event, bidId } = await paidSponsorship('released', {
         startsAt: pastIso(26 * HOUR), endsAt: pastIso(25 * HOUR),
       });
-      mockStripe('/v1/accounts', { id: `acct_refpol_${TS}` });
-      mockStripe('/v1/account_links', { url: 'https://connect.stripe.com/setup/refpol' });
+      mockStripe('/v2/core/accounts', { id: `acct_refpol_${TS}` });
+      mockStripe('/v2/core/account_links', { url: 'https://connect.stripe.com/setup/refpol' });
       await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+      mockV2Account(`acct_refpol_${TS}`, 'active');
       await fireWebhook({ type: 'account.updated', data: { object: { id: `acct_refpol_${TS}`, payouts_enabled: true } } });
       mockStripe('/v1/transfers', { id: `tr_refpol_${TS}` });
       await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
