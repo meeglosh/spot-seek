@@ -41,7 +41,12 @@ The agents write here instead of guessing. Read this each morning. Empty is good
   bucket. Until then, images are served through the Worker at
   GET /api/images/:key.
 
-## 3.1-3.4 — Payment processor for sponsor transactions needs a human decision
+## 3.1-3.4 — RESOLVED 2026-10-05 (fee timing): Payment processor for sponsor transactions needs a human decision
+
+- RESOLVED 2026-10-05: PAYMENTS.md answers fee collection timing — the sponsor
+  pays in full at bid acceptance (platform balance); the platform fee is retained
+  and the host share is transferred after the event (+24h). Stripe keys remain
+  open under the PAYMENTS entry below.
 
 - What it needs: a payment provider (Stripe recommended), test-mode API keys
   (`STRIPE_SECRET_KEY=sk_test_...`), and a decision on fee collection timing
@@ -101,9 +106,11 @@ The agents write here instead of guessing. Read this each morning. Empty is good
      STRIPE_SECRET_KEY), `pk_test_...` (app config), and after creating the
      webhook endpoint (`https://spot-seek-api.dry-base-037d.workers.dev/api/payments/webhook`)
      the signing secret `whsec_...` (wrangler secret STRIPE_WEBHOOK_SECRET).
-  3. Confirm the platform fee: code currently uses 15% (PLATFORM_FEE_RATE,
-     backend/src/sponsors.ts). Say the word if it should differ.
-  4. Decide the refund policy fine print (current build: full refund if the
-     event is cancelled before funds are released to the host).
+  3. RESOLVED 2026-10-05 — platform fee: 15% confirmed (PLATFORM_FEE_RATE,
+     backend/src/sponsors.ts), unchanged.
+  4. RESOLVED 2026-10-05 — refund policy: full refund if the event is
+     cancelled before release; once the event start time has passed a refund
+     happens only if the host cancels (sponsors can no longer withdraw a paid
+     sponsorship). Implemented; see PAYMENTS.md "Refund policy".
 - Explicitly NOT happening without a separate owner decision: live-mode
   keys, real charges, live Connect onboarding. Per CLAUDE.md hard stops.

@@ -18,21 +18,39 @@ Stripe Connect marketplace, **separate charges & transfers**:
 3. **Release after the event.** Once the event has ended (+24h dispute
    window), a cron sweep transfers `amountCents - platformFeeCents` to the
    host's connected account. The platform fee (15%, `PLATFORM_FEE_RATE` in
-   `backend/src/sponsors.ts`) never leaves the platform balance.
+   `backend/src/sponsors.ts` — confirmed by the owner 2026-10-05) never leaves the platform balance.
 4. **Cancellation → refund.** If the event is cancelled before release, the
    sponsor is refunded from the platform balance. Hosts are never clawed
-   back because they were never paid early.
+   back because they were never paid early. See "Refund policy" below.
 
 Why not instant destination charges: paying hosts weeks before the event
 creates refund risk and misaligned incentives. The escrow-like timing above
 reuses the existing cron sweep infrastructure (reminders/reviews) and the
 existing `amountCents`/`platformFeeCents` columns.
 
+## Refund policy (owner-confirmed 2026-10-05)
+
+- **Platform fee: 15%**, confirmed. It stays parameterized in
+  `PLATFORM_FEE_RATE`.
+- **Before the event's start time:** a sponsor may withdraw/cancel a `paid`
+  sponsorship and receives a full refund (`paymentStatus` → `refunded`).
+- **After the start time:** a sponsor can no longer withdraw or cancel a
+  `paid` sponsorship — `PATCH /api/sponsors/bids/:id` returns
+  `403 { error: 'refund_window_closed' }`. A refund then happens only if the
+  **host cancels the event** (refunded by the cron sweep, at any point before
+  release).
+- **After release:** no refund and no withdrawal
+  (`409 { error: 'already_released' }`).
+- Sponsorships that are not yet `paid` (pending / awaiting payment) are
+  unaffected and can be cancelled at any time.
+- A withdrawal needs Stripe configured; otherwise it returns
+  `503 payments_not_configured` rather than cancelling without refunding.
+
 ## Money-state machine (sponsorships.paymentStatus)
 
 ```
 unpaid → requires_payment → paid → released
-                              ↘ refunded (event cancelled before release)
+                              ↘ refunded (event cancelled by host, or sponsor withdrew before start)
 ```
 
 - `unpaid` — bid not yet accepted (or legacy rows).

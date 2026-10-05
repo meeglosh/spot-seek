@@ -51,9 +51,17 @@ function stripeWebhookSecret(env: Env): string | undefined {
   return testStripeConfig?.webhookSecret ?? env.STRIPE_WEBHOOK_SECRET;
 }
 
-function getClient(env: Env): StripeClient | null {
+export function getClient(env: Env): StripeClient | null {
   const key = stripeSecretKey(env);
   return key ? realStripe(key) : null;
+}
+
+// Refund policy (PAYMENTS.md): a paid sponsorship is refunded in full if it is
+// withdrawn/cancelled before funds are released. Once the event's start time
+// has passed, only a host cancelling the event triggers a refund — the sponsor
+// can no longer withdraw.
+export function sponsorRefundWindowClosed(event: { startsAt: Date | null }, now = Date.now()): boolean {
+  return event.startsAt != null && event.startsAt.getTime() <= now;
 }
 
 function fmtUsd(cents: number): string {

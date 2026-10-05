@@ -15,6 +15,7 @@ import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { notify } from './notifications';
+import { getClient, sponsorRefundWindowClosed } from './payments';
 
 const PLATFORM_FEE_RATE = 0.15;
 
@@ -296,6 +297,32 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
   if (isInitiator && status !== 'cancelled')
     return c.json({ error: 'Only the reviewer may accept or reject — you may only cancel' }, 400);
 
+  // Refund policy (PAYMENTS.md). A sponsor stepping out of a sponsorship they
+  // have money in (cancel as initiator, or reject as reviewer):
+  //   - released: funds already went to the host -> no withdrawal, no refund.
+  //   - paid, event started: window closed -> only a host cancelling the event
+  //     refunds (handled by the payments sweep).
+  //   - paid, before start: withdraw + full refund (below, once updated).
+  // Pre-payment states (pending/requires_payment) are unchanged.
+  let refundPaymentIntentId: string | null = null;
+  const sponsorWithdrawing = isSponsor && !isHost && (status === 'cancelled' || status === 'rejected');
+  if (sponsorWithdrawing && bid.paymentStatus === 'released')
+    return c.json({ error: 'already_released' }, 409);
+  if (sponsorWithdrawing && bid.paymentStatus === 'paid') {
+    if (event && sponsorRefundWindowClosed(event))
+      return c.json({ error: 'refund_window_closed' }, 403);
+    const client = getClient(c.env);
+    if (!client) return c.json({ error: 'payments_not_configured' }, 503);
+    if (!bid.paymentIntentId) return c.json({ error: 'No payment to refund' }, 409);
+    try {
+      await client.createRefund({ paymentIntentId: bid.paymentIntentId });
+    } catch (err) {
+      console.error('[sponsors] withdrawal refund failed for sponsorship', bid.id, err);
+      return c.json({ error: 'refund_failed' }, 502);
+    }
+    refundPaymentIntentId = bid.paymentIntentId;
+  }
+
   // Acceptance hook (PAYMENTS.md): moving to 'active' puts the sponsorship
   // into the money-state machine (unpaid -> requires_payment -> ...); the
   // sponsor triggers the actual charge via POST /api/payments/sponsorships/:id/pay.
@@ -304,12 +331,23 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
     updatedAt: new Date(),
   };
   if (status === 'active') updateValues.paymentStatus = 'requires_payment';
+  if (refundPaymentIntentId) updateValues.paymentStatus = 'refunded';
 
   const [updated] = await db
     .update(schema.sponsorships)
     .set(updateValues)
     .where(eq(schema.sponsorships.id, bid.id))
     .returning();
+
+  if (event && refundPaymentIntentId) {
+    await notify(db, c.env.RESEND_API_KEY, {
+      userId: bid.sponsorId,
+      type: 'payment_refunded',
+      title: `Refund issued for "${event.title}"`,
+      body: `Your ${(bid.amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })} sponsorship for "${event.title}" was refunded because you withdrew before the event started.`,
+      eventId: event.id,
+    }).catch((err) => console.error('[sponsors] payment_refunded notify failed:', err));
+  }
 
   if (event && status === 'active') {
     const amount = (bid.amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });

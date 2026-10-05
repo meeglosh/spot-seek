@@ -415,4 +415,102 @@ describe('configured mode', () => {
       expect(await run2.json()).toEqual({ released: 0, refunded: 0 });
     });
   });
+  // ─── Refund policy (PAYMENTS.md) ───────────────────────────────────────────
+  describe('sponsor withdrawal refund policy', () => {
+    const futureIso = (msAhead: number) => new Date(Date.now() + msAhead).toISOString();
+
+    // Event + accepted bid + PaymentIntent + webhook -> a 'paid' sponsorship.
+    async function paidSponsorship(tag: string, eventOverrides: Record<string, unknown>) {
+      const host = await signIn(`refpol-${tag}-host`);
+      const sponsor = await signIn(`refpol-${tag}-sponsor`);
+      await registerSponsor(sponsor.cookie, `Refpol ${tag} Co`);
+      const event = await createEvent(host.cookie, eventOverrides);
+      const accepted = await bidAndAccept(host.cookie, sponsor.cookie, event.id, 9000);
+      const piId = `pi_refpol_${tag}_${TS}`;
+      mockStripe('/v1/payment_intents', { id: piId, client_secret: `${piId}_secret` });
+      await SELF.fetch(`${PAYMENTS}/sponsorships/${accepted.id}/pay`, {
+        method: 'POST', headers: { Cookie: sponsor.cookie },
+      });
+      await fireWebhook({
+        type: 'payment_intent.succeeded',
+        data: { object: { id: piId, metadata: { sponsorshipId: accepted.id } } },
+      });
+      return { host, sponsor, event, bidId: accepted.id };
+    }
+
+    const patchBid = (cookie: string, bidId: string, status: string) =>
+      SELF.fetch(`${SPONSORS}/bids/${bidId}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', Cookie: cookie },
+        body: JSON.stringify({ status }),
+      });
+
+    async function paymentStatusOf(host: { cookie: string }, eventId: string, bidId: string) {
+      const res = await SELF.fetch(`${SPONSORS}/events/${eventId}/bids`, { headers: { Cookie: host.cookie } });
+      const { bids } = await res.json() as { bids: { id: string; paymentStatus: string }[] };
+      return bids.find((b) => b.id === bidId)?.paymentStatus;
+    }
+
+    it('sponsor withdraws before start: refunded', async () => {
+      const { host, sponsor, event, bidId } = await paidSponsorship('before', { startsAt: futureIso(48 * HOUR) });
+      mockStripe('/v1/refunds', { id: 're_refpol_before' });
+      const res = await patchBid(sponsor.cookie, bidId, 'cancelled');
+      expect(res.status).toBe(200);
+      const { bid } = await res.json() as { bid: { status: string; paymentStatus: string } };
+      expect(bid.status).toBe('cancelled');
+      expect(bid.paymentStatus).toBe('refunded');
+      expect(await paymentStatusOf(host, event.id, bidId)).toBe('refunded');
+      const notifs = await notificationsFor(sponsor.cookie);
+      expect(notifs.some((n) => n.type === 'payment_refunded' && n.eventId === event.id)).toBe(true);
+    });
+
+    it('sponsor withdraws after start: rejected with refund_window_closed, no refund', async () => {
+      const { host, sponsor, event, bidId } = await paidSponsorship('after', {
+        startsAt: pastIso(HOUR), endsAt: futureIso(2 * HOUR),
+      });
+      // No /v1/refunds interceptor: any outbound refund call would fail.
+      const res = await patchBid(sponsor.cookie, bidId, 'cancelled');
+      expect(res.status).toBe(403);
+      expect(await res.json()).toEqual({ error: 'refund_window_closed' });
+      expect(await paymentStatusOf(host, event.id, bidId)).toBe('paid');
+    });
+
+    it('host cancels the event after start: refunded by the sweep', async () => {
+      const { host, sponsor, event, bidId } = await paidSponsorship('hostcancel', {
+        startsAt: pastIso(HOUR), endsAt: futureIso(2 * HOUR),
+      });
+      const cancelRes = await SELF.fetch(`${EVENTS}/${event.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', Cookie: host.cookie },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      expect(cancelRes.status).toBe(200);
+      mockStripe('/v1/refunds', { id: 're_refpol_hostcancel' });
+      const run = await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      expect(run.status).toBe(200);
+      expect((await run.json() as { refunded: number }).refunded).toBeGreaterThanOrEqual(1);
+      expect(await paymentStatusOf(host, event.id, bidId)).toBe('refunded');
+      const notifs = await notificationsFor(sponsor.cookie);
+      expect(notifs.some((n) => n.type === 'payment_refunded' && n.eventId === event.id)).toBe(true);
+    });
+
+    it('already released: no withdrawal and no refund', async () => {
+      const { host, sponsor, event, bidId } = await paidSponsorship('released', {
+        startsAt: pastIso(26 * HOUR), endsAt: pastIso(25 * HOUR),
+      });
+      mockStripe('/v1/accounts', { id: `acct_refpol_${TS}` });
+      mockStripe('/v1/account_links', { url: 'https://connect.stripe.com/setup/refpol' });
+      await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+      await fireWebhook({ type: 'account.updated', data: { object: { id: `acct_refpol_${TS}`, payouts_enabled: true } } });
+      mockStripe('/v1/transfers', { id: `tr_refpol_${TS}` });
+      await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      expect(await paymentStatusOf(host, event.id, bidId)).toBe('released');
+
+      // No /v1/refunds interceptor: a refund attempt would fail the call.
+      const res = await patchBid(sponsor.cookie, bidId, 'cancelled');
+      expect(res.status).toBe(409);
+      expect(await res.json()).toEqual({ error: 'already_released' });
+      const run = await SELF.fetch(`${PAYMENTS}/run-sweeps`, { method: 'POST', headers: { Cookie: host.cookie } });
+      expect((await run.json() as { refunded: number }).refunded).toBe(0);
+      expect(await paymentStatusOf(host, event.id, bidId)).toBe('released');
+    });
+  });
 });
