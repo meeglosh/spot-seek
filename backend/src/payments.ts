@@ -174,10 +174,16 @@ paymentsRouter.post('/webhook', async (c) => {
 
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
 
+  // Two sources: "Your account" events (no `account` field) and Connect
+  // events (`account` = the connected account id). Separate charges &
+  // transfers puts the PaymentIntent on the PLATFORM, so payment_intent.
+  // succeeded is only trusted from the platform source; a PaymentIntent on a
+  // connected account is not ours. account.updated for a connected account
+  // is keyed by event.account (falling back to object.id).
   if (event.type === 'payment_intent.succeeded') {
-    await handlePaymentIntentSucceeded(db, c.env.RESEND_API_KEY, event.data.object);
+    if (!event.account) await handlePaymentIntentSucceeded(db, c.env.RESEND_API_KEY, event.data.object);
   } else if (event.type === 'account.updated') {
-    await handleAccountUpdated(db, event.data.object);
+    await handleAccountUpdated(db, event.data.object, event.account);
   }
 
   return c.json({ received: true });
@@ -225,8 +231,12 @@ async function handlePaymentIntentSucceeded(
   ]);
 }
 
-async function handleAccountUpdated(db: Db, object: Record<string, unknown>): Promise<void> {
-  const accountId = object.id as string | undefined;
+async function handleAccountUpdated(
+  db: Db,
+  object: Record<string, unknown>,
+  eventAccount?: string,
+): Promise<void> {
+  const accountId = eventAccount ?? (object.id as string | undefined);
   if (!accountId) return;
   await db
     .update(schema.users)

@@ -16,7 +16,9 @@ export type StripeAccount = { id: string; payoutsEnabled: boolean };
 export type StripePaymentIntent = { id: string; clientSecret: string };
 export type StripeTransfer = { id: string };
 export type StripeRefund = { id: string };
-export type StripeEvent = { id?: string; type: string; data: { object: Record<string, unknown> } };
+// `account` is present only on events from a Connect destination ("Connected
+// accounts"); platform ("Your account") events omit it.
+export type StripeEvent = { id?: string; account?: string; type: string; data: { object: Record<string, unknown> } };
 
 export type StripeClient = {
   createAccount(): Promise<{ id: string }>;
@@ -104,9 +106,16 @@ function bufferToHex(buf: ArrayBuffer): string {
 export async function verifyStripeSignature(
   payload: string,
   signatureHeader: string,
-  secret: string,
+  secret: string | string[],
   toleranceSeconds = 5 * 60,
 ): Promise<StripeEvent | null> {
+  // STRIPE_WEBHOOK_SECRET may hold several comma-separated signing secrets
+  // (one per webhook destination); valid if it verifies against any of them.
+  const secrets = (Array.isArray(secret) ? secret : secret.split(','))
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (secrets.length === 0) return null;
+
   const parts = signatureHeader.split(',').reduce<Record<string, string[]>>((acc, part) => {
     const [k, v] = part.split('=');
     if (!k || v === undefined) return acc;
@@ -122,17 +131,19 @@ export async function verifyStripeSignature(
   if (!Number.isFinite(tsSeconds)) return null;
   if (Math.abs(Date.now() / 1000 - tsSeconds) > toleranceSeconds) return null;
 
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  );
-  const signatureBuf = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${timestamp}.${payload}`));
-  const expected = bufferToHex(signatureBuf);
-
-  const valid = candidateSigs.some((sig) => timingSafeEqualHex(sig, expected));
+  const signed = new TextEncoder().encode(`${timestamp}.${payload}`);
+  let valid = false;
+  for (const sec of secrets) {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(sec),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign'],
+    );
+    const expected = bufferToHex(await crypto.subtle.sign('HMAC', key, signed));
+    if (candidateSigs.some((sig) => timingSafeEqualHex(sig, expected))) valid = true;
+  }
   if (!valid) return null;
 
   try {

@@ -270,6 +270,21 @@ describe('configured mode', () => {
       expect(res.status).toBe(400);
     });
 
+    it('accepts a signature matching any secret in a comma-separated list', async () => {
+      const prev = STRIPE_WEBHOOK_SECRET;
+      __setTestStripeConfig({ secretKey: STRIPE_SECRET_KEY, webhookSecret: `${prev},whsec_second_destination` });
+      try {
+        const ok1 = await fireWebhook({ type: 'account.updated', data: { object: { id: 'acct_multi' } } }, prev);
+        expect(ok1.status).toBe(200);
+        const ok2 = await fireWebhook({ type: 'account.updated', data: { object: { id: 'acct_multi' } } }, 'whsec_second_destination');
+        expect(ok2.status).toBe(200);
+        const bad = await fireWebhook({ type: 'account.updated', data: { object: { id: 'acct_multi' } } }, 'whsec_unlisted');
+        expect(bad.status).toBe(400);
+      } finally {
+        __setTestStripeConfig({ secretKey: STRIPE_SECRET_KEY, webhookSecret: prev });
+      }
+    });
+
     it('accepts a validly signed payload', async () => {
       const res = await fireWebhook({ type: 'account.updated', data: { object: { id: 'acct_nonexistent' } } });
       expect(res.status).toBe(200);
@@ -301,6 +316,31 @@ describe('configured mode', () => {
       expect(sponsorNotifs.some((n) => n.type === 'payment_received' && n.eventId === event.id)).toBe(true);
       const hostNotifs = await notificationsFor(host.cookie);
       expect(hostNotifs.some((n) => n.type === 'payment_received' && n.eventId === event.id)).toBe(true);
+    });
+  });
+
+  describe('webhook event sources', () => {
+    it('ignores payment_intent.succeeded carrying a connected `account`, accepts it from the platform', async () => {
+      const host = await signIn('conf-src-host');
+      const sponsor = await signIn('conf-src-sponsor');
+      await registerSponsor(sponsor.cookie, 'Source Co');
+      const event = await createEvent(host.cookie);
+      const accepted = await bidAndAccept(host.cookie, sponsor.cookie, event.id, 4000);
+      const pi = { id: 'pi_src_1', metadata: { sponsorshipId: accepted.id } };
+      await fireWebhook({ type: 'payment_intent.succeeded', account: 'acct_other', data: { object: pi } });
+      expect((await notificationsFor(sponsor.cookie)).some((n) => n.type === 'payment_received')).toBe(false);
+      await fireWebhook({ type: 'payment_intent.succeeded', data: { object: pi } });
+      expect((await notificationsFor(sponsor.cookie)).some((n) => n.type === 'payment_received')).toBe(true);
+    });
+
+    it('account.updated uses event.account to find the host', async () => {
+      const host = await signIn('conf-src-acct-host');
+      mockStripe('/v1/accounts', { id: 'acct_src_1' });
+      mockStripe('/v1/account_links', { url: 'https://connect.stripe.com/setup/src' });
+      await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+      await fireWebhook({ type: 'account.updated', account: 'acct_src_1', data: { object: { id: 'acct_src_1', payouts_enabled: true } } });
+      const res = await SELF.fetch(`${PAYMENTS}/connect/status`, { headers: { Cookie: host.cookie } });
+      expect(await res.json()).toMatchObject({ accountId: 'acct_src_1', payoutsEnabled: true });
     });
   });
 

@@ -79,6 +79,11 @@ unpaid → requires_payment → paid → released
   - `POST /webhook` — Stripe webhook (signature-verified with
     `STRIPE_WEBHOOK_SECRET`): `payment_intent.succeeded` → `paid` (+
     notifications to both parties), `account.updated` → payouts flag.
+    `STRIPE_WEBHOOK_SECRET` may be a comma-separated list (one signing
+    secret per destination: a "Your account" destination for
+    `payment_intent.succeeded`, a "Connected accounts" one for
+    `account.updated`). `payment_intent.succeeded` is ignored when the event
+    carries a connected `account`.
 - Cron sweep: `paid` sponsorships whose event ended ≥24h ago and host has
   payouts enabled → Stripe Transfer of the host share → `released` (+
   notification). Event cancelled while `paid` → refund → `refunded`.
