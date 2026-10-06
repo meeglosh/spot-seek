@@ -81,20 +81,8 @@ accountRouter.delete('/', async (c) => {
   const db = drizzle(sql, { schema });
 
   // ── 2. Upcoming published events block deletion ─────────────────────────────
-  const hosted = await db.select().from(schema.events).where(eq(schema.events.hostId, userId));
-  const upcoming = hosted.filter((e) => isUpcoming(e));
-  if (upcoming.length > 0) {
-    return c.json(
-      {
-        error: 'has_upcoming_events',
-        events: upcoming.map((e) => ({ id: e.id, title: e.title, startsAt: e.startsAt })),
-      },
-      409,
-    );
-  }
-
-  // ── 3. Money in flight blocks deletion ──────────────────────────────────────
-  const paid = await db
+  // Independent reads run concurrently (each is one neon-http round trip).
+  const paidQuery = db
     .select({
       id: schema.sponsorships.id,
       eventId: schema.sponsorships.eventId,
@@ -110,6 +98,22 @@ accountRouter.delete('/', async (c) => {
         or(eq(schema.sponsorships.sponsorId, userId), eq(schema.events.hostId, userId)),
       ),
     );
+  const [hosted, paid] = await Promise.all([
+    db.select().from(schema.events).where(eq(schema.events.hostId, userId)),
+    paidQuery,
+  ]);
+  const upcoming = hosted.filter((e) => isUpcoming(e));
+  if (upcoming.length > 0) {
+    return c.json(
+      {
+        error: 'has_upcoming_events',
+        events: upcoming.map((e) => ({ id: e.id, title: e.title, startsAt: e.startsAt })),
+      },
+      409,
+    );
+  }
+
+  // ── 3. Money in flight blocks deletion ──────────────────────────────────────
   if (paid.length > 0) {
     return c.json(
       {
@@ -209,30 +213,6 @@ accountRouter.delete('/', async (c) => {
     isNotNull(schema.sponsorships.transferId),
   );
   const hostedIdsAll = hosted.map((e) => e.id);
-  const keptRows =
-    hostedIdsAll.length > 0
-      ? await db
-          .selectDistinct({ eventId: schema.sponsorships.eventId })
-          .from(schema.sponsorships)
-          .where(and(inArray(schema.sponsorships.eventId, hostedIdsAll), hasHistory))
-      : [];
-  const keptEventIds = new Set(keptRows.map((r) => r.eventId));
-  const sponsorHistory = await db
-    .select({ id: schema.sponsorships.id })
-    .from(schema.sponsorships)
-    .where(and(eq(schema.sponsorships.sponsorId, userId), hasHistory));
-
-  // Only events WITHOUT payment history are deleted below.
-  const hostedIds = hosted.map((e) => e.id).filter((id) => !keptEventIds.has(id));
-
-  // ── 4. Free the user's going spots, then promote the waitlists ──────────────
-  // A going RSVP must leave the 'going' state BEFORE promotion runs or the
-  // capacity guard still counts it. Events the user hosts are skipped: they are
-  // deleted below.
-  const goingRows = await db
-    .select({ eventId: schema.rsvps.eventId })
-    .from(schema.rsvps)
-    .where(and(eq(schema.rsvps.userId, userId), eq(schema.rsvps.state, 'going')));
   // Guest RSVPs (web /e/:id RSVPs, guest_rsvps) tied to this person are deleted
   // for privacy: rows with their email (pending/unclaimed or otherwise) and rows
   // claimed by their account (claimed_user_id would otherwise be SET NULL by the
@@ -242,10 +222,35 @@ accountRouter.delete('/', async (c) => {
     eq(schema.guestRsvps.email, normalizeEmail(session.user.email)),
     eq(schema.guestRsvps.claimedUserId, userId),
   );
-  const guestGoing = await db
-    .select({ eventId: schema.guestRsvps.eventId })
-    .from(schema.guestRsvps)
-    .where(and(guestWhere, eq(schema.guestRsvps.state, 'going')));
+  const [keptRows, sponsorHistory, goingRows, guestGoing] = await Promise.all([
+    hostedIdsAll.length > 0
+      ? db
+          .selectDistinct({ eventId: schema.sponsorships.eventId })
+          .from(schema.sponsorships)
+          .where(and(inArray(schema.sponsorships.eventId, hostedIdsAll), hasHistory))
+      : Promise.resolve([] as { eventId: string }[]),
+    db
+      .select({ id: schema.sponsorships.id })
+      .from(schema.sponsorships)
+      .where(and(eq(schema.sponsorships.sponsorId, userId), hasHistory)),
+    db
+      .select({ eventId: schema.rsvps.eventId })
+      .from(schema.rsvps)
+      .where(and(eq(schema.rsvps.userId, userId), eq(schema.rsvps.state, 'going'))),
+    db
+      .select({ eventId: schema.guestRsvps.eventId })
+      .from(schema.guestRsvps)
+      .where(and(guestWhere, eq(schema.guestRsvps.state, 'going'))),
+  ]);
+  const keptEventIds = new Set(keptRows.map((r) => r.eventId));
+
+  // Only events WITHOUT payment history are deleted below.
+  const hostedIds = hosted.map((e) => e.id).filter((id) => !keptEventIds.has(id));
+
+  // ── 4. Free the user's going spots, then promote the waitlists ──────────────
+  // A going RSVP must leave the 'going' state BEFORE promotion runs or the
+  // capacity guard still counts it. Events the user hosts are skipped: they are
+  // deleted below.
   await db.delete(schema.guestRsvps).where(guestWhere);
 
   const goingEventIds = [
@@ -262,11 +267,14 @@ accountRouter.delete('/', async (c) => {
           inArray(schema.rsvps.eventId, goingEventIds),
         ),
       );
-    for (const eventId of goingEventIds) {
-      await promoteFromWaitlist(db, c.env.RESEND_API_KEY, eventId).catch((err) =>
-        console.error('[account] waitlist promotion failed:', err),
-      );
-    }
+    // Events are independent; promote them concurrently.
+    await Promise.all(
+      goingEventIds.map((eventId) =>
+        promoteFromWaitlist(db, c.env.RESEND_API_KEY, eventId).catch((err) =>
+          console.error('[account] waitlist promotion failed:', err),
+        ),
+      ),
+    );
   }
 
   // ── 5. Delete the user's own (non-upcoming) events ──────────────────────────
@@ -313,48 +321,58 @@ accountRouter.delete('/', async (c) => {
   }
 
   // ── 6. Per-user rows, then the user itself ──────────────────────────────────
-  await db.delete(schema.reviews).where(
-    or(eq(schema.reviews.reviewerId, userId), eq(schema.reviews.hostId, userId)),
-  );
-  await db.delete(schema.follows).where(
-    or(eq(schema.follows.followerId, userId), eq(schema.follows.followingId, userId)),
-  );
-  await db.delete(schema.userFavourites).where(eq(schema.userFavourites.userId, userId));
-  await db.delete(schema.notifications).where(eq(schema.notifications.userId, userId));
-  await db.delete(schema.notificationPrefs).where(eq(schema.notificationPrefs.userId, userId));
-  await db.delete(schema.comments).where(eq(schema.comments.userId, userId));
-  // Sponsor offers hang off sponsorships; delete the user's remaining own
-  // sponsorships (no payment history — those were reassigned above), which
-  // cascades their offers.
-  await db.delete(schema.sponsorships).where(eq(schema.sponsorships.sponsorId, userId));
-  await db.delete(schema.sponsorProfiles).where(eq(schema.sponsorProfiles.id, userId));
-  await db.delete(schema.rsvps).where(eq(schema.rsvps.userId, userId));
+  // None of these depend on each other (each only references users / events
+  // that still exist), so they run concurrently; the users row goes last.
+  await Promise.all([
+    db.delete(schema.reviews).where(
+      or(eq(schema.reviews.reviewerId, userId), eq(schema.reviews.hostId, userId)),
+    ),
+    db.delete(schema.follows).where(
+      or(eq(schema.follows.followerId, userId), eq(schema.follows.followingId, userId)),
+    ),
+    db.delete(schema.userFavourites).where(eq(schema.userFavourites.userId, userId)),
+    db.delete(schema.notifications).where(eq(schema.notifications.userId, userId)),
+    db.delete(schema.notificationPrefs).where(eq(schema.notificationPrefs.userId, userId)),
+    db.delete(schema.comments).where(eq(schema.comments.userId, userId)),
+    db.delete(schema.rsvps).where(eq(schema.rsvps.userId, userId)),
+    // Sponsor offers hang off sponsorships; delete the user's remaining own
+    // sponsorships (no payment history — those were reassigned above), which
+    // cascades their offers. Then the sponsor profile.
+    db
+      .delete(schema.sponsorships)
+      .where(eq(schema.sponsorships.sponsorId, userId))
+      .then(() => db.delete(schema.sponsorProfiles).where(eq(schema.sponsorProfiles.id, userId))),
+  ]);
   await db.delete(schema.users).where(eq(schema.users.id, userId));
 
   // Better Auth rows: verification tokens (value = user id, or identifier =
   // email), then sessions/accounts/user.
   const authDb = drizzle(sql, { schema: authSchema });
-  await authDb.delete(authSchema.authVerification).where(
-    or(
-      eq(authSchema.authVerification.value, userId),
-      eq(authSchema.authVerification.identifier, session.user.email),
+  await Promise.all([
+    authDb.delete(authSchema.authVerification).where(
+      or(
+        eq(authSchema.authVerification.value, userId),
+        eq(authSchema.authVerification.identifier, session.user.email),
+      ),
     ),
-  );
-  await authDb.delete(authSchema.authSession).where(eq(authSchema.authSession.userId, userId));
-  await authDb.delete(authSchema.authAccount).where(eq(authSchema.authAccount.userId, userId));
+    authDb.delete(authSchema.authSession).where(eq(authSchema.authSession.userId, userId)),
+    authDb.delete(authSchema.authAccount).where(eq(authSchema.authAccount.userId, userId)),
+  ]);
   await authDb.delete(authSchema.authUser).where(eq(authSchema.authUser.id, userId));
 
   // ── 7. R2 cleanup (best effort; DB deletion already succeeded) ──────────────
-  for (const id of hostedIdsAll) {
-    try {
-      const listed = await c.env.SPOTSEEK_IMAGES.list({ prefix: `events/${id}/` });
-      if (listed.objects.length > 0) {
-        await c.env.SPOTSEEK_IMAGES.delete(listed.objects.map((o) => o.key));
+  await Promise.all(
+    hostedIdsAll.map(async (id) => {
+      try {
+        const listed = await c.env.SPOTSEEK_IMAGES.list({ prefix: `events/${id}/` });
+        if (listed.objects.length > 0) {
+          await c.env.SPOTSEEK_IMAGES.delete(listed.objects.map((o) => o.key));
+        }
+      } catch (err) {
+        console.error('[account] R2 cleanup failed:', err);
       }
-    } catch (err) {
-      console.error('[account] R2 cleanup failed:', err);
-    }
-  }
+    }),
+  );
 
   return c.json({ deleted: true });
 });

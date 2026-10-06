@@ -113,9 +113,7 @@ describe('DELETE /api/account — guards', () => {
 
 describe('DELETE /api/account — attendee', () => {
   it('removes user, auth rows, sessions, RSVPs, favourites, follows, notifications, prefs, reviews', async () => {
-    const host = await signUp('att-host');
-    const other = await signUp('att-other');
-    const u = await signUp('att');
+    const [host, other, u] = await Promise.all([signUp('att-host'), signUp('att-other'), signUp('att')]);
     const ev = await createEvent(host, { startsAt: iso(48 * HOUR) });
     const past = await createEvent(host, { startsAt: iso(-26 * HOUR), endsAt: iso(-24 * HOUR), status: 'completed' });
     await rsvp(u, ev.id); // going
@@ -163,10 +161,7 @@ describe('DELETE /api/account — attendee', () => {
   });
 
   it('runs waitlist promotion for events where they were going', async () => {
-    const host = await signUp('wl-host');
-    const going = await signUp('wl-going');
-    const waiter1 = await signUp('wl-w1');
-    const waiter2 = await signUp('wl-w2');
+    const [host, going, waiter1, waiter2] = await Promise.all([signUp('wl-host'), signUp('wl-going'), signUp('wl-w1'), signUp('wl-w2')]);
     const ev = await createEvent(host, { capacity: 1, startsAt: iso(48 * HOUR) });
     expect((await rsvp(going, ev.id)).state).toBe('going');
     expect((await rsvp(waiter1, ev.id)).state).toBe('waitlisted');
@@ -195,8 +190,7 @@ describe('DELETE /api/account — guest RSVPs', () => {
     db.select().from(schema.guestRsvps).where(eq(schema.guestRsvps.eventId, eventId));
 
   it('promotes a waitlisted GUEST when the going member is deleted (merged waitlist)', async () => {
-    const host = await signUp('gw-host');
-    const going = await signUp('gw-going');
+    const [host, going] = await Promise.all([signUp('gw-host'), signUp('gw-going')]);
     const ev = await createEvent(host, { capacity: 1, startsAt: iso(48 * HOUR) });
     expect((await rsvp(going, ev.id)).state).toBe('going');
     const g = await guest(ev.id, `gw-wait-${TS}@spotseek.test`, 'waitlisted');
@@ -207,9 +201,7 @@ describe('DELETE /api/account — guest RSVPs', () => {
   }, 60_000);
 
   it('deletes unclaimed/pending guest RSVPs with the deleted user email (any case) and frees their spot', async () => {
-    const host = await signUp('gd-host');
-    const u = await signUp('gd');
-    const waiter = await signUp('gd-waiter');
+    const [host, u, waiter] = await Promise.all([signUp('gd-host'), signUp('gd'), signUp('gd-waiter')]);
     const ev = await createEvent(host, { capacity: 1, startsAt: iso(48 * HOUR) });
     const ev2 = await createEvent(host, { startsAt: iso(72 * HOUR) });
     // The guest row for u's email holds the only spot on ev; waiter is waitlisted.
@@ -228,8 +220,7 @@ describe('DELETE /api/account — guest RSVPs', () => {
   }, 60_000);
 
   it('deletes guest rows claimed by the user (no phantom unclaimed row) and cascades on their own past events', async () => {
-    const host = await signUp('gc-host');
-    const u = await signUp('gc');
+    const [host, u] = await Promise.all([signUp('gc-host'), signUp('gc')]);
     const ev = await createEvent(host, { startsAt: iso(48 * HOUR) });
     const claimed = await guest(ev.id, `someone-else-${TS}@spotseek.test`, 'going', { claimedUserId: u.id });
     const past = await createEvent(u, { startsAt: iso(-26 * HOUR), endsAt: iso(-24 * HOUR), status: 'completed' });
@@ -245,8 +236,7 @@ describe('DELETE /api/account — guest RSVPs', () => {
 
 describe('DELETE /api/account — host', () => {
   it('409 has_upcoming_events lists the events and deletes nothing; allowed once cancelled', async () => {
-    const host = await signUp('up-host');
-    const att = await signUp('up-att');
+    const [host, att] = await Promise.all([signUp('up-host'), signUp('up-att')]);
     const ev = await createEvent(host, { title: `Upcoming ${TS}`, startsAt: iso(48 * HOUR) });
     await rsvp(att, ev.id);
 
@@ -281,8 +271,7 @@ describe('DELETE /api/account — host', () => {
   });
 
   it('past, draft, cancelled and completed events do not block; they are deleted with their RSVPs, comments, R2 covers', async () => {
-    const host = await signUp('past-host');
-    const att = await signUp('past-att');
+    const [host, att] = await Promise.all([signUp('past-host'), signUp('past-att')]);
     const draft = await createEvent(host, { status: 'draft' });
     const cancelled = await createEvent(host, { status: 'cancelled', startsAt: iso(48 * HOUR) });
     const ended = await createEvent(host, { startsAt: iso(-5 * HOUR), endsAt: iso(-3 * HOUR) });
@@ -311,8 +300,7 @@ describe('DELETE /api/account — host', () => {
   });
 
   it('409 money_in_flight when a sponsorship on the host\'s (past) event is paid; allowed once released', async () => {
-    const host = await signUp('money-host');
-    const sponsor = await signUp('money-sponsor');
+    const [host, sponsor] = await Promise.all([signUp('money-host'), signUp('money-sponsor')]);
     const ev = await createEvent(host, { startsAt: iso(48 * HOUR) });
     const bid = await sponsorBid(sponsor, ev.id);
     // Event is over, sponsorship paid but not yet released.
@@ -336,8 +324,7 @@ describe('DELETE /api/account — host', () => {
 
 describe('DELETE /api/account — sponsor', () => {
   it('409 money_in_flight when the sponsor has a paid sponsorship; refunded unblocks', async () => {
-    const host = await signUp('sp-host');
-    const sponsor = await signUp('sp-paid');
+    const [host, sponsor] = await Promise.all([signUp('sp-host'), signUp('sp-paid')]);
     const ev = await createEvent(host, { startsAt: iso(48 * HOUR) });
     const bid = await sponsorBid(sponsor, ev.id);
     await db.update(schema.sponsorships).set({ status: 'active', paymentStatus: 'paid' })
@@ -366,8 +353,7 @@ describe('DELETE /api/account — sponsor', () => {
   });
 
   it('deletes the sponsor profile and pending bids; a stripe account reference goes with the user row', async () => {
-    const host = await signUp('sp2-host');
-    const sponsor = await signUp('sp2');
+    const [host, sponsor] = await Promise.all([signUp('sp2-host'), signUp('sp2')]);
     const ev = await createEvent(host, { startsAt: iso(48 * HOUR) });
     const bid = await sponsorBid(sponsor, ev.id);
     await db.update(schema.users).set({ stripeAccountId: `acct_acctdel_${TS}` }).where(eq(schema.users.id, sponsor.id));
@@ -380,8 +366,7 @@ describe('DELETE /api/account — sponsor', () => {
   });
 
   it('a user who is both host (past events only) and attendee is deleted in one call', async () => {
-    const other = await signUp('both-other');
-    const u = await signUp('both');
+    const [other, u] = await Promise.all([signUp('both-other'), signUp('both')]);
     const theirs = await createEvent(u, { startsAt: iso(-5 * HOUR), endsAt: iso(-3 * HOUR) });
     const otherEv = await createEvent(other, { capacity: 1, startsAt: iso(48 * HOUR) });
     await rsvp(u, otherEv.id);

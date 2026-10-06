@@ -78,7 +78,8 @@ deeplinksRouter.get('/sitemap.xml', async (c) => {
       ),
     )
     .orderBy(asc(schema.events.startsAt))
-    .limit(SITEMAP_MAX_URLS);
+    // One slot is the homepage entry, so the total never exceeds the cap.
+    .limit(SITEMAP_MAX_URLS - 1);
   const urls = [
     `  <url><loc>${escapeHtml(`${base}/`)}</loc></url>`,
     ...rows.map(
