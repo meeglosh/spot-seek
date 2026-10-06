@@ -10,8 +10,9 @@ import { useAuth } from '../../../lib/auth';
 import { enablePush, shouldPromptForPush } from '../../../lib/push';
 import {
   fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, fetchProfile, fetchEventReviews, submitReview,
-  API_BASE, EVENT_SHARE_BASE, type ApiEvent, type ApiRsvp, type ApiProfile, type ApiEventReviews,
+  API_BASE, type ApiEvent, type ApiRsvp, type ApiProfile, type ApiEventReviews,
 } from '../../../lib/api';
+import { eventShareUrl } from '../../../lib/shareLinks';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 import { colors, palette, spacing, type as t, hardShadow } from '../../../lib/theme';
 import { AppHeader } from '../../../components/AppHeader';
@@ -332,7 +333,7 @@ export default function EventDetailScreen() {
     // linkify and preview http(s) URLs, and only a Universal Link can fall
     // back to a web page (with an Open Graph preview) when the recipient
     // doesn't have the app installed yet. See backend/src/deeplinks.ts.
-    const link = `${EVENT_SHARE_BASE}/e/${event.id}`;
+    const link = eventShareUrl(event.id);
     const when = dateStr ? `${dateStr}${timeStr ? ` ${tr('detail.share.at')} ${timeStr}` : ''}` : null;
     // On iOS, `url` already produces the rich link preview — keep it out of
     // `message` there, or Messages' link-detector previews it a second time.

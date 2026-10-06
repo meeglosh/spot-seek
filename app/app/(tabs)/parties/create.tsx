@@ -9,7 +9,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
-import { createEvent, fetchEvent, EVENT_SHARE_BASE, type ApiEvent } from '../../../lib/api';
+import { createEvent, fetchEvent, type ApiEvent } from '../../../lib/api';
+import { eventShareUrl } from '../../../lib/shareLinks';
 import { API_BASE, apiFetch, uploadEventCover, deleteEvent } from '../../../lib/api';
 import { AppHeader } from '../../../components/AppHeader';
 import { Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../../components/ui';
@@ -143,7 +144,7 @@ export default function CreateEventScreen() {
   // here the title/date come from local form state rather than a re-fetched
   // ApiEvent, since we already have them right after publishing.
   function shareEvent(savedEventId: string) {
-    const link = `${EVENT_SHARE_BASE}/e/${savedEventId}`;
+    const link = eventShareUrl(savedEventId);
     // No venueTimezone available here — this is local pre-save form state,
     // not a fetched ApiEvent, so this falls back to device-local formatting.
     const { dateStr, timeStr } = startsAt
