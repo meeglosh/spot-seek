@@ -2,7 +2,8 @@
  * Post-event reviews: upsert, validation, aggregates, and the review_request
  * cron sweep trigger.
  */
-import { SELF } from 'cloudflare:test';
+import { SELF, env } from 'cloudflare:test';
+import { neon } from '@neondatabase/serverless';
 import { describe, it, expect } from 'vitest';
 
 const AUTH = 'https://example.com/api/auth';
@@ -312,5 +313,75 @@ describe('review_request sweep', () => {
     };
     const reviewNotifs2 = attNotifs2.notifications.filter((n) => n.type === 'review_request' && n.eventId === event.id);
     expect(reviewNotifs2).toHaveLength(1);
+  });
+});
+
+describe('guest (signed-out) review reads', () => {
+  async function reviewedEvent(tag: string) {
+    const host = await signIn(`${tag}-host`);
+    const attendee = await signIn(`${tag}-att`);
+    const event = await createEvent(host.cookie, {
+      startsAt: pastIso(3 * HOUR),
+      endsAt: pastIso(HOUR),
+    });
+    await rsvpGoing(attendee.cookie, event.id);
+    const r = await SELF.fetch(REVIEWS, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: attendee.cookie },
+      body: JSON.stringify({ eventId: event.id, hostRating: 4, comment: 'Fun' }),
+    });
+    expect(r.status).toBe(200);
+    return { host, attendee, event };
+  }
+
+  it('guest GET /event/:id returns 200 with aggregates and no email', async () => {
+    const { host, attendee, event } = await reviewedEvent('g1');
+    const res = await SELF.fetch(`${REVIEWS}/event/${event.id}`);
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(text).not.toContain('@');
+    expect(text).not.toContain('spotseek.test');
+    const body = JSON.parse(text) as { myReview: unknown; host: { avg: number; count: number } | null; reviews: ApiReview[] };
+    expect(body.myReview).toBeNull();
+    expect(body.host).toEqual({ avg: 4, count: 1 });
+    expect(body.reviews).toHaveLength(1);
+    expect(body.reviews[0].reviewerName).toBe('g1-att');
+    expect(Object.keys(body.reviews[0]).sort()).toEqual(
+      ['comment', 'createdAt', 'eventId', 'hostRating', 'id', 'reviewerId', 'reviewerName', 'updatedAt', 'venueRating'],
+    );
+
+    const hostRes = await SELF.fetch(`${REVIEWS}/host/${host.id}`);
+    expect(hostRes.status).toBe(200);
+    const hostText = await hostRes.text();
+    expect(hostText).not.toContain('@');
+    expect((JSON.parse(hostText) as { count: number }).count).toBe(1);
+    expect(attendee.id).toBeTruthy();
+  });
+
+  it('guest POST is still 401', async () => {
+    const { event } = await reviewedEvent('g2');
+    const res = await SELF.fetch(REVIEWS, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventId: event.id, hostRating: 5 }),
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it('hides reviews of hidden/removed/draft events from guests but not from the host', async () => {
+    const { host, event } = await reviewedEvent('g3');
+    const sql = neon(env.DATABASE_URL);
+
+    await sql`UPDATE events SET moderation_status = 'hidden' WHERE id = ${event.id}`;
+    expect((await SELF.fetch(`${REVIEWS}/event/${event.id}`)).status).toBe(404);
+    expect((await SELF.fetch(`${REVIEWS}/event/${event.id}`, { headers: { Cookie: host.cookie } })).status).toBe(200);
+    const hostAgg = await (await SELF.fetch(`${REVIEWS}/host/${host.id}`)).json() as { count: number; recent: unknown[] };
+    expect(hostAgg.count).toBe(0);
+    expect(hostAgg.recent).toEqual([]);
+
+    await sql`UPDATE events SET moderation_status = 'removed' WHERE id = ${event.id}`;
+    expect((await SELF.fetch(`${REVIEWS}/event/${event.id}`)).status).toBe(404);
+
+    await sql`UPDATE events SET moderation_status = 'ok', status = 'draft' WHERE id = ${event.id}`;
+    expect((await SELF.fetch(`${REVIEWS}/event/${event.id}`)).status).toBe(404);
+    expect(((await (await SELF.fetch(`${REVIEWS}/host/${host.id}`)).json()) as { count: number }).count).toBe(0);
   });
 });

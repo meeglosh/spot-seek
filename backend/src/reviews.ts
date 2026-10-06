@@ -6,17 +6,24 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, ne, notInArray, sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import * as schema from './schema';
 import type { Event, ReviewRow } from './schema';
 import { createAuth } from './auth';
+import { MOD_HIDDEN, canViewEvent, optionalViewerId } from './moderation/visibility';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
 
 export const reviewsRouter = new Hono<AppEnv>();
 
-// All review routes require auth.
+// Writes (POST/PATCH/PUT/DELETE) require auth. Read-only GETs are public so
+// guests can see ratings; they use the best-effort viewer id (null = guest).
 reviewsRouter.use('*', async (c, next) => {
+  if (c.req.method === 'GET' || c.req.method === 'HEAD') {
+    c.set('userId', (await optionalViewerId(c as never)) ?? '');
+    return next();
+  }
   const auth = createAuth(neon(c.env.DATABASE_URL));
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) return c.json({ error: 'Unauthorized' }, 401);
@@ -25,6 +32,19 @@ reviewsRouter.use('*', async (c, next) => {
 });
 
 // ─── helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * SQL restricting reviews (joined to events) to events the viewer may see:
+ * no drafts, no moderation-hidden/removed. The event's host sees all their own.
+ */
+function visibleEventSql(viewerId: string): SQL {
+  const pub = and(
+    ne(schema.events.status, 'draft'),
+    notInArray(schema.events.moderationStatus, [...MOD_HIDDEN]),
+  ) as SQL;
+  if (!viewerId) return pub;
+  return sql`(${schema.events.hostId} = ${viewerId} OR ${pub})`;
+}
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
@@ -146,7 +166,7 @@ reviewsRouter.get('/event/:eventId', async (c) => {
   const eventId = c.req.param('eventId');
 
   const event = await db.query.events.findFirst({ where: eq(schema.events.id, eventId) });
-  if (!event) return c.json({ error: 'Event not found' }, 404);
+  if (!event || !canViewEvent(event, userId || null)) return c.json({ error: 'Event not found' }, 404);
 
   const eventReviews = await db.query.reviews.findMany({
     where: eq(schema.reviews.eventId, eventId),
@@ -155,12 +175,13 @@ reviewsRouter.get('/event/:eventId', async (c) => {
   });
   const names = await namesById(db, [...new Set(eventReviews.map((r) => r.reviewerId))]);
   const apiReviews = eventReviews.map((r) => toApiReview(r, names.get(r.reviewerId) ?? null));
-  const myReview = apiReviews.find((r) => r.reviewerId === userId) ?? null;
+  const myReview = userId ? (apiReviews.find((r) => r.reviewerId === userId) ?? null) : null;
 
   const [hostAgg] = await db
     .select({ avg: sql<string | null>`avg(${schema.reviews.hostRating})`, count: count() })
     .from(schema.reviews)
-    .where(eq(schema.reviews.hostId, event.hostId));
+    .innerJoin(schema.events, eq(schema.events.id, schema.reviews.eventId))
+    .where(and(eq(schema.reviews.hostId, event.hostId), visibleEventSql(userId)));
   const hostCount = Number(hostAgg?.count ?? 0);
   const host = hostCount > 0 ? { avg: round1(Number(hostAgg!.avg)), count: hostCount } : null;
 
@@ -173,7 +194,8 @@ reviewsRouter.get('/event/:eventId', async (c) => {
         count: count(schema.reviews.venueRating),
       })
       .from(schema.reviews)
-      .where(eq(schema.reviews.venueKey, venueKey));
+      .innerJoin(schema.events, eq(schema.events.id, schema.reviews.eventId))
+      .where(and(eq(schema.reviews.venueKey, venueKey), visibleEventSql(userId)));
     const venueCount = Number(venueAgg?.count ?? 0);
     venue = venueCount > 0 ? { avg: round1(Number(venueAgg!.avg)), count: venueCount } : null;
   }
@@ -184,21 +206,28 @@ reviewsRouter.get('/event/:eventId', async (c) => {
 // ─── GET /host/:userId — a host's aggregate rating + recent reviews ──────────
 
 reviewsRouter.get('/host/:userId', async (c) => {
+  const userId = c.get('userId');
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
   const hostId = c.req.param('userId');
+  const visible = and(eq(schema.reviews.hostId, hostId), visibleEventSql(userId)) as SQL;
 
   const [agg] = await db
     .select({ avg: sql<string | null>`avg(${schema.reviews.hostRating})`, count: count() })
     .from(schema.reviews)
-    .where(eq(schema.reviews.hostId, hostId));
+    .innerJoin(schema.events, eq(schema.events.id, schema.reviews.eventId))
+    .where(visible);
   const total = Number(agg?.count ?? 0);
   const avg = total > 0 ? round1(Number(agg!.avg)) : 0;
 
-  const recentRows = await db.query.reviews.findMany({
-    where: eq(schema.reviews.hostId, hostId),
-    orderBy: desc(schema.reviews.createdAt),
-    limit: 10,
-  });
+  const recentRows = (
+    await db
+      .select({ review: schema.reviews })
+      .from(schema.reviews)
+      .innerJoin(schema.events, eq(schema.events.id, schema.reviews.eventId))
+      .where(visible)
+      .orderBy(desc(schema.reviews.createdAt))
+      .limit(10)
+  ).map((r) => r.review);
   const names = await namesById(db, [...new Set(recentRows.map((r) => r.reviewerId))]);
   const recent = recentRows.map((r) => toApiReview(r, names.get(r.reviewerId) ?? null));
 
