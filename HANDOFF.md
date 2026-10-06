@@ -84,6 +84,9 @@ package in `stitch_spot_seek_event_network.zip` (repo root, untracked —
 
 Latest build: **28** (2026-08-17). Deployed backend: dev/preview worker at
 https://spot-seek-api.dry-base-037d.workers.dev (cron `*/15 * * * *`).
+The Worker is moving to the custom domain **https://spotseek.app** (apex +
+`www`, DNS on Cloudflare; `www` 301s to the apex). `workers_dev` is kept
+enabled so builds <= 29, which hardcode the workers.dev URL, keep working.
 
 Shipped since the last snapshot, newest first:
 - **Refund rule** — sponsors can withdraw for a full refund before the event
@@ -339,8 +342,16 @@ Deployed to **https://spot-seek-api.dry-base-037d.workers.dev** (dev/preview
 — Neon dev branch DB, R2 buckets `spotseek-images`/`-preview` created,
 secrets DATABASE_URL + BETTER_AUTH_SECRET set, BETTER_AUTH_URL as wrangler
 var). `API_BASE` release path in `app/lib/api.ts` now points at it; dev
-builds still use localhost:8787. Smoke-tested: `/` and `/api/feed` return
-live data. Wrangler OAuth is authenticated on this machine; the Cloudflare
+builds still use localhost:8787. Smoke-tested: `/health` (formerly `/`) and `/api/feed` return
+live data. `GET /` is now the branded marketing page; the old JSON status is
+at `GET /health` (nothing in the app or tests depended on `/`).
+Custom domains `spotseek.app` / `www.spotseek.app` are declared in
+`backend/wrangler.jsonc` (`routes` with `custom_domain: true`);
+`PUBLIC_BASE_URL` is `https://spotseek.app` (drives emails, share/og/canonical,
+sitemap, guest RSVP and reset links, Stripe onboarding URLs).
+`BETTER_AUTH_URL` is unchanged (still workers.dev; auth review item in
+BLOCKED.md). The AASA file is served as `application/json` on both hosts
+with no redirect. Wrangler OAuth is authenticated on this machine; the Cloudflare
 Claude Code plugin (`cloudflare@cloudflare`) is installed. Wrangler is v4 (upgraded from v3 on
 `task/wrangler-v4`).
 

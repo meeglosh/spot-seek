@@ -3,6 +3,13 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2025-01-01",
 	"compatibility_flags": ["nodejs_compat"],
+	// Custom domains (DNS on Cloudflare). workers.dev stays enabled so builds
+	// <= 29, which hardcode the workers.dev URL, keep working.
+	"workers_dev": true,
+	"routes": [
+		{ "pattern": "spotseek.app", "custom_domain": true },
+		{ "pattern": "www.spotseek.app", "custom_domain": true }
+	],
 	"observability": {
 		"enabled": true,
 	},
@@ -15,10 +22,9 @@
 		"APNS_TEAM_ID": "XM2SC5YZ8C",
 		"APNS_TOPIC": "com.spotseek.app",
 		// OWNER REVIEW: public origin used for share links, og:url, canonical,
-		// sitemap and email CTAs. Switch to https://spotseek.app when the custom
-		// domain is live (see HANDOFF.md / report for the exact steps).
+		// sitemap, email CTAs and Stripe onboarding return URLs.
 		// Optional: "APP_STORE_URL" (leave unset until the listing exists).
-		"PUBLIC_BASE_URL": "https://spot-seek-api.dry-base-037d.workers.dev",
+		"PUBLIC_BASE_URL": "https://spotseek.app",
 		// OWNER REVIEW: Resend quota guard (src/email-guard.ts). Max real emails per
 		// UTC day (plan allows 100; 80 leaves headroom for the owner's own use).
 		// Mail to .test/.example/.invalid/.localhost and example.com/.org/.net is

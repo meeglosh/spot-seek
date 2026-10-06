@@ -272,7 +272,7 @@ describe('public event page', () => {
       endsAt: new Date(Date.now() + 7200_000).toISOString(),
     });
     const html = await (await app(`/e/${ev.id}`)).text();
-    expect(html).toContain(`<link rel="canonical" href="https://spot-seek-api.dry-base-037d.workers.dev/e/${ev.id}">`);
+    expect(html).toContain(`<link rel="canonical" href="https://spotseek.app/e/${ev.id}">`);
     expect(html).toContain('property="og:url"');
     expect(html).toContain('0 GOING');
     expect(html).toContain('HOSTED BY');

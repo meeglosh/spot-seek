@@ -28,23 +28,28 @@ const BUNDLE_ID = 'com.spotseek.app';
 /** Max URLs in sitemap.xml (protocol limit is 50,000). */
 export const SITEMAP_MAX_URLS = 1000;
 
-deeplinksRouter.get('/.well-known/apple-app-site-association', (c) => c.json({
-  applinks: {
-    apps: [],
-    details: [
-      {
-        appID: `${APPLE_TEAM_ID}.${BUNDLE_ID}`,
-        paths: ['/e/*'],
-      },
-    ],
-  },
-}));
+deeplinksRouter.get('/.well-known/apple-app-site-association', (c) => c.body(
+  JSON.stringify({
+    applinks: {
+      apps: [],
+      details: [
+        {
+          appID: `${APPLE_TEAM_ID}.${BUNDLE_ID}`,
+          paths: ['/e/*'],
+        },
+      ],
+    },
+  }),
+  200,
+  { 'Content-Type': 'application/json' },
+));
 
 deeplinksRouter.get('/robots.txt', (c) => {
   const base = publicBaseUrl(c.env);
   return c.text(
     [
       'User-agent: *',
+      'Allow: /',
       'Allow: /e/',
       'Disallow: /api/',
       'Disallow: /rsvp/',
@@ -74,12 +79,13 @@ deeplinksRouter.get('/sitemap.xml', async (c) => {
     )
     .orderBy(asc(schema.events.startsAt))
     .limit(SITEMAP_MAX_URLS);
-  const urls = rows
-    .map(
+  const urls = [
+    `  <url><loc>${escapeHtml(`${base}/`)}</loc></url>`,
+    ...rows.map(
       (r) =>
         `  <url><loc>${escapeHtml(`${base}/e/${r.id}`)}</loc><lastmod>${r.updatedAt.toISOString()}</lastmod></url>`,
-    )
-    .join('\n');
+    ),
+  ].join('\n');
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
   return c.body(xml, 200, {
     'Content-Type': 'application/xml; charset=utf-8',

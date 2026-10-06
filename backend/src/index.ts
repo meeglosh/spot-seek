@@ -14,7 +14,8 @@ import { favouritesRouter } from './favourites';
 import { geocodeRouter } from './geocode';
 import { deeplinksRouter } from './deeplinks';
 import { webRsvpRouter } from './webrsvp';
-import { configurePublicBaseUrl } from './email';
+import { configurePublicBaseUrl, publicBaseUrl } from './email';
+import { renderHomePage } from './homepage';
 import { configureEmailGuard } from './email-guard';
 import { configureApns } from './apns';
 import { pushRouter } from './push';
@@ -27,6 +28,16 @@ import { passwordResetRouter, sendResetEmail } from './password-reset';
 import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
+
+// www.spotseek.app -> apex (301, path + query preserved). Runs before everything
+// else. The AASA file is exempt so Apple's CDN never follows a redirect on either host.
+app.use('*', async (c, next) => {
+  const url = new URL(c.req.url);
+  if (url.hostname === 'www.spotseek.app' && url.pathname !== '/.well-known/apple-app-site-association') {
+    return c.redirect(`https://spotseek.app${url.pathname}${url.search}`, 301);
+  }
+  await next();
+});
 
 // Public base URL (PUBLIC_BASE_URL var) used by every outward-facing link.
 app.use('*', async (c, next) => {
@@ -105,7 +116,13 @@ app.get('/static/email-logo.png', () => {
   return new Response(bytes, { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' } });
 });
 
-app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
+app.get('/health', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
+
+app.get('/', (c) =>
+  c.html(renderHomePage({ baseUrl: publicBaseUrl(c.env), appStoreUrl: c.env.APP_STORE_URL }), 200, {
+    'Cache-Control': 'public, max-age=300',
+  }),
+);
 
 // Combines the notifications sweep (reminders/reviews) with the payments
 // sweep (release/refund) into a single cron handler.
