@@ -377,7 +377,7 @@ ${HOME_CSS}
   </div>
 
   <div class="host__visual">
-    <img class="host__photo" src="/site/rooftop-1536.d735170a.webp" srcset="/site/rooftop-800.a7d8db45.webp 800w, /site/rooftop-1536.d735170a.webp 1536w" sizes="(min-width:760px) 45vw, 100vw" width="1536" height="1024" alt="Friends on a rooftop couch at dusk, seen from behind, watching a football match on a big outdoor screen under string lights with a city skyline behind" loading="lazy">
+    <img class="host__photo" src="/site/rooftop-1536.e43efa47.webp" srcset="/site/rooftop-800.1bec80b8.webp 800w, /site/rooftop-1536.e43efa47.webp 1536w" sizes="(min-width:760px) 45vw, 100vw" width="1536" height="1024" alt="Friends on a rooftop couch cheering with raised arms as a man in a tuxedo accepts a gold statuette on a big outdoor screen, under string lights at dusk with a city skyline behind" loading="lazy">
   <form class="evt" onsubmit="return false" aria-label="Example party: choose a venue">
     <p class="evt__tag">EXAMPLE PARTY</p>
     <p class="evt__title">OSCARS NIGHT</p>
