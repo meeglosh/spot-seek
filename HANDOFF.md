@@ -355,6 +355,19 @@ with no redirect. Wrangler OAuth is authenticated on this machine; the Cloudflar
 Claude Code plugin (`cloudflare@cloudflare`) is installed. Wrangler is v4 (upgraded from v3 on
 `task/wrangler-v4`).
 
+### Landing page (`GET /`)
+
+Source: `backend/src/homepage.ts` (HTML + inlined CSS in one template; JSON-LD
+and `PUBLIC_BASE_URL`-based canonical/og URLs are built there). Images are
+Workers Static Assets in `backend/public/site/` (`assets` binding in
+`wrangler.jsonc`, served at `/site/*`; `public/_headers` makes them immutable).
+Filenames carry an 8-char content hash (`name.<sha256[:8]>.ext`). To change an
+image: put the new file in `public/site/` named `name.<hash>.ext` (hash =
+`shasum -a 256 file | cut -c1-8`), delete the old one, and update the URL in
+`homepage.ts`. The test `every /site/ asset the page references exists` fails
+if a reference is stale. Static Assets only answers paths that match a file, so
+Worker routes are unaffected. Deploy is the normal `npm run deploy`.
+
 
 ## 11. Next steps
 

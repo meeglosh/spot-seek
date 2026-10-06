@@ -10,6 +10,14 @@
 		{ "pattern": "spotseek.app", "custom_domain": true },
 		{ "pattern": "www.spotseek.app", "custom_domain": true }
 	],
+	// Workers Static Assets: landing-page images in ./public (served at /site/*, content-hashed
+	// names + immutable caching via public/_headers). Default run_worker_first=false means a
+	// request is answered from assets only when it matches a file there; every other path
+	// (/, /api/*, /e/*, /health, /static/email-logo.png, ...) goes to the Worker untouched.
+	"assets": {
+		"directory": "./public",
+		"binding": "ASSETS"
+	},
 	"observability": {
 		"enabled": true,
 	},

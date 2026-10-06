@@ -17,33 +17,52 @@ describe('Worker health', () => {
 });
 
 describe('Home page', () => {
-  it('GET / serves the marketing page with hero, canonical and JSON-LD', async () => {
+  it('GET / serves the landing page as HTML with canonical, JSON-LD and short caching', async () => {
     const response = await req('https://spotseek.app/');
     expect(response.status).toBe(200);
-    expect(response.headers.get('content-type')).toContain('text/html');
+    expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
+    expect(response.headers.get('cache-control')).toBe('public, max-age=300');
     const html = await response.text();
-    expect(html).toContain('FIND YOUR');
-    expect(html).toContain('WATCH PARTY.');
+    expect(html).toContain('NEVER WATCH');
+    expect(html).toContain('ALONE.');
     expect(html).toContain('<link rel="canonical" href="https://spotseek.app/">');
     expect(html).toContain('property="og:title"');
     expect(html).toContain('name="twitter:card"');
-    expect(html).toContain('application/ld+json');
-    expect(html).toContain('/static/email-logo.png');
+    expect(html).toContain('"@type":"Organization"');
+    expect(html).toContain('"@type":"WebSite"');
     expect(html).toContain('hello@spotseek.app');
-    expect(html).toContain('COMING SOON TO THE APP STORE');
-    // No external JS: the only <script> is the JSON-LD block.
+    // CSS is inlined; the only <script> is the JSON-LD block.
+    expect(html).toContain('<style>');
+    expect(html).not.toContain('styles.css');
     expect(html).not.toMatch(/<script(?![^>]*ld\+json)/);
   });
 
-  it('shows the App Store link, HTML-escaped, when APP_STORE_URL is set', async () => {
-    const html = await (await req('https://spotseek.app/', { APP_STORE_URL: 'https://apps.apple.com/app/x?a=1&b="2"' })).text();
-    expect(html).toContain('href="https://apps.apple.com/app/x?a=1&amp;b=&quot;2&quot;"');
-    expect(html).not.toContain('COMING SOON TO THE APP STORE');
+  it('og:image and twitter:image are absolute, hashed and follow PUBLIC_BASE_URL', async () => {
+    const html = await (await req('https://spotseek.app/')).text();
+    expect(html).toMatch(/<meta property="og:image" content="https:\/\/spotseek\.app\/site\/og\.[0-9a-f]{8}\.jpg">/);
+    expect(html).toMatch(/<meta name="twitter:image" content="https:\/\/spotseek\.app\/site\/og\.[0-9a-f]{8}\.jpg">/);
+    const other = await (await req('https://spotseek.app/', { PUBLIC_BASE_URL: 'https://other.example.test' })).text();
+    expect(other).toContain('<link rel="canonical" href="https://other.example.test/">');
+    expect(other).toContain('content="https://other.example.test/site/og.');
   });
 
-  it('canonical follows PUBLIC_BASE_URL', async () => {
-    const html = await (await req('https://spotseek.app/', { PUBLIC_BASE_URL: 'https://other.example.test' })).text();
-    expect(html).toContain('<link rel="canonical" href="https://other.example.test/">');
+  it('every /site/ asset the page references exists in Static Assets (public/site)', async () => {
+    const html = await (await req('https://spotseek.app/')).text();
+    const urls = [...new Set([...html.matchAll(/\/site\/[A-Za-z0-9._-]+\.(?:webp|png|jpg)/g)].map((m) => m[0]))];
+    expect(urls.length).toBeGreaterThanOrEqual(7);
+    for (const u of urls) {
+      const res = await env.ASSETS.fetch(`https://spotseek.app${u}`);
+      expect(res.status, u).toBe(200);
+      expect(res.headers.get('cache-control'), u).toBe('public, max-age=31536000, immutable');
+      expect((await res.arrayBuffer()).byteLength, u).toBeGreaterThan(1000);
+    }
+  });
+
+  it('Worker-owned paths are unaffected by the assets binding', async () => {
+    const logo = await req('https://spotseek.app/static/email-logo.png');
+    expect(logo.status).toBe(200);
+    expect(logo.headers.get('content-type')).toBe('image/png');
+    expect((await req('https://spotseek.app/robots.txt')).status).toBe(200);
   });
 
   it('robots allows / and the sitemap lists it', async () => {

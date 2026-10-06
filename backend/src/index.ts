@@ -119,7 +119,8 @@ app.get('/static/email-logo.png', () => {
 app.get('/health', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 
 app.get('/', (c) =>
-  c.html(renderHomePage({ baseUrl: publicBaseUrl(c.env), appStoreUrl: c.env.APP_STORE_URL }), 200, {
+  c.html(renderHomePage({ baseUrl: publicBaseUrl(c.env) }), 200, {
+    'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'public, max-age=300',
   }),
 );

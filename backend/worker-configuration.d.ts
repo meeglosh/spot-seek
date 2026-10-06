@@ -29,4 +29,6 @@ interface Env {
   GUEST_LIMITER?: RateLimit;
   CHAT_ROOMS: DurableObjectNamespace;
   SPOTSEEK_IMAGES: R2Bucket;
+  // Workers Static Assets (backend/public): landing-page images served at /site/*.
+  ASSETS: Fetcher;
 }
