@@ -2,6 +2,7 @@
 // without owner sign-off. Images live in backend/public/site/ (Workers Static Assets) with
 // content-hashed filenames; see HANDOFF.md ("Landing page") for how to update them.
 import { safeJson } from './webpage';
+import { buildCalendar, nextEventDateTitle, type CalRow } from './landing-calendar';
 
 const HOME_CSS = `
 :root{
@@ -32,7 +33,9 @@ a{color:inherit}
 /* hero */
 .hero{position:relative;min-height:max(660px,100svh);display:flex;flex-direction:column;justify-content:flex-end;padding:0 var(--gut) 22px;overflow:hidden;background:var(--ink)}
 .hero__photo{position:absolute;left:0;top:0;width:100%;height:calc(100% - 380px);min-height:300px;object-fit:cover;object-position:13% 30%}
-.hero__block{position:relative;background:var(--ink);border:2px solid var(--white);box-shadow:8px 8px 0 var(--cyan);padding:14px 16px 16px;margin-right:8px;animation:rise .6s cubic-bezier(.2,.7,.2,1) both}
+.hero__block{--sh:8px;position:relative;margin-right:8px;animation:rise .75s cubic-bezier(.2,.7,.2,1) both}
+.hero__block::before{content:"";position:absolute;inset:0;background:var(--cyan);transform:translate(var(--sh),var(--sh));animation:hslam .95s cubic-bezier(.2,.7,.2,1) both}
+.hero__card{position:relative;background:var(--ink);border:2px solid var(--white);padding:14px 16px 16px}
 .hero h1{font:400 clamp(46px,13.5vw,64px)/.98 var(--display);letter-spacing:.005em}
 .hero__sub{margin:10px 0 14px;font-size:16px;color:var(--white);max-width:34ch}
 .hero__actions{display:flex;flex-direction:column;gap:10px;align-items:stretch}
@@ -48,7 +51,9 @@ a{color:inherit}
 .btn--ghost:hover{background:var(--white);color:var(--ink)}
 .btn--sm .btn__big{font-size:24px}
 
-@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(46px)}to{opacity:1;transform:none}}
+/* hard-shadow settle: the cyan shadow sits flush, overshoots, then locks at its offset */
+@keyframes hslam{0%,55%{transform:none}80%{transform:translate(calc(var(--sh)*1.7),calc(var(--sh)*1.7))}100%{transform:translate(var(--sh),var(--sh))}}
 
 /* ticker */
 .ticker{background:var(--orange);color:var(--ink);border-block:2px solid var(--ink);overflow:hidden;white-space:nowrap}
@@ -124,6 +129,8 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
 .brands{padding-block:8px 72px}
 .brands>*{border-top:2px solid var(--line);padding-top:20px}
 .brands__h{font:700 13px/1.3 var(--label);letter-spacing:.1em;color:var(--mute)}
+.brands__h span{position:relative;display:inline-block;padding-bottom:6px}
+.brands__h span::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--cyan);transform-origin:0 50%}
 .brands p{font-size:19px;max-width:52ch;margin-top:-1px;border:0;padding-top:6px}
 .brands a{color:var(--cyan);text-underline-offset:3px}
 
@@ -148,7 +155,8 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
   .top{padding:20px var(--gut)}
   .hero{min-height:max(720px,100svh);padding:0 var(--gut) 40px}
   .hero__photo{height:calc(100% - 380px)}
-  .hero__block{max-width:640px;margin-left:auto;margin-right:0;padding:26px 28px;box-shadow:12px 12px 0 var(--cyan)}
+  .hero__block{--sh:12px;max-width:640px;margin-left:auto;margin-right:0}
+  .hero__card{padding:26px 28px}
   .hero h1{font-size:clamp(72px,7vw,96px)}
   .hero__sub{font-size:20px;max-width:44ch}
   .hero__actions{flex-direction:row}
@@ -180,93 +188,73 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
 `;
 
 // Scroll moments. Everything here is an enhancement: with JS off, or with reduced motion, the page
-// renders in its static final state. Native path = CSS scroll-driven animations
-// (animation-timeline: view()); fallback path = IntersectionObserver toggling `.in` under
-// html.sx-io (set by the inline script only when view() timelines are unsupported).
-// transform / opacity / clip-path only.
-const sxStruct = (p: string) => `
-${p}.steps li::before{content:"";position:absolute;left:0;top:-2px;width:100%;height:4px;background:var(--cyan);transform-origin:0 50%}
-${p}.vs__grid{isolation:isolate}
-${p}.vs__card--old li{text-decoration:none}
-${p}.vs__card--old li::after{content:attr(data-t) / "";position:absolute;left:22px;right:0;top:0;color:transparent;text-decoration:line-through;text-decoration-color:var(--mute);text-decoration-thickness:2px;pointer-events:none}
-${p}.vs__card--new{box-shadow:none;position:relative}
-${p}.vs__card--new::after{content:"";position:absolute;inset:-2px;z-index:-1;background:var(--lime);transform:translate(8px,8px)}
-${p}.close{overflow:clip}
-${p}.close__a,${p}.close__b{display:inline-block}
-${p}.close__pin{transform-origin:50% 100%}
-`;
-
-const SX_NATIVE = `
-@media (prefers-reduced-motion:no-preference){
-@supports (animation-timeline:view()) and (content:"a" / ""){
-${sxStruct('')}
-.steps li{view-timeline:--sx block}
-.vs__card--old{view-timeline:--sx block}
-.vs__card--new{view-timeline:--sx block}
-.close__in{view-timeline:--sx block}
-.steps li::before{animation:sx-bar linear both;animation-timeline:--sx;animation-range:entry calc(5% + var(--d,0%)) entry calc(55% + var(--d,0%))}
-.steps__n{animation:sx-dim linear both;animation-timeline:--sx;animation-range:entry calc(5% + var(--d,0%)) entry calc(55% + var(--d,0%))}
-.steps li:nth-child(2){--d:10%}
-.steps li:nth-child(3){--d:20%}
-.vs__card--old li:nth-child(2){--a:25%;--b:85%}
-.vs__card--old li:nth-child(3){--a:40%;--b:100%}
-.vs__card--old li::after{animation:sx-wipe linear both;animation-timeline:--sx;animation-range:entry var(--a,10%) entry var(--b,70%)}
-.vs__card--new::after{animation:sx-slam linear both;animation-timeline:--sx;animation-range:entry 75% cover 20%}
-.fx{animation:sx-wipe linear both;animation-timeline:view();animation-range:entry 0% entry 55%}
-.close__a{animation:sx-from-l linear both;animation-timeline:--sx;animation-range:entry 0% entry 60%}
-.close__b{animation:sx-from-r linear both;animation-timeline:--sx;animation-range:entry 15% entry 75%}
-.close__pin{animation:sx-drop linear both;animation-timeline:--sx;animation-range:entry 35% entry 100%}
-@keyframes sx-bar{from{transform:scaleX(0)}to{transform:none}}
-@keyframes sx-dim{from{opacity:.2}to{opacity:1}}
-@keyframes sx-wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
-@keyframes sx-slam{0%,35%{transform:none}100%{transform:translate(8px,8px)}}
-@keyframes sx-from-l{from{opacity:0;transform:translateX(-14vw)}to{opacity:1;transform:none}}
-@keyframes sx-from-r{from{opacity:0;transform:translateX(14vw)}to{opacity:1;transform:none}}
-@keyframes sx-drop{0%{opacity:0;transform:translateY(-130px) rotate(-12deg)}65%{opacity:1;transform:none}82%{transform:scaleY(.9)}100%{opacity:1;transform:none}}
-}}`;
-
-const SX_FALLBACK = `
-${sxStruct('.sx-io ')}
-.sx-io .steps li::before{transform:scaleX(0);transition:transform .6s cubic-bezier(.23,1,.32,1)}
+// renders in its static final state. One code path for every browser: a tiny IntersectionObserver
+// (inline script below) adds html.sx-io, then adds `.in` to each moment's element as it enters the
+// viewport, and CSS transitions play. (An earlier version used CSS scroll-driven animations
+// (animation-timeline: view()) with this as the fallback; two paths, plus a gate that also required
+// `content` alt-text support, meant some engines showed little or nothing, so it is gone.)
+// `--i` (set by the script) staggers elements that enter in the same batch.
+// transform / opacity / clip-path only; no scroll handlers; nothing moves while you read.
+const SX_CSS = `
+/* 1. Three moves: bar draws, numeral lights up, in sequence */
+.sx-io .steps li::before{content:"";position:absolute;left:0;top:-2px;width:100%;height:4px;background:var(--cyan);transform:scaleX(0);transform-origin:0 50%;transition:transform .7s cubic-bezier(.23,1,.32,1) calc(var(--i,0)*.22s)}
 .sx-io .steps li.in::before{transform:none}
-.sx-io .steps__n{opacity:.2;transition:opacity .5s .15s}
-.sx-io .steps li.in .steps__n{opacity:1}
-.sx-io .vs__card--old li::after{clip-path:inset(0 100% 0 0);transition:clip-path .6s cubic-bezier(.23,1,.32,1)}
-.sx-io .vs__card--old li.in::after{clip-path:inset(0 0 0 0)}
-.sx-io .vs__card--old li:nth-child(2)::after{transition-delay:.12s}
-.sx-io .vs__card--old li:nth-child(3)::after{transition-delay:.24s}
-.sx-io .vs__card--new::after{transform:none;transition:transform .16s ease-out .45s}
+.sx-io .steps__n{opacity:.15;transform:translateY(16px) scale(.9);transform-origin:0 100%;transition:opacity .5s calc(.1s + var(--i,0)*.22s),transform .6s cubic-bezier(.23,1,.32,1) calc(var(--i,0)*.22s)}
+.sx-io .steps li.in .steps__n{opacity:1;transform:none}
+
+/* 2. Stale listings struck through, then the SpotSeek card's shadow slams out */
+.sx-io .vs__grid{isolation:isolate}
+@supports (content:"a" / ""){
+.sx-io .vs__card--old li{text-decoration:none}
+.sx-io .vs__card--old li::after{content:attr(data-t) / "";position:absolute;left:22px;right:0;top:0;color:transparent;text-decoration:line-through;text-decoration-color:var(--white);text-decoration-thickness:2px;pointer-events:none;clip-path:inset(0 100% 0 0);transition:clip-path .7s cubic-bezier(.23,1,.32,1) calc(var(--i,0)*.18s)}
+.sx-io .vs__card--old li.in::after{clip-path:inset(0)}
+}
+.sx-io .vs__card--new{box-shadow:none;position:relative}
+.sx-io .vs__card--new::after{content:"";position:absolute;inset:-2px;z-index:-1;background:var(--lime);transition:transform .22s cubic-bezier(.3,1.7,.5,1) calc(.35s + var(--i,0)*.18s)}
 .sx-io .vs__card--new.in::after{transform:translate(8px,8px)}
-.sx-io .fx{clip-path:inset(0 100% 0 0);transition:clip-path .55s cubic-bezier(.23,1,.32,1)}
-.sx-io .fx.in{clip-path:inset(0 0 0 0)}
-.sx-io .close__a,.sx-io .close__b{opacity:0;transition:opacity .5s,transform .7s cubic-bezier(.23,1,.32,1)}
-.sx-io .close__a{transform:translateX(-14vw)}
-.sx-io .close__b{transform:translateX(14vw);transition-delay:.12s}
+
+/* 3. Calendar rows wipe in; the NEXT UP tag stamps on */
+.sx-io .fx{clip-path:inset(0 100% 0 0);transition:clip-path .6s cubic-bezier(.23,1,.32,1) calc(var(--i,0)*.07s)}
+.sx-io .fx.in{clip-path:inset(0)}
+.sx-io .fx__tag{opacity:0;transform:scale(.6);transition:opacity .2s calc(.5s + var(--i,0)*.07s),transform .3s cubic-bezier(.3,1.7,.5,1) calc(.5s + var(--i,0)*.07s)}
+.sx-io .fx.in .fx__tag{opacity:1;transform:none}
+
+/* 4. Host: the photo frame and the example party slide in from opposite sides and lock; venue chips pop in */
+.sx-io .host{overflow-x:clip}
+.sx-io .host__photo,.sx-io .host__visual .evt{opacity:0;transition:opacity .5s,transform .9s cubic-bezier(.22,1.2,.4,1)}
+.sx-io .host__photo{transform:translateX(-12vw)}
+.sx-io .host__visual .evt{transform:translateX(12vw);transition-delay:.1s}
+.sx-io .host__visual.in .host__photo,.sx-io .host__visual.in .evt{opacity:1;transform:none}
+.sx-io .evt label{opacity:0;transform:translateY(10px) scale(.9);transition:opacity .3s,transform .45s cubic-bezier(.3,1.6,.5,1)}
+.sx-io .host__visual.in .evt label{opacity:1;transform:none;transition-delay:calc(.9s + var(--c,0)*.14s)}
+.evt label:nth-of-type(2){--c:1}
+.evt label:nth-of-type(3){--c:2}
+.evt label:nth-of-type(4){--c:3}
+.sx-io .host__visual.in .evt label:last-of-type span{animation:sx-lit .6s 1.65s both}
+@keyframes sx-lit{40%{transform:scale(1.12)}}
+
+/* 5. Brands line underlines itself */
+.sx-io .brands__h span::after{transform:scaleX(0);transition:transform .8s cubic-bezier(.23,1,.32,1) .15s}
+.sx-io .brands__h.in span::after{transform:none}
+
+/* 6. Closing (the peak): headline slides together, the pin drops */
+.sx-io .close{overflow:clip}
+.sx-io .close__a,.sx-io .close__b{display:inline-block;opacity:0;transition:opacity .5s,transform .85s cubic-bezier(.23,1,.32,1)}
+.sx-io .close__a{transform:translateX(-22vw)}
+.sx-io .close__b{transform:translateX(22vw);transition-delay:.12s}
 .sx-io .close__in.in .close__a,.sx-io .close__in.in .close__b{opacity:1;transform:none}
-.sx-io .close__pin{opacity:0;transform:translateY(-130px) rotate(-12deg);transition:opacity .3s .4s,transform .55s cubic-bezier(.23,1,.32,1) .4s}
-.sx-io .close__in.in .close__pin{opacity:1;transform:none}
+.sx-io .close__pin{opacity:0;transform-origin:50% 100%}
+.sx-io .close__in.in .close__pin{animation:sx-drop .8s ease-out .55s both}
+@keyframes sx-drop{0%{opacity:0;transform:translateY(-170px) rotate(-14deg)}58%{opacity:1;transform:none}74%{transform:scaleY(.85)}90%{transform:scaleY(1.04)}100%{opacity:1;transform:none}}
 `;
 
-// "Next up" highlight (real date) + IntersectionObserver fallback. Plain ES2017, no dependencies.
+// Inline script (the only non-JSON-LD script; test/index.spec.ts enforces < 4 KB).
 const SX_JS = `(()=>{
-var d=document,h=d.documentElement,q=s=>[].slice.call(d.querySelectorAll(s));
-try{
-var n=new Date(),T=new Date(n.getFullYear(),n.getMonth(),n.getDate()),M='JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC',best,bs,on;
-q('.fx').forEach(r=>{
-var m=/^([A-Z]{3}) (\\d+)(?: TO ([A-Z]{3}) (\\d+))?(?:, (\\d{4}))?$/.exec(r.firstElementChild.textContent.trim());
-if(!m)return;
-var mk=(a,b,y)=>new Date(y,M.indexOf(a)/3,+b),y=+m[5]||T.getFullYear(),s=mk(m[1],m[2],y),e=m[3]?mk(m[3],m[4],y):s;
-if(e<s)e=mk(m[3],m[4],y+1);
-if(!m[5]&&e<T){s=mk(m[1],m[2],y+1);e=m[3]?mk(m[3],m[4],y+1):s;if(e<s)e=mk(m[3],m[4],y+2)}
-if(e<T||(best&&s>=bs))return;
-best=r;bs=s;on=s<=T
-});
-if(best){best.classList.add('fx--next');var t=d.createElement('span');t.className='fx__tag';t.textContent=on?'ON NOW':'NEXT UP';best.firstElementChild.appendChild(t)}
-}catch(e){}
-if(!matchMedia('(prefers-reduced-motion:reduce)').matches&&!CSS.supports('animation-timeline:view()')&&CSS.supports('content:"a" / ""')&&window.IntersectionObserver){
-h.classList.add('sx-io');
-var io=new IntersectionObserver(l=>l.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{rootMargin:'0px 0px -12% 0px'});
-q('.steps li,.vs__card--old li,.vs__card--new,.fx,.close__in').forEach(e=>io.observe(e))
+var d=document;
+if(!matchMedia('(prefers-reduced-motion:reduce)').matches&&window.IntersectionObserver){
+var io=new IntersectionObserver(l=>{var i=0;l.forEach(e=>{if(e.isIntersecting||e.boundingClientRect.top<0){var t=e.target;t.style.setProperty('--i',i++);t.classList.add('in');io.unobserve(t)}})},{rootMargin:'0px 0px -14% 0px'});
+d.documentElement.classList.add('sx-io');
+[].forEach.call(d.querySelectorAll('.steps li,.vs__card--old li,.vs__card--new,.fx,.host__visual,.brands__h,.close__in'),e=>io.observe(e))
 }
 })()`;
 
@@ -278,11 +266,35 @@ const SX_NEXT_CSS = `
 
 export interface HomeOpts {
   baseUrl: string;
+  /** Injectable clock (tests); defaults to the current time. */
+  now?: Date;
+}
+
+const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+function tickerHtml(rows: CalRow[]): string {
+  const items = rows.map((r) => esc(r.ticker));
+  return items.map((t) => `<li>${t}</li>`).join('') + '\n    ' + items.map((t) => `<li aria-hidden="true">${t}</li>`).join('');
+}
+
+function calendarHtml(rows: CalRow[]): string {
+  return rows
+    .map(
+      (r) => `      <li class="fx${r.tag ? ' fx--next' : ''}">
+        <span class="fx__date">${esc(r.dateLabel)}${r.tag ? `<span class="fx__tag">${r.tag}</span>` : ''}</span>
+        <span class="fx__name">${esc(r.name)}</span>
+        <span class="fx__note">${esc(r.note)}</span>
+      </li>`,
+    )
+    .join('\n');
 }
 
 /** Landing page HTML. baseUrl (PUBLIC_BASE_URL, no trailing slash) anchors canonical/og URLs. */
 export function renderHomePage(o: HomeOpts): string {
   const base = o.baseUrl.replace(/\/+$/, '');
+  const now = o.now ?? new Date();
+  const rows = buildCalendar(now);
+  const oscarsDate = nextEventDateTitle('oscars-', now) ?? 'Date to be announced';
   const jsonLd = [
     {
       '@context': 'https://schema.org',
@@ -327,7 +339,7 @@ export function renderHomePage(o: HomeOpts): string {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Narrow:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
-${HOME_CSS}${SX_NEXT_CSS}${SX_NATIVE}${SX_FALLBACK}
+${HOME_CSS}${SX_NEXT_CSS}${SX_CSS}
 </style>
 <script type="application/ld+json">${safeJson(jsonLd)}</script>
 </head>
@@ -346,7 +358,7 @@ ${HOME_CSS}${SX_NEXT_CSS}${SX_NATIVE}${SX_FALLBACK}
 
 <section class="hero" id="top">
   <img class="hero__photo" src="/site/living-room-1536.8aa17217.webp" srcset="/site/living-room-800.cfea0bf0.webp 800w, /site/living-room-1536.8aa17217.webp 1536w" sizes="100vw" width="1536" height="1024" alt="Four friends cheering with fists and arms in the air in a warm living room as their team scores on a big TV, with beers and bowls of popcorn and snacks on the coffee table" fetchpriority="high">
-  <div class="hero__block">
+  <div class="hero__block"><div class="hero__card">
     <h1>NEVER WATCH<br>ALONE.</h1>
     <p class="hero__sub">Games, award shows, season finales, election nights. Find host-confirmed watch parties near you, with real people going. Or host your own.</p>
     <div class="hero__actions">
@@ -356,13 +368,12 @@ ${HOME_CSS}${SX_NEXT_CSS}${SX_NATIVE}${SX_FALLBACK}
       </a>
       <a class="btn btn--ghost" href="#host">Host a watch party</a>
     </div>
-  </div>
+  </div></div>
 </section>
 
 <div class="ticker" role="region" aria-label="What's on: upcoming big nights">
   <ul class="ticker__track">
-    <li>NFL SUNDAYS</li><li>NBA SEASON STARTS OCT 20</li><li>ELECTION NIGHT NOV 3</li><li>GOLDEN GLOBES JAN 10</li><li>SUPER BOWL LXI FEB 14</li><li>OSCARS MAR 14</li><li>MARCH MADNESS MAR 14 TO APR 5</li><li>CHAMPIONS LEAGUE FINAL JUN 5</li><li>EVERY WEEK: YOUR SHOW'S NEW EPISODE</li>
-    <li aria-hidden="true">NFL SUNDAYS</li><li aria-hidden="true">NBA SEASON STARTS OCT 20</li><li aria-hidden="true">ELECTION NIGHT NOV 3</li><li aria-hidden="true">GOLDEN GLOBES JAN 10</li><li aria-hidden="true">SUPER BOWL LXI FEB 14</li><li aria-hidden="true">OSCARS MAR 14</li><li aria-hidden="true">MARCH MADNESS MAR 14 TO APR 5</li><li aria-hidden="true">CHAMPIONS LEAGUE FINAL JUN 5</li><li aria-hidden="true">EVERY WEEK: YOUR SHOW'S NEW EPISODE</li>
+    ${tickerHtml(rows)}
   </ul>
 </div>
 
@@ -414,51 +425,7 @@ ${HOME_CSS}${SX_NEXT_CSS}${SX_NATIVE}${SX_FALLBACK}
     <h2 id="season-h" class="h2 h2--dark">WHAT'S ON,<br>THE CALENDAR.</h2>
     <p class="season__lead">Sports, awards, elections, finales. The dates worth getting people together for.</p>
     <ul class="fixtures">
-      <li class="fx">
-        <span class="fx__date">EVERY SUNDAY</span>
-        <span class="fx__name">NFL SUNDAYS</span>
-        <span class="fx__note">The weekly ritual.</span>
-      </li>
-      <li class="fx">
-        <span class="fx__date">OCT 20</span>
-        <span class="fx__name">NBA SEASON STARTS</span>
-        <span class="fx__note">Opening night.</span>
-      </li>
-      <li class="fx">
-        <span class="fx__date">NOV 3</span>
-        <span class="fx__name">US ELECTION NIGHT</span>
-        <span class="fx__note">Midterms. Results on every screen.</span>
-      </li>
-      <li class="fx">
-        <span class="fx__date">JAN 10, 2027</span>
-        <span class="fx__name">GOLDEN GLOBES</span>
-        <span class="fx__note">Red carpet to final envelope.</span>
-      </li>
-      <li class="fx">
-        <span class="fx__date">FEB 14, 2027</span>
-        <span class="fx__name">SUPER BOWL LXI</span>
-        <span class="fx__note">The big one.</span>
-      </li>
-      <li class="fx">
-        <span class="fx__date">MAR 14, 2027</span>
-        <span class="fx__name">THE OSCARS</span>
-        <span class="fx__note">Hosted by Conan O'Brien.</span>
-      </li>
-      <li class="fx">
-        <span class="fx__date">MAR 14 TO APR 5, 2027</span>
-        <span class="fx__name">MARCH MADNESS</span>
-        <span class="fx__note">Three weeks of brackets.</span>
-      </li>
-      <li class="fx">
-        <span class="fx__date">JUN 5, 2027</span>
-        <span class="fx__name">CHAMPIONS LEAGUE FINAL</span>
-        <span class="fx__note">One night, one trophy.</span>
-      </li>
-      <li class="fx">
-        <span class="fx__date">EVERY WEEK</span>
-        <span class="fx__name">YOUR SHOW'S NEW EPISODE</span>
-        <span class="fx__note">Finales and premieres count.</span>
-      </li>
+${calendarHtml(rows)}
     </ul>
   </div>
 </section>
@@ -480,7 +447,7 @@ ${HOME_CSS}${SX_NEXT_CSS}${SX_NATIVE}${SX_FALLBACK}
     <p class="evt__title">OSCARS NIGHT</p>
     <dl class="evt__rows">
       <div><dt>Host</dt><dd>You</dd></div>
-      <div><dt>Date</dt><dd>Mar 14, 2027</dd></div>
+      <div><dt>Date</dt><dd>${oscarsDate}</dd></div>
       <div><dt>Venue</dt><dd class="evt__venue"><span data-v="bar">A bar downtown</span><span data-v="home">Your living room</span><span data-v="roof">A rooftop</span><span data-v="none">To be decided</span></dd></div>
     </dl>
     <fieldset>
@@ -495,7 +462,7 @@ ${HOME_CSS}${SX_NEXT_CSS}${SX_NATIVE}${SX_FALLBACK}
 </section>
 
 <section class="brands wrap" aria-labelledby="brands-h">
-  <h2 id="brands-h" class="brands__h">RUN A BAR, A SHOP OR A BRAND?</h2>
+  <h2 id="brands-h" class="brands__h"><span>RUN A BAR, A SHOP OR A BRAND?</span></h2>
   <p>Brands and local businesses can sponsor a party. <a href="mailto:hello@spotseek.app?subject=Sponsoring%20a%20party">Say hello</a> and we'll tell you how it will work.</p>
 </section>
 

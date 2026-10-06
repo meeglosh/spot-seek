@@ -11,6 +11,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { eq } from 'drizzle-orm';
 import * as schema from './schema';
 import { bufferToHex, timingSafeEqualHex } from './stripe';
+import { landingHealth } from './landing-calendar';
 
 type AppEnv = { Bindings: Env };
 
@@ -42,6 +43,9 @@ export async function requireAdmin(c: Context<{ Bindings: Env }>, next: Next) {
 }
 
 adminRouter.use('*', requireAdmin);
+
+// GET /api/admin/landing-health: runway of the landing page's curated calendar (no side effects).
+adminRouter.get('/landing-health', (c) => c.json(landingHealth(new Date())));
 
 // POST /api/admin/verify/:userId — mark a host as verified.
 adminRouter.post('/verify/:userId', async (c) => {

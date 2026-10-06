@@ -16,6 +16,7 @@ import { deeplinksRouter } from './deeplinks';
 import { webRsvpRouter } from './webrsvp';
 import { configurePublicBaseUrl, publicBaseUrl } from './email';
 import { renderHomePage } from './homepage';
+import { warnIfLandingLow } from './landing-calendar';
 import { configureEmailGuard } from './email-guard';
 import { configureApns } from './apns';
 import { pushRouter } from './push';
@@ -131,6 +132,9 @@ async function scheduled(controller: ScheduledController, env: Env, ctx?: Execut
   configurePublicBaseUrl(env.PUBLIC_BASE_URL);
   configureEmailGuard(env);
   configureApns(env, ctx);
+  // Landing calendar runway check, once a day (the 13:00 UTC run). Logs only; never emails.
+  const at = new Date(controller.scheduledTime);
+  if (at.getUTCHours() === 13 && at.getUTCMinutes() < 15) warnIfLandingLow(at);
   await notificationsScheduled(controller, env);
   await runPaymentSweeps(env);
 }
