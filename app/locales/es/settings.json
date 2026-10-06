@@ -9,10 +9,13 @@
     "signedInAs": "Sesión iniciada como",
     "signOut": "Cerrar sesión",
     "deleteAccount": "Eliminar cuenta",
-    "deleteConfirm": "¿Eliminar tu cuenta? Esta acción no se puede deshacer. Los anfitriones deben eliminar antes sus propios eventos.",
+    "deleteConfirm": "¿Eliminar tu cuenta? Se eliminarán de forma permanente tu perfil, tus confirmaciones de asistencia y todos los eventos pasados, borradores o cancelados que organices. Esta acción no se puede deshacer.",
     "keepIt": "Conservar",
     "yesDelete": "Sí, eliminar",
-    "deleteFallbackError": "No se pudo eliminar la cuenta."
+    "deleteFallbackError": "No se pudo eliminar la cuenta.",
+    "typeToConfirm": "Escribe {{word}} para confirmar",
+    "blockedEvents": "Todavía organizas eventos próximos. Cancélalos primero para avisar a los asistentes y reembolsar a los patrocinadores, y vuelve a intentarlo:",
+    "blockedMoney": "Aún hay pagos de patrocinio en curso, así que no se puede eliminar tu cuenta todavía. Inténtalo de nuevo cuando se liberen o reembolsen:"
   },
   "notifications": {
     "title": "Notificaciones",

@@ -9,10 +9,13 @@
     "signedInAs": "Signed in as",
     "signOut": "Sign Out",
     "deleteAccount": "Delete Account",
-    "deleteConfirm": "Delete your account? This cannot be undone. Hosts must delete their own events first.",
+    "deleteConfirm": "Delete your account? This permanently removes your profile, RSVPs, and any past, draft, or cancelled events you host. This cannot be undone.",
     "keepIt": "Keep It",
     "yesDelete": "Yes, Delete",
-    "deleteFallbackError": "Could not delete account."
+    "deleteFallbackError": "Could not delete account.",
+    "typeToConfirm": "Type {{word}} to confirm",
+    "blockedEvents": "You still host upcoming events. Cancel them first so attendees are notified and sponsors are refunded, then try again:",
+    "blockedMoney": "Sponsorship payments are still in progress, so your account can't be deleted yet. Try again once they are released or refunded:"
   },
   "notifications": {
     "title": "Notifications",

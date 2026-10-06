@@ -9,10 +9,13 @@
     "signedInAs": "Angemeldet als",
     "signOut": "Abmelden",
     "deleteAccount": "Konto löschen",
-    "deleteConfirm": "Konto löschen? Dies kann nicht rückgängig gemacht werden. Gastgeber müssen zuerst ihre eigenen Veranstaltungen löschen.",
+    "deleteConfirm": "Konto löschen? Dadurch werden dein Profil, deine Zusagen sowie alle vergangenen, entworfenen oder abgesagten Veranstaltungen, die du ausrichtest, endgültig gelöscht. Dies kann nicht rückgängig gemacht werden.",
     "keepIt": "Behalten",
     "yesDelete": "Ja, löschen",
-    "deleteFallbackError": "Konto konnte nicht gelöscht werden."
+    "deleteFallbackError": "Konto konnte nicht gelöscht werden.",
+    "typeToConfirm": "Gib {{word}} zur Bestätigung ein",
+    "blockedEvents": "Du richtest noch bevorstehende Veranstaltungen aus. Sage sie zuerst ab, damit Teilnehmende benachrichtigt und Sponsoren erstattet werden, und versuche es dann erneut:",
+    "blockedMoney": "Sponsoring-Zahlungen sind noch in Bearbeitung, daher kann dein Konto noch nicht gelöscht werden. Versuche es erneut, sobald sie ausgezahlt oder erstattet wurden:"
   },
   "notifications": {
     "title": "Benachrichtigungen",

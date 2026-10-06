@@ -17,6 +17,7 @@ import { notificationsRouter, scheduled as notificationsScheduled } from './noti
 import { reviewsRouter } from './reviews';
 import { allowRequest, tooManyRequests, AUTH_LIMIT_PER_MIN } from './ratelimit';
 import { EMAIL_LOGO_PNG_BASE64 } from './email-logo';
+import { accountRouter } from './account';
 import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -52,6 +53,7 @@ app.route('/api/geocode', geocodeRouter);
 app.route('/api/notifications', notificationsRouter);
 app.route('/api/reviews', reviewsRouter);
 app.route('/api/payments', paymentsRouter);
+app.route('/api/account', accountRouter);
 app.route('/payments', onboardPagesRouter);
 app.route('/', deeplinksRouter);
 

@@ -2,7 +2,7 @@
  * Settings — account, notification prefs, favourites, and about.
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,14 +11,17 @@ import * as Location from 'expo-location';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../lib/auth';
 import {
-  fetchNotificationPrefs, updateNotificationPrefs, deleteAccount, getStoredLocale,
-  fetchConnectStatus, startConnectOnboarding, type ApiNotificationPrefs, type ApiConnectStatus,
+  fetchNotificationPrefs, updateNotificationPrefs, deleteAccount, DeleteAccountBlockedError, getStoredLocale,
+  fetchConnectStatus, startConnectOnboarding, type ApiNotificationPrefs, type ApiConnectStatus, type DeleteBlocker,
 } from '../lib/api';
 import { colors, palette, spacing, type as t } from '../lib/theme';
 import { AppHeader } from '../components/AppHeader';
-import { Btn, Badge, SectionTitle } from '../components/ui';
+import { Btn, Badge, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle } from '../components/ui';
 import { GuestGate } from '../components/AuthGate';
 import { SUPPORTED_LOCALES, setAppLocale } from '../lib/i18n';
+
+// Typed (case-sensitive) to re-confirm account deletion; sent to the server too.
+const DELETE_WORD = 'DELETE';
 
 function milesToKm(mi: number): number {
   return Math.round(mi * 1.609);
@@ -76,6 +79,9 @@ export default function SettingsScreen() {
   const [deleteStep, setDeleteStep] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [deleteTyped, setDeleteTyped] = useState('');
+  const [deleteFocused, setDeleteFocused] = useState(false);
+  const [deleteBlocker, setDeleteBlocker] = useState<DeleteBlocker | null>(null);
 
   // Only place location is reported from the app: a one-shot, best-effort
   // coarse position sent whenever the foreground permission is already
@@ -182,16 +188,29 @@ export default function SettingsScreen() {
     router.replace('/(auth)');
   }
 
+  function resetDelete() {
+    setDeleteStep(false);
+    setDeleteTyped('');
+    setDeleteBlocker(null);
+  }
+
   async function handleDeleteAccount() {
+    if (deleteTyped !== DELETE_WORD) return;
     setDeleting(true);
     setDeleteError('');
+    setDeleteBlocker(null);
     try {
       await deleteAccount();
       auth.signOut();
       router.replace('/(auth)');
     } catch (err) {
-      setDeleteError((err as Error).message || tr('account.deleteFallbackError'));
+      if (err instanceof DeleteAccountBlockedError) {
+        setDeleteBlocker(err.blocker);
+      } else {
+        setDeleteError((err as Error).message || tr('account.deleteFallbackError'));
+      }
       setDeleteStep(false);
+      setDeleteTyped('');
     } finally {
       setDeleting(false);
     }
@@ -233,7 +252,7 @@ export default function SettingsScreen() {
             <Btn
               label={tr('account.deleteAccount')}
               variant="danger"
-              onPress={() => { setDeleteStep(true); setDeleteError(''); }}
+              onPress={() => { setDeleteStep(true); setDeleteError(''); setDeleteBlocker(null); }}
               style={s.fullBtn}
             />
           ) : (
@@ -241,13 +260,28 @@ export default function SettingsScreen() {
               <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
                 {tr('account.deleteConfirm')}
               </Text>
+              <View>
+                <FieldLabel color={colors.danger}>{tr('account.typeToConfirm', { word: DELETE_WORD })}</FieldLabel>
+                <TextInput
+                  style={[inputStyle, deleteFocused && inputFocusedStyle]}
+                  value={deleteTyped}
+                  onChangeText={setDeleteTyped}
+                  onFocus={() => setDeleteFocused(true)}
+                  onBlur={() => setDeleteFocused(false)}
+                  placeholder={DELETE_WORD}
+                  placeholderTextColor={colors.textTertiary}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  accessibilityLabel={tr('account.typeToConfirm', { word: DELETE_WORD })}
+                />
+              </View>
               <View style={s.confirmBtns}>
                 <Btn
                   label={tr('account.keepIt')}
                   variant="ghost"
                   small
                   style={s.confirmBtn}
-                  onPress={() => setDeleteStep(false)}
+                  onPress={resetDelete}
                 />
                 <Btn
                   label={deleting ? '…' : tr('account.yesDelete')}
@@ -255,11 +289,45 @@ export default function SettingsScreen() {
                   small
                   style={s.confirmBtn}
                   onPress={handleDeleteAccount}
-                  disabled={deleting}
+                  disabled={deleting || deleteTyped !== DELETE_WORD}
                 />
               </View>
             </View>
           )}
+          {deleteBlocker?.code === 'has_upcoming_events' ? (
+            <View style={s.confirmBox}>
+              <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('account.blockedEvents')}</Text>
+              {deleteBlocker.events.map((e) => (
+                <Pressable
+                  key={e.id}
+                  style={s.linkRow}
+                  onPress={() => router.push(`/(tabs)/discover/${e.id}` as never)}
+                  accessibilityRole="link"
+                >
+                  <Text style={[t.bodyMd, { color: colors.accent, flex: 1 }]} numberOfLines={2}>{e.title}</Text>
+                  <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+          {deleteBlocker?.code === 'money_in_flight' ? (
+            <View style={s.confirmBox}>
+              <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('account.blockedMoney')}</Text>
+              {deleteBlocker.sponsorships.map((sp) => (
+                <Pressable
+                  key={sp.id}
+                  style={s.linkRow}
+                  onPress={() => router.push(`/(tabs)/discover/${sp.eventId}` as never)}
+                  accessibilityRole="link"
+                >
+                  <Text style={[t.bodyMd, { color: colors.accent, flex: 1 }]} numberOfLines={2}>
+                    {sp.eventTitle} · ${(sp.amountCents / 100).toFixed(2)}
+                  </Text>
+                  <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
           {deleteError ? <Text style={[t.bodySm, { color: colors.danger }]}>{deleteError}</Text> : null}
         </View>
 

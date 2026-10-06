@@ -806,13 +806,55 @@ export async function updateNotificationPrefs(
 
 // ─── Account ──────────────────────────────────────────────────────────────────
 
-// Backend route may not exist yet (see notification system task brief) — a
-// 404 surfaces as a generic error the caller renders, same as any other
-// failure shape here.
-export async function deleteAccount(): Promise<void> {
-  const res = await apiFetch('/api/account', { method: 'DELETE' });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: string };
-    throw new Error(body.error ?? `Delete account failed: ${res.status}`);
+export type DeleteBlocker =
+  | { code: 'has_upcoming_events'; events: { id: string; title: string; startsAt: string | null }[] }
+  | {
+      code: 'money_in_flight';
+      sponsorships: { id: string; eventId: string; eventTitle: string; amountCents: number; role: 'sponsor' | 'host' }[];
+    };
+
+/** Thrown by deleteAccount() on a 409 — the account cannot be deleted yet. */
+export class DeleteAccountBlockedError extends Error {
+  blocker: DeleteBlocker;
+  constructor(blocker: DeleteBlocker) {
+    super(blocker.code);
+    this.name = 'DeleteAccountBlockedError';
+    this.blocker = blocker;
   }
+}
+
+export async function deleteAccount(): Promise<void> {
+  const res = await apiFetch('/api/account', {
+    method: 'DELETE',
+    body: JSON.stringify({ confirm: 'DELETE' }),
+  });
+  if (res.ok) return;
+  const body = await res.json().catch(() => ({})) as {
+    error?: string;
+    events?: { id: string; title: string; startsAt: string | null }[];
+    sponsorships?: { id: string; eventId: string; eventTitle: string; amountCents: number; role: 'sponsor' | 'host' }[];
+  };
+  if (res.status === 409 && body.error === 'has_upcoming_events') {
+    throw new DeleteAccountBlockedError({ code: 'has_upcoming_events', events: body.events ?? [] });
+  }
+  if (res.status === 409 && body.error === 'money_in_flight') {
+    throw new DeleteAccountBlockedError({ code: 'money_in_flight', sponsorships: body.sponsorships ?? [] });
+  }
+  throw new Error(body.error ?? `Delete account failed: ${res.status}`);
+}
+
+// ─── Forgot password ──────────────────────────────────────────────────────────
+
+/**
+ * Requests a password-reset email. The server always answers neutrally (it
+ * never reveals whether the email exists), so any 2xx is success; only 429 and
+ * network/5xx failures surface as errors.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const res = await apiFetch('/api/auth/request-password-reset', {
+    method: 'POST',
+    skipAuth: true,
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error(`Password reset request failed: ${res.status}`);
 }

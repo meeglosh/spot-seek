@@ -121,6 +121,18 @@ unpaid → requires_payment → paid → released
 - ACH debit + Stripe hosted invoices for larger B2B sponsors.
 - Live-mode cutover: **human-only step**.
 
+## Account deletion (`DELETE /api/account`)
+
+- A user with any sponsorship in `paymentStatus = 'paid'` (not yet `released`
+  or `refunded`) — as the sponsor OR as the host of the event — gets
+  `409 money_in_flight` and cannot delete their account until the release /
+  refund sweep or a withdrawal settles it.
+- **The Stripe connected account is never deleted via the Stripe API**
+  (money and compliance: payouts, KYC and tax records live with Stripe). On
+  account deletion we only drop OUR reference — `users.stripe_account_id` and
+  `stripe_payouts_enabled` go away with the `users` row. Closing the orphaned
+  connected account, if ever wanted, is a manual dashboard step by the owner.
+
 ## Non-negotiables (from CLAUDE.md)
 
 - Test-mode keys only; live keys/charges are a human decision recorded in
