@@ -3,7 +3,7 @@ import { colors } from '../../../lib/theme';
 
 export default function SponsorshipLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="browse" />
       <Stack.Screen name="[eventId]" />

@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, Modal, Pressable, StyleSheet } from 'react-native';
+import { View, Modal, Pressable, StyleSheet } from 'react-native';
+import { Text } from './Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, palette, spacing, type as t } from '../lib/theme';
-import { Badge, Btn } from './ui';
+import { colors, spacing, type as t } from '../lib/theme';
+import { Btn } from './ui';
 
 type Router = ReturnType<typeof useRouter>;
 
@@ -33,7 +34,6 @@ export function GuestGate({
   const { t: tr } = useTranslation('common');
   return (
     <View style={s.center}>
-      <Badge label={tr('guestGate.membersOnly')} tone="live" />
       <Text style={[t.headlineLg, s.gateTitle]}>{title}</Text>
       <Text style={[t.bodyMd, s.gateBody]}>{message}</Text>
       <View style={s.gateActions}>
@@ -67,7 +67,6 @@ export function AuthGateSheet({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={s.scrim} onPress={onClose} />
       <View style={[s.sheet, { paddingBottom: insets.bottom + spacing.xl }]}>
-        <Badge label={tr('guestGate.membersOnly')} tone="live" />
         <Text style={[t.headlineMd, s.gateTitle]}>{title ?? tr('guestGate.joinTheAction')}</Text>
         <Text style={[t.bodyMd, s.gateBody]}>{message}</Text>
         <View style={s.gateActions}>
@@ -91,24 +90,21 @@ const s = StyleSheet.create({
     gap: spacing.lg,
   },
   gateTitle: {
-    color: palette.white,
+    color: colors.textPrimary,
     textAlign: 'center',
-    textShadowColor: palette.secondary,
-    textShadowOffset: { width: 3, height: 3 },
-    textShadowRadius: 0,
   },
   gateBody: { color: colors.textSecondary, textAlign: 'center', maxWidth: 300 },
   gateActions: { alignSelf: 'stretch', gap: spacing.md, marginTop: spacing.md },
 
-  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.overlay },
+  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.scrim },
   sheet: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: palette.surfaceLowest,
+    backgroundColor: colors.surfaceSunken,
     borderTopWidth: 2,
-    borderTopColor: colors.accent,
+    borderTopColor: colors.action,
     padding: spacing.xl,
     gap: spacing.md,
     alignItems: 'center',

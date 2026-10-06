@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Image, TextInput,
-  ActivityIndicator, KeyboardAvoidingView, Platform,
+  View, ScrollView, StyleSheet, Image, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { Text } from '../../../components/Text';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useStripe } from '@stripe/stripe-react-native';
 import { AppHeader } from '../../../components/AppHeader';
-import { colors, palette, spacing, fonts, type as t } from '../../../lib/theme';
+import { colors, spacing, type as t } from '../../../lib/theme';
 import { Btn, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
@@ -26,9 +26,9 @@ const PAID_POLL_ATTEMPTS = 15;
 
 const PLATFORM_FEE_RATE = 0.15;
 
-const BID_TONE: Record<SponsorshipStatus, 'neutral' | 'volt' | 'live'> = {
+const BID_TONE: Record<SponsorshipStatus, 'neutral' | 'confirmed' | 'live'> = {
   pending: 'neutral',
-  active: 'volt',
+  active: 'confirmed',
   rejected: 'live',
   cancelled: 'neutral',
 };
@@ -227,7 +227,7 @@ export default function SponsorshipDetailsScreen() {
     return (
       <View style={s.container}>
         <AppHeader back />
-        <View style={s.center}><ActivityIndicator color={colors.accent} /></View>
+        <View style={s.center}><ActivityIndicator color={colors.action} /></View>
       </View>
     );
   }
@@ -262,18 +262,16 @@ export default function SponsorshipDetailsScreen() {
           {event.coverImageUrl ? (
             <>
               <Image source={{ uri: resolveImageUrl(event.coverImageUrl)! }} style={s.coverImg} resizeMode="cover" />
-              <View style={s.coverTint} />
             </>
           ) : (
-            <Text style={[s.coverFallback, { fontFamily: fonts.display }]} numberOfLines={1}>
+            <Text style={[t.headlineLg, s.coverFallback]} numberOfLines={1}>
               {event.broadcastSubject.toUpperCase()}
             </Text>
           )}
         </View>
 
         <View style={s.body}>
-          <Badge label={tr('bid.openForBids')} tone="accent" />
-          <Text style={[t.headlineLg, { color: colors.accent }]}>{event.title}</Text>
+          <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{event.title}</Text>
           {event.description != null && event.description !== '' && (
             <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{event.description}</Text>
           )}
@@ -309,14 +307,14 @@ export default function SponsorshipDetailsScreen() {
           <View style={s.dealList}>
             {DEAL_POINTS.map((p) => (
               <View key={p.title} style={s.dealRow}>
-                <Text style={[t.labelCaps, { color: colors.volt }]}>{p.title}</Text>
+                <Text style={[t.labelCaps, { color: colors.textPrimary }]}>{p.title}</Text>
                 <Text style={[t.bodySm, { color: colors.textSecondary }]}>{p.body}</Text>
               </View>
             ))}
           </View>
 
           {/* ── Bid status / bid form ────────────────────────────────────── */}
-          <SectionTitle accent={colors.live}>{tr('bid.statusTitle')}</SectionTitle>
+          <SectionTitle>{tr('bid.statusTitle')}</SectionTitle>
 
           {openBids.length > 0 ? (
             openBids.map((bid) => (
@@ -330,11 +328,11 @@ export default function SponsorshipDetailsScreen() {
                 </Text>
                 <View style={s.statusRow}>
                   <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.platformFee')}</Text>
-                  <Text style={[t.monoData, { color: colors.live }]}>{fmtUsd(bid.platformFeeCents)}</Text>
+                  <Text style={[t.monoData, { color: colors.textSecondary }]}>{fmtUsd(bid.platformFeeCents)}</Text>
                 </View>
                 <View style={s.statusRow}>
                   <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.hostReceives')}</Text>
-                  <Text style={[t.monoData, { color: colors.volt }]}>
+                  <Text style={[t.monoData, { color: colors.confirmed }]}>
                     {fmtUsd(bid.amountCents - bid.platformFeeCents)}
                   </Text>
                 </View>
@@ -352,7 +350,7 @@ export default function SponsorshipDetailsScreen() {
                 {bid.status === 'pending' ? (
                   <Btn label={tr('bid.cancelBid')} variant="danger" disabled={submitting} onPress={() => handleCancelBid(bid.id)} />
                 ) : (
-                  <Text style={[t.bodySm, { color: colors.volt }]}>
+                  <Text style={[t.bodySm, { color: colors.confirmed }]}>
                     {tr('bid.hostAccepted')}
                   </Text>
                 )}
@@ -360,13 +358,13 @@ export default function SponsorshipDetailsScreen() {
                   <View style={s.paymentBlock}>
                     {processingBidId === bid.id ? (
                       <View style={s.processingRow}>
-                        <ActivityIndicator color={colors.accent} />
+                        <ActivityIndicator color={colors.action} />
                         <Text style={[t.bodySm, { color: colors.textSecondary }]}>{tr('bid.payment.processing')}</Text>
                       </View>
                     ) : bid.paymentStatus === 'paid' ? (
-                      <Text style={[t.bodySm, { color: colors.volt }]}>{tr('bid.payment.paid')}</Text>
+                      <Text style={[t.bodySm, { color: colors.confirmed }]}>{tr('bid.payment.paid')}</Text>
                     ) : bid.paymentStatus === 'released' ? (
-                      <Text style={[t.bodySm, { color: colors.volt }]}>{tr('bid.payment.released')}</Text>
+                      <Text style={[t.bodySm, { color: colors.confirmed }]}>{tr('bid.payment.released')}</Text>
                     ) : bid.paymentStatus === 'refunded' ? (
                       <Text style={[t.bodySm, { color: colors.textSecondary }]}>{tr('bid.payment.refunded')}</Text>
                     ) : (
@@ -395,7 +393,7 @@ export default function SponsorshipDetailsScreen() {
             ))
           ) : notSponsor ? (
             <View style={s.statusCard}>
-              <Text style={[t.headlineSm, { color: colors.live }]}>{tr('bid.sponsorProfileNeeded.title')}</Text>
+              <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{tr('bid.sponsorProfileNeeded.title')}</Text>
               <Text style={[t.bodySm, { color: colors.textSecondary }]}>
                 {tr('bid.sponsorProfileNeeded.body')}
               </Text>
@@ -440,7 +438,7 @@ export default function SponsorshipDetailsScreen() {
                 />
               </View>
               {amountCents > 0 && (
-                <Text style={[t.monoData, { color: colors.accent }]}>
+                <Text style={[t.monoData, { color: colors.textSecondary }]}>
                   {tr('bid.feeSummary', { fee: fmtUsd(feeCents), host: fmtUsd(amountCents - feeCents) })}
                 </Text>
               )}
@@ -464,52 +462,46 @@ export default function SponsorshipDetailsScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.lg },
 
   coverWrap: {
     height: 190,
-    backgroundColor: palette.black,
+    backgroundColor: colors.textOnFill,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    borderBottomWidth: 2,
-    borderBottomColor: colors.accentDim,
   },
   coverImg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.55 },
-  coverTint: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,229,255,0.08)',
-  },
-  coverFallback: { fontSize: 40, color: palette.surfaceHighest, paddingHorizontal: spacing.lg },
+  coverFallback: { color: colors.surface3, paddingHorizontal: spacing.lg },
 
   body: { padding: spacing.lg, gap: spacing.lg },
 
   factsCard: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: palette.outlineVariant,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.md,
   },
   factRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
   factLabel: { color: colors.textSecondary },
   factValue: { color: colors.textPrimary, flexShrink: 1, textAlign: 'right' },
-  factDivider: { height: 1, backgroundColor: colors.separator },
+  factDivider: { height: 1, backgroundColor: colors.borderSubtle },
 
   dealList: { gap: spacing.md },
   dealRow: {
-    backgroundColor: colors.card,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.volt,
+    backgroundColor: colors.surface1,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.xs,
   },
 
   statusCard: {
-    backgroundColor: palette.surfaceLowest,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: colors.accentDim,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.lg,
   },

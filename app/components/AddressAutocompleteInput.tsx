@@ -12,11 +12,13 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator,
+  View, TextInput, Pressable, StyleSheet, ActivityIndicator,
 } from 'react-native';
+import { Text } from './Text';
 import { searchAddresses, type GeocodeSuggestion } from '../lib/api';
 import { inputStyle, inputFocusedStyle } from './ui';
-import { colors, fonts, palette, spacing, type as t } from '../lib/theme';
+import { colors, spacing, TAP, type as t } from '../lib/theme';
+import { Icon } from './icons';
 
 const DEBOUNCE_MS = 350;
 const MIN_QUERY = 3;
@@ -97,7 +99,7 @@ export function AddressAutocompleteInput({
           returnKeyType="done"
         />
         {searching && (
-          <ActivityIndicator size="small" color={colors.accent} style={s.spinner} />
+          <ActivityIndicator size="small" color={colors.action} style={s.spinner} />
         )}
       </View>
 
@@ -109,13 +111,14 @@ export function AddressAutocompleteInput({
               style={({ pressed }) => [
                 s.row,
                 i < suggestions.length - 1 && s.rowDivider,
-                pressed && { backgroundColor: palette.surfaceHigh },
+                pressed && { backgroundColor: colors.surface3 },
               ]}
               onPress={() => pick(item)}
+              accessibilityRole="button"
             >
-              <Text style={s.rowGlyph}>◉</Text>
+              <Icon name="pin" size={18} color={colors.textSecondary} />
               <View style={s.rowLabels}>
-                <Text style={s.rowLabel} numberOfLines={1}>{item.name}</Text>
+                <Text style={[t.bodyMdStrong, s.rowLabel]} numberOfLines={1}>{item.name}</Text>
                 <Text style={[t.labelCapsSm, { color: colors.textTertiary }]} numberOfLines={1}>
                   {item.label}
                 </Text>
@@ -126,7 +129,7 @@ export function AddressAutocompleteInput({
       )}
 
       {focused && value.trim().length >= MIN_QUERY && !searching && suggestions.length === 0 && (
-        <Text style={s.customHint}>
+        <Text style={[t.bodySm, s.customHint]}>
           No matches — the address will be saved as typed, without a map pin.
         </Text>
       )}
@@ -137,31 +140,29 @@ export function AddressAutocompleteInput({
 const s = StyleSheet.create({
   spinner: { position: 'absolute', right: spacing.md, top: 0, bottom: 0 },
   suggestions: {
-    backgroundColor: palette.surfaceMid,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.borderSubtle,
     marginTop: spacing.xs,
     overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: TAP,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     gap: spacing.md,
   },
   rowDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
+    borderBottomColor: colors.borderSubtle,
   },
-  rowGlyph: { fontSize: 12, width: 20, textAlign: 'center', color: colors.accent },
   rowLabels: { flex: 1, gap: 1 },
-  rowLabel: { fontSize: 15, color: colors.textPrimary, fontFamily: fonts.sansMedium },
+  rowLabel: { color: colors.textPrimary },
   customHint: {
-    fontSize: 12,
     marginTop: spacing.xs,
     paddingHorizontal: spacing.xs,
     color: colors.textTertiary,
-    fontFamily: fonts.sansRegular,
   },
 });

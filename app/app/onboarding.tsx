@@ -1,21 +1,14 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  Image,
-  Pressable,
-  FlatList,
-  StyleSheet,
-  useWindowDimensions,
-  type NativeSyntheticEvent,
-  type NativeScrollEvent,
+  View, Image, Pressable, FlatList, StyleSheet, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent,
 } from 'react-native';
+import { Text } from '../components/Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { colors, fonts, palette, spacing, type as t } from '../lib/theme';
-import { Btn } from '../components/ui';
+import { colors, spacing, TAP, type as t } from '../lib/theme';
+import { Btn, Chip } from '../components/ui';
 import { setOnboardingSeen } from '../lib/api';
 
 // A brand slide has no photo/accent/chips — just the logo mark, wordmark,
@@ -26,7 +19,6 @@ type PhotoSlide = {
   key: string;
   kind: 'photo';
   image: number;
-  accent: string;
   headline: string;
   body: string;
   chips: string[];
@@ -58,7 +50,6 @@ function buildSlides(tr: TFunction): Slide[] {
       key: 'seeker',
       kind: 'photo',
       image: SLIDE_IMAGES.seeker,
-      accent: colors.accent,
       headline: tr('seeker.headline'),
       body: tr('seeker.body'),
       chips: [tr('seeker.chips.liveSports'), tr('seeker.chips.awards'), tr('seeker.chips.bigEvents')],
@@ -67,7 +58,6 @@ function buildSlides(tr: TFunction): Slide[] {
       key: 'host',
       kind: 'photo',
       image: SLIDE_IMAGES.host,
-      accent: colors.live,
       headline: tr('host.headline'),
       body: tr('host.body'),
       chips: [tr('host.chips.yourVenue'), tr('host.chips.yourCrowd'), tr('host.chips.yourRules')],
@@ -76,7 +66,6 @@ function buildSlides(tr: TFunction): Slide[] {
       key: 'sponsor',
       kind: 'photo',
       image: SLIDE_IMAGES.sponsor,
-      accent: colors.volt,
       headline: tr('sponsor.headline'),
       body: tr('sponsor.body'),
       chips: [tr('sponsor.chips.vipAccess'), tr('sponsor.chips.gearDrops'), tr('sponsor.chips.partnerDeals')],
@@ -129,7 +118,7 @@ export default function OnboardingScreen() {
           <View style={[s.slideContent, { paddingTop: insets.top + spacing.sm }]}>
             <View style={s.brandCenter}>
               <Image source={BRAND_LOGO} resizeMode="contain" style={s.brandLogo} />
-              <Text style={[s.brandWordmark, { fontFamily: fonts.display }]}>SPOT SEEK</Text>
+              <Text style={[t.displayXl, s.brandWordmark]}>SPOT SEEK</Text>
               <Text style={[t.labelCaps, s.brandTagline]}>{tr('brand.tagline')}</Text>
             </View>
           </View>
@@ -149,16 +138,12 @@ export default function OnboardingScreen() {
         <View style={[s.slideContent, { paddingTop: insets.top + spacing.sm }]}>
           <View style={{ flex: 1 }} />
 
-          <View style={[s.card, { borderTopColor: item.accent, borderBottomColor: item.accent }]}>
+          <View style={s.card}>
             <Text style={[t.displayXl, s.headline]}>{item.headline}</Text>
-            <View style={[s.bodyRule, { borderLeftColor: item.accent }]}>
-              <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{item.body}</Text>
-            </View>
+            <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{item.body}</Text>
             <View style={s.chipRow}>
               {item.chips.map((chip) => (
-                <View key={chip} style={[s.chip, { borderColor: item.accent }]}>
-                  <Text style={[t.labelCapsSm, { color: item.accent }]}>{chip}</Text>
-                </View>
+                <Chip key={chip} label={chip} tone="neutral" />
               ))}
             </View>
           </View>
@@ -189,7 +174,7 @@ export default function OnboardingScreen() {
           {SLIDES.map((slide, i) => (
             <View
               key={slide.key}
-              style={[s.progressSeg, { backgroundColor: i === index ? colors.accent : palette.surfaceHigh }]}
+              style={[s.progressSeg, { backgroundColor: i === index ? colors.action : colors.surface3 }]}
             />
           ))}
         </View>
@@ -206,37 +191,30 @@ export default function OnboardingScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
 
-  scrim: { backgroundColor: 'rgba(14,14,17,0.28)' },
+  scrim: { backgroundColor: colors.scrimSoft },
 
   slideContent: { flex: 1 },
   skipBtn: {
     alignSelf: 'center',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    minHeight: 44,
+    minHeight: TAP,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  brandSlide: { backgroundColor: colors.bg },
+  brandSlide: { backgroundColor: colors.canvas },
   brandCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   brandLogo: { width: 140, height: 140, marginBottom: spacing.sm },
-  brandWordmark: {
-    fontSize: 40,
-    color: colors.accent,
-    letterSpacing: 1,
-    textShadowColor: `${colors.accent}66`,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-  },
-  brandTagline: { color: colors.textSecondary, fontSize: 16, letterSpacing: 3 },
+  brandWordmark: { color: colors.textPrimary, letterSpacing: 1 },
+  brandTagline: { color: colors.textSecondary, letterSpacing: 3 },
 
   card: {
-    backgroundColor: 'rgba(27,27,30,0.92)',
-    borderTopWidth: 2,
-    borderBottomWidth: 4,
+    backgroundColor: colors.panelOnMedia,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     marginHorizontal: spacing.xl,
     marginBottom: spacing.md,
@@ -244,15 +222,13 @@ const s = StyleSheet.create({
   },
   // Anton's cap-height runs much taller than its nominal font size — a tight
   // lineHeight clips glyph tops (see the ~1.25-1.35x multiplier the theme's
-  // own Anton presets use, e.g. displayXl's 56/44 ≈ 1.27). paddingTop adds a
+  // own Anton presets use, e.g. displayXl's 52/40 = 1.3). paddingTop adds a
   // small extra margin above the ink for full-bleed slides.
-  headline: { color: colors.textPrimary, fontSize: 40, lineHeight: 52, paddingTop: 6 },
-  bodyRule: { borderLeftWidth: 3, paddingLeft: spacing.md },
+  headline: { color: colors.textPrimary, paddingTop: 6 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: { borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2 },
 
   footer: {
-    backgroundColor: colors.bg,
+    backgroundColor: colors.canvas,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
     gap: spacing.sm,

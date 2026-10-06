@@ -1,49 +1,28 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import {
-  Text, Image, Pressable, View, StyleSheet, Animated,
-  type ImageSourcePropType, type LayoutChangeEvent,
+  Pressable, View, StyleSheet, Animated,
+  type LayoutChangeEvent,
 } from 'react-native';
+import { Text } from '../../components/Text';
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs/types';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, palette } from '../../lib/theme';
+import { Icon } from '../../components/icons';
+import { colors, hardShadow, type as t } from '../../lib/theme';
 
-// Rendered from the actual Material Symbols glyph outlines (explore /
-// sports_kabaddi / person) via a local extraction script, not the
-// @expo/vector-icons font — that font never got linked into the compiled
-// TestFlight archive (expo prebuild wasn't re-run after installing it) and
-// silently fell back to tofu glyphs in production despite working in dev.
-// Plain tintable PNGs sidestep font-linking entirely, the same asset
-// pipeline already proven reliable for the app icon and splash screen.
-// Metro's static-asset require() has no ESM equivalent for local images.
-/* eslint-disable @typescript-eslint/no-require-imports */
-const ICONS: Record<'discover' | 'parties' | 'profile', ImageSourcePropType> = {
-  discover: require('../../assets/icons/tab-discover.png'),
-  parties: require('../../assets/icons/tab-parties.png'),
-  profile: require('../../assets/icons/tab-profile.png'),
-};
-/* eslint-enable @typescript-eslint/no-require-imports */
+// Tab icons come from the SpotSeek SVG icon set (components/icons), not an
+// icon font (an icon-font link crash once shipped) and not raster PNGs.
+type TabIconName = 'discover' | 'parties' | 'profile';
 
-function TabIcon({ focused, icon }: { focused: boolean; icon: keyof typeof ICONS }) {
-  return (
-    <Image
-      source={ICONS[icon]}
-      style={[s.icon, { tintColor: focused ? colors.accent : colors.textTertiary }]}
-      resizeMode="contain"
-    />
-  );
+function TabIcon({ focused, icon }: { focused: boolean; icon: TabIconName }) {
+  return <Icon name={icon} size={24} color={focused ? colors.action : colors.textTertiary} />;
 }
 
 function TabLabel({ label, focused }: { label: string; focused: boolean }) {
   return (
     <Text
-      style={[
-        s.tabLabel,
-        {
-          color: focused ? colors.accent : colors.textTertiary,
-          fontFamily: focused ? fonts.labelBold : fonts.label,
-        },
-      ]}
+      style={[t.labelCapsSm, { color: focused ? colors.action : colors.textTertiary }]}
+      maxFontSizeMultiplier={1.2}
     >
       {label}
     </Text>
@@ -52,7 +31,7 @@ function TabLabel({ label, focused }: { label: string; focused: boolean }) {
 
 type TabLayout = { x: number; width: number };
 
-// A shared, animated pill can't be built from independent per-tab
+// A shared, animated indicator can't be built from independent per-tab
 // tabBarButton renderers (each tab only knows its own focus state, not the
 // others' positions) — it needs one element outside any single tab that
 // knows every tab's on-screen x/width and slides between them. That
@@ -108,7 +87,7 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
           if (hidden) return null;
 
           const focused = state.index === index;
-          const tintColor = focused ? colors.accent : colors.textTertiary;
+          const tintColor = focused ? colors.action : colors.textTertiary;
           const icon = options.tabBarIcon?.({ focused, color: tintColor, size: 24 });
           const label = typeof options.tabBarLabel === 'function'
             ? options.tabBarLabel({
@@ -138,6 +117,8 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
                   prev[index]?.x === next.x && prev[index]?.width === next.width ? prev : { ...prev, [index]: next }
                 ));
               }}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: focused }}
               style={s.tabButton}
             >
               {icon}
@@ -160,7 +141,7 @@ export default function TabsLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accent,
+        tabBarActiveTintColor: colors.action,
         tabBarInactiveTintColor: colors.textTertiary,
       }}
     >
@@ -199,8 +180,8 @@ const s = StyleSheet.create({
   // must not be part of the row's own (resolved, content-driven) height, or
   // the pill's top/bottom-anchored fill stretches into that empty space too.
   tabBarOuter: {
-    backgroundColor: colors.tabBar,
-    borderTopColor: colors.tabBarBorder,
+    backgroundColor: colors.surfaceSunken,
+    borderTopColor: colors.borderSubtle,
     borderTopWidth: 1,
   },
   tabBarRow: {
@@ -209,12 +190,16 @@ const s = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 14,
   },
+  // Active tab indicator: a square block with a 2px action border and the
+  // hard shadow (selected = shadow). Washed fill keeps the label legible.
   pill: {
     position: 'absolute',
     top: 6,
     bottom: 6,
-    backgroundColor: `${palette.primary}1f`,
-    borderRadius: 20,
+    backgroundColor: colors.actionWash,
+    borderWidth: 2,
+    borderColor: colors.action,
+    ...hardShadow(3),
   },
   tabButton: {
     flex: 1,
@@ -222,8 +207,4 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 2,
   },
-  // 24px — was 26 (a 50% bump from the original 17 while chasing the
-  // reference design's weight), nudged back down to 24 as the better fit.
-  icon: { width: 24, height: 24 },
-  tabLabel: { fontSize: 11, marginTop: 2, letterSpacing: 0.6, textTransform: 'uppercase' },
 });

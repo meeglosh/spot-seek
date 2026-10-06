@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TextInput, ActivityIndicator,
+  View, ScrollView, StyleSheet, TextInput, ActivityIndicator,
 } from 'react-native';
+import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../components/AppHeader';
-import { colors, palette, spacing, type as t } from '../../../lib/theme';
+import { colors, spacing, type as t } from '../../../lib/theme';
 import { Btn, Chip, Badge, FieldLabel, inputStyle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
@@ -166,14 +167,14 @@ export default function BrowseSponsorsScreen() {
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipScroll} contentContainerStyle={s.chipRow}>
               {SORTS.map((opt) => (
-                <Chip key={opt.key} label={opt.label} tone="volt" active={sort === opt.key} onPress={() => setSort(opt.key)} />
+                <Chip key={opt.key} label={opt.label} tone="action" active={sort === opt.key} onPress={() => setSort(opt.key)} />
               ))}
             </ScrollView>
           </>
         )}
 
         {loading ? (
-          <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing['2xl'] }} />
+          <ActivityIndicator color={colors.action} style={{ marginVertical: spacing['2xl'] }} />
         ) : error ? (
           <Text style={[t.bodySm, { color: colors.danger }]}>{error}</Text>
         ) : sponsors.length === 0 ? (
@@ -195,7 +196,7 @@ export default function BrowseSponsorsScreen() {
                     {sp.companyName}
                   </Text>
                   {(sp.sponsorshipCount ?? 0) > 0 && (
-                    <Badge label={`${sp.sponsorshipCount} sponsored`} tone="accent" dot={false} />
+                    <Badge label={`${sp.sponsorshipCount} sponsored`} tone="confirmed" dot={false} />
                   )}
                 </View>
                 {sp.website && (
@@ -215,7 +216,7 @@ export default function BrowseSponsorsScreen() {
                 )}
 
                 {wasSent ? (
-                  <Badge label="Request sent" tone="volt" />
+                  <Badge label="Request sent" tone="confirmed" />
                 ) : isOpen ? (
                   <View style={s.requestForm}>
                     <View style={s.field}>
@@ -265,7 +266,7 @@ export default function BrowseSponsorsScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   subtitle: { color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.xl },
   searchInput: { marginBottom: spacing.md },
@@ -273,9 +274,9 @@ const s = StyleSheet.create({
   chipRow: { gap: spacing.sm, paddingRight: spacing.lg },
 
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: palette.outlineVariant,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.sm,
     marginBottom: spacing.lg,

@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, fonts, spacing, type as t } from '../lib/theme';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { Text } from './Text';
+import { Icon } from './icons';
+import { colors, spacing, TAP, type as t } from '../lib/theme';
 
-// ─── StarRating: read-only display, 0-5 float rendered as glyph stars ────────
-// Text glyphs rather than an icon asset — "★"/"☆" render crisply at any size
-// with zero extra bundle weight, matching the rest of HEA's asset-light UI.
+// ─── StarRating: read-only display, 0-5 float rendered with the icon set ─────
+// Filled star = earned rating (the one place a fill carries meaning); display
+// stars are neutral paper, since a rating is not interactive.
 
 export function StarRating({
   value, size = 16, label,
@@ -18,22 +20,22 @@ export function StarRating({
     <View style={s.row}>
       <View style={s.starsRow}>
         {Array.from({ length: 5 }, (_, i) => (
-          <Text
+          <Icon
             key={i}
-            style={{ fontSize: size, lineHeight: size * 1.15, color: i < rounded ? colors.accent : colors.textTertiary }}
-          >
-            {i < rounded ? '★' : '☆'}
-          </Text>
+            name={i < rounded ? 'starFilled' : 'star'}
+            size={size}
+            color={i < rounded ? colors.textPrimary : colors.textTertiary}
+          />
         ))}
       </View>
       {label && (
-        <Text style={[t.labelCapsSm, { color: colors.textSecondary, fontFamily: fonts.label }]}>{label}</Text>
+        <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{label}</Text>
       )}
     </View>
   );
 }
 
-// ─── StarInput: 5 tappable stars, 1-5 rating ──────────────────────────────────
+// ─── StarInput: 5 tappable stars, 1-5 rating (interactive = action) ──────────
 
 export function StarInput({
   value, onChange, size = 28, accessibilityLabel,
@@ -52,14 +54,16 @@ export function StarInput({
           <Pressable
             key={i}
             onPress={() => onChange(rating)}
-            hitSlop={6}
             style={s.starHit}
             accessibilityRole="button"
+            accessibilityState={{ selected: filled }}
             accessibilityLabel={accessibilityLabel ? `${accessibilityLabel} ${rating}` : `${rating}`}
           >
-            <Text style={{ fontSize: size, lineHeight: size * 1.15, color: filled ? colors.accent : colors.textTertiary }}>
-              {filled ? '★' : '☆'}
-            </Text>
+            <Icon
+              name={filled ? 'starFilled' : 'star'}
+              size={size}
+              color={filled ? colors.action : colors.textTertiary}
+            />
           </Pressable>
         );
       })}
@@ -71,5 +75,5 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   starsRow: { flexDirection: 'row', gap: 2 },
   inputRow: { flexDirection: 'row', gap: spacing.xs },
-  starHit: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  starHit: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
 });

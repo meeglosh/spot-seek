@@ -1,42 +1,42 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, Image, Pressable, StyleSheet, Animated, ScrollView, Platform, Alert,
+  View, Pressable, StyleSheet, Animated, ScrollView, Platform, Alert,
 } from 'react-native';
+import { Text } from './Text';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, palette, spacing, type as t } from '../lib/theme';
+import { colors, mapPalette as mp, radius, spacing, TAP, hardShadow, pressStyle, type as t } from '../lib/theme';
+import { Icon } from './icons';
 import { Badge, Btn } from './ui';
 import type { EventItem } from './EventCard';
 import { formatEventDateTime } from '../lib/dateFormat';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports -- Metro static-asset require
-const LOCATE_ICON = require('../assets/icons/icon-locate.png');
-
-// ─── Neon night map style ──────────────────────────────────────────────────────
-// Near-black base with a dark-teal glow on roads and water, per the HEA map
-// reference. Only applies on the Google provider; on Apple Maps the map keeps
+// ─── Night map style ───────────────────────────────────────────────────────────
+// Built from `mapPalette` in lib/theme.ts (neutral near-black land, cool grey
+// roads) so the map shares the app's palette instead of an off-palette teal.
+// Only applies on the Google provider; on Apple Maps the map keeps
 // its native tiles while the neon chrome and pins still render on top.
 
 const NEON_MAP_STYLE = [
-  { elementType: 'geometry', stylers: [{ color: '#0a0e11' }] },
+  { elementType: 'geometry', stylers: [{ color: mp.land }] },
   { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#3f6b72' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#060a0c' }] },
-  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#12313a' }] },
-  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#5e9aa3' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: mp.label }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: mp.labelStroke }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: mp.boundary }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: mp.labelPlace }] },
   { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#0c1619' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#102d33' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#0a1a1e' }] },
-  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#3f6b72' }] },
-  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#14424b' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#1a5f6b' }] },
-  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#0e2a30' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: mp.park }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: mp.road }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: mp.roadStroke }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: mp.label }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: mp.arterial }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: mp.highway }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: mp.highwayStroke }] },
   { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d2b33' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#2c565e' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: mp.water }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: mp.labelWater }] },
 ];
 
 // Live-soon: event starts within the next ~3 hours (or kicked off in the last
@@ -218,7 +218,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
       >
         {shown.map((event) => {
           const live = isLiveSoon(event.startsAt);
-          const tone = live ? colors.live : colors.accent;
+          const tone = live ? colors.live : colors.action;
           const isSel = selected?.id === event.id;
           return (
             <Marker
@@ -230,12 +230,12 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
               onPress={() => selectEvent(event)}
               tracksViewChanges={false}
             >
-              {/* Glowing neon pin — cyan by default, orange when live-soon */}
+              {/* Pin — action by default, live orange when live-soon; selected = hard shadow */}
               <View style={s.pinWrap}>
                 <View
                   style={[
                     s.pin,
-                    { borderColor: tone, shadowColor: tone },
+                    { borderColor: tone },
                     isSel && s.pinSelected,
                   ]}
                 >
@@ -265,7 +265,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
             <MapChip
               key={sub}
               label={sub}
-              tone={colors.accent}
+              tone={colors.action}
               active={sportFilter === sub}
               onPress={() => {
                 const next = sportFilter === sub ? null : sub;
@@ -296,13 +296,10 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
         ]}
         onPress={centerOnMyLocation}
         disabled={locating}
+        accessibilityRole="button"
         accessibilityLabel={tr('map.locateLabel')}
       >
-        <Image
-          source={LOCATE_ICON}
-          style={s.locateIcon}
-          resizeMode="contain"
-        />
+        <Icon name="locate" size={22} color={colors.textPrimary} />
       </Pressable>
 
       {/* Event count badge */}
@@ -323,10 +320,10 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
           <View style={s.cardSubjectRow}>
             <View style={s.cardBadges}>
               {isLiveSoon(selected.startsAt) && <Badge label={tr('map.liveSoon')} tone="live" />}
-              <Badge label={selected.broadcastSubject} tone="accent" dot={false} />
+              <Badge label={selected.broadcastSubject} tone="neutral" dot={false} />
             </View>
-            <Pressable onPress={dismiss} hitSlop={12}>
-              <Text style={s.closeGlyph}>✕</Text>
+            <Pressable onPress={dismiss} style={s.closeBtn} accessibilityRole="button">
+              <Icon name="close" size={20} color={colors.textTertiary} />
             </Pressable>
           </View>
 
@@ -338,7 +335,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
           {/* Venue + date row */}
           <View style={s.cardMeta}>
             {selected.venueName && (
-              <Text style={[t.monoData, s.cardVenue]} numberOfLines={1}>
+              <Text style={[t.labelMd, s.cardVenue]} numberOfLines={1}>
                 {selected.isPrivateLocation ? tr('card.privateLocation', { venue: selected.venueName }) : selected.venueName}
               </Text>
             )}
@@ -351,7 +348,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
               );
             })()}
             {typeof selected.goingCount === 'number' && (
-              <Text style={[t.labelCapsSm, { color: colors.volt }]}>
+              <Text style={[t.labelCapsSm, { color: colors.confirmed }]}>
                 {tr('card.goingCount', { count: selected.goingCount })}
               </Text>
             )}
@@ -383,9 +380,14 @@ function MapChip({
   return (
     <Pressable
       onPress={onPress}
-      style={[
+      hitSlop={{ top: 7, bottom: 7 }}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      style={({ pressed }) => [
         s.mapChip,
-        active && { borderColor: tone, shadowColor: tone, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.9, shadowRadius: 6, elevation: 5 },
+        active && { borderColor: tone },
+        active && hardShadow(3),
+        active && pressStyle(pressed, 3),
       ]}
     >
       <Text style={[t.labelCapsSm, { color: active ? tone : colors.textSecondary }]}>{label}</Text>
@@ -394,35 +396,32 @@ function MapChip({
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   map: { flex: 1 },
 
-  // Glowing pins
+  // Pins are true circles (radius.round); the selected pin is the only one
+  // that carries the hard shadow.
   pinWrap: { alignItems: 'center' },
   pin: {
     width: 22,
     height: 22,
-    borderRadius: 11,
+    borderRadius: radius.round,
     borderWidth: 2,
-    backgroundColor: 'rgba(10,14,17,0.92)',
+    backgroundColor: colors.mapPin,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 6,
-    elevation: 6,
   },
-  pinSelected: { transform: [{ scale: 1.3 }] },
-  pinCore: { width: 8, height: 8, borderRadius: 4 },
+  pinSelected: { transform: [{ scale: 1.3 }], ...hardShadow(2) },
+  pinCore: { width: 8, height: 8, borderRadius: radius.round },
   pinStem: { width: 2, height: 7 },
 
   // Chip bar over the map
   chipBar: { position: 'absolute', top: spacing.md, left: 0, right: 0 },
   chipRow: { paddingHorizontal: spacing.lg, gap: spacing.sm, flexDirection: 'row' },
   mapChip: {
-    backgroundColor: palette.surfaceLowest,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: palette.surfaceHighest,
+    borderColor: colors.borderSubtle,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
@@ -436,22 +435,21 @@ const s = StyleSheet.create({
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surface,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: palette.outlineVariant,
+    borderColor: colors.borderSubtle,
   },
   locateBtnLifted: { bottom: spacing.lg + 260 },
   locateBtnDisabled: { opacity: 0.5 },
-  locateIcon: { width: 22, height: 22, tintColor: colors.textPrimary },
 
   // Count badge
   countBadge: {
     position: 'absolute',
     top: spacing.md + 42,
     left: spacing.lg,
-    backgroundColor: palette.surfaceLowest,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: palette.surfaceHighest,
+    borderColor: colors.borderSubtle,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
   },
@@ -462,32 +460,30 @@ const s = StyleSheet.create({
     bottom: spacing['3xl'],
     left: spacing.xl,
     right: spacing.xl,
-    backgroundColor: palette.surfaceLow,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: palette.surfaceHighest,
-    borderTopWidth: 2,
-    borderTopColor: colors.accent,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     alignItems: 'center',
   },
   emptyText: { color: colors.textSecondary, textAlign: 'center' },
 
-  // Bottom card — sharp HEA sheet with a cyan top edge
+  // Bottom card — sharp sheet, 1px strong top edge
   bottomCard: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: palette.surfaceLow,
-    borderTopWidth: 2,
-    borderTopColor: colors.accent,
+    backgroundColor: colors.surface1,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderStrong,
     padding: spacing.xl,
     paddingTop: spacing.lg,
     gap: spacing.md,
   },
   cardSubjectRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   cardBadges: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', flex: 1, paddingRight: spacing.md },
-  closeGlyph: { color: colors.textTertiary, fontSize: 18 },
+  closeBtn: { width: TAP, height: TAP, alignItems: 'flex-end', justifyContent: 'center', marginTop: -spacing.sm, marginRight: -spacing.sm },
   cardMeta: { gap: 4 },
-  cardVenue: { color: colors.accent, textTransform: 'uppercase' },
+  cardVenue: { color: colors.textPrimary, textTransform: 'uppercase' },
 });

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, Modal, Platform,
+  View, Pressable, StyleSheet, Modal, Platform,
 } from 'react-native';
+import { Text } from './Text';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
-import { colors, fonts, palette, spacing, type as t } from '../lib/theme';
+import { colors, spacing, TAP, type as t } from '../lib/theme';
+import { Icon } from './icons';
 
 type Props = {
   value: Date | null;
@@ -60,13 +62,15 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
 
   return (
     <>
-      {/* Underline trigger — orange bottom border while the picker is open */}
+      {/* Underline trigger — action-coloured bottom border while the picker is open */}
       <Pressable
-        style={[s.trigger, showPicker && { borderBottomColor: colors.live }]}
+        style={[s.trigger, showPicker && { borderBottomColor: colors.action }]}
         onPress={openPicker}
+        accessibilityRole="button"
       >
         <Text
           style={[
+            t.bodyMdStrong,
             s.triggerText,
             { color: value ? colors.textPrimary : colors.textTertiary },
           ]}
@@ -74,8 +78,8 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
           {formatted ?? placeholder}
         </Text>
         {value && (
-          <Pressable onPress={clear} hitSlop={12}>
-            <Text style={s.clearGlyph}>✕</Text>
+          <Pressable onPress={clear} style={s.clearBtn} accessibilityRole="button">
+            <Icon name="close" size={16} color={colors.textTertiary} />
           </Pressable>
         )}
       </Pressable>
@@ -97,12 +101,12 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
           <Pressable style={s.backdrop} onPress={() => setShowPicker(false)} />
           <View style={s.sheet}>
             <View style={s.sheetHeader}>
-              <Pressable onPress={clear}>
+              <Pressable onPress={clear} style={s.sheetBtn} accessibilityRole="button">
                 <Text style={[t.labelCaps, { color: colors.textSecondary }]}>Clear</Text>
               </Pressable>
               <Text style={[t.labelCaps, { color: colors.textPrimary }]}>Date & Time</Text>
-              <Pressable onPress={confirmIOS}>
-                <Text style={[t.labelCaps, { color: colors.accent }]}>Done</Text>
+              <Pressable onPress={confirmIOS} style={s.sheetBtn} accessibilityRole="button">
+                <Text style={[t.labelCaps, { color: colors.action }]}>Done</Text>
               </Pressable>
             </View>
             <RNDateTimePicker
@@ -123,9 +127,10 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
 
 const s = StyleSheet.create({
   trigger: {
-    backgroundColor: palette.surfaceMid,
+    backgroundColor: colors.surface2,
     borderBottomWidth: 2,
-    borderBottomColor: palette.outlineVariant,
+    borderBottomColor: colors.borderStrong,
+    minHeight: TAP,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     flexDirection: 'row',
@@ -133,14 +138,15 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.sm,
   },
-  triggerText: { flex: 1, fontFamily: fonts.sansMedium, fontSize: 16 },
-  clearGlyph: { color: colors.textTertiary, fontSize: 16 },
+  triggerText: { flex: 1 },
+  clearBtn: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center', marginRight: -spacing.md },
+  sheetBtn: { minHeight: TAP, justifyContent: 'center' },
 
-  backdrop: { flex: 1, backgroundColor: colors.overlay },
+  backdrop: { flex: 1, backgroundColor: colors.scrim },
   sheet: {
-    backgroundColor: palette.surfaceLow,
-    borderTopWidth: 2,
-    borderTopColor: colors.accent,
+    backgroundColor: colors.surface1,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderStrong,
     paddingBottom: spacing['3xl'],
   },
   sheetHeader: {

@@ -1,13 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Image, TextInput,
-  ActivityIndicator, RefreshControl,
+  View, ScrollView, StyleSheet, Image, TextInput, ActivityIndicator, RefreshControl,
 } from 'react-native';
+import { Text } from '../../../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
-import { colors, palette, spacing, fonts, type as t } from '../../../lib/theme';
+import { colors, spacing, type as t } from '../../../lib/theme';
+import { Icon } from '../../../components/icons';
 import { Btn, Chip, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
@@ -33,9 +34,9 @@ const SPONSOR_CATEGORIES = [
   'Local Business', 'Apparel & Merch', 'Finance', 'Other',
 ] as const;
 
-const BID_TONE: Record<SponsorshipStatus, 'neutral' | 'volt' | 'live'> = {
+const BID_TONE: Record<SponsorshipStatus, 'neutral' | 'confirmed' | 'live'> = {
   pending: 'neutral',
-  active: 'volt',
+  active: 'confirmed',
   rejected: 'live',
   cancelled: 'neutral',
 };
@@ -197,13 +198,13 @@ export default function SponsorshipHubScreen() {
         <Text style={[t.bodyMd, s.subtitle]}>{tr('browse.subtitle')}</Text>
 
         {loading ? (
-          <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing['2xl'] }} />
+          <ActivityIndicator color={colors.action} style={{ marginVertical: spacing['2xl'] }} />
         ) : (
           <>
             {/* ── Sponsor identity / registration ─────────────────────────── */}
             {sponsor === null ? (
               <View style={s.registerCard}>
-                <Text style={[t.headlineSm, { color: colors.accent }]}>{tr('browse.register.title')}</Text>
+                <Text style={[t.headlineSm, { color: colors.action }]}>{tr('browse.register.title')}</Text>
                 <Text style={[t.bodySm, { color: colors.textSecondary }]}>
                   {tr('browse.register.description')}
                 </Text>
@@ -276,7 +277,7 @@ export default function SponsorshipHubScreen() {
               </View>
             ) : (
               <View style={s.sponsorBlock}>
-                <Text style={[t.labelCaps, { color: colors.volt }]}>
+                <Text style={[t.labelCaps, { color: colors.confirmed }]}>
                   {tr('browse.sponsorLabel', { company: sponsor.companyName })}
                 </Text>
                 {summary && (
@@ -287,11 +288,11 @@ export default function SponsorshipHubScreen() {
                     </View>
                     <View style={s.tile}>
                       <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.active')}</Text>
-                      <Text style={[t.headlineMd, { color: colors.volt }]}>{summary.activeBids}</Text>
+                      <Text style={[t.headlineMd, { color: colors.confirmed }]}>{summary.activeBids}</Text>
                     </View>
                     <View style={s.tile}>
                       <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.totalSpend')}</Text>
-                      <Text style={[t.headlineMd, { color: colors.accent }]}>{fmtUsd(summary.totalSpendCents)}</Text>
+                      <Text style={[t.headlineMd, { color: colors.action }]}>{fmtUsd(summary.totalSpendCents)}</Text>
                     </View>
                     <View style={s.tile}>
                       <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.reach')}</Text>
@@ -314,13 +315,13 @@ export default function SponsorshipHubScreen() {
                       </Text>
                       <Badge
                         label={r.status === 'pending' ? tr('browse.requests.newRequest') : tr(`statusLabels.${r.status}`)}
-                        tone={r.status === 'pending' ? 'volt' : r.status === 'active' ? 'accent' : 'neutral'}
+                        tone={r.status === 'pending' ? 'live' : r.status === 'active' ? 'confirmed' : 'neutral'}
                       />
                     </View>
                     <Text style={[t.bodySm, { color: colors.textSecondary }]}>
                       {fmtEventDate(r.event?.startsAt ?? null, tr, r.event?.venueTimezone ?? null)} · {tr('browse.requests.goingCount', { count: r.goingCount })}
                     </Text>
-                    <Text style={[t.headlineMd, { color: colors.accent }]}>{fmtUsd(r.amountCents)}</Text>
+                    <Text style={[t.dataLg, { color: colors.textPrimary }]}>{fmtUsd(r.amountCents)}</Text>
                     {r.note && (
                       <Text style={[t.bodySm, { color: colors.textSecondary }]}>“{r.note}”</Text>
                     )}
@@ -374,21 +375,23 @@ export default function SponsorshipHubScreen() {
                       {ev.coverImageUrl ? (
                         <>
                           <Image source={{ uri: resolveImageUrl(ev.coverImageUrl)! }} style={s.coverImg} resizeMode="cover" />
-                          <View style={s.coverTint} />
                         </>
                       ) : (
-                        <Text style={[s.coverFallback, { fontFamily: fonts.display }]} numberOfLines={1}>
+                        <Text style={[t.headlineLg, s.coverFallback]} numberOfLines={1}>
                           {ev.broadcastSubject.toUpperCase()}
                         </Text>
                       )}
                     </View>
                     <View style={s.eventBody}>
-                      <Text style={[t.headlineMd, { color: colors.accent }]}>{ev.title}</Text>
-                      <Text style={[t.bodySm, { color: colors.textSecondary }]} numberOfLines={1}>
-                        ◈ {ev.isPrivateLocation
-                          ? tr('browse.marketplace.privateVenue')
-                          : ev.venueName ?? tr('browse.marketplace.venueTbc')}
-                      </Text>
+                      <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{ev.title}</Text>
+                      <View style={s.venueLine}>
+                        <Icon name="pin" size={16} color={colors.textSecondary} />
+                        <Text style={[t.bodySm, { color: colors.textSecondary, flexShrink: 1 }]} numberOfLines={1}>
+                          {ev.isPrivateLocation
+                            ? tr('browse.marketplace.privateVenue')
+                            : ev.venueName ?? tr('browse.marketplace.venueTbc')}
+                        </Text>
+                      </View>
                       <View style={s.eventTiles}>
                         <View style={s.eventTile}>
                           <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.marketplace.date')}</Text>
@@ -429,14 +432,14 @@ export default function SponsorshipHubScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   subtitle: { color: colors.textSecondary, marginTop: spacing.xs, marginBottom: spacing.xl },
 
   registerCard: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: colors.accentDim,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.lg,
     marginBottom: spacing['2xl'],
@@ -447,9 +450,9 @@ const s = StyleSheet.create({
   budgetField: { flex: 1 },
 
   requestCard: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: palette.outlineVariant,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.sm,
     marginBottom: spacing.md,
@@ -463,9 +466,9 @@ const s = StyleSheet.create({
   tile: {
     flexBasis: '47%',
     flexGrow: 1,
-    backgroundColor: palette.surfaceMid,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: palette.outlineVariant,
+    borderColor: colors.borderSubtle,
     padding: spacing.md,
     gap: spacing.xs,
   },
@@ -474,31 +477,28 @@ const s = StyleSheet.create({
   filterRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
 
   eventCard: {
-    backgroundColor: colors.card,
-    borderTopWidth: 2,
-    borderTopColor: colors.accentDim,
+    backgroundColor: colors.surface1,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
     marginBottom: spacing.xl,
   },
   coverWrap: {
     height: 150,
-    backgroundColor: palette.black,
+    backgroundColor: colors.textOnFill,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   coverImg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.55 },
-  coverTint: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,229,255,0.08)',
-  },
-  coverFallback: { fontSize: 34, color: palette.surfaceHighest, paddingHorizontal: spacing.lg },
+  coverFallback: { color: colors.surface3, paddingHorizontal: spacing.lg },
+  venueLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2 },
   eventBody: { padding: spacing.lg, gap: spacing.md },
   eventTiles: { flexDirection: 'row', gap: spacing.md },
   eventTile: {
     flex: 1,
-    backgroundColor: palette.surfaceLowest,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: palette.surfaceHighest,
+    borderColor: colors.borderSubtle,
     padding: spacing.md,
     gap: spacing.xs,
   },

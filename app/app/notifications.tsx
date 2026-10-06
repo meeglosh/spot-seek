@@ -5,7 +5,8 @@
  * state for this pass so a user can still see what was new.
  */
 import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { Text } from '../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,7 @@ import { useAuth } from '../lib/auth';
 import {
   fetchNotifications, markNotificationsRead, type ApiNotification,
 } from '../lib/api';
-import { colors, palette, spacing, type as t } from '../lib/theme';
+import { colors, spacing, type as t } from '../lib/theme';
 import { routeFor } from '../lib/notificationRoutes';
 import { AppHeader } from '../components/AppHeader';
 import { GuestGate } from '../components/AuthGate';
@@ -107,7 +108,7 @@ export default function NotificationsScreen() {
         <Text style={[t.headlineLg, s.title]}>{tr('title')}</Text>
 
         {loading ? (
-          <ActivityIndicator color={colors.accent} style={{ marginTop: spacing.xl }} />
+          <ActivityIndicator color={colors.action} style={{ marginTop: spacing.xl }} />
         ) : error ? (
           <Text style={[t.bodyMd, s.errorText]}>{error}</Text>
         ) : notifications.length === 0 ? (
@@ -138,24 +139,23 @@ export default function NotificationsScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, gap: spacing.lg },
   title: { color: colors.textPrimary },
   emptyText: { color: colors.textSecondary, marginTop: spacing.xl, textAlign: 'center' },
   errorText: { color: colors.danger, marginTop: spacing.xl, textAlign: 'center' },
   list: { gap: spacing.md },
   row: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
-    borderLeftWidth: 2,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.xs,
   },
+  // Unread = a full action-coloured border and a raised surface (no side stripe).
   rowUnread: {
-    borderLeftWidth: 4,
-    borderLeftColor: colors.accent,
-    backgroundColor: palette.surfaceMid,
+    borderColor: colors.action,
+    backgroundColor: colors.surface2,
   },
   rowTitle: { color: colors.textPrimary },
   rowBody: { color: colors.textSecondary },

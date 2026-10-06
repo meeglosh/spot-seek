@@ -5,8 +5,9 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, Pressable, StyleSheet, ScrollView, TextInput, Switch,
+  View, Pressable, StyleSheet, ScrollView, TextInput, Switch,
 } from 'react-native';
+import { Text } from '../../../components/Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +15,8 @@ import { SPORTS, searchTeams } from '../../../lib/sports-data';
 import { fetchFavourites, type ApiFavourite } from '../../../lib/api';
 import { DateTimePicker } from '../../../components/DateTimePicker';
 import { useDiscoverFilters } from '../../../lib/discover-filters';
-import { colors, fonts, palette, spacing, type as t } from '../../../lib/theme';
+import { colors, spacing, TAP, type as t } from '../../../lib/theme';
+import { Icon } from '../../../components/icons';
 import { Btn, Chip, SectionTitle } from '../../../components/ui';
 import { goToAuth } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
@@ -95,12 +97,17 @@ export default function FilterScreen() {
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={s.header}>
-        <Pressable onPress={closeFilter} style={s.closeBtn} hitSlop={8}>
-          <Text style={s.closeGlyph}>✕</Text>
+        <Pressable
+          onPress={closeFilter}
+          style={s.closeBtn}
+          accessibilityRole="button"
+          accessibilityLabel={tr('filters.title')}
+        >
+          <Icon name="close" size={22} color={colors.textPrimary} />
         </Pressable>
         <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{tr('filters.title')}</Text>
-        <Pressable onPress={clearAll} hitSlop={8}>
-          <Text style={[t.labelCapsSm, { color: activeCount > 0 ? colors.live : colors.textTertiary }]}>
+        <Pressable onPress={clearAll} style={s.clearAll} accessibilityRole="button">
+          <Text style={[t.labelCapsSm, { color: activeCount > 0 ? colors.action : colors.textTertiary }]}>
             {activeCount > 0 ? tr('filters.clearCount', { count: activeCount }) : tr('filters.clearAll')}
           </Text>
         </Pressable>
@@ -111,7 +118,7 @@ export default function FilterScreen() {
         {/* Your favourites quick-apply — sign-in nudge for guests */}
         {auth.status !== 'authenticated' ? (
           <View style={s.section}>
-            <SectionTitle accent={colors.volt}>{tr('filters.yourInterests')}</SectionTitle>
+            <SectionTitle>{tr('filters.yourInterests')}</SectionTitle>
             <Pressable
               style={s.favouriteRow}
               onPress={() => goToAuth(router, 'sign-in', '/(tabs)/discover/filter')}
@@ -128,7 +135,7 @@ export default function FilterScreen() {
           </View>
         ) : favourites.length > 0 && (
           <View style={s.section}>
-            <SectionTitle accent={colors.volt}>{tr('filters.yourInterests')}</SectionTitle>
+            <SectionTitle>{tr('filters.yourInterests')}</SectionTitle>
             <View style={s.favouriteRow}>
               <View style={s.favouriteLabels}>
                 <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
@@ -142,8 +149,8 @@ export default function FilterScreen() {
               <Switch
                 value={useFavourites}
                 onValueChange={setUseFavourites}
-                trackColor={{ false: palette.surfaceHighest, true: colors.accent }}
-                thumbColor={palette.bg}
+                trackColor={{ false: colors.borderSubtle, true: colors.action }}
+                thumbColor={colors.canvas}
               />
             </View>
           </View>
@@ -168,7 +175,7 @@ export default function FilterScreen() {
         <View style={s.section}>
           <SectionTitle>{tr('filters.teams')}</SectionTitle>
           <View style={s.searchRow}>
-            <Text style={s.searchGlyph}>⌕</Text>
+            <Icon name="search" size={18} color={colors.textTertiary} />
             <TextInput
               style={s.searchInput}
               placeholder={tr('filters.searchTeamsPlaceholder')}
@@ -182,7 +189,7 @@ export default function FilterScreen() {
           {selectedTeams.length > 0 && (
             <View style={s.chipRow}>
               {selectedTeams.map((name) => (
-                <Chip key={name} label={`${name} ✕`} active onPress={() => toggleTeam(name)} />
+                <Chip key={name} label={name} trailingIcon="close" active onPress={() => toggleTeam(name)} />
               ))}
             </View>
           )}
@@ -210,7 +217,7 @@ export default function FilterScreen() {
                   <Chip
                     key={name}
                     label={name}
-                    tone="volt"
+                    tone="confirmed"
                     active={selectedTeams.includes(name)}
                     onPress={() => toggleTeam(name)}
                   />
@@ -239,7 +246,7 @@ export default function FilterScreen() {
         <View style={s.section}>
           <SectionTitle>{tr('filters.venue')}</SectionTitle>
           <View style={s.searchRow}>
-            <Text style={s.searchGlyph}>⌕</Text>
+            <Icon name="search" size={18} color={colors.textTertiary} />
             <TextInput
               style={s.searchInput}
               placeholder={tr('filters.venuePlaceholder')}
@@ -248,8 +255,8 @@ export default function FilterScreen() {
               onChangeText={setVenueSearch}
             />
             {venueSearch.length > 0 && (
-              <Pressable onPress={() => setVenueSearch('')} hitSlop={8}>
-                <Text style={s.clearGlyph}>✕</Text>
+              <Pressable onPress={() => setVenueSearch('')} style={s.clearBtn} accessibilityRole="button">
+                <Icon name="close" size={16} color={colors.textTertiary} />
               </Pressable>
             )}
           </View>
@@ -269,7 +276,7 @@ export default function FilterScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -278,10 +285,10 @@ const s = StyleSheet.create({
     paddingBottom: spacing.md,
     paddingTop: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.separator,
+    borderBottomColor: colors.borderSubtle,
   },
-  closeBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  closeGlyph: { color: colors.textPrimary, fontSize: 18 },
+  closeBtn: { width: TAP, height: TAP, alignItems: 'flex-start', justifyContent: 'center' },
+  clearAll: { minHeight: TAP, justifyContent: 'center' },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, gap: spacing['2xl'] },
   section: { gap: spacing.md },
 
@@ -290,11 +297,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: spacing.lg,
-    backgroundColor: palette.surfaceMid,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: palette.surfaceHighest,
-    borderTopWidth: 2,
-    borderTopColor: colors.volt,
+    borderColor: colors.borderSubtle,
   },
   favouriteLabels: { flex: 1, paddingRight: spacing.lg, gap: 3 },
 
@@ -304,22 +309,20 @@ const s = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.surfaceMid,
+    backgroundColor: colors.surface2,
     borderBottomWidth: 2,
-    borderBottomColor: palette.outlineVariant,
+    borderBottomColor: colors.borderStrong,
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
   },
-  searchGlyph: { color: colors.textTertiary, fontSize: 18 },
   searchInput: {
+    ...t.labelMd,
     flex: 1,
     color: colors.textPrimary,
-    fontFamily: fonts.label,
-    fontSize: 13,
-    letterSpacing: 0.5,
-    paddingVertical: spacing.md,
+    minHeight: TAP,
+    paddingVertical: spacing.sm,
   },
-  clearGlyph: { color: colors.textTertiary, fontSize: 14 },
+  clearBtn: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center', marginRight: -spacing.md },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   favSection: { gap: spacing.sm },
@@ -330,8 +333,8 @@ const s = StyleSheet.create({
   applyBar: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.canvas,
     borderTopWidth: 1,
-    borderTopColor: colors.separator,
+    borderTopColor: colors.borderSubtle,
   },
 });

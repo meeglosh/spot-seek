@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import { View, Pressable, StyleSheet, Image } from 'react-native';
+import { Text } from './Text';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, palette, spacing, type as t } from '../lib/theme';
+import { colors, spacing, type as t } from '../lib/theme';
 import { Badge, Btn } from './ui';
 
 import { API_BASE } from '../lib/api';
@@ -63,19 +64,22 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
   const badges = (
     <View style={s.badgeRow}>
       {today && <Badge label={tr('card.today')} tone="live" />}
-      <Badge label={event.broadcastSubject} tone="accent" dot={false} />
-      {sponsorTag && <Badge label={sponsorTag} tone="volt" dot={false} />}
+      <Badge label={event.broadcastSubject} tone="neutral" dot={false} />
+      {sponsorTag && <Badge label={sponsorTag} tone="confirmed" icon="live" />}
     </View>
   );
 
   return (
-    <Pressable style={s.card} onPress={goTo}>
-      {/* Full-bleed cover with dark duotone treatment */}
+    <Pressable
+      style={({ pressed }) => [s.card, pressed && { backgroundColor: colors.surface2 }]}
+      onPress={goTo}
+      accessibilityRole="button"
+    >
+      {/* Full-bleed cover, dimmed with the scrim token for legibility */}
       {coverSrc && !compact && (
         <View style={s.coverWrap}>
           <Image source={coverSrc} style={s.cover} resizeMode="cover" />
-          <View style={[StyleSheet.absoluteFill, s.duoDark]} />
-          <View style={[StyleSheet.absoluteFill, s.duoBlue]} />
+          <View style={[StyleSheet.absoluteFill, s.mediaDim]} />
           <View style={s.coverBadges}>{badges}</View>
         </View>
       )}
@@ -95,7 +99,7 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
         {!compact && (
           <View style={s.meta}>
             {event.venueName && (
-              <Text style={[t.monoData, s.venueText]} numberOfLines={1}>
+              <Text style={[t.labelMd, s.venueText]} numberOfLines={1}>
                 {event.isPrivateLocation ? tr('card.privateLocation', { venue: event.venueName }) : event.venueName}
               </Text>
             )}
@@ -130,22 +134,19 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: palette.surfaceLow,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: palette.outlineVariant,
-    borderTopWidth: 2,
-    borderTopColor: colors.accent,
+    borderColor: colors.borderSubtle,
     overflow: 'hidden',
   },
   coverWrap: { width: '100%', height: 160 },
   cover: { width: '100%', height: '100%' },
-  duoDark: { backgroundColor: 'rgba(15,15,18,0.45)' },
-  duoBlue: { backgroundColor: 'rgba(0,101,117,0.18)' },
+  mediaDim: { backgroundColor: colors.mediaDim },
   coverBadges: { position: 'absolute', top: spacing.md, left: spacing.md },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
   body: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm },
   bodyCompact: { paddingTop: spacing.md },
-  venueText: { color: colors.accent, textTransform: 'uppercase' },
+  venueText: { color: colors.textPrimary, textTransform: 'uppercase' },
   meta: { gap: 2 },
   footer: {
     flexDirection: 'row',
@@ -154,7 +155,7 @@ const s = StyleSheet.create({
     marginTop: spacing.sm,
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.separator,
+    borderTopColor: colors.borderSubtle,
   },
   footerLeft: { flex: 1, gap: 2, paddingRight: spacing.md },
 });

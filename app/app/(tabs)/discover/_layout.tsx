@@ -6,7 +6,7 @@ export default function DiscoverLayout() {
   const scheme = useColorScheme();
   const c = scheme === 'dark' ? dark : light;
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.canvas } }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="[id]" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="filter" options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />

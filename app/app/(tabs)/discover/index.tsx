@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, FlatList, Pressable, StyleSheet, RefreshControl,
-  TextInput, ActivityIndicator, Image,
+  View, FlatList, Pressable, StyleSheet, RefreshControl, TextInput, ActivityIndicator,
 } from 'react-native';
+import { Text } from '../../../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
@@ -10,8 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
 import { AppHeader } from '../../../components/AppHeader';
-import { Btn, Chip } from '../../../components/ui';
-import { colors, fonts, palette, spacing, type as t } from '../../../lib/theme';
+import { Btn, Chip, SegmentedControl } from '../../../components/ui';
+import { colors, spacing, TAP, type as t } from '../../../lib/theme';
+import { Icon } from '../../../components/icons';
 import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
 import { useDiscoverFilters, activeFilterCount } from '../../../lib/discover-filters';
 
@@ -181,27 +182,18 @@ export default function DiscoverScreen() {
 
         {/* LIST | MAP toggle + search */}
         <View style={s.controlsRow}>
-          <View style={s.segmented}>
-            {(['list', 'map'] as const).map((mode) => {
-              const on = viewMode === mode;
-              return (
-                <Pressable
-                  key={mode}
-                  style={[s.segmentBtn, on && s.segmentBtnActive]}
-                  onPress={() => handleModePress(mode)}
-                  accessibilityLabel={mode === 'list' ? tr('feed.switchToListView') : tr('feed.switchToMapView')}
-                >
-                  <Text style={[t.labelCaps, { color: on ? colors.fillText : colors.textSecondary }]}>
-                    {mode === 'list' ? tr('feed.viewList') : tr('feed.viewMap')}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <SegmentedControl
+            value={viewMode}
+            onChange={handleModePress}
+            options={[
+              { key: 'list', label: tr('feed.viewList'), icon: 'list', accessibilityLabel: tr('feed.switchToListView') },
+              { key: 'map', label: tr('feed.viewMap'), icon: 'map', accessibilityLabel: tr('feed.switchToMapView') },
+            ]}
+          />
 
           {viewMode === 'list' && (
             <View style={s.searchRow}>
-              <Text style={s.searchGlyph}>⌕</Text>
+              <Icon name="search" size={18} color={colors.textTertiary} />
               <TextInput
                 style={s.searchInput}
                 placeholder={tr('feed.searchPlaceholder')}
@@ -210,8 +202,13 @@ export default function DiscoverScreen() {
                 onChangeText={setSearch}
               />
               {search.length > 0 && (
-                <Pressable onPress={() => setSearch('')} hitSlop={8}>
-                  <Text style={s.clearGlyph}>✕</Text>
+                <Pressable
+                  onPress={() => setSearch('')}
+                  style={s.clearBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={trCommon('shell.accessibility.clear')}
+                >
+                  <Icon name="close" size={16} color={colors.textTertiary} />
                 </Pressable>
               )}
             </View>
@@ -221,17 +218,13 @@ export default function DiscoverScreen() {
           <Pressable
             style={[s.filterIconBtn, filterCount > 0 && s.filterIconBtnActive]}
             onPress={openFilters}
+            accessibilityRole="button"
             accessibilityLabel={tr('feed.filtersLabel')}
           >
-            <Image
-              // eslint-disable-next-line @typescript-eslint/no-require-imports -- Metro static-asset require
-              source={require('../../../assets/icons/icon-filter.png')}
-              style={[s.filterIcon, { tintColor: filterCount > 0 ? colors.accent : colors.textSecondary }]}
-              resizeMode="contain"
-            />
+            <Icon name="filter" size={20} color={filterCount > 0 ? colors.action : colors.textSecondary} />
             {filterCount > 0 && (
               <View style={s.filterBadge}>
-                <Text style={s.filterBadgeText}>{filterCount}</Text>
+                <Text style={[t.labelCapsSm, s.filterBadgeText]}>{filterCount}</Text>
               </View>
             )}
           </Pressable>
@@ -248,7 +241,7 @@ export default function DiscoverScreen() {
               <Chip label={tr('feed.moreTeams', { count: (filters.teams?.length ?? 0) - 2 })} active onPress={openFilters} />
             )}
             {filters.venue && <Chip label={filters.venue} active onPress={openFilters} />}
-            {filters.useFavourites && <Chip label={tr('feed.yourTeams')} active tone="volt" onPress={openFilters} />}
+            {filters.useFavourites && <Chip label={tr('feed.yourTeams')} active tone="confirmed" onPress={openFilters} />}
           </View>
         )}
 
@@ -269,7 +262,7 @@ export default function DiscoverScreen() {
       {viewMode === 'map' && (
         loading ? (
           <View style={s.center}>
-            <ActivityIndicator color={colors.accent} />
+            <ActivityIndicator color={colors.action} />
           </View>
         ) : (
           <EventMapView
@@ -283,7 +276,7 @@ export default function DiscoverScreen() {
       {viewMode === 'list' && (
         loading && !refreshing ? (
           <View style={s.center}>
-            <ActivityIndicator color={colors.accent} />
+            <ActivityIndicator color={colors.action} />
             <Text style={[t.bodySm, { color: colors.textTertiary }]}>
               {tr('feed.loadingEvents')}
             </Text>
@@ -300,7 +293,7 @@ export default function DiscoverScreen() {
             contentContainerStyle={[s.list, { paddingBottom: insets.bottom + spacing.xl }]}
             ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />
             }
             ListHeaderComponent={
               <Text style={[t.labelCaps, s.sectionLabel]}>
@@ -326,48 +319,30 @@ export default function DiscoverScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   header: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md },
 
   controlsRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
-
-  // Sharp segmented LIST | MAP toggle
-  segmented: {
-    flexDirection: 'row',
-    backgroundColor: palette.surfaceMid,
-    borderWidth: 1,
-    borderColor: palette.surfaceHighest,
-    padding: 2,
-  },
-  segmentBtn: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segmentBtnActive: { backgroundColor: colors.fill },
 
   // Underlined search input
   searchRow: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.surfaceMid,
+    backgroundColor: colors.surface2,
     borderBottomWidth: 2,
-    borderBottomColor: palette.outlineVariant,
+    borderBottomColor: colors.borderStrong,
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
   },
-  searchGlyph: { color: colors.textTertiary, fontSize: 18 },
   searchInput: {
+    ...t.labelMd,
     flex: 1,
     color: colors.textPrimary,
-    fontFamily: fonts.label,
-    fontSize: 13,
-    letterSpacing: 0.5,
+    minHeight: TAP - 4,
     paddingVertical: spacing.sm,
   },
-  clearGlyph: { color: colors.textTertiary, fontSize: 14 },
+  clearBtn: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center', marginRight: -spacing.md },
 
   // Single filters entry point — replaces the old Sport/Teams/Date/Venue row
   filterIconBtn: {
@@ -375,15 +350,15 @@ const s = StyleSheet.create({
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surfaceMid,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: palette.surfaceHighest,
+    borderColor: colors.borderSubtle,
   },
   filterIconBtnActive: {
-    backgroundColor: `${colors.accent}20`,
-    borderColor: `${colors.accent}80`,
+    backgroundColor: colors.actionWash,
+    borderColor: colors.action,
+    borderWidth: 2,
   },
-  filterIcon: { width: 18, height: 18 },
   filterBadge: {
     position: 'absolute',
     top: -6,
@@ -391,12 +366,11 @@ const s = StyleSheet.create({
     minWidth: 18,
     height: 18,
     paddingHorizontal: 4,
-    borderRadius: 9,
-    backgroundColor: colors.live,
+    backgroundColor: colors.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBadgeText: { color: palette.black, fontSize: 11, fontFamily: fonts.labelBold },
+  filterBadgeText: { color: colors.textOnFill },
 
   activeFilters: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
 

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, spacing, type as t } from '../lib/theme';
+import { colors, spacing, type as t } from '../lib/theme';
 
 // Matches the require() pattern used for the same asset in app/onboarding.tsx
 // (brand slide) — static imports don't cover these picture assets the way
@@ -46,7 +47,7 @@ export default function LaunchSplash({ dismiss, onDone }: Props) {
     <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.container, { opacity }]}>
       <View style={s.center}>
         <Image source={BRAND_LOGO} resizeMode="contain" style={s.logo} />
-        <Text style={[s.wordmark, { fontFamily: fonts.display }]}>SPOT SEEK</Text>
+        <Text style={[t.displayXl, s.wordmark]}>SPOT SEEK</Text>
         <Text style={[t.labelCaps, s.tagline]}>{tr('brand.tagline')}</Text>
       </View>
     </Animated.View>
@@ -54,16 +55,9 @@ export default function LaunchSplash({ dismiss, onDone }: Props) {
 }
 
 const s = StyleSheet.create({
-  container: { backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  container: { backgroundColor: colors.canvas, alignItems: 'center', justifyContent: 'center' },
   center: { alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   logo: { width: 140, height: 140, marginBottom: spacing.sm },
-  wordmark: {
-    fontSize: 40,
-    color: colors.accent,
-    letterSpacing: 1,
-    textShadowColor: `${colors.accent}66`,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-  },
-  tagline: { color: colors.textSecondary, fontSize: 16, letterSpacing: 3 },
+  wordmark: { color: colors.textPrimary, letterSpacing: 1 },
+  tagline: { color: colors.textSecondary, letterSpacing: 3 },
 });
