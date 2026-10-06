@@ -39,7 +39,10 @@
     "accessibility": {
       "openMenu": "Open menu",
       "notifications": "Notifications",
-      "profile": "Profile"
+      "profile": "Profile",
+      "back": "Back",
+      "closeMenu": "Close menu",
+      "clear": "Clear"
     }
   }
 }

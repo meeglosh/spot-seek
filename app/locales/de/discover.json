@@ -29,8 +29,8 @@
     "goingCount_other": "{{count}} Teilnehmer",
     "hostedBy": "Veranstaltet von {{name}}",
     "privateLocation": "{{venue}} — privat",
-    "sponsorTag": "⚡ {{name}}",
-    "sponsorTagMore": "⚡ {{name}} +{{count}}"
+    "sponsorTag": "{{name}}",
+    "sponsorTagMore": "{{name}} +{{count}}"
   },
   "map": {
     "liveNow": "Jetzt live",
@@ -47,7 +47,7 @@
     "clearCount": "Zurücksetzen ({{count}})",
     "yourInterests": "Deine Interessen",
     "filterByYourTeamsTitle": "Nach deinen Teams & Sportarten filtern",
-    "filterByYourTeamsSub": "Melde dich an, um Favoriten zu speichern und den Feed danach zu filtern →",
+    "filterByYourTeamsSub": "Melde dich an, um Favoriten zu speichern und den Feed danach zu filtern",
     "showOnlyYourTeams": "Nur deine Teams & Sportarten anzeigen",
     "moreFavourites": " +{{count}} mehr",
     "sport": "Sportart",
@@ -66,7 +66,7 @@
   "detail": {
     "loadError": "Event konnte nicht geladen werden.",
     "notFound": "Event nicht gefunden",
-    "goBack": "← Zurück",
+    "goBack": "Zurück",
     "liveTonight": "Heute Abend live",
     "dateTime": "Datum & Uhrzeit",
     "tba": "NOCH OFFEN",
@@ -85,7 +85,7 @@
       "waze": "Waze"
     },
     "breakdown": "Die Details",
-    "authNudge": "Melde dich an, um zuzusagen und alle Ortsdetails zu sehen →",
+    "authNudge": "Melde dich an, um zuzusagen und alle Ortsdetails zu sehen",
     "authGateMessage": "Melde dich an, um zuzusagen, der Gästeliste beizutreten und alle Ortsdetails zu sehen.",
     "cancelRsvp": "Zusage stornieren",
     "shareEvent": "Event teilen",

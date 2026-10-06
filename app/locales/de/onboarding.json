@@ -30,8 +30,8 @@
     }
   },
   "cta": {
-    "next": "WEITER →",
-    "getStarted": "LOS GEHT'S →"
+    "next": "WEITER",
+    "getStarted": "LOS GEHT'S"
   },
   "skip": {
     "label": "ÜBERSPRINGEN",
