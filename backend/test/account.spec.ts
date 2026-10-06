@@ -353,7 +353,13 @@ describe('DELETE /api/account — sponsor', () => {
     await db.update(schema.sponsorships).set({ paymentStatus: 'refunded', status: 'cancelled' })
       .where(eq(schema.sponsorships.id, bid.id));
     expect((await del(sponsor)).status).toBe(200);
-    expect(await db.select().from(schema.sponsorships).where(eq(schema.sponsorships.id, bid.id))).toHaveLength(0);
+    // Owner-approved 2026-10-06: a refunded sponsorship is payment history, so it
+    // is KEPT, anonymised under the "Deleted sponsor" placeholder (see
+    // account-records.spec.ts); the sponsor's own profile is still removed.
+    const kept = await db.select().from(schema.sponsorships).where(eq(schema.sponsorships.id, bid.id));
+    expect(kept).toHaveLength(1);
+    expect(kept[0].sponsorId).toBe('deleted-sponsor');
+    expect(kept[0].paymentStatus).toBe('refunded');
     expect(await db.select().from(schema.sponsorProfiles).where(eq(schema.sponsorProfiles.id, sponsor.id))).toHaveLength(0);
     // The host's event is untouched.
     expect(await db.select().from(schema.events).where(eq(schema.events.id, ev.id))).toHaveLength(1);

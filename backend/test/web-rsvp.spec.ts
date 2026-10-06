@@ -8,6 +8,7 @@ import { env, createExecutionContext } from 'cloudflare:test';
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { neon } from '@neondatabase/serverless';
 import worker from '../src/index';
+import { __setEmailGuardTestHooks } from '../src/email-guard';
 
 const BASE = 'https://example.com';
 const json = { 'Content-Type': 'application/json' };
@@ -19,6 +20,9 @@ const realFetch = globalThis.fetch;
 
 beforeEach(() => {
   sent = [];
+  // Resend is mocked below; fixtures are @spotseek.test, so lift the test-domain
+  // suppression and keep the real send counter untouched.
+  __setEmailGuardTestHooks({ allowTestDomains: true, reserve: async () => 1 });
   vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     if (url.startsWith('https://api.resend.com/')) {
@@ -28,7 +32,10 @@ beforeEach(() => {
     return realFetch(input, init);
   });
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  __setEmailGuardTestHooks(null);
+});
 
 function app(path: string, init: RequestInit = {}, overrides: Record<string, unknown> = {}) {
   const ctx = createExecutionContext();

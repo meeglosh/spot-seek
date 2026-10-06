@@ -1,6 +1,7 @@
 /**
  * Forgot-password: reset page + email rendering (no Better Auth config needed).
  */
+import { __setEmailGuardTestHooks } from '../src/email-guard';
 import { SELF } from 'cloudflare:test';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderEmailHtml, renderEmailText } from '../src/email';
@@ -56,10 +57,14 @@ describe('GET /reset-password', () => {
 describe('password reset email layout', () => {
   const url = resetUrl('https://api.example.test/', 'tok en/1');
 
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    __setEmailGuardTestHooks(null);
+  });
 
   it('sendResetEmail links to PUBLIC_BASE_URL, not BETTER_AUTH_URL', async () => {
     let body: { html: string; text: string } | undefined;
+    __setEmailGuardTestHooks({ reserve: async () => 1 }); // fetch is mocked; don't touch the real counter
     vi.stubGlobal('fetch', async (_u: unknown, init?: RequestInit) => {
       body = JSON.parse(String(init?.body));
       return new Response('{}', { status: 200 });

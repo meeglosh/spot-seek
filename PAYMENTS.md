@@ -127,11 +127,59 @@ unpaid → requires_payment → paid → released
   or `refunded`) — as the sponsor OR as the host of the event — gets
   `409 money_in_flight` and cannot delete their account until the release /
   refund sweep or a withdrawal settles it.
+- **Unfinished payments (owner-approved 2026-10-06).** Every sponsorship
+  involving the user (as sponsor, or on their events) with
+  `paymentStatus = 'requires_payment'` has its PaymentIntent cancelled
+  (`POST /v1/payment_intents/:id/cancel`, `cancelPaymentIntent` in
+  `stripe.ts`). An already-canceled PI is fine. A PI that already `succeeded`
+  (or is `processing`) means money is in flight: `409 money_in_flight`, same as
+  `paid`. Each sponsorship becomes `status = 'cancelled'` (`paymentStatus` back
+  to `unpaid`; the PI id stays as the Stripe record) and the other party gets a
+  `sponsorship_rejected` notification titled "Sponsorship cancelled". A Stripe
+  failure other than the above returns `502 payment_cancel_failed` before
+  anything else is destroyed. Without `STRIPE_SECRET_KEY` the sponsorship is
+  just marked cancelled.
+- **Payment history is preserved (owner-approved 2026-10-06).** "History" =
+  `paymentStatus != 'unpaid'` OR a `paymentIntentId`/`transferId` is set.
+  - Host: any of the user's events with a history sponsorship is KEPT, not
+    deleted: `host_id` moves to the anonymous `deleted-host` user ("Deleted
+    host"; keeps the RESTRICT FK satisfied), the description, cover image,
+    recurrence rule and (for private-location events) venue fields are
+    scrubbed, and status becomes `completed` (`cancelled` stays) so it leaves
+    the feed and sitemap. Events without history are deleted as before.
+  - Sponsor: the user's history sponsorships on other hosts' events are KEPT;
+    `sponsor_id` moves to `deleted-sponsor` ("Deleted sponsor", with an
+    anonymised `sponsor_profiles` row the joins need) and the free-text note is
+    cleared. The user's own sponsor profile and history-free sponsorships are
+    deleted.
+  - Placeholders (`backend/src/deleted-users.ts`) are created lazily and
+    idempotently. They have a `users` row and a Better Auth `user` row (so the
+    `@invalid` email cannot be registered) but NO `account` row: no credential,
+    so sign-in and password reset cannot work. They never render as a real
+    host/sponsor: `/e/:id` omits the organizer, `/api/profiles/:id`,
+    `/api/sponsors/:id` and the sponsor directory 404/skip them, and host
+    requests to them are rejected.
+  - Note: a sponsorship whose PI was cancelled by a deletion still has a
+    `paymentIntentId`, so by the rule above it counts as history and its event /
+    row is kept (anonymised). This is the conservative reading of the rule.
 - **The Stripe connected account is never deleted via the Stripe API**
   (money and compliance: payouts, KYC and tax records live with Stripe). On
   account deletion we only drop OUR reference — `users.stripe_account_id` and
   `stripe_payouts_enabled` go away with the `users` row. Closing the orphaned
   connected account, if ever wanted, is a manual dashboard step by the owner.
+
+## Outbound email guard (Resend quota)
+
+The Resend plan allows 100 emails/day, so every real send goes through
+`backend/src/email-guard.ts` (called from `sendEmail`): recipients on reserved
+domains (`.test`, `.example`, `.invalid`, `.localhost`, `example.com/.org/.net`)
+are never emailed (`[EMAIL SUPPRESSED test-domain]`); an optional
+`EMAIL_ALLOWLIST` var (comma-separated addresses or `@domain`; UNSET by
+default) restricts real mail to matching recipients; and `EMAIL_DAILY_CAP`
+(wrangler var, default 80) caps real sends per UTC day via the
+`email_send_counts(day, count)` table, reserved atomically before sending
+(`[EMAIL SUPPRESSED daily-cap]`, once per request). If the counter is
+unreachable the send is suppressed. In-app notifications are unaffected.
 
 ## Non-negotiables (from CLAUDE.md)
 

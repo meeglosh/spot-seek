@@ -15,6 +15,7 @@ import { geocodeRouter } from './geocode';
 import { deeplinksRouter } from './deeplinks';
 import { webRsvpRouter } from './webrsvp';
 import { configurePublicBaseUrl } from './email';
+import { configureEmailGuard } from './email-guard';
 import { notificationsRouter, scheduled as notificationsScheduled } from './notifications';
 import { reviewsRouter } from './reviews';
 import { allowRequest, tooManyRequests, AUTH_LIMIT_PER_MIN } from './ratelimit';
@@ -28,6 +29,7 @@ const app = new Hono<{ Bindings: Env }>();
 // Public base URL (PUBLIC_BASE_URL var) used by every outward-facing link.
 app.use('*', async (c, next) => {
   configurePublicBaseUrl(c.env.PUBLIC_BASE_URL);
+  configureEmailGuard(c.env);
   await next();
 });
 
@@ -105,6 +107,7 @@ app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 // sweep (release/refund) into a single cron handler.
 async function scheduled(controller: ScheduledController, env: Env): Promise<void> {
   configurePublicBaseUrl(env.PUBLIC_BASE_URL);
+  configureEmailGuard(env);
   await notificationsScheduled(controller, env);
   await runPaymentSweeps(env);
 }

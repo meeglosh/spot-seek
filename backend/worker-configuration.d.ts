@@ -9,6 +9,10 @@ interface Env {
   // App Store listing URL; unset -> pages show "Coming soon".
   APP_STORE_URL?: string;
   RESEND_API_KEY?: string;
+  // Resend quota guard (src/email-guard.ts): max real sends per UTC day (default
+  // 80) and an optional comma-separated allowlist (addresses or @domain).
+  EMAIL_DAILY_CAP?: string;
+  EMAIL_ALLOWLIST?: string;
   ADMIN_SECRET?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;

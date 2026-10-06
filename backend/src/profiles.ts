@@ -3,6 +3,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { and, eq } from 'drizzle-orm';
 import * as schema from './schema';
+import { isPlaceholderUserId } from './deleted-users';
 import { createAuth } from './auth';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
@@ -27,7 +28,7 @@ profilesRouter.get('/:id', async (c) => {
   const user = await db.query.users.findFirst({
     where: eq(schema.users.id, c.req.param('id')),
   });
-  if (!user) return c.json({ error: 'Not found' }, 404);
+  if (!user || isPlaceholderUserId(user.id)) return c.json({ error: 'Not found' }, 404);
 
   const { email: _, ...publicProfile } = user;
   return c.json({ user: publicProfile });

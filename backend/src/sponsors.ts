@@ -13,6 +13,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import * as schema from './schema';
+import { isPlaceholderUserId } from './deleted-users';
 import { createAuth } from './auth';
 import { notify } from './notifications';
 import { guestGoingCounts } from './guests';
@@ -105,9 +106,9 @@ sponsorsRouter.get('/', async (c) => {
   if (!userId) return c.json({ error: 'Unauthorized' }, 401);
 
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
-  const profiles = await db.query.sponsorProfiles.findMany({
+  const profiles = (await db.query.sponsorProfiles.findMany({
     orderBy: desc(schema.sponsorProfiles.createdAt),
-  });
+  })).filter((p) => !isPlaceholderUserId(p.id));
   const counts = await sponsorshipCounts(db, profiles.map((p) => p.id));
   const sponsors = profiles.map((p) => ({ ...p, sponsorshipCount: counts.get(p.id) ?? 0 }));
   return c.json({ sponsors });
@@ -119,7 +120,7 @@ sponsorsRouter.get('/:id', async (c) => {
   const profile = await db.query.sponsorProfiles.findFirst({
     where: eq(schema.sponsorProfiles.id, c.req.param('id')),
   });
-  if (!profile) return c.json({ error: 'Not found' }, 404);
+  if (!profile || isPlaceholderUserId(profile.id)) return c.json({ error: 'Not found' }, 404);
   const counts = await sponsorshipCounts(db, [profile.id]);
   return c.json({ sponsor: { ...profile, sponsorshipCount: counts.get(profile.id) ?? 0 } });
 });
@@ -187,7 +188,7 @@ sponsorsRouter.post('/requests', async (c) => {
   const sponsor = await db.query.sponsorProfiles.findFirst({
     where: eq(schema.sponsorProfiles.id, sponsorId),
   });
-  if (!sponsor) return c.json({ error: 'Sponsor not found' }, 404);
+  if (!sponsor || isPlaceholderUserId(sponsor.id)) return c.json({ error: 'Sponsor not found' }, 404);
 
   const platformFeeCents = Math.round(amountCents * PLATFORM_FEE_RATE);
   const [request] = await db

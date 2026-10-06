@@ -48,6 +48,11 @@ export type StripeClient = {
     idempotencyKey?: string;
   }): Promise<StripePaymentIntent>;
   retrievePaymentIntent(id: string): Promise<StripePaymentIntentState>;
+  // POST /v1/payment_intents/:id/cancel. Resolves with the PI's resulting
+  // status. An already-canceled / succeeded / processing PI (Stripe answers
+  // those with a 400) resolves with its CURRENT status instead of throwing, so
+  // callers can treat 'canceled' as success and 'succeeded' as money in flight.
+  cancelPaymentIntent(id: string): Promise<{ id: string; status: string }>;
   createTransfer(params: {
     amountCents: number;
     currency: string;
@@ -282,6 +287,22 @@ export function realStripe(secretKey: string): StripeClient {
     async retrievePaymentIntent(id) {
       const pi = await stripeRequest(secretKey, 'GET', `/payment_intents/${encodeURIComponent(id)}`);
       return { id: pi.id as string, clientSecret: pi.client_secret as string, status: pi.status as string };
+    },
+
+    async cancelPaymentIntent(id) {
+      const path = `/payment_intents/${encodeURIComponent(id)}`;
+      try {
+        const pi = await stripeRequest(secretKey, 'POST', `${path}/cancel`, {});
+        return { id: pi.id as string, status: pi.status as string };
+      } catch (err) {
+        // Unexpected-state 400s: look at where the PI actually is.
+        const pi = await stripeRequest(secretKey, 'GET', path).catch(() => null);
+        const status = pi?.status as string | undefined;
+        if (status === 'canceled' || status === 'succeeded' || status === 'processing') {
+          return { id, status };
+        }
+        throw err;
+      }
     },
 
     async createTransfer({ amountCents, currency, destination, metadata }) {

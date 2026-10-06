@@ -13,10 +13,18 @@
  *     Guest RSVPs (guest_rsvps) with the user's email, or claimed by the user,
  *     are deleted first (privacy); the events where one was 'going' also get
  *     promotion (promoteFromWaitlist considers guests too).
+ *  3b. Unfinished payments (requires_payment, as sponsor or on the user's
+ *     events): the Stripe PaymentIntent is cancelled, the sponsorship is marked
+ *     cancelled and the other party notified. A PI that already succeeded (or
+ *     is processing) is 409 money_in_flight. No Stripe key: just mark cancelled.
  *  5. The user's own past/draft/cancelled/completed events are deleted (their
  *     RSVPs are cleared explicitly — rsvps.event_id has no ON DELETE CASCADE —
  *     and everything else hanging off the event cascades), because
- *     events.host_id is ON DELETE RESTRICT by design.
+ *     events.host_id is ON DELETE RESTRICT by design. EXCEPT events with any
+ *     sponsorship carrying payment history (paymentStatus != 'unpaid' or a
+ *     paymentIntentId/transferId): those are kept, scrubbed and reassigned to
+ *     the anonymous `deleted-host` user; the user's own sponsorships with
+ *     payment history are reassigned to `deleted-sponsor` (deleted-users.ts).
  *  6. Per-user rows are deleted explicitly (belt and braces over the FK
  *     cascades), then the app `users` row and the Better Auth user (which
  *     cascades sessions + accounts) are removed. Better Auth's own deleteUser
@@ -33,12 +41,15 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, eq, inArray, or } from 'drizzle-orm';
+import { and, eq, inArray, ne, or, isNotNull } from 'drizzle-orm';
 import * as schema from './schema';
 import * as authSchema from './auth-schema';
 import { createAuth } from './auth';
 import { promoteFromWaitlist } from './waitlist';
 import { normalizeEmail } from './guests';
+import { getClient } from './payments';
+import { notify } from './notifications';
+import { ensureDeletedHost, ensureDeletedSponsor } from './deleted-users';
 
 type AppEnv = { Bindings: Env };
 
@@ -115,7 +126,104 @@ accountRouter.delete('/', async (c) => {
     );
   }
 
-  const hostedIds = hosted.map((e) => e.id);
+  // ── 3b. Unfinished payments: cancel the PaymentIntent, cancel the sponsorship ─
+  // requires_payment rows where the user is the sponsor or the event's host.
+  // Stripe first (irreversible), then the row, one at a time, so a later
+  // failure/409 leaves every already-cancelled row consistent. A PI that has
+  // already succeeded (or is processing) means money is in flight: 409.
+  const unfinished = await db
+    .select({
+      id: schema.sponsorships.id,
+      eventId: schema.sponsorships.eventId,
+      eventTitle: schema.events.title,
+      amountCents: schema.sponsorships.amountCents,
+      sponsorId: schema.sponsorships.sponsorId,
+      hostId: schema.events.hostId,
+      paymentIntentId: schema.sponsorships.paymentIntentId,
+    })
+    .from(schema.sponsorships)
+    .innerJoin(schema.events, eq(schema.events.id, schema.sponsorships.eventId))
+    .where(
+      and(
+        eq(schema.sponsorships.paymentStatus, 'requires_payment'),
+        or(eq(schema.sponsorships.sponsorId, userId), eq(schema.events.hostId, userId)),
+      ),
+    );
+  if (unfinished.length > 0) {
+    const stripe = getClient(c.env);
+    const inFlight: typeof unfinished = [];
+    for (const row of unfinished) {
+      if (stripe && row.paymentIntentId) {
+        let status: string;
+        try {
+          status = (await stripe.cancelPaymentIntent(row.paymentIntentId)).status;
+        } catch (err) {
+          console.error('[account] PaymentIntent cancel failed:', err);
+          return c.json({ error: 'payment_cancel_failed', sponsorshipId: row.id }, 502);
+        }
+        if (status !== 'canceled') {
+          inFlight.push(row);
+          continue;
+        }
+      }
+      await db
+        .update(schema.sponsorships)
+        .set({ status: 'cancelled', paymentStatus: 'unpaid', updatedAt: new Date() })
+        .where(eq(schema.sponsorships.id, row.id));
+      const isSponsor = row.sponsorId === userId;
+      const otherParty = isSponsor ? row.hostId : row.sponsorId;
+      await notify(db, c.env.RESEND_API_KEY, {
+        userId: otherParty,
+        type: 'sponsorship_rejected',
+        title: 'Sponsorship cancelled',
+        body: isSponsor
+          ? `The sponsor closed their account, so their pending sponsorship of "${row.eventTitle}" was cancelled. No payment was taken.`
+          : `The host closed their account, so your sponsorship of "${row.eventTitle}" was cancelled. Your payment was not taken.`,
+        eventId: row.eventId,
+      }).catch((err) => console.error('[account] cancel notify failed:', err));
+    }
+    if (inFlight.length > 0) {
+      return c.json(
+        {
+          error: 'money_in_flight',
+          sponsorships: inFlight.map((p) => ({
+            id: p.id,
+            eventId: p.eventId,
+            eventTitle: p.eventTitle,
+            amountCents: p.amountCents,
+            role: p.sponsorId === userId ? 'sponsor' : 'host',
+          })),
+        },
+        409,
+      );
+    }
+  }
+
+  // ── 3c. Payment history must outlive the account ────────────────────────────
+  // History = paymentStatus != 'unpaid' OR a paymentIntentId/transferId set.
+  // Events (host side) and sponsorship rows (sponsor side) carrying history are
+  // KEPT and handed to anonymous placeholder users (deleted-users.ts).
+  const hasHistory = or(
+    ne(schema.sponsorships.paymentStatus, 'unpaid'),
+    isNotNull(schema.sponsorships.paymentIntentId),
+    isNotNull(schema.sponsorships.transferId),
+  );
+  const hostedIdsAll = hosted.map((e) => e.id);
+  const keptRows =
+    hostedIdsAll.length > 0
+      ? await db
+          .selectDistinct({ eventId: schema.sponsorships.eventId })
+          .from(schema.sponsorships)
+          .where(and(inArray(schema.sponsorships.eventId, hostedIdsAll), hasHistory))
+      : [];
+  const keptEventIds = new Set(keptRows.map((r) => r.eventId));
+  const sponsorHistory = await db
+    .select({ id: schema.sponsorships.id })
+    .from(schema.sponsorships)
+    .where(and(eq(schema.sponsorships.sponsorId, userId), hasHistory));
+
+  // Only events WITHOUT payment history are deleted below.
+  const hostedIds = hosted.map((e) => e.id).filter((id) => !keptEventIds.has(id));
 
   // ── 4. Free the user's going spots, then promote the waitlists ──────────────
   // A going RSVP must leave the 'going' state BEFORE promotion runs or the
@@ -167,6 +275,43 @@ accountRouter.delete('/', async (c) => {
     await db.delete(schema.events).where(inArray(schema.events.id, hostedIds));
   }
 
+  // Kept events (payment history): reassign to the anonymous "Deleted host" and
+  // scrub the host's personal content. Status moves out of the public feed /
+  // sitemap ('cancelled' stays, everything else becomes 'completed'); none of
+  // them is upcoming (checked above) and none has money in flight. Private
+  // (home) venues are blanked; the description and cover are the host's own
+  // words/photos. Title, time and amounts stay: they are the payment record.
+  if (keptEventIds.size > 0) {
+    const authDbForPlaceholder = drizzle(sql, { schema: authSchema });
+    const placeholderHost = await ensureDeletedHost(db, authDbForPlaceholder);
+    for (const e of hosted.filter((h) => keptEventIds.has(h.id))) {
+      await db
+        .update(schema.events)
+        .set({
+          hostId: placeholderHost,
+          description: null,
+          coverImageUrl: null,
+          recurrenceRule: null,
+          status: e.status === 'cancelled' ? 'cancelled' : 'completed',
+          ...(e.isPrivateLocation
+            ? { venueName: null, venueAddress: null, venueLat: null, venueLng: null, venueTimezone: null }
+            : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.events.id, e.id));
+    }
+  }
+
+  // Sponsor side: paid-history sponsorships on other hosts' events are kept,
+  // anonymised under the "Deleted sponsor" placeholder (+ anonymised profile).
+  if (sponsorHistory.length > 0) {
+    const placeholderSponsor = await ensureDeletedSponsor(db, drizzle(sql, { schema: authSchema }));
+    await db
+      .update(schema.sponsorships)
+      .set({ sponsorId: placeholderSponsor, note: null, updatedAt: new Date() })
+      .where(inArray(schema.sponsorships.id, sponsorHistory.map((r) => r.id)));
+  }
+
   // ── 6. Per-user rows, then the user itself ──────────────────────────────────
   await db.delete(schema.reviews).where(
     or(eq(schema.reviews.reviewerId, userId), eq(schema.reviews.hostId, userId)),
@@ -178,8 +323,9 @@ accountRouter.delete('/', async (c) => {
   await db.delete(schema.notifications).where(eq(schema.notifications.userId, userId));
   await db.delete(schema.notificationPrefs).where(eq(schema.notificationPrefs.userId, userId));
   await db.delete(schema.comments).where(eq(schema.comments.userId, userId));
-  // Sponsor offers hang off sponsorships; delete the user's own sponsorships
-  // (pending/active/etc. — none are paid, checked above) which cascades offers.
+  // Sponsor offers hang off sponsorships; delete the user's remaining own
+  // sponsorships (no payment history — those were reassigned above), which
+  // cascades their offers.
   await db.delete(schema.sponsorships).where(eq(schema.sponsorships.sponsorId, userId));
   await db.delete(schema.sponsorProfiles).where(eq(schema.sponsorProfiles.id, userId));
   await db.delete(schema.rsvps).where(eq(schema.rsvps.userId, userId));
@@ -199,7 +345,7 @@ accountRouter.delete('/', async (c) => {
   await authDb.delete(authSchema.authUser).where(eq(authSchema.authUser.id, userId));
 
   // ── 7. R2 cleanup (best effort; DB deletion already succeeded) ──────────────
-  for (const id of hostedIds) {
+  for (const id of hostedIdsAll) {
     try {
       const listed = await c.env.SPOTSEEK_IMAGES.list({ prefix: `events/${id}/` });
       if (listed.objects.length > 0) {

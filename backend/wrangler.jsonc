@@ -13,7 +13,14 @@
 		// sitemap and email CTAs. Switch to https://spotseek.app when the custom
 		// domain is live (see HANDOFF.md / report for the exact steps).
 		// Optional: "APP_STORE_URL" (leave unset until the listing exists).
-		"PUBLIC_BASE_URL": "https://spot-seek-api.dry-base-037d.workers.dev"
+		"PUBLIC_BASE_URL": "https://spot-seek-api.dry-base-037d.workers.dev",
+		// OWNER REVIEW: Resend quota guard (src/email-guard.ts). Max real emails per
+		// UTC day (plan allows 100; 80 leaves headroom for the owner's own use).
+		// Mail to .test/.example/.invalid/.localhost and example.com/.org/.net is
+		// always suppressed. Optional "EMAIL_ALLOWLIST" (comma-separated addresses
+		// or @domain entries; when set ONLY those get real email) is deliberately
+		// left unset.
+		"EMAIL_DAILY_CAP": "80"
 	},
 	"durable_objects": {
 		"bindings": [

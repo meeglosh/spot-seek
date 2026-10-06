@@ -17,6 +17,7 @@ import * as schema from './schema';
 import type { Event, Rsvp } from './schema';
 import { createAuth } from './auth';
 import { renderEmailHtml, renderEmailText, REPLY_TO } from './email';
+import { checkEmailAllowed } from './email-guard';
 
 // ─── Email sender via Resend ──────────────────────────────────────────────────
 export interface SendEmailOptions {
@@ -44,6 +45,9 @@ export async function sendEmail(
   opts: SendEmailOptions = {},
 ): Promise<void> {
   const content = { type: opts.type, title: subject, body: text, eventId: opts.eventId, ...opts };
+  // Single choke point for every real send: test/reserved domains, optional
+  // allowlist and the daily cap (see email-guard.ts). Reserves a slot.
+  if (!(await checkEmailAllowed(to))) return;
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',

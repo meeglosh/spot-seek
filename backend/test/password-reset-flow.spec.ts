@@ -6,6 +6,7 @@
 import { SELF, fetchMock } from 'cloudflare:test';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { __setTestResendKey } from '../src/password-reset';
+import { __setEmailGuardTestHooks } from '../src/email-guard';
 
 const BASE = 'https://example.com';
 const AUTH = `${BASE}/api/auth`;
@@ -20,6 +21,9 @@ const sent: ResendBody[] = [];
 
 beforeAll(() => {
   __setTestResendKey('re_test_key');
+  // Resend is fully mocked below; fixtures are @spotseek.test, so lift the test-domain
+  // suppression and keep the real send counter untouched.
+  __setEmailGuardTestHooks({ allowTestDomains: true, reserve: async () => 1 });
   fetchMock.activate();
   // Unmatched requests (Neon, Better Auth) fall through to the real network; only
   // Resend is intercepted, and every call is captured.
@@ -33,7 +37,10 @@ beforeAll(() => {
     .persist();
 });
 
-afterAll(() => __setTestResendKey(null));
+afterAll(() => {
+  __setTestResendKey(null);
+  __setEmailGuardTestHooks(null);
+});
 
 const requestReset = (email: string, headers: Record<string, string> = {}) =>
   SELF.fetch(`${AUTH}/request-password-reset`, {

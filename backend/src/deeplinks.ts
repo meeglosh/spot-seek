@@ -3,6 +3,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { and, asc, desc, eq, gt } from 'drizzle-orm';
 import * as schema from './schema';
+import { isPlaceholderUserId } from './deleted-users';
 import { publicBaseUrl } from './email';
 import { countGoing, eventIsOpen } from './guests';
 import { escapeHtml, installCtas, renderPage, safeJson } from './webpage';
@@ -154,7 +155,8 @@ deeplinksRouter.get('/e/:id', async (c) => {
       .limit(5),
   ]);
 
-  const hostName = host?.displayName ?? null;
+  // The anonymous placeholder owner of a deleted host's kept events is never shown as a host.
+  const hostName = host && !isPlaceholderUserId(host.id) ? host.displayName : null;
   const canonical = `${base}/e/${event.id}`;
   const title = escapeHtml(event.title);
   // Link-preview bots (Messages/WhatsApp/Slack) scrape this page's HTML

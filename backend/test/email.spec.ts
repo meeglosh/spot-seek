@@ -1,7 +1,8 @@
 import { SELF } from 'cloudflare:test';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { renderEmailHtml, DEFAULT_PUBLIC_BASE_URL } from '../src/email';
 import { sendEmail } from '../src/reminders';
+import { __setEmailGuardTestHooks } from '../src/email-guard';
 
 const EVENT_ID = '11111111-2222-3333-4444-555555555555';
 
@@ -31,6 +32,11 @@ describe('renderEmailHtml', () => {
 });
 
 describe('sendEmail', () => {
+  // Fixture recipients are @b.test; these tests cover the Resend payload, not the
+  // guard (see email-guard.spec.ts), and must never touch the real send counter.
+  beforeEach(() => __setEmailGuardTestHooks({ allowTestDomains: true, reserve: async () => 1 }));
+  afterEach(() => __setEmailGuardTestHooks(null));
+
   it('posts html, text and reply_to to Resend', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
