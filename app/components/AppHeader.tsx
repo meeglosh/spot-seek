@@ -11,12 +11,20 @@ import { colors, radius, spacing, TAP, elevation, type as t } from '../lib/theme
 import { Press, SoonTag } from './ui';
 import { useAuth } from '../lib/auth';
 import { fetchNotifications } from '../lib/api';
+import { useAuthGate, type GateIntent } from './AuthGate';
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
 
 type MenuItem = { icon: IconName; label: string; onPress?: () => void; soon?: boolean };
 
-function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+function DrawerMenu({
+  open, onClose, onGuestAction,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** Called for a guest tapping a members-only item; the parent owns the sign-up sheet. */
+  onGuestAction: (intent: GateIntent) => void;
+}) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const auth = useAuth();
@@ -41,7 +49,14 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   };
 
   const items: MenuItem[] = [
-    { icon: 'live', label: tr('shell.menu.switchToHosting'), onPress: () => go('/(tabs)/parties/dashboard') },
+    {
+      icon: 'live',
+      label: tr('shell.menu.switchToHosting'),
+      onPress: () => {
+        if (auth.status !== 'authenticated') { onGuestAction({ kind: 'host' }); return; }
+        go('/(tabs)/parties/dashboard');
+      },
+    },
     { icon: 'sponsorship', label: tr('shell.menu.sponsorships'), onPress: () => go('/(tabs)/sponsorship') },
     {
       icon: 'wallet',
@@ -141,6 +156,7 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
   const { t: tr } = useTranslation('common');
   const [menuOpen, setMenuOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const { requireAuth, gateSheet } = useAuthGate();
 
   const initial =
     auth.status === 'authenticated' ? (auth.user.name.trim().charAt(0).toUpperCase() || 'S') : 'S';
@@ -194,26 +210,28 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
       <Text style={[t.headlineMd, s.wordmark]}>SPOT SEEK</Text>
 
       <View style={s.headerRight}>
-        {auth.status === 'authenticated' && (
-          <Press
-            onPress={() => router.push('/notifications' as never)}
-            style={s.bellBtn}
-            accessibilityRole="button"
-            accessibilityLabel={tr('shell.accessibility.notifications')}
-          >
-            <Icon name="bell" size={24} color={colors.textSecondary} />
-            {unread > 0 && (
-              <View style={s.bellBadge}>
-                <Text style={[t.labelSm, s.bellBadgeText]} numberOfLines={1}>
-                  {unread > 99 ? '99+' : unread}
-                </Text>
-              </View>
-            )}
-          </Press>
-        )}
+        <Press
+          onPress={() => {
+            if (requireAuth({ kind: 'notifications' })) router.push('/notifications' as never);
+          }}
+          style={s.bellBtn}
+          accessibilityRole="button"
+          accessibilityLabel={tr('shell.accessibility.notifications')}
+        >
+          <Icon name="bell" size={24} color={colors.textSecondary} />
+          {unread > 0 && (
+            <View style={s.bellBadge}>
+              <Text style={[t.labelSm, s.bellBadgeText]} numberOfLines={1}>
+                {unread > 99 ? '99+' : unread}
+              </Text>
+            </View>
+          )}
+        </Press>
 
         <Press
-          onPress={() => router.push('/(tabs)/profile' as never)}
+          onPress={() => {
+            if (requireAuth({ kind: 'profile' })) router.push('/(tabs)/profile' as never);
+          }}
           hitSlop={4}
           style={s.avatar}
           accessibilityRole="button"
@@ -223,7 +241,17 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
         </Press>
       </View>
 
-      <DrawerMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <DrawerMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onGuestAction={(intent) => {
+          // iOS can't present a second modal while the drawer is still
+          // dismissing, so let the drawer finish closing first.
+          setMenuOpen(false);
+          setTimeout(() => requireAuth(intent), 350);
+        }}
+      />
+      {gateSheet}
     </View>
   );
 }

@@ -16,7 +16,7 @@ import { useDiscoverFilters } from '../../../lib/discover-filters';
 import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
 import { Btn, Chip, SectionTitle, Press, Toggle } from '../../../components/ui';
-import { goToAuth } from '../../../components/AuthGate';
+import { useAuthGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 
 // spacing.lg top + 44pt tap row + spacing.md bottom
@@ -26,6 +26,7 @@ export default function FilterScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+  const { requireAuth, gateSheet } = useAuthGate();
   // Scoped to 'discover' — this screen's strings live under the filters
   // subtree of discover.json (see lib/i18n.ts for the key-naming convention).
   // Aliased to `tr` because `t` is already the theme.type import above.
@@ -103,7 +104,7 @@ export default function FilterScreen() {
             <SectionTitle>{tr('filters.yourInterests')}</SectionTitle>
             <Press
               style={s.favouriteRow}
-              onPress={() => goToAuth(router, 'sign-in', '/(tabs)/discover/filter')}
+              onPress={() => requireAuth({ kind: 'favourite' })}
             >
               <View style={s.favouriteLabels}>
                 <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
@@ -270,6 +271,7 @@ export default function FilterScreen() {
         />
       </View>
       </View>
+      {gateSheet}
     </View>
   );
 }

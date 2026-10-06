@@ -19,6 +19,15 @@
     "keepBrowsing": "Continuar a explorar",
     "joinTheAction": "Junta-te ao SpotSeek"
   },
+  "authSheet": {
+    "rsvp": "Cria uma conta para confirmar presença em {{label}}",
+    "host": "Cria uma conta para organizar uma festa",
+    "favourite": "Cria uma conta para seguir as tuas equipas",
+    "notifications": "Cria uma conta para receberes avisos",
+    "profile": "Cria uma conta para ver o teu perfil",
+    "parties": "Cria uma conta para ver as tuas festas",
+    "message": "Demora um minuto e voltas logo para aqui."
+  },
   "tabs": {
     "discover": "Descobrir",
     "myParties": "Minhas festas",

@@ -9,6 +9,7 @@ import type { BottomTabBarProps } from 'expo-router/build/react-navigation/botto
 import { useTranslation } from 'react-i18next';
 import { Icon } from '../../components/icons';
 import { colors, radius, elevation, type as t } from '../../lib/theme';
+import { useAuthGate } from '../../components/AuthGate';
 
 // Tab icons come from the SpotSeek SVG icon set (components/icons), not an
 // icon font (an icon-font link crash once shipped) and not raster PNGs.
@@ -42,6 +43,9 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
   const pillX = useRef(new Animated.Value(0)).current;
   const pillWidth = useRef(new Animated.Value(0)).current;
   const hasPositioned = useRef(false);
+  // Guests tapping My parties / Profile get the sign-up sheet over the tab
+  // they're on instead of landing on a locked screen.
+  const { requireAuth, gateSheet } = useAuthGate();
 
   useEffect(() => {
     const layout = layouts[state.index];
@@ -96,6 +100,8 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
             : (options.tabBarLabel ?? options.title ?? route.name);
 
           const onPress = () => {
+            if (route.name === 'parties' && !requireAuth({ kind: 'parties' })) return;
+            if (route.name === 'profile' && !requireAuth({ kind: 'profile' })) return;
             const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
             if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
           };
@@ -127,6 +133,7 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
           );
         })}
       </View>
+      {gateSheet}
     </View>
   );
 }

@@ -1,40 +1,20 @@
 {
-  "brand": {
-    "tagline": "Ne regardez jamais seul"
-  },
-  "seeker": {
-    "headline": "Trouvez votre salle",
-    "body": "Le match, le final, la cérémonie, la soirée électorale. Trouvez une soirée près de chez vous et passez la porte.",
+  "promise": {
+    "title": "Ne regardez jamais seul.",
+    "body": "Trouvez une salle pour le match, le final ou la grande soirée. Pointez-vous, c'est tout.",
+    "cta": "Trouver une soirée",
+    "signIn": "J'ai déjà un compte",
     "chips": {
       "liveSports": "Sport en direct",
       "awards": "Cérémonies",
       "bigEvents": "Grandes soirées"
     }
   },
-  "host": {
-    "headline": "Organisez la soirée",
-    "body": "Choisissez le programme, le lieu et la liste d'invités. Un bar, un toit ou votre salon, tout marche.",
-    "chips": {
-      "yourVenue": "Votre salle",
-      "yourCrowd": "Vos invités",
-      "yourRules": "Vos règles"
-    }
-  },
-  "sponsor": {
-    "headline": "Soutenez la soirée",
-    "body": "Parrainez une soirée locale et montrez votre nom à ceux qui sont dans la salle. Les hôtes valident chaque sponsor.",
-    "chips": {
-      "vipAccess": "Vrais événements",
-      "gearDrops": "Validé par l'hôte",
-      "partnerDeals": "Frais clairs"
-    }
-  },
-  "cta": {
-    "next": "Suivant",
-    "getStarted": "C'est parti"
-  },
-  "skip": {
-    "label": "Passer",
-    "a11y": "Passer la présentation"
+  "location": {
+    "title": "Des soirées près de chez vous",
+    "body": "Partagez votre position et Découvrir met en avant les salles les plus proches. Nous ne l'utilisons que lorsque l'app est ouverte.",
+    "allow": "Partager ma position",
+    "skip": "Plus tard",
+    "note": "Vous pouvez changer cela à tout moment dans les Réglages."
   }
 }

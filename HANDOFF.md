@@ -223,9 +223,27 @@ npm run deploy          # dev/preview worker (allowed per CLAUDE.md)
   Keys nested per-namespace; `_one`/`_other` plurals; keep 5-language parity
   (python key-diff) whenever EN gains keys.
 - **EventMapView** had a freeze bug historically — keep diffs there minimal.
-- The root `app/app/index.tsx` redirect chain (auth → onboarding → welcome)
-  is load-bearing and has bitten twice; modify minimally, test with real
-  cold launches.
+- The root `app/app/index.tsx` redirect chain is load-bearing and has bitten
+  twice; modify minimally, test with real cold launches. Since redesign
+  phase 4 (guest-first) it is:
+  `authenticated` -> `/(tabs)/discover`;
+  `unauthenticated + onboarding not seen` -> `/onboarding` (promise screen)
+  -> `/onboarding-location` -> `/(auth)/interests` -> `/(tabs)/discover`;
+  `unauthenticated + seen` -> `/(tabs)/discover` as a guest (the old
+  `/(auth)` welcome screen is no longer on the launch path; sign-out still
+  lands on it). The "seen" SecureStore flag is set on the promise screen.
+- **Guest mode (phase 4)**: guests browse Discover, event detail and the map
+  with no account. Guest interests live in SecureStore
+  (`spotseek_guest_interests`, `lib/guestState.ts`) and are MERGED into the
+  account's favourites (the bulk endpoint replaces, so never send guest picks
+  alone) by `AuthProvider` after every successful sign-in/sign-up. Members-only
+  taps go through `useAuthGate().requireAuth(intent)` (`components/AuthGate`),
+  which opens a contextual sheet ("Sign up to RSVP for …"); the auth screens
+  receive `redirect` + `context` params and return with `router.dismissTo`.
+  RSVP completes after auth via an in-memory pending intent consumed by the
+  event screen. Guests get 401 (swallowed) on `/api/reviews/*` and
+  `/api/favourites`; the feed, `/api/events/:id` and `/api/profiles/:id` are
+  public. `assets/onboarding/*` is no longer referenced (removable).
 - vitest runs against the REAL shared dev DB — always timestamp-unique
   fixtures.
 

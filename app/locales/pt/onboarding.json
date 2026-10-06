@@ -1,40 +1,20 @@
 {
-  "brand": {
-    "tagline": "Nunca vejas sozinho"
-  },
-  "seeker": {
-    "headline": "Encontra a tua sala",
-    "body": "O jogo, o final de temporada, a gala de prémios, a noite eleitoral. Encontra uma festa perto de ti e aparece.",
+  "promise": {
+    "title": "Nunca vejas sozinho.",
+    "body": "Encontra uma sala para o jogo, o final de temporada ou a grande noite. Aparece e já estás dentro.",
+    "cta": "Encontrar uma festa",
+    "signIn": "Já tenho conta",
     "chips": {
       "liveSports": "Desporto ao vivo",
       "awards": "Galas de prémios",
       "bigEvents": "Grandes noites"
     }
   },
-  "host": {
-    "headline": "Organiza a noite",
-    "body": "Escolhe o que dá, diz onde e define a lista de convidados. Um bar, um terraço ou a tua sala servem.",
-    "chips": {
-      "yourVenue": "A tua sala",
-      "yourCrowd": "Os teus convidados",
-      "yourRules": "As tuas regras"
-    }
-  },
-  "sponsor": {
-    "headline": "Apoia a noite",
-    "body": "Patrocina uma festa local e põe o teu nome à frente de quem está na sala. Os anfitriões aprovam cada patrocinador.",
-    "chips": {
-      "vipAccess": "Eventos reais",
-      "gearDrops": "Aprovado pelo anfitrião",
-      "partnerDeals": "Taxas claras"
-    }
-  },
-  "cta": {
-    "next": "Seguinte",
-    "getStarted": "Começar"
-  },
-  "skip": {
-    "label": "Saltar",
-    "a11y": "Saltar introdução"
+  "location": {
+    "title": "Festas perto de ti",
+    "body": "Partilha a tua localização e o Descobrir mostra primeiro as salas mais próximas. Só a usamos enquanto a app está aberta.",
+    "allow": "Partilhar a minha localização",
+    "skip": "Agora não",
+    "note": "Podes mudar isto quando quiseres nas Definições."
   }
 }

@@ -12,6 +12,9 @@ import { Chip, SegmentedControl, Press, Skeleton, EventCardSkeleton, EmptyState,
 import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
 import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
+import { useAuth } from '../../../lib/auth';
+import { useAuthGate } from '../../../components/AuthGate';
+import { getGuestInterests } from '../../../lib/guestState';
 import { useDiscoverFilters, activeFilterCount, clearFiltersGlobal } from '../../../lib/discover-filters';
 
 // 'This week' first — it's the default; 'All' last since it's the least-used option.
@@ -72,7 +75,11 @@ export default function DiscoverScreen() {
   const { t: trCommon } = useTranslation('common');
   const { filters } = useDiscoverFilters();
   const filterCount = activeFilterCount(filters);
+  const auth = useAuth();
+  const { requireAuth, gateSheet } = useAuthGate();
   const [favourites, setFavourites] = useState<ApiFavourite[]>([]);
+  // A guest's onboarding picks live on the device until they sign up.
+  const [guestTeams, setGuestTeams] = useState<string[]>([]);
 
   const [allEvents, setAllEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,11 +132,30 @@ export default function DiscoverScreen() {
 
   useEffect(() => { loadFeed(); }, []);
 
+  // If location was already granted (e.g. at the onboarding step), use it for
+  // the map and "Near me" without asking again. Never prompts from here.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const loc = await Location.getLastKnownPositionAsync();
+        if (!cancelled && loc) setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+      } catch { /* optional nicety */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // Reload when filters change (filter screen sets them and navigates back)
   useFocusEffect(useCallback(() => {
     loadFeed(filter === 'Near me' ? userLocation : null);
-    fetchFavourites().then(setFavourites).catch(() => {});
-  }, [filters, filter, userLocation]));
+    if (auth.status === 'authenticated') {
+      fetchFavourites().then(setFavourites).catch(() => {});
+    } else {
+      getGuestInterests().then((g) => setGuestTeams(g.filter((f) => f.type === 'team').map((f) => f.value)));
+    }
+  }, [filters, filter, userLocation, auth.status]));
 
   async function handleFilterPress(f: Filter) {
     setFilter(f);
@@ -153,7 +179,9 @@ export default function DiscoverScreen() {
   }, [filter, userLocation]);
 
   // Client-side: apply venue filter + team filter (server already applied sport/date)
-  const favTeams = favourites.filter((f) => f.type === 'team').map((f) => f.value);
+  const favTeams = auth.status === 'authenticated'
+    ? favourites.filter((f) => f.type === 'team').map((f) => f.value)
+    : guestTeams;
   const displayed = filterByTime(allEvents, filter).filter((e) => {
     if (search && !e.title.toLowerCase().includes(search.toLowerCase()) && !e.broadcastSubject.toLowerCase().includes(search.toLowerCase())) return false;
     if (filters.venue && !e.venueName?.toLowerCase().includes(filters.venue.toLowerCase())) return false;
@@ -321,7 +349,9 @@ export default function DiscoverScreen() {
                   title={tr('feed.emptyDefaultTitle')}
                   body={tr('feed.emptyDefault')}
                   actionLabel={tr('feed.hostOne')}
-                  onAction={() => router.push('/(tabs)/parties/create' as never)}
+                  onAction={() => {
+                    if (requireAuth({ kind: 'host' })) router.push('/(tabs)/parties/create' as never);
+                  }}
                 />
               )
             }
@@ -330,6 +360,7 @@ export default function DiscoverScreen() {
           />
         )
       )}
+      {gateSheet}
     </View>
   );
 }

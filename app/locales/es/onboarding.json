@@ -1,40 +1,20 @@
 {
-  "brand": {
-    "tagline": "Nunca veas solo"
-  },
-  "seeker": {
-    "headline": "Encuentra tu sitio",
-    "body": "El partido, el final de temporada, la gala, la noche electoral. Encuentra una fiesta cerca y ve.",
+  "promise": {
+    "title": "Nunca veas solo.",
+    "body": "Encuentra sitio para el partido, el final de temporada o la gran noche. Aparece y ya estás dentro.",
+    "cta": "Buscar una fiesta",
+    "signIn": "Ya tengo cuenta",
     "chips": {
       "liveSports": "Deporte en vivo",
       "awards": "Galas",
       "bigEvents": "Grandes noches"
     }
   },
-  "host": {
-    "headline": "Organiza la noche",
-    "body": "Elige qué ver, dónde y quién viene. Vale un bar, una azotea o tu salón.",
-    "chips": {
-      "yourVenue": "Tu sitio",
-      "yourCrowd": "Tus invitados",
-      "yourRules": "Tus reglas"
-    }
-  },
-  "sponsor": {
-    "headline": "Patrocina la noche",
-    "body": "Patrocina una fiesta local y pon tu nombre ante la gente de la sala. El anfitrión aprueba cada patrocinador.",
-    "chips": {
-      "vipAccess": "Eventos reales",
-      "gearDrops": "Con visto bueno",
-      "partnerDeals": "Comisiones claras"
-    }
-  },
-  "cta": {
-    "next": "Siguiente",
-    "getStarted": "Empezar"
-  },
-  "skip": {
-    "label": "Omitir",
-    "a11y": "Omitir la introducción"
+  "location": {
+    "title": "Fiestas cerca de ti",
+    "body": "Comparte tu ubicación y Descubrir empieza por los sitios más cercanos. Solo la usamos mientras la app está abierta.",
+    "allow": "Compartir mi ubicación",
+    "skip": "Ahora no",
+    "note": "Puedes cambiarlo cuando quieras en Ajustes."
   }
 }

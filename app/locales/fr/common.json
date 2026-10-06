@@ -19,6 +19,15 @@
     "keepBrowsing": "Continuer à explorer",
     "joinTheAction": "Rejoindre SpotSeek"
   },
+  "authSheet": {
+    "rsvp": "Créez un compte pour réserver : {{label}}",
+    "host": "Créez un compte pour organiser une soirée",
+    "favourite": "Créez un compte pour suivre vos équipes",
+    "notifications": "Créez un compte pour être prévenu",
+    "profile": "Créez un compte pour voir votre profil",
+    "parties": "Créez un compte pour voir vos soirées",
+    "message": "Ça prend une minute, et vous revenez ici juste après."
+  },
   "tabs": {
     "discover": "Découvrir",
     "myParties": "Mes soirées",

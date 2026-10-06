@@ -12,7 +12,7 @@ export default function SignInScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signIn } = useAuth();
-  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  const { redirect, context } = useLocalSearchParams<{ redirect?: string; context?: string }>();
   // Where to land after auth — back to the gated screen, or Discover by default.
   const target = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/(tabs)/discover';
   // Scoped to the 'auth' namespace — tr()/t() calls below read
@@ -33,7 +33,7 @@ export default function SignInScreen() {
     setError('');
     try {
       await signIn(email, password);
-      router.replace(target as never);
+      router.dismissTo(target as never);
     } catch (err) {
       setError((err as Error).message || tr('signIn.errorFallback'));
     } finally {
@@ -56,7 +56,7 @@ export default function SignInScreen() {
         </View>
 
         <Text style={[t.headlineLg, s.title]}>{tr('signIn.title')}</Text>
-        <Text style={[t.bodyMd, s.subtitle]}>{tr('signIn.subtitle')}</Text>
+        <Text style={[t.bodyMd, s.subtitle]}>{context || tr('signIn.subtitle')}</Text>
 
         <View style={s.form}>
           <View style={s.field}>
@@ -110,7 +110,7 @@ export default function SignInScreen() {
             disabled={loading}
           />
           <Press
-            onPress={() => router.push({ pathname: '/(auth)/sign-up', params: redirect ? { redirect } : {} } as never)}
+            onPress={() => router.push({ pathname: '/(auth)/sign-up', params: { ...(redirect ? { redirect } : {}), ...(context ? { context } : {}) } } as never)}
             hitSlop={8}
           >
             <Text style={[t.bodySm, s.switchText]}>

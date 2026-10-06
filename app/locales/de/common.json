@@ -19,6 +19,15 @@
     "keepBrowsing": "Weiter stöbern",
     "joinTheAction": "Bei SpotSeek mitmachen"
   },
+  "authSheet": {
+    "rsvp": "Erstelle ein Konto, um für {{label}} zuzusagen",
+    "host": "Erstelle ein Konto, um eine Party zu veranstalten",
+    "favourite": "Erstelle ein Konto, um deinen Teams zu folgen",
+    "notifications": "Erstelle ein Konto, um Benachrichtigungen zu erhalten",
+    "profile": "Erstelle ein Konto, um dein Profil zu sehen",
+    "parties": "Erstelle ein Konto, um deine Partys zu sehen",
+    "message": "Das dauert eine Minute, danach bist du genau hier zurück."
+  },
   "tabs": {
     "discover": "Entdecken",
     "myParties": "Meine Partys",

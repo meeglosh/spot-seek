@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
+import { getOnboardingSeen } from '../../lib/api';
 import { colors, fonts, spacing, type as t } from '../../lib/theme';
 import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
 
@@ -12,7 +13,8 @@ export default function SignUpScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signUp } = useAuth();
-  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+  const { redirect, context } = useLocalSearchParams<{ redirect?: string; context?: string }>();
+  const target = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/(tabs)/discover';
   // Scoped to the 'auth' namespace — tr()/t() calls below read
   // locales/<lang>/auth.json. Aliased to `tr` because this file already
   // uses `t` for theme.type tokens imported from ../../lib/theme. See
@@ -32,9 +34,12 @@ export default function SignUpScreen() {
     setError('');
     try {
       await signUp(name, email, password);
-      // Route through interests onboarding; carry the redirect so onboarding
-      // returns the user to whatever screen originally gated them.
-      router.replace({ pathname: '/(auth)/interests', params: redirect ? { redirect } : {} } as never);
+      // Someone who went through first-run onboarding has already picked
+      // interests as a guest (synced by AuthProvider), so go straight back to
+      // where they were. Anyone who hasn't gets the interests step first.
+      const seen = await getOnboardingSeen().catch(() => true);
+      if (seen) router.dismissTo(target as never);
+      else router.replace({ pathname: '/(auth)/interests', params: { redirect: target } } as never);
     } catch (err) {
       setError((err as Error).message || tr('signUp.errorFallback'));
     } finally {
@@ -56,7 +61,7 @@ export default function SignUpScreen() {
         </View>
 
         <Text style={[t.headlineLg, s.title]}>{tr('signUp.title')}</Text>
-        <Text style={[t.bodyMd, s.subtitle]}>{tr('signUp.subtitle')}</Text>
+        <Text style={[t.bodyMd, s.subtitle]}>{context || tr('signUp.subtitle')}</Text>
 
         <View style={s.form}>
           {([
@@ -113,7 +118,7 @@ export default function SignUpScreen() {
             disabled={loading}
           />
           <Press
-            onPress={() => router.push({ pathname: '/(auth)/sign-in', params: redirect ? { redirect } : {} } as never)}
+            onPress={() => router.push({ pathname: '/(auth)/sign-in', params: { ...(redirect ? { redirect } : {}), ...(context ? { context } : {}) } } as never)}
             hitSlop={8}
           >
             <Text style={[t.bodySm, s.switchText]}>

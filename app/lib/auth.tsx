@@ -3,6 +3,7 @@ import {
   API_BASE, apiFetch, setBearerToken, clearBearerToken, restoreBearerToken,
   setStoredUser, clearStoredUser, getStoredUser,
 } from './api';
+import { syncGuestInterests } from './guestState';
 
 export type AuthUser = {
   id: string;
@@ -138,6 +139,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const user = body?.user as AuthUser;
     setStoredUser(user);
     setState({ status: 'authenticated', user });
+    // Interests picked as a guest follow the person into their account.
+    syncGuestInterests();
   }
 
   async function signIn(email: string, password: string) {
@@ -164,6 +167,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const user = body?.user as AuthUser;
     setStoredUser(user);
     setState({ status: 'authenticated', user });
+    // Interests picked as a guest follow the person into their account.
+    syncGuestInterests();
   }
 
   function signOut() {

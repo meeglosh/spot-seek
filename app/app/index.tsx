@@ -10,6 +10,15 @@ import { getOnboardingSeen } from '../lib/api';
 // fine, but nothing ever routed an authenticated user past the welcome
 // screen. AuthProvider renders null while status is 'loading', so by the
 // time this component mounts, status has already settled.
+//
+// Redirect chain (phase 4, guest-first):
+//   authenticated                 -> /(tabs)/discover
+//   unauthenticated, not yet seen -> /onboarding -> /onboarding-location
+//                                    -> /(auth)/interests -> /(tabs)/discover (guest)
+//   unauthenticated, seen         -> /(tabs)/discover (guest; sign-up is a sheet
+//                                    shown at the moment of intent, see AuthGate)
+// The welcome screen (/(auth)) is no longer on the launch path; sign-out still
+// lands there.
 export default function Index() {
   const auth = useAuth();
 
@@ -25,7 +34,7 @@ export default function Index() {
     if (auth.status === 'authenticated') return;
     getOnboardingSeen()
       .then(setOnboardingSeen)
-      .catch(() => setOnboardingSeen(true)); // fail open: worst case they miss the slideshow, never a blank app
+      .catch(() => setOnboardingSeen(true)); // fail open: worst case they miss onboarding, never a blank app
   }, [auth.status]);
 
   // DEV ONLY (see app/__gallery.tsx): jump straight to a dev route for visual
@@ -41,5 +50,5 @@ export default function Index() {
     // flashing onboarding then immediately replacing it (or vice versa).
     return null;
   }
-  return <Redirect href={onboardingSeen ? '/(auth)' : '/onboarding'} />;
+  return <Redirect href={onboardingSeen ? '/(tabs)/discover' : '/onboarding'} />;
 }

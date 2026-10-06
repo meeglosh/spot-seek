@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, ScrollView, StyleSheet, ActivityIndicator, Image, Platform, Share, Alert, TextInput } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,7 +18,8 @@ import { Icon } from '../../../components/icons';
 import { AppHeader } from '../../../components/AppHeader';
 import * as Haptics from 'expo-haptics';
 import { Badge, SectionTitle, Btn, Chip, FieldLabel, Press, Skeleton, EmptyState, ErrorState, inputStyle, inputFocusedStyle } from '../../../components/ui';
-import { AuthGateSheet } from '../../../components/AuthGate';
+import { useAuthGate } from '../../../components/AuthGate';
+import { consumePendingIntent } from '../../../lib/guestState';
 import { StarRating, StarInput } from '../../../components/Stars';
 
 
@@ -49,7 +50,7 @@ export default function EventDetailScreen() {
   const [rsvp, setRsvp] = useState<ApiRsvp | null>(null);
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpError, setRsvpError] = useState('');
-  const [gateOpen, setGateOpen] = useState(false);
+  const { requireAuth, gateSheet } = useAuthGate();
 
   const [hostProfile, setHostProfile] = useState<ApiProfile | null>(null);
   const [reviewsCtx, setReviewsCtx] = useState<ApiEventReviews>({ myReview: null, host: null, venue: null, reviews: [] });
@@ -150,9 +151,17 @@ export default function EventDetailScreen() {
     }
   }
 
-  async function handleRsvp() {
+  // Guests get the sign-up sheet, titled with this party ("Sign up to RSVP for
+  // Arsenal v Spurs"). `resume` is the post-sign-up completion of that same tap:
+  // it only ever creates the RSVP, never toggles an existing one off.
+  function openGate() {
+    if (!id) return;
+    requireAuth({ kind: 'rsvp', label: event?.title ?? '', eventId: id });
+  }
+
+  async function handleRsvp(resume = false) {
     if (auth.status !== 'authenticated') {
-      setGateOpen(true);
+      openGate();
       return;
     }
     if (!event) return;
@@ -160,7 +169,7 @@ export default function EventDetailScreen() {
     setRsvpLoading(true);
     setRsvpError('');
     try {
-      if (rsvp && rsvp.state !== 'cancelled') {
+      if (!resume && rsvp && rsvp.state !== 'cancelled') {
         await cancelRsvp(rsvp.id);
         setRsvp({ ...rsvp, state: 'cancelled' });
       } else {
@@ -193,7 +202,7 @@ export default function EventDetailScreen() {
         if (mine) setRsvp(mine);
         else setRsvpError(tr('detail.alreadyRsvpd'));
       } else if (msg === 'unauthorized') {
-        setGateOpen(true);
+        openGate();
       } else {
         // Surface the real reason — a generic message here hid a
         // "Unsupported FormDataPart"-class bug on the cover upload for days.
@@ -203,6 +212,16 @@ export default function EventDetailScreen() {
       setRsvpLoading(false);
     }
   }
+
+  // Finish the RSVP the guest started before signing up. Runs once the event
+  // is loaded and the session is authenticated; the pending intent is consumed
+  // so it can never fire twice.
+  const resumeRsvp = useRef(handleRsvp);
+  useEffect(() => { resumeRsvp.current = handleRsvp; });
+  useEffect(() => {
+    if (auth.status !== 'authenticated' || !event || !id) return;
+    if (consumePendingIntent('rsvp', id)) resumeRsvp.current(true);
+  }, [auth.status, event, id]);
 
   if (loading) {
     return (
@@ -431,7 +450,7 @@ export default function EventDetailScreen() {
 
           {/* Auth nudge */}
           {auth.status !== 'authenticated' && (
-            <Press style={s.authNudge} onPress={() => setGateOpen(true)}>
+            <Press style={s.authNudge} onPress={openGate}>
               <Text style={[t.bodySm, { color: colors.textSecondary }]}>
                 {tr('detail.authNudge')}
               </Text>
@@ -524,7 +543,7 @@ export default function EventDetailScreen() {
         <Press
           style={[s.rsvpBtn, { backgroundColor: rsvpBg }]}
           restOpacity={rsvpLoading ? 0.6 : 1}
-          onPress={handleRsvp}
+          onPress={() => handleRsvp()}
           disabled={rsvpLoading}
           accessibilityRole="button"
         >
@@ -535,18 +554,13 @@ export default function EventDetailScreen() {
           )}
         </Press>
         {isActive && (
-          <Press onPress={handleRsvp} disabled={rsvpLoading} style={s.textLink} accessibilityRole="button">
+          <Press onPress={() => handleRsvp()} disabled={rsvpLoading} style={s.textLink} accessibilityRole="button">
             <Text style={[t.labelSm, s.cancelText]}>{tr('detail.cancelRsvp')}</Text>
           </Press>
         )}
       </View>
 
-      <AuthGateSheet
-        visible={gateOpen}
-        onClose={() => setGateOpen(false)}
-        message={tr('detail.authGateMessage')}
-        redirect={id ? `/(tabs)/discover/${id}` : undefined}
-      />
+      {gateSheet}
     </View>
   );
 }

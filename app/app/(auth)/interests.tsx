@@ -1,6 +1,9 @@
 /**
  * Onboarding: pick your sports and teams.
- * Shown once after sign-up. Skippable. Data saved to /api/favourites/bulk.
+ * Step 3 of first-run onboarding, and it works WITHOUT an account: a guest's
+ * picks are stored locally (lib/guestState) and synced to the account after
+ * sign-up / sign-in; a signed-in user's go straight to /api/favourites/bulk.
+ * Skippable.
  */
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TextInput } from 'react-native';
@@ -10,12 +13,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { SPORTS, searchTeams, type Sport } from '../../lib/sports-data';
 import { saveFavouritesBulk } from '../../lib/api';
+import { useAuth } from '../../lib/auth';
+import { setGuestInterests } from '../../lib/guestState';
 import { colors, radius, spacing, TAP, type as t } from '../../lib/theme';
 import { Icon } from '../../components/icons';
 import { Btn, Chip, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
 
 export default function InterestsScreen() {
   const router = useRouter();
+  const auth = useAuth();
   const insets = useSafeAreaInsets();
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
   // Land back on the screen that originally gated the user, or Discover.
@@ -66,7 +72,8 @@ export default function InterestsScreen() {
       }
     }
     try {
-      await saveFavouritesBulk(favs);
+      if (auth.status === 'authenticated') await saveFavouritesBulk(favs);
+      else await setGuestInterests(favs);
     } catch { /* non-fatal, user can set later */ }
     setSaving(false);
     router.replace(target as never);

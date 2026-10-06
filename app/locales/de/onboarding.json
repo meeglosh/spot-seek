@@ -1,40 +1,20 @@
 {
-  "brand": {
-    "tagline": "Nie wieder allein schauen"
-  },
-  "seeker": {
-    "headline": "Finde deinen Raum",
-    "body": "Das Spiel, das Finale, die Preisverleihung, die Wahlnacht. Finde eine Watch Party in deiner Nähe und komm vorbei.",
+  "promise": {
+    "title": "Nie wieder allein schauen.",
+    "body": "Finde einen Raum für das Spiel, das Finale oder die große Nacht. Hingehen, dabei sein.",
+    "cta": "Party finden",
+    "signIn": "Ich habe ein Konto",
     "chips": {
       "liveSports": "Live-Sport",
       "awards": "Preisverleihungen",
       "bigEvents": "Große Nächte"
     }
   },
-  "host": {
-    "headline": "Lade zur Nacht ein",
-    "body": "Such aus, was läuft, sag wo und stell die Gästeliste zusammen. Bar, Dachterrasse oder Wohnzimmer, alles geht.",
-    "chips": {
-      "yourVenue": "Dein Raum",
-      "yourCrowd": "Deine Gäste",
-      "yourRules": "Deine Regeln"
-    }
-  },
-  "sponsor": {
-    "headline": "Unterstütze die Nacht",
-    "body": "Sponsere eine lokale Watch Party und bring deinen Namen zu den Leuten im Raum. Gastgeber bestätigen jeden Sponsor.",
-    "chips": {
-      "vipAccess": "Echte Events",
-      "gearDrops": "Vom Gastgeber bestätigt",
-      "partnerDeals": "Klare Gebühren"
-    }
-  },
-  "cta": {
-    "next": "Weiter",
-    "getStarted": "Los geht's"
-  },
-  "skip": {
-    "label": "Überspringen",
-    "a11y": "Einführung überspringen"
+  "location": {
+    "title": "Partys in deiner Nähe",
+    "body": "Teile deinen Standort und Entdecken zeigt dir zuerst die Räume in deiner Nähe. Wir nutzen ihn nur, während die App geöffnet ist.",
+    "allow": "Standort teilen",
+    "skip": "Jetzt nicht",
+    "note": "Du kannst das jederzeit in den Einstellungen ändern."
   }
 }

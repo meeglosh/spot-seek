@@ -1,40 +1,20 @@
 {
-  "brand": {
-    "tagline": "Never watch alone"
-  },
-  "seeker": {
-    "headline": "Find your room",
-    "body": "The game, the finale, the award show, election night. Find a watch party near you and show up.",
+  "promise": {
+    "title": "Never watch alone.",
+    "body": "Find a room for the game, the finale or the big night. Show up and you're in.",
+    "cta": "Find a party",
+    "signIn": "I have an account",
     "chips": {
       "liveSports": "Live sports",
       "awards": "Award shows",
       "bigEvents": "Big nights"
     }
   },
-  "host": {
-    "headline": "Host the night",
-    "body": "Pick what's on, say where, and set the guest list. A bar, a rooftop or your living room all work.",
-    "chips": {
-      "yourVenue": "Your room",
-      "yourCrowd": "Your guest list",
-      "yourRules": "Your rules"
-    }
-  },
-  "sponsor": {
-    "headline": "Back the night",
-    "body": "Sponsor a local watch party and put your name in front of the people in the room. Hosts approve every sponsor.",
-    "chips": {
-      "vipAccess": "Real events",
-      "gearDrops": "Host approved",
-      "partnerDeals": "Clear fees"
-    }
-  },
-  "cta": {
-    "next": "Next",
-    "getStarted": "Get started"
-  },
-  "skip": {
-    "label": "Skip",
-    "a11y": "Skip onboarding"
+  "location": {
+    "title": "See parties near you",
+    "body": "Share your location and Discover leads with the rooms closest to you. We only use it while the app is open.",
+    "allow": "Share my location",
+    "skip": "Not now",
+    "note": "You can change this any time in Settings."
   }
 }
