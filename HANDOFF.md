@@ -368,6 +368,14 @@ image: put the new file in `public/site/` named `name.<hash>.ext` (hash =
 if a reference is stale. Static Assets only answers paths that match a file, so
 Worker routes are unaffected. Deploy is the normal `npm run deploy`.
 
+Scroll moments (steps, stale-listing strike and card slam, calendar wipe plus
+real-date "next up" row, closing headline and pin): CSS scroll-driven animations
+(`animation-timeline: view()`) gated by `prefers-reduced-motion: no-preference`,
+with an IntersectionObserver fallback driven by one small inline script (under
+4 KB, the only non-JSON-LD script; `test/index.spec.ts` enforces that). With JS
+off or reduced motion the page is its static design. transform, opacity and
+clip-path only; no scroll handlers.
+
 
 ## 11. Next steps
 

@@ -179,6 +179,103 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
 }
 `;
 
+// Scroll moments. Everything here is an enhancement: with JS off, or with reduced motion, the page
+// renders in its static final state. Native path = CSS scroll-driven animations
+// (animation-timeline: view()); fallback path = IntersectionObserver toggling `.in` under
+// html.sx-io (set by the inline script only when view() timelines are unsupported).
+// transform / opacity / clip-path only.
+const sxStruct = (p: string) => `
+${p}.steps li::before{content:"";position:absolute;left:0;top:-2px;width:100%;height:4px;background:var(--cyan);transform-origin:0 50%}
+${p}.vs__grid{isolation:isolate}
+${p}.vs__card--old li{text-decoration:none}
+${p}.vs__card--old li::after{content:attr(data-t) / "";position:absolute;left:22px;right:0;top:0;color:transparent;text-decoration:line-through;text-decoration-color:var(--mute);text-decoration-thickness:2px;pointer-events:none}
+${p}.vs__card--new{box-shadow:none;position:relative}
+${p}.vs__card--new::after{content:"";position:absolute;inset:-2px;z-index:-1;background:var(--lime);transform:translate(8px,8px)}
+${p}.close{overflow:clip}
+${p}.close__a,${p}.close__b{display:inline-block}
+${p}.close__pin{transform-origin:50% 100%}
+`;
+
+const SX_NATIVE = `
+@media (prefers-reduced-motion:no-preference){
+@supports (animation-timeline:view()) and (content:"a" / ""){
+${sxStruct('')}
+.steps li{view-timeline:--sx block}
+.vs__card--old{view-timeline:--sx block}
+.vs__card--new{view-timeline:--sx block}
+.close__in{view-timeline:--sx block}
+.steps li::before{animation:sx-bar linear both;animation-timeline:--sx;animation-range:entry calc(5% + var(--d,0%)) entry calc(55% + var(--d,0%))}
+.steps__n{animation:sx-dim linear both;animation-timeline:--sx;animation-range:entry calc(5% + var(--d,0%)) entry calc(55% + var(--d,0%))}
+.steps li:nth-child(2){--d:10%}
+.steps li:nth-child(3){--d:20%}
+.vs__card--old li:nth-child(2){--a:25%;--b:85%}
+.vs__card--old li:nth-child(3){--a:40%;--b:100%}
+.vs__card--old li::after{animation:sx-wipe linear both;animation-timeline:--sx;animation-range:entry var(--a,10%) entry var(--b,70%)}
+.vs__card--new::after{animation:sx-slam linear both;animation-timeline:--sx;animation-range:entry 75% cover 20%}
+.fx{animation:sx-wipe linear both;animation-timeline:view();animation-range:entry 0% entry 55%}
+.close__a{animation:sx-from-l linear both;animation-timeline:--sx;animation-range:entry 0% entry 60%}
+.close__b{animation:sx-from-r linear both;animation-timeline:--sx;animation-range:entry 15% entry 75%}
+.close__pin{animation:sx-drop linear both;animation-timeline:--sx;animation-range:entry 35% entry 100%}
+@keyframes sx-bar{from{transform:scaleX(0)}to{transform:none}}
+@keyframes sx-dim{from{opacity:.2}to{opacity:1}}
+@keyframes sx-wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes sx-slam{0%,35%{transform:none}100%{transform:translate(8px,8px)}}
+@keyframes sx-from-l{from{opacity:0;transform:translateX(-14vw)}to{opacity:1;transform:none}}
+@keyframes sx-from-r{from{opacity:0;transform:translateX(14vw)}to{opacity:1;transform:none}}
+@keyframes sx-drop{0%{opacity:0;transform:translateY(-130px) rotate(-12deg)}65%{opacity:1;transform:none}82%{transform:scaleY(.9)}100%{opacity:1;transform:none}}
+}}`;
+
+const SX_FALLBACK = `
+${sxStruct('.sx-io ')}
+.sx-io .steps li::before{transform:scaleX(0);transition:transform .6s cubic-bezier(.23,1,.32,1)}
+.sx-io .steps li.in::before{transform:none}
+.sx-io .steps__n{opacity:.2;transition:opacity .5s .15s}
+.sx-io .steps li.in .steps__n{opacity:1}
+.sx-io .vs__card--old li::after{clip-path:inset(0 100% 0 0);transition:clip-path .6s cubic-bezier(.23,1,.32,1)}
+.sx-io .vs__card--old li.in::after{clip-path:inset(0 0 0 0)}
+.sx-io .vs__card--old li:nth-child(2)::after{transition-delay:.12s}
+.sx-io .vs__card--old li:nth-child(3)::after{transition-delay:.24s}
+.sx-io .vs__card--new::after{transform:none;transition:transform .16s ease-out .45s}
+.sx-io .vs__card--new.in::after{transform:translate(8px,8px)}
+.sx-io .fx{clip-path:inset(0 100% 0 0);transition:clip-path .55s cubic-bezier(.23,1,.32,1)}
+.sx-io .fx.in{clip-path:inset(0 0 0 0)}
+.sx-io .close__a,.sx-io .close__b{opacity:0;transition:opacity .5s,transform .7s cubic-bezier(.23,1,.32,1)}
+.sx-io .close__a{transform:translateX(-14vw)}
+.sx-io .close__b{transform:translateX(14vw);transition-delay:.12s}
+.sx-io .close__in.in .close__a,.sx-io .close__in.in .close__b{opacity:1;transform:none}
+.sx-io .close__pin{opacity:0;transform:translateY(-130px) rotate(-12deg);transition:opacity .3s .4s,transform .55s cubic-bezier(.23,1,.32,1) .4s}
+.sx-io .close__in.in .close__pin{opacity:1;transform:none}
+`;
+
+// "Next up" highlight (real date) + IntersectionObserver fallback. Plain ES2017, no dependencies.
+const SX_JS = `(()=>{
+var d=document,h=d.documentElement,q=s=>[].slice.call(d.querySelectorAll(s));
+try{
+var n=new Date(),T=new Date(n.getFullYear(),n.getMonth(),n.getDate()),M='JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC',best,bs,on;
+q('.fx').forEach(r=>{
+var m=/^([A-Z]{3}) (\\d+)(?: TO ([A-Z]{3}) (\\d+))?(?:, (\\d{4}))?$/.exec(r.firstElementChild.textContent.trim());
+if(!m)return;
+var mk=(a,b,y)=>new Date(y,M.indexOf(a)/3,+b),y=+m[5]||T.getFullYear(),s=mk(m[1],m[2],y),e=m[3]?mk(m[3],m[4],y):s;
+if(e<s)e=mk(m[3],m[4],y+1);
+if(!m[5]&&e<T){s=mk(m[1],m[2],y+1);e=m[3]?mk(m[3],m[4],y+1):s;if(e<s)e=mk(m[3],m[4],y+2)}
+if(e<T||(best&&s>=bs))return;
+best=r;bs=s;on=s<=T
+});
+if(best){best.classList.add('fx--next');var t=d.createElement('span');t.className='fx__tag';t.textContent=on?'ON NOW':'NEXT UP';best.firstElementChild.appendChild(t)}
+}catch(e){}
+if(!matchMedia('(prefers-reduced-motion:reduce)').matches&&!CSS.supports('animation-timeline:view()')&&CSS.supports('content:"a" / ""')&&window.IntersectionObserver){
+h.classList.add('sx-io');
+var io=new IntersectionObserver(l=>l.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{rootMargin:'0px 0px -12% 0px'});
+q('.steps li,.vs__card--old li,.vs__card--new,.fx,.close__in').forEach(e=>io.observe(e))
+}
+})()`;
+
+const SX_NEXT_CSS = `
+.fx--next{background:var(--ink);color:var(--white)}
+.fx--next .fx__date{color:var(--cyan)}
+.fx__tag{display:inline-block;margin-left:10px;padding:3px 6px;background:var(--orange);color:var(--ink);font:700 11px/1 var(--label);letter-spacing:.12em;vertical-align:1px}
+`;
+
 export interface HomeOpts {
   baseUrl: string;
 }
@@ -230,7 +327,7 @@ export function renderHomePage(o: HomeOpts): string {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Narrow:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
-${HOME_CSS}
+${HOME_CSS}${SX_NEXT_CSS}${SX_NATIVE}${SX_FALLBACK}
 </style>
 <script type="application/ld+json">${safeJson(jsonLd)}</script>
 </head>
@@ -296,9 +393,9 @@ ${HOME_CSS}
     <article class="vs__card vs__card--old">
       <h3>THE OLD LISTING</h3>
       <ul>
-        <li>A venue page nobody has touched in a while</li>
-        <li>"Probably has it on"</li>
-        <li>No idea who is actually going, or if anyone is</li>
+        <li data-t="A venue page nobody has touched in a while">A venue page nobody has touched in a while</li>
+        <li data-t="&quot;Probably has it on&quot;">"Probably has it on"</li>
+        <li data-t="No idea who is actually going, or if anyone is">No idea who is actually going, or if anyone is</li>
       </ul>
     </article>
     <article class="vs__card vs__card--new">
@@ -405,7 +502,7 @@ ${HOME_CSS}
 <section class="close" id="notify" aria-labelledby="close-h">
   <div class="wrap close__in">
     <img src="/site/pin.36450ac1.webp" width="72" height="90" alt="" class="close__pin">
-    <h2 id="close-h" class="close__h">NEVER WATCH<br>ALONE.</h2>
+    <h2 id="close-h" class="close__h"><span class="close__a">NEVER WATCH</span><br><span class="close__b">ALONE.</span></h2>
     <a class="btn btn--primary btn--lg" href="mailto:hello@spotseek.app?subject=Notify%20me%20when%20SpotSeek%20launches">
       <span class="btn__small">Coming soon to the App Store</span>
       <span class="btn__big">Notify me</span>
@@ -421,6 +518,7 @@ ${HOME_CSS}
   <a href="mailto:hello@spotseek.app">hello@spotseek.app</a>
   <span>Coming soon to the App Store</span>
 </footer>
+<script>${SX_JS}</script>
 </body>
 </html>
 `;

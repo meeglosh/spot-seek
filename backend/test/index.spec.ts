@@ -31,10 +31,17 @@ describe('Home page', () => {
     expect(html).toContain('"@type":"Organization"');
     expect(html).toContain('"@type":"WebSite"');
     expect(html).toContain('hello@spotseek.app');
-    // CSS is inlined; the only <script> is the JSON-LD block.
+    // CSS is inlined. Scripts: the JSON-LD block plus exactly one small inline enhancement script
+    // (scroll moments + next-up date). No external JS, no src=, nothing else.
     expect(html).toContain('<style>');
     expect(html).not.toContain('styles.css');
-    expect(html).not.toMatch(/<script(?![^>]*ld\+json)/);
+    const scripts = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)];
+    expect(html.match(/<script/g)!.length).toBe(scripts.length);
+    const inline = scripts.filter((m) => !/ld\+json/.test(m[1]!));
+    expect(inline).toHaveLength(1);
+    expect(inline[0]![1]).toBe('');
+    expect(inline[0]![2]!.length).toBeLessThan(4096);
+    expect(html).not.toMatch(/<script[^>]*\ssrc=/);
   });
 
   it('og:image and twitter:image are absolute, hashed and follow PUBLIC_BASE_URL', async () => {
