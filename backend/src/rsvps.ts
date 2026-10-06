@@ -5,6 +5,7 @@ import { and, count, eq, sql } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { notify } from './notifications';
+import { promoteFromWaitlist } from './waitlist';
 import { allowRequest, tooManyRequests, RSVP_LIMIT_PER_MIN } from './ratelimit';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
@@ -197,6 +198,13 @@ rsvpsRouter.patch('/:id', async (c) => {
     .set({ state, updatedAt: new Date() })
     .where(eq(schema.rsvps.id, rsvp.id))
     .returning();
+
+  // A going spot was freed: promote the earliest waitlisted user(s).
+  if (rsvp.state === 'going' && state !== 'going') {
+    await promoteFromWaitlist(db, c.env.RESEND_API_KEY, rsvp.eventId).catch((err) =>
+      console.error('[rsvps] waitlist promotion failed:', err),
+    );
+  }
 
   return c.json({ rsvp: updated });
 });

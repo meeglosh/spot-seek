@@ -7,6 +7,7 @@ import { createAuth } from './auth';
 import { parseRRule, generateOccurrences } from './recurrence';
 import { notify, fanoutFavoriteNearby } from './notifications';
 import { lookupVenueTimezone } from './timezone';
+import { promoteFromWaitlist } from './waitlist';
 
 type AppEnv = { Bindings: Env; Variables: { hostId?: string } };
 
@@ -192,6 +193,13 @@ eventsRouter.patch('/:id', async (c) => {
         );
       }
     })().catch((err) => console.error('[events] cancel/venue notify failed:', err));
+  }
+
+  // Capacity raised: promote as many waitlisted users as the new capacity allows.
+  if (typeof patch.capacity === 'number' && (existing.capacity === null || patch.capacity > existing.capacity)) {
+    await promoteFromWaitlist(db, c.env.RESEND_API_KEY, id).catch((err) =>
+      console.error('[events] waitlist promotion failed:', err),
+    );
   }
 
   const becamePublished = existing.status !== 'published' && updated.status === 'published';

@@ -34,7 +34,8 @@ export type NotificationType =
   | 'payment_due'
   | 'payment_received'
   | 'payout_sent'
-  | 'payment_refunded';
+  | 'payment_refunded'
+  | 'waitlist_promoted';
 
 const DEFAULT_PREFS = { emailEnabled: true, pushEnabled: false, radiusMiles: 100 };
 

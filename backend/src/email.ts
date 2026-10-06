@@ -25,6 +25,7 @@ export function escapeHtml(s: string): string {
 
 const HEADLINES: Record<string, string> = {
   rsvp: 'NEW RSVP',
+  waitlist_promoted: "YOU'RE IN!",
   reminder_24h: 'GAME DAY IS TOMORROW',
   reminder_1h: 'GAME TIME SOON',
   review_request: 'HOW WAS IT?',

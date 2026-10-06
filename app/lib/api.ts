@@ -745,7 +745,8 @@ export type ApiNotificationType =
   | 'payment_due'
   | 'payment_received'
   | 'payout_sent'
-  | 'payment_refunded';
+  | 'payment_refunded'
+  | 'waitlist_promoted';
 
 export type ApiNotification = {
   id: string;

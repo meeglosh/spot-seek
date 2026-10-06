@@ -271,7 +271,7 @@ export const followsRelations = relations(follows, ({ one }) => ({
 // type is plain text (not pgEnum) because the set of notification kinds is
 // expected to grow — sponsor_bid | sponsorship_request | sponsorship_accepted |
 // sponsorship_rejected | rsvp | reminder_24h | reminder_1h | event_cancelled |
-// venue_changed | favorite_nearby.
+// venue_changed | favorite_nearby | waitlist_promoted.
 
 export const notifications = pgTable('notifications', {
   id: uuid('id').primaryKey().defaultRandom(),
