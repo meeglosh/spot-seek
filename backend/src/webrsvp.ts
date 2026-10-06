@@ -31,6 +31,7 @@ import {
   normalizeEmail,
 } from './guests';
 import { escapeHtml, installCtas, renderPage } from './webpage';
+import { canViewEvent, isModerationHidden } from './moderation/visibility';
 
 export const webRsvpRouter = new Hono<{ Bindings: Env }>();
 
@@ -116,7 +117,9 @@ webRsvpRouter.post('/rsvp/:eventId', async (c) => {
   if (!UUID_RE.test(eventId)) return fail(c, 404, 'Event not found');
   const db = getDb(c);
   const event = await db.query.events.findFirst({ where: eq(schema.events.id, eventId) });
-  if (!event) return fail(c, 404, 'Event not found');
+  // Hidden/removed events 404. Drafts keep the pre-existing generic "closed" (410) answer,
+  // which exposes no event content (web-rsvp.spec pins this).
+  if (!event || isModerationHidden(event)) return fail(c, 404, 'Event not found');
   if (!eventIsOpen(event)) return fail(c, 410, 'RSVPs are closed for this event.', eventId);
 
   // Idempotent per (event, email): one row, ever. A repeat submission resends
@@ -251,7 +254,7 @@ webRsvpRouter.get('/rsvp/:eventId/event.ics', async (c) => {
   const eventId = c.req.param('eventId');
   if (!UUID_RE.test(eventId)) return c.text('Not found', 404);
   const event = await getDb(c).query.events.findFirst({ where: eq(schema.events.id, eventId) });
-  if (!event || event.status === 'draft' || !event.startsAt) return c.text('Not found', 404);
+  if (!event || !canViewEvent(event, null) || !event.startsAt) return c.text('Not found', 404);
   return c.body(buildIcs(event, publicBaseUrl(c.env)), 200, {
     'Content-Type': 'text/calendar; charset=utf-8',
     'Content-Disposition': 'attachment; filename="spotseek-event.ics"',
@@ -271,7 +274,7 @@ async function loadGuest(c: Ctx) {
   });
   if (!guest) return null;
   const event = await db.query.events.findFirst({ where: eq(schema.events.id, eventId) });
-  if (!event) return null;
+  if (!event || !canViewEvent(event, null)) return null;
   return { db, guest, event };
 }
 

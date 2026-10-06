@@ -8,6 +8,9 @@ import { parseRRule, generateOccurrences } from './recurrence';
 import { notify, fanoutFavoriteNearby } from './notifications';
 import { lookupVenueTimezone } from './timezone';
 import { promoteFromWaitlist } from './waitlist';
+import { screenEventContent, logModeration, isPublishingPaused, REJECT_MESSAGE } from './moderation/screen';
+import { canViewEvent, isModerationHidden } from './moderation/visibility';
+import { isAdminAuthorized } from './admin';
 
 type AppEnv = { Bindings: Env; Variables: { hostId?: string } };
 
@@ -38,6 +41,31 @@ eventsRouter.post('/', async (c) => {
   const venueLat = typeof body.venueLat === 'number' ? body.venueLat : null;
   const venueLng = typeof body.venueLng === 'number' ? body.venueLng : null;
 
+  // Moderation gate: only when the event is being published. Drafts always
+  // save; publishing is screened again when the draft is published.
+  let flaggedCategories: string[] | null = null;
+  if (body.status === 'published') {
+    if (await isPublishingPaused(db, hostId)) return c.json({ error: 'publishing_paused' }, 403);
+    const screen = await screenEventContent(c.env, {
+      title: body.title,
+      broadcastSubject: body.broadcastSubject,
+      description: typeof body.description === 'string' ? body.description : null,
+      venueName: typeof body.venueName === 'string' ? body.venueName : null,
+      venueAddress: typeof body.venueAddress === 'string' ? body.venueAddress : null,
+    });
+    if (screen.verdict === 'reject') {
+      await logModeration(db, {
+        eventId: null,
+        action: 'blocked_on_publish',
+        reason: screen.source,
+        actor: 'system',
+        detail: { hostId, stage: 'create', title: body.title.slice(0, 120), match: screen.detail },
+      });
+      return c.json({ error: 'content_rejected', message: REJECT_MESSAGE }, 422);
+    }
+    if (screen.verdict === 'flag') flaggedCategories = screen.categories;
+  }
+
   const [event] = await db
     .insert(schema.events)
     .values({
@@ -63,8 +91,19 @@ eventsRouter.post('/', async (c) => {
       venueTimezone: lookupVenueTimezone(venueLat, venueLng),
       isPrivateLocation: body.isPrivateLocation === true,
       recurrenceRule: typeof body.recurrenceRule === 'string' ? body.recurrenceRule : null,
+      moderationStatus: flaggedCategories ? 'flagged' : 'ok',
     })
     .returning();
+
+  if (flaggedCategories) {
+    await logModeration(db, {
+      eventId: event.id,
+      action: 'auto_flagged',
+      reason: 'classifier',
+      actor: 'system',
+      detail: { categories: flaggedCategories, hostId, stage: 'create' },
+    });
+  }
 
   if (event.status === 'published') {
     await fanoutFavoriteNearby(db, c.env.RESEND_API_KEY, event).catch((err) =>
@@ -82,6 +121,11 @@ eventsRouter.get('/:id', async (c) => {
     where: eq(schema.events.id, c.req.param('id')),
   });
   if (!event) return c.json({ error: 'Not found' }, 404);
+  // Drafts and hidden/removed events 404 for everyone but the host (and admin).
+  // Cancelled/completed stay visible so attendees can see that it was called off.
+  if (!canViewEvent(event, c.get('hostId')) && !(await isAdminAuthorized(c.env, c.req.header('Authorization')))) {
+    return c.json({ error: 'Not found' }, 404);
+  }
 
   // Active sponsors for this event, highest bid first.
   const sponsorRows = await db
@@ -108,6 +152,8 @@ eventsRouter.patch('/:id', async (c) => {
   if (!existing) return c.json({ error: 'Not found' }, 404);
   // Authorization: only the host may edit their own event.
   if (existing.hostId !== callerId) return c.json({ error: 'Forbidden' }, 403);
+  // An event an admin took down cannot be edited or republished by the host.
+  if (existing.moderationStatus === 'removed') return c.json({ error: 'event_removed' }, 403);
 
   const body = await c.req.json<Record<string, unknown>>();
 
@@ -142,11 +188,55 @@ eventsRouter.patch('/:id', async (c) => {
 
   if (Object.keys(patch).length === 0) return c.json({ error: 'No editable fields provided' }, 400);
 
+  // Moderation gate: runs when the result is a published event and either it is
+  // being published now or a screened field (title/description/venue/subject) changed.
+  let flaggedCategories: string[] | null = null;
+  const nextStatus = patch.status ?? existing.status;
+  const publishingNow = existing.status !== 'published' && nextStatus === 'published';
+  const screenedChanged =
+    patch.title !== undefined || patch.description !== undefined || patch.broadcastSubject !== undefined ||
+    patch.venueName !== undefined || patch.venueAddress !== undefined;
+  if (nextStatus === 'published' && (publishingNow || screenedChanged)) {
+    if (publishingNow && (await isPublishingPaused(db, callerId))) {
+      return c.json({ error: 'publishing_paused' }, 403);
+    }
+    const merged = {
+      title: patch.title ?? existing.title,
+      broadcastSubject: patch.broadcastSubject ?? existing.broadcastSubject,
+      description: patch.description ?? existing.description,
+      venueName: patch.venueName ?? existing.venueName,
+      venueAddress: patch.venueAddress ?? existing.venueAddress,
+    };
+    const screen = await screenEventContent(c.env, merged);
+    if (screen.verdict === 'reject') {
+      await logModeration(db, {
+        eventId: id,
+        action: 'blocked_on_publish',
+        reason: screen.source,
+        actor: 'system',
+        detail: { hostId: callerId, stage: 'update', match: screen.detail },
+      });
+      return c.json({ error: 'content_rejected', message: REJECT_MESSAGE }, 422);
+    }
+    if (screen.verdict === 'flag') flaggedCategories = screen.categories;
+  }
+  if (flaggedCategories && existing.moderationStatus === 'ok') patch.moderationStatus = 'flagged';
+
   const [updated] = await db
     .update(schema.events)
     .set({ ...patch, updatedAt: new Date() })
     .where(eq(schema.events.id, id))
     .returning();
+
+  if (patch.moderationStatus === 'flagged') {
+    await logModeration(db, {
+      eventId: id,
+      action: 'auto_flagged',
+      reason: 'classifier',
+      actor: 'system',
+      detail: { categories: flaggedCategories, hostId: callerId, stage: 'update' },
+    });
+  }
 
   const becameCancelled = existing.status !== 'cancelled' && updated.status === 'cancelled';
   const venueChanged =
@@ -279,7 +369,7 @@ eventsRouter.get('/:id/occurrences', async (c) => {
   const event = await db.query.events.findFirst({
     where: eq(schema.events.id, c.req.param('id')),
   });
-  if (!event) return c.json({ error: 'Not found' }, 404);
+  if (!event || (isModerationHidden(event) && event.hostId !== c.get('hostId'))) return c.json({ error: 'Not found' }, 404);
   if (!event.recurrenceRule) return c.json({ occurrences: [] });
   if (!event.startsAt) return c.json({ error: 'Event has no startsAt' }, 400);
 

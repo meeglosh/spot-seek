@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm';
 import * as schema from './schema';
 import { bufferToHex, timingSafeEqualHex } from './stripe';
 import { landingHealth } from './landing-calendar';
+import { moderationAdminRouter } from './moderation/admin';
 
 type AppEnv = { Bindings: Env };
 
@@ -43,6 +44,9 @@ export async function requireAdmin(c: Context<{ Bindings: Env }>, next: Next) {
 }
 
 adminRouter.use('*', requireAdmin);
+
+// Event moderation review: /api/admin/moderation/{queue,events/:id/restore,events/:id/remove}.
+adminRouter.route('/moderation', moderationAdminRouter);
 
 // GET /api/admin/landing-health: runway of the landing page's curated calendar (no side effects).
 adminRouter.get('/landing-health', (c) => c.json(landingHealth(new Date())));

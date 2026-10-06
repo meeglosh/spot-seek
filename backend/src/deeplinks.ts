@@ -6,6 +6,7 @@ import * as schema from './schema';
 import { isPlaceholderUserId } from './deleted-users';
 import { publicBaseUrl } from './email';
 import { countGoing, eventIsOpen } from './guests';
+import { canViewEvent, discoverableEventSql, optionalViewerId } from './moderation/visibility';
 import { escapeHtml, installCtas, renderPage, safeJson } from './webpage';
 
 // Universal Links (iOS) + the shared-link landing page.
@@ -72,7 +73,7 @@ deeplinksRouter.get('/sitemap.xml', async (c) => {
     .from(schema.events)
     .where(
       and(
-        eq(schema.events.status, 'published'),
+        discoverableEventSql(),
         eq(schema.events.isPrivateLocation, false),
         gt(schema.events.startsAt, new Date()),
       ),
@@ -137,7 +138,10 @@ deeplinksRouter.get('/e/:id', async (c) => {
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
   // Non-UUID ids would make Postgres throw; treat them as not found.
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-  const event = isUuid ? await db.query.events.findFirst({ where: eq(schema.events.id, id) }) : undefined;
+  const found = isUuid ? await db.query.events.findFirst({ where: eq(schema.events.id, id) }) : undefined;
+  // Drafts and hidden/removed events are 404 for the public; only the host sees them.
+  const event =
+    found && (canViewEvent(found, null) || canViewEvent(found, await optionalViewerId(c))) ? found : undefined;
 
   if (!event) {
     return c.html(
@@ -186,7 +190,7 @@ deeplinksRouter.get('/e/:id', async (c) => {
   const imageUrl = absoluteImageUrl(base, event.coverImageUrl);
 
   const open = eventIsOpen(event);
-  const published = event.status === 'published';
+  const published = event.status === 'published' && event.moderationStatus !== 'hidden' && event.moderationStatus !== 'removed';
   const jsonLd = published ? buildEventJsonLd(event, { url: canonical, hostName, imageUrl }) : null;
 
   const head = [

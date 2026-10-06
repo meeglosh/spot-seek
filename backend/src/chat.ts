@@ -11,6 +11,7 @@ import { and, eq, asc } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { CHAT_USER_HEADER } from './chat-room';
+import { isModerationHidden } from './moderation/visibility';
 export { ChatRoom } from './chat-room';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
@@ -35,7 +36,7 @@ chatRouter.get('/:eventId', async (c) => {
   const event = await db.query.events.findFirst({
     where: eq(schema.events.id, c.req.param('eventId')),
   });
-  if (!event) return c.json({ error: 'Event not found' }, 404);
+  if (!event || (isModerationHidden(event) && event.hostId !== c.get('userId'))) return c.json({ error: 'Event not found' }, 404);
 
   const comments = await db.query.comments.findMany({
     where: eq(schema.comments.eventId, c.req.param('eventId')),
@@ -53,7 +54,7 @@ chatRouter.post('/:eventId', async (c) => {
   const event = await db.query.events.findFirst({
     where: eq(schema.events.id, c.req.param('eventId')),
   });
-  if (!event) return c.json({ error: 'Event not found' }, 404);
+  if (!event || (isModerationHidden(event) && event.hostId !== userId)) return c.json({ error: 'Event not found' }, 404);
 
   const { body } = await c.req.json<{ body?: string }>();
   if (!body?.trim()) return c.json({ error: 'body is required' }, 400);

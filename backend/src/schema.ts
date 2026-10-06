@@ -8,6 +8,8 @@ import {
   boolean,
   doublePrecision,
   unique,
+  primaryKey,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -88,6 +90,10 @@ export const events = pgTable('events', {
   // Nullable — absent until a venue with coordinates is set.
   venueTimezone: text('venue_timezone'),
   isPrivateLocation: boolean('is_private_location').notNull().default(false),
+  // Moderation state, separate from `status` so publishing semantics stay
+  // intact: ok | flagged (live, awaiting review) | hidden | removed (both act
+  // like non-public events). See src/moderation/.
+  moderationStatus: text('moderation_status').notNull().default('ok'),
 });
 
 // ─── rsvps ────────────────────────────────────────────────────────────────────
@@ -400,3 +406,43 @@ export type Rsvp = typeof rsvps.$inferSelect;
 export type NewRsvp = typeof rsvps.$inferInsert;
 export type EventStatus = (typeof eventStatusEnum.enumValues)[number];
 export type RsvpState = (typeof rsvpStateEnum.enumValues)[number];
+
+
+// ─── Moderation (scripts/add-moderation.ts) ───────────────────────────────────
+
+export type ModerationStatus = 'ok' | 'flagged' | 'hidden' | 'removed';
+export const REPORT_REASONS = ['hate', 'harassment', 'sexual', 'violence', 'spam', 'other'] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+export const eventReports = pgTable(
+  'event_reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: uuid('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+    reporterId: text('reporter_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    reason: text('reason').notNull().$type<ReportReason>(),
+    note: text('note'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique('event_reports_event_reporter_unique').on(t.eventId, t.reporterId)],
+);
+
+export const userBlocks = pgTable(
+  'user_blocks',
+  {
+    blockerId: text('blocker_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    blockedId: text('blocked_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.blockerId, t.blockedId] })],
+);
+
+export const moderationEvents = pgTable('moderation_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  eventId: uuid('event_id'),
+  action: text('action').notNull().$type<'auto_hidden' | 'auto_flagged' | 'blocked_on_publish' | 'restored' | 'removed'>(),
+  reason: text('reason'),
+  actor: text('actor').notNull().$type<'system' | 'admin'>(),
+  detail: jsonb('detail'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});

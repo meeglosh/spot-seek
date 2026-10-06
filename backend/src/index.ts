@@ -26,6 +26,9 @@ import { allowRequest, tooManyRequests, AUTH_LIMIT_PER_MIN } from './ratelimit';
 import { EMAIL_LOGO_PNG_BASE64 } from './email-logo';
 import { accountRouter } from './account';
 import { passwordResetRouter, sendResetEmail } from './password-reset';
+import { reportRouter, blocksRouter } from './moderation/routes';
+import { runModerationDigest } from './moderation/admin';
+import { renderGuidelinesPage } from './guidelines';
 import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -80,6 +83,8 @@ app.all('/api/auth/*', async (c) => {
 });
 
 app.route('/api/events', eventsRouter);
+app.route('/api/events', reportRouter);
+app.route('/api/users', blocksRouter);
 app.route('/api/feed', feedRouter);
 app.route('/api/rsvps', rsvpsRouter);
 app.route('/api/dashboard', dashboardRouter);
@@ -126,6 +131,14 @@ app.get('/', (c) =>
   }),
 );
 
+// Community guidelines (Apple 1.2: published contact info + what is not allowed).
+app.get('/guidelines', (c) =>
+  c.html(renderGuidelinesPage({ baseUrl: publicBaseUrl(c.env) }), 200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'public, max-age=3600',
+  }),
+);
+
 // Combines the notifications sweep (reminders/reviews) with the payments
 // sweep (release/refund) into a single cron handler.
 async function scheduled(controller: ScheduledController, env: Env, ctx?: ExecutionContext): Promise<void> {
@@ -134,7 +147,10 @@ async function scheduled(controller: ScheduledController, env: Env, ctx?: Execut
   configureApns(env, ctx);
   // Landing calendar runway check, once a day (the 13:00 UTC run). Logs only; never emails.
   const at = new Date(controller.scheduledTime);
-  if (at.getUTCHours() === 13 && at.getUTCMinutes() < 15) warnIfLandingLow(at);
+  const dailyTick = at.getUTCHours() === 13 && at.getUTCMinutes() < 15;
+  if (dailyTick) warnIfLandingLow(at);
+  // Moderation digest: one email to hello@ if the review queue is non-empty (guarded send, once per UTC day).
+  if (dailyTick) await runModerationDigest(env, at).catch((err) => console.error('[moderation] digest failed:', err));
   await notificationsScheduled(controller, env);
   await runPaymentSweeps(env);
 }

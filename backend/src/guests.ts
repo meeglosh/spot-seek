@@ -66,6 +66,7 @@ export function newToken(): string {
 /** Same openness rule as waitlist promotion: published and not yet over. */
 export function eventIsOpen(event: schema.Event, now = new Date()): boolean {
   if (event.status !== 'published') return false;
+  if (event.moderationStatus === 'hidden' || event.moderationStatus === 'removed') return false;
   const end = event.endsAt ?? event.startsAt;
   return !end || end > now;
 }

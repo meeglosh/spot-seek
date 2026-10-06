@@ -7,6 +7,8 @@ import { createAuth } from './auth';
 import { notify } from './notifications';
 import { promoteFromWaitlist } from './waitlist';
 import { goingTotalSql, countGoing, claimGuestRsvps } from './guests';
+import { canViewEvent, isModerationHidden } from './moderation/visibility';
+import { isBlockedByHost } from './moderation/routes';
 import { allowRequest, tooManyRequests, RSVP_LIMIT_PER_MIN } from './ratelimit';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
@@ -52,7 +54,11 @@ rsvpsRouter.get('/mine', async (c) => {
       : [];
   const eventsById = new Map(events.map((e) => [e.id, e]));
 
-  const result = rsvps.map((r) => ({ ...r, event: eventsById.get(r.eventId) ?? null }));
+  // Hidden/removed events disappear from the attendee's list (RSVP rows are kept).
+  const result = rsvps.map((r) => {
+    const ev = eventsById.get(r.eventId);
+    return { ...r, event: ev && canViewEvent(ev, userId) ? ev : null };
+  });
   return c.json({ rsvps: result });
 });
 
@@ -68,7 +74,13 @@ rsvpsRouter.post('/', async (c) => {
   const event = await db.query.events.findFirst({
     where: eq(schema.events.id, body.eventId),
   });
-  if (!event) return c.json({ error: 'Event not found' }, 404);
+  if (!event || (isModerationHidden(event) && event.hostId !== userId)) {
+    return c.json({ error: 'Event not found' }, 404);
+  }
+  // A host who blocked this user does not take their RSVPs.
+  if (event.hostId !== userId && (await isBlockedByHost(db, event.hostId, userId))) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
 
   // Atomic insert: determine state (going vs waitlisted) and check uniqueness
   // in a single CTE to avoid a race condition where concurrent requests all see

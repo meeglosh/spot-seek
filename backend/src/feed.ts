@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { and, eq, gte, lte, isNull, or, sql, ilike, inArray, asc } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
+import { discoverableEventSql, notBlockedWithHostSql } from './moderation/visibility';
 
 type AppEnv = { Bindings: Env };
 
@@ -62,7 +63,8 @@ feedRouter.get('/', async (c) => {
   const offset = Math.min(Math.max(parseInt(offsetParam ?? '', 10) || 0, 0), 100_000);
 
   const conditions = [
-    eq(schema.events.status, 'published'),
+    // Published and not hidden/removed by moderation (drafts/cancelled never listed).
+    discoverableEventSql(),
     // Drop events that ended more than 6h ago (undated events are kept; they
     // sort last).
     or(
@@ -70,6 +72,9 @@ feedRouter.get('/', async (c) => {
       sql`coalesce(${schema.events.endsAt}, ${schema.events.startsAt}) >= now() - interval '6 hours'`,
     ) ?? eq(schema.events.status, 'published'),
   ];
+
+  // Blocks apply in both directions (feed and search alike).
+  if (callerId) conditions.push(notBlockedWithHostSql(callerId));
 
   if (after) conditions.push(gte(schema.events.startsAt, new Date(after)));
   if (before) conditions.push(lte(schema.events.startsAt, new Date(before)));

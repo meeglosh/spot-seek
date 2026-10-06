@@ -27,6 +27,9 @@ interface Env {
   AUTH_LIMITER?: RateLimit;
   RSVP_LIMITER?: RateLimit;
   GUEST_LIMITER?: RateLimit;
+  // Workers AI (wrangler.jsonc `ai`): Llama Guard 3 text classifier for event moderation.
+  // Optional so tests / local dev without it fall back to blocklist-only screening.
+  AI?: Ai;
   CHAT_ROOMS: DurableObjectNamespace;
   SPOTSEEK_IMAGES: R2Bucket;
   // Workers Static Assets (backend/public): landing-page images served at /site/*.

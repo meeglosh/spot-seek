@@ -65,6 +65,9 @@
 		// Guest web RSVPs: 5/min per client IP. OWNER REVIEW (new namespace id).
 		{ "name": "GUEST_LIMITER", "namespace_id": "1003", "simple": { "limit": 5, "period": 60 } }
 	],
+	// Workers AI for event moderation (Llama Guard 3, src/moderation/classifier.ts).
+	// OWNER REVIEW: new binding; billed per token (see HANDOFF / report).
+	"ai": { "binding": "AI" },
 	"triggers": {
 		"crons": ["*/15 * * * *"]
 	},
