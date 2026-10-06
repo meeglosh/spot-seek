@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { eq, count, inArray } from 'drizzle-orm';
+import { eq, count, inArray, and, ne, isNull, asc } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 
@@ -54,9 +54,42 @@ dashboardRouter.get('/', async (c) => {
     countsMap.get(row.eventId)![row.state] = Number(row.total);
   }
 
+  // Guest (web, no-account) RSVPs: confirmed ones count toward the same totals.
+  // Pending (unconfirmed) and claimed (now a real rsvps row) guests are excluded.
+  // Only the display NAME is exposed — never the guest's email or token.
+  const guestRows = await db
+    .select({
+      eventId: schema.guestRsvps.eventId,
+      name: schema.guestRsvps.name,
+      state: schema.guestRsvps.state,
+    })
+    .from(schema.guestRsvps)
+    .where(
+      and(
+        inArray(schema.guestRsvps.eventId, eventIds),
+        ne(schema.guestRsvps.state, 'pending'),
+        isNull(schema.guestRsvps.claimedUserId),
+      ),
+    )
+    .orderBy(asc(schema.guestRsvps.createdAt));
+  const guestsByEvent = new Map<string, { name: string; state: string }[]>();
+  for (const g of guestRows) {
+    if (!countsMap.has(g.eventId)) {
+      countsMap.set(g.eventId, { going: 0, interested: 0, waitlisted: 0, cancelled: 0 });
+    }
+    const counts = countsMap.get(g.eventId)!;
+    counts[g.state] = (counts[g.state] ?? 0) + 1;
+    if (g.state === 'going' || g.state === 'waitlisted') {
+      const list = guestsByEvent.get(g.eventId) ?? [];
+      if (list.length < 200) list.push({ name: g.name, state: g.state });
+      guestsByEvent.set(g.eventId, list);
+    }
+  }
+
   const eventsWithCounts = events.map((e) => ({
     ...e,
     rsvpCounts: countsMap.get(e.id) ?? { going: 0, interested: 0, waitlisted: 0, cancelled: 0 },
+    guestAttendees: guestsByEvent.get(e.id) ?? [],
   }));
 
   return c.json({ events: eventsWithCounts });

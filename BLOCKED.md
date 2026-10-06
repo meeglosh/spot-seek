@@ -134,3 +134,42 @@ The agents write here instead of guessing. Read this each morning. Empty is good
      disables CSRF, and future versions need `disableCSRFCheck: true` for that.
      Web pages now exist (`/e/:id` and the onboarding pages), so the
      origin/CSRF stance should be re-evaluated.
+
+## Web guest RSVP + custom domain — owner review (task/web-rsvp)
+
+- `wrangler.jsonc` additions (OWNER REVIEW, not deployed): var `PUBLIC_BASE_URL`
+  (still the workers.dev URL), unsafe ratelimit binding `GUEST_LIMITER`
+  (namespace_id 1003, 5/min per IP). Optional var `APP_STORE_URL` (unset =
+  "Coming soon").
+- Schema: additive `guest_rsvps` table via `backend/scripts/add-guest-rsvps.ts`
+  (applied to the Neon `dev` branch only; must be run on any other DB before deploy).
+- `app/app.json` `associatedDomains` is `applinks:spot-seek-api.dry-base-037d.workers.dev`
+  and was NOT changed. `app/lib/api.ts` `EVENT_SHARE_BASE` is hard-coded to the
+  same host and was NOT changed (needs a new app build).
+- Account linking by email does not require the email to be verified (Better
+  Auth email verification is not enabled). Someone signing up with another
+  person's email could claim only that person's guest RSVPs. Low impact; decide
+  whether to require verified email before claiming.
+- Custom domain steps for spotseek.app (owner):
+  1. Cloudflare dashboard > Workers & Pages > spot-seek-api > Settings >
+     Domains & Routes > Add > Custom Domain > `spotseek.app` (zone is already on
+     Cloudflare; this creates the proxied DNS record and certificate). Or in
+     wrangler.jsonc: `"routes": [{ "pattern": "spotseek.app", "custom_domain": true }]`.
+     Alternative if the apex must keep serving something else: a route
+     `spotseek.app/e/*` plus `/rsvp/*`, `/.well-known/*`, `/robots.txt`,
+     `/sitemap.xml`, `/static/*`, `/api/*`, `/payments/*` (all paths used in
+     public links and emails) on zone spotseek.app. A Custom Domain is simpler.
+  2. Set `PUBLIC_BASE_URL` to `https://spotseek.app` (wrangler.jsonc vars) and
+     redeploy. Optionally set `BETTER_AUTH_URL` to the same origin (auth review item above).
+  3. Check `https://spotseek.app/.well-known/apple-app-site-association` returns
+     JSON, status 200, no redirect (Apple requires this; Cloudflare must not
+     redirect or challenge it).
+  4. iOS Universal Links: change `app/app.json` `ios.associatedDomains` to
+     `["applinks:spotseek.app"]` (keep the workers.dev entry too during the
+     transition), bump `ios.buildNumber`, `expo prebuild`, and ship a new
+     TestFlight/App Store build. Associated domains are baked into the app, so
+     existing builds keep only the workers.dev domain. Update `EVENT_SHARE_BASE`
+     in `app/lib/api.ts` in the same build so shared links use the new domain.
+  5. Email: Resend is already verified for spotseek.app; email CTAs follow
+     `PUBLIC_BASE_URL` automatically. Stripe onboarding return URLs also follow it.
+  6. Submit `https://spotseek.app/sitemap.xml` in Google Search Console.

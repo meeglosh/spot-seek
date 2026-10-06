@@ -1,11 +1,12 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, count, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { notify } from './notifications';
 import { promoteFromWaitlist } from './waitlist';
+import { goingTotalSql, countGoing, claimGuestRsvps } from './guests';
 import { allowRequest, tooManyRequests, RSVP_LIMIT_PER_MIN } from './ratelimit';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
@@ -22,6 +23,12 @@ rsvpsRouter.use('*', async (c, next) => {
   if (c.req.method !== 'GET' && !(await allowRequest(c.env.RSVP_LIMITER, `rsvp:${session.user.id}`, RSVP_LIMIT_PER_MIN))) {
     return tooManyRequests();
   }
+  // Account linking: guest RSVPs made on the web with this email become this
+  // user's real RSVPs on their first authenticated request (no Better Auth
+  // config involved). Failures must never block the request.
+  await claimGuestRsvps(drizzle(neon(c.env.DATABASE_URL), { schema }), session.user.id, session.user.email).catch(
+    (err) => console.error('[rsvps] guest claim failed:', err),
+  );
   await next();
 });
 
@@ -78,9 +85,7 @@ rsvpsRouter.post('/', async (c) => {
   // never occupies a slot.
   const rows = await db.execute(sql`
     WITH going_count AS (
-      SELECT COUNT(*) AS cnt
-      FROM rsvps
-      WHERE event_id = ${eventId} AND state = 'going'
+      SELECT ${goingTotalSql(eventId)} AS cnt
     )
     INSERT INTO rsvps (event_id, user_id, state)
     SELECT
@@ -114,11 +119,7 @@ rsvpsRouter.post('/', async (c) => {
 
   if ((rsvp.state === 'going' || rsvp.state === 'waitlisted') && event.hostId !== userId) {
     await (async () => {
-      const [goingRow] = await db
-        .select({ total: count() })
-        .from(schema.rsvps)
-        .where(and(eq(schema.rsvps.eventId, eventId), eq(schema.rsvps.state, 'going')));
-      const goingCount = Number(goingRow?.total ?? 0);
+      const goingCount = await countGoing(db, eventId);
       await notify(db, c.env.RESEND_API_KEY, {
         userId: event.hostId,
         type: 'rsvp',
@@ -159,7 +160,7 @@ rsvpsRouter.patch('/:id', async (c) => {
       WHERE id = ${rsvp.id}
         AND ${capacity === null
           ? sql`TRUE`
-          : sql`(SELECT COUNT(*) FROM rsvps WHERE event_id = ${rsvp.eventId} AND state = 'going') < ${capacity}`}
+          : sql`${goingTotalSql(rsvp.eventId)} < ${capacity}`}
       RETURNING *
     `);
     if (!rows.rows || rows.rows.length === 0) {
@@ -168,11 +169,7 @@ rsvpsRouter.patch('/:id', async (c) => {
     // Concurrent PATCHes can both pass the guard above (same snapshot). Verify
     // after the write and roll this row back if capacity was exceeded.
     if (capacity !== null) {
-      const [goingRow] = await db
-        .select({ total: count() })
-        .from(schema.rsvps)
-        .where(and(eq(schema.rsvps.eventId, rsvp.eventId), eq(schema.rsvps.state, 'going')));
-      if (Number(goingRow?.total ?? 0) > capacity) {
+      if ((await countGoing(db, rsvp.eventId)) > capacity) {
         await db
           .update(schema.rsvps)
           .set({ state: rsvp.state, updatedAt: new Date() })

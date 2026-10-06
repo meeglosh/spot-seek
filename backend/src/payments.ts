@@ -25,6 +25,7 @@ import { eq, and, inArray } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { notify } from './notifications';
+import { publicBaseUrl } from './email';
 import { realStripe, verifyStripeSignature } from './stripe';
 import type { StripeClient } from './stripe';
 
@@ -103,7 +104,7 @@ paymentsRouter.post('/connect/onboard', requireAuth, async (c) => {
     await db.update(schema.users).set({ stripeAccountId: accountId }).where(eq(schema.users.id, userId));
   }
 
-  const base = c.env.BETTER_AUTH_URL ?? 'http://localhost:8787';
+  const base = publicBaseUrl(c.env);
   const link = await client.createAccountLink(
     accountId,
     `${base}/payments/onboard/refresh?account=${encodeURIComponent(accountId)}`,
@@ -513,7 +514,7 @@ onboardPagesRouter.get('/onboard/refresh', async (c) => {
   if (!user) return c.html(onboardFallbackPage());
 
   try {
-    const base = c.env.BETTER_AUTH_URL ?? 'http://localhost:8787';
+    const base = publicBaseUrl(c.env);
     const link = await client.createAccountLink(
       accountId,
       `${base}/payments/onboard/refresh?account=${encodeURIComponent(accountId)}`,

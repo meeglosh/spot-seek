@@ -56,6 +56,20 @@ Join between an attendee and an event.
 Capacity enforcement: when capacity is set and `going` count reaches it, new
 RSVPs become `waitlisted`. This is application logic, asserted by tests.
 
+### guest_rsvps (web RSVP without an account)
+Created by `backend/scripts/add-guest-rsvps.ts`. Chosen over fake "guest" user
+rows so `users`/Better Auth stay untouched and users.email stays unique.
+- id, event_id (fk -> events.id, ON DELETE CASCADE), name, email (lower-cased,
+  never exposed), state (pending | going | waitlisted | cancelled), token
+  (unguessable, in email links), claimed_user_id (nullable fk -> users.id),
+  created_at, updated_at
+- unique (event_id, email) — duplicate submissions are idempotent.
+- Only a confirmed row occupies capacity. Going total = going `rsvps` + going
+  `guest_rsvps` with claimed_user_id IS NULL. When the same email later
+  authenticates, the guest RSVP becomes a real `rsvps` row and the guest row is
+  marked claimed, so nothing is counted twice.
+- Waitlist promotion orders both tables together by updated_at.
+
 ## Out of scope for v0 (do not build until queued)
 - venues as first-class table
 - following / social graph

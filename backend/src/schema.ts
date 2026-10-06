@@ -339,6 +339,37 @@ export const reviews = pgTable(
 export type ReviewRow = typeof reviews.$inferSelect;
 export type NewReview = typeof reviews.$inferInsert;
 
+// ─── guest_rsvps ──────────────────────────────────────────────────────────────
+// No-account RSVPs from the public /e/:id web page. Kept out of `rsvps` so no
+// fake user rows are needed (users.email is unique and Better Auth owns that
+// table). A guest row counts toward capacity only while claimed_user_id IS NULL
+// and state = 'going'; once attached to an account a real rsvps row replaces it.
+export type GuestRsvpState = 'pending' | 'going' | 'waitlisted' | 'cancelled';
+
+export const guestRsvps = pgTable(
+  'guest_rsvps',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    eventId: uuid('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    // Lower-cased. NEVER returned to hosts or any public endpoint.
+    email: text('email').notNull(),
+    state: text('state').$type<GuestRsvpState>().notNull().default('pending'),
+    token: text('token').notNull(),
+    claimedUserId: text('claimed_user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('guest_rsvps_event_email_unique').on(table.eventId, table.email),
+    unique('guest_rsvps_token_unique').on(table.token),
+  ],
+);
+
+export type GuestRsvp = typeof guestRsvps.$inferSelect;
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Event = typeof events.$inferSelect;

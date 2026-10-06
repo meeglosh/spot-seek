@@ -3,6 +3,11 @@
 interface Env {
   DATABASE_URL: string;
   BETTER_AUTH_URL?: string;
+  // Public origin for every outward-facing link (share links, og:url, canonical,
+  // email CTAs, onboarding pages). Defaults to the workers.dev URL when unset.
+  PUBLIC_BASE_URL?: string;
+  // App Store listing URL; unset -> pages show "Coming soon".
+  APP_STORE_URL?: string;
   RESEND_API_KEY?: string;
   ADMIN_SECRET?: string;
   STRIPE_SECRET_KEY?: string;
@@ -11,6 +16,7 @@ interface Env {
   // the code degrades to a per-isolate in-memory limiter if a binding is absent.
   AUTH_LIMITER?: RateLimit;
   RSVP_LIMITER?: RateLimit;
+  GUEST_LIMITER?: RateLimit;
   CHAT_ROOMS: DurableObjectNamespace;
   SPOTSEEK_IMAGES: R2Bucket;
 }
