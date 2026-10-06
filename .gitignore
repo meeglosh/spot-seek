@@ -4,8 +4,8 @@
 backend/.dev.vars
 
 # Dependencies
-node_modules/
-app/node_modules/
+node_modules
+app/node_modules
 
 # Expo
 app/.expo/
