@@ -22,8 +22,8 @@
 //  The hard shadow (solid offset, zero blur) means exactly one thing:
 //  "pressable primary, or currently selected/active". Used on: primary Btn,
 //  the selected Chip / selected card, the active tab indicator, the RSVP
-//  button. Nothing else carries a shadow. Pressed = the shadow collapses: the
-//  element translates by the offset and the shadow drops (see `pressStyle`).
+//  button. Nothing else carries a shadow. Pressed = the content translates by
+//  the offset onto the stationary shadow block: it reads as pushed in.
 //
 // ─── Shape & border grammar ─────────────────────────────────────────────────
 //  Corners are 0 everywhere. `radius.round` is the single documented
@@ -52,6 +52,17 @@ const palette = {
   roseDeep: '#93000a',
 } as const;
 
+// Flatten an rgba() wash over an opaque #rrggbb base into an opaque #rrggbb.
+export function compositeOver(rgba: string, base: string): string {
+  const m = rgba.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+  if (!m) throw new Error(`compositeOver: bad rgba ${rgba}`);
+  const a = Number(m[4]);
+  const hex = (i: number) => parseInt(base.slice(1 + i * 2, 3 + i * 2), 16);
+  return '#' + [0, 1, 2]
+    .map((i) => Math.round(Number(m[i + 1]) * a + hex(i) * (1 - a)).toString(16).padStart(2, '0'))
+    .join('');
+}
+
 export const colors = {
   // Canvas + surface elevation ladder
   surfaceSunken: palette.sunken,
@@ -74,12 +85,17 @@ export const colors = {
   // Action = interactive/primary only
   action:        palette.cyan,
   actionWash:    'rgba(0,229,255,0.08)',
+  // Opaque composites of the washes over `canvas`: a selected control sits on
+  // these (a hard-shadow block needs an opaque face).
+  actionSelectedFill:    compositeOver('rgba(0,229,255,0.08)', palette.canvas),
   // Live = live / now / urgent only
   live:          palette.orange,
   liveWash:      'rgba(255,94,7,0.10)',
+  liveSelectedFill:      compositeOver('rgba(255,94,7,0.10)', palette.canvas),
   // Confirmed = going / confirmed / sponsored only
   confirmed:     palette.lime,
   confirmedWash: 'rgba(180,225,0,0.10)',
+  confirmedSelectedFill: compositeOver('rgba(180,225,0,0.10)', palette.canvas),
   // Danger
   danger:        palette.rose,
   dangerFill:    palette.roseDeep,
@@ -195,28 +211,10 @@ export const type = {
 } as const;
 
 // ─── Depth: the hard shadow ──────────────────────────────────────────────────
-// Solid offset, zero blur, 100% opacity. Means "pressable primary or selected".
-// `elevation` gives Android a comparable lift (Android cannot draw a coloured
-// hard shadow; it is dropped to 0 whenever the shadow is).
+// Solid offset block, zero blur, full opacity. Means "pressable primary or
+// selected". It is NOT a platform shadow: platform shadows are drawn from the
+// alpha of the view's children, which doubles text on translucent fills and
+// differs between iOS and Android. The block is a real View painted behind the
+// content (see `HardShadow` in components/ui.tsx), so it renders identically
+// everywhere. The content on top must have an OPAQUE background.
 export const HARD_OFFSET = 4;
-
-export function hardShadow(offset: number = HARD_OFFSET, color: string = colors.shadow) {
-  return {
-    shadowColor: color,
-    shadowOffset: { width: offset, height: offset },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: offset,
-  } as const;
-}
-
-// The brutalist press: shadow collapses and the element travels the offset.
-export function pressStyle(pressed: boolean, offset: number = HARD_OFFSET) {
-  return pressed
-    ? ({
-      transform: [{ translateX: offset }, { translateY: offset }],
-      shadowOpacity: 0,
-      elevation: 0,
-    } as const)
-    : null;
-}

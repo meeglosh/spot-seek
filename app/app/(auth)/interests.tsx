@@ -12,7 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { SPORTS, searchTeams, type Sport } from '../../lib/sports-data';
 import { saveFavouritesBulk } from '../../lib/api';
-import { colors, spacing, hardShadow, pressStyle, TAP, type as t } from '../../lib/theme';
+import { colors, spacing, TAP, type as t } from '../../lib/theme';
+import { HardPressable } from '../../components/ui';
 import { Icon } from '../../components/icons';
 import { Btn, Chip, inputStyle, inputFocusedStyle } from '../../components/ui';
 
@@ -115,9 +116,11 @@ export default function InterestsScreen() {
                 const key = teamKey(team.name);
                 const on = selected.has(key);
                 return (
-                  <Pressable
+                  <HardPressable
                     key={team.id}
-                    style={({ pressed }) => [s.resultChip, on && s.resultChipOn, on && pressStyle(pressed, 3)]}
+                    active={on}
+                    offset={3}
+                    contentStyle={[s.resultChip, on && s.resultChipOn]}
                     onPress={() => toggle(key)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
@@ -128,7 +131,7 @@ export default function InterestsScreen() {
                     <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>
                       {team.leagueName}
                     </Text>
-                  </Pressable>
+                  </HardPressable>
                 );
               })}
             </View>
@@ -144,8 +147,10 @@ export default function InterestsScreen() {
                   const on = selected.has(key);
                   return (
                     <View key={sport.id} style={s.sportBlock}>
-                      <Pressable
-                        style={({ pressed }) => [s.sportRow, on && s.sportRowOn, on && pressStyle(pressed, 3)]}
+                      <HardPressable
+                        active={on}
+                        offset={3}
+                        contentStyle={[s.sportRow, on && s.sportRowOn]}
                         accessibilityRole="button"
                         accessibilityState={{ selected: on, expanded: expandedSport === sport.id }}
                         onPress={() => {
@@ -161,7 +166,7 @@ export default function InterestsScreen() {
                           size={18}
                           color={on ? colors.action : colors.textTertiary}
                         />
-                      </Pressable>
+                      </HardPressable>
 
                       {/* Inline team chips */}
                       {expandedSport === sport.id && (
@@ -232,7 +237,7 @@ const s = StyleSheet.create({
     borderWidth: 2, borderColor: colors.borderSubtle,
     backgroundColor: colors.surface2,
   },
-  sportRowOn: { borderColor: colors.action, backgroundColor: colors.actionWash, ...hardShadow(3) },
+  sportRowOn: { borderColor: colors.action, backgroundColor: colors.actionSelectedFill },
   sportName: { flex: 1, color: colors.textPrimary },
   teamsPanel: {
     borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.surfaceSunken,
@@ -244,7 +249,7 @@ const s = StyleSheet.create({
     borderWidth: 2, borderColor: colors.borderSubtle, backgroundColor: colors.surface2,
     minHeight: TAP, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 2,
   },
-  resultChipOn: { borderColor: colors.action, backgroundColor: colors.actionWash, ...hardShadow(3) },
+  resultChipOn: { borderColor: colors.action, backgroundColor: colors.actionSelectedFill },
   saveBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.md,

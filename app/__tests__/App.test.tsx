@@ -1,4 +1,4 @@
-import { light, dark, colors, radius, fonts, type, hardShadow, pressStyle, TAP } from '../lib/theme';
+import { light, dark, colors, radius, fonts, type, compositeOver, HARD_OFFSET, TAP } from '../lib/theme';
 
 describe('theme (High-Energy Action v2, dark-only, semantic roles)', () => {
   it('uses the near-black canvas', () => {
@@ -77,20 +77,17 @@ describe('colour roles', () => {
 });
 
 describe('depth model', () => {
-  it('hardShadow is a solid offset: zero blur, full opacity, elevation parity', () => {
-    const sh = hardShadow(4);
-    expect(sh.shadowRadius).toBe(0);
-    expect(sh.shadowOpacity).toBe(1);
-    expect(sh.shadowOffset).toEqual({ width: 4, height: 4 });
-    expect(sh.elevation).toBe(4);
-    expect(sh.shadowColor).toBe(colors.shadow);
+  it('has a positive hard-shadow offset and an opaque shadow ink', () => {
+    expect(HARD_OFFSET).toBeGreaterThan(0);
+    expect(colors.shadow).toMatch(/^#[0-9a-f]{6}$/i);
   });
 
-  it('pressStyle collapses the shadow and translates by the offset', () => {
-    expect(pressStyle(false)).toBeNull();
-    const pressed = pressStyle(true, 3);
-    expect(pressed).toMatchObject({ shadowOpacity: 0, elevation: 0 });
-    expect(pressed?.transform).toEqual([{ translateX: 3 }, { translateY: 3 }]);
+  it('selected fills are opaque composites of the washes over the canvas', () => {
+    for (const fill of [colors.actionSelectedFill, colors.liveSelectedFill, colors.confirmedSelectedFill]) {
+      expect(fill).toMatch(/^#[0-9a-f]{6}$/i);
+    }
+    expect(compositeOver('rgba(0,229,255,0.08)', '#0F0F12')).toBe('#0e2025');
+    expect(colors.actionSelectedFill).toBe('#0e2025');
   });
 });
 

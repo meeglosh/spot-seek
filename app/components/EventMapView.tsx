@@ -7,7 +7,8 @@ import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, mapPalette as mp, radius, spacing, TAP, hardShadow, pressStyle, type as t } from '../lib/theme';
+import { colors, mapPalette as mp, radius, spacing, TAP, type as t } from '../lib/theme';
+import { HardShadow, HardPressable } from './ui';
 import { Icon } from './icons';
 import { Badge, Btn } from './ui';
 import type { EventItem } from './EventCard';
@@ -232,15 +233,16 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
             >
               {/* Pin — action by default, live orange when live-soon; selected = hard shadow */}
               <View style={s.pinWrap}>
-                <View
-                  style={[
-                    s.pin,
-                    { borderColor: tone },
-                    isSel && s.pinSelected,
-                  ]}
+                <HardShadow
+                  offset={2}
+                  active={isSel}
+                  round
+                  fill={false}
+                  style={[s.pinSlot, isSel && s.pinSlotSelected]}
+                  contentStyle={[s.pin, { borderColor: tone }, isSel && { backgroundColor: colors.surfaceSunken }]}
                 >
                   <View style={[s.pinCore, { backgroundColor: tone }]} />
-                </View>
+                </HardShadow>
                 <View style={[s.pinStem, { backgroundColor: tone }]} />
               </View>
             </Marker>
@@ -378,20 +380,17 @@ function MapChip({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <HardPressable
       onPress={onPress}
       hitSlop={{ top: 7, bottom: 7 }}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      style={({ pressed }) => [
-        s.mapChip,
-        active && { borderColor: tone },
-        active && hardShadow(3),
-        active && pressStyle(pressed, 3),
-      ]}
+      active={active}
+      offset={3}
+      contentStyle={[s.mapChip, active && { borderColor: tone }]}
     >
       <Text style={[t.labelCapsSm, { color: active ? tone : colors.textSecondary }]}>{label}</Text>
-    </Pressable>
+    </HardPressable>
   );
 }
 
@@ -411,7 +410,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pinSelected: { transform: [{ scale: 1.3 }], ...hardShadow(2) },
+  // marginLeft balances the 2px shadow gutter so the pin stays centred on its stem.
+  pinSlot: { marginLeft: 2 },
+  pinSlotSelected: { transform: [{ scale: 1.3 }] },
   pinCore: { width: 8, height: 8, borderRadius: radius.round },
   pinStem: { width: 2, height: 7 },
 

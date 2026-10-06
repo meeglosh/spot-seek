@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Pressable, Animated, AccessibilityInfo, StyleSheet,
-  type ViewStyle, type StyleProp,
+  type ViewStyle, type StyleProp, type PressableProps,
 } from 'react-native';
 import { Text } from './Text';
 import { Icon, type IconName } from './icons';
 import {
-  colors, radius, spacing, type as t, TAP, hardShadow, pressStyle,
+  colors, radius, spacing, type as t, TAP, HARD_OFFSET,
 } from '../lib/theme';
 
 // ─── Reduce Motion ────────────────────────────────────────────────────────────
@@ -52,15 +52,98 @@ export function LiveDot({ color = colors.live, size = 8 }: { color?: string; siz
   );
 }
 
-// ─── Segmented control: the selected segment is "selected" = fill + shadow ───
+const SEG_SHADOW = 3;
+const CHIP_SHADOW = 3;
+
+// ─── Hard shadow: a real solid block behind the content ─────────────────────
+// Not a platform shadow (those paint from child alpha and differ per OS).
+// Layers: [wrapper: reserves `offset` px right+bottom] > [block, absolute,
+// shifted by `offset`] + [content, opaque, on top]. Pressed: the content
+// translates onto the stationary block, so it reads as pushed in.
+// `style` is wrapper layout (flex, margins, alignSelf); `contentStyle` is the
+// visual face and MUST carry an opaque backgroundColor when `active`.
+
+export function HardShadow({
+  offset = HARD_OFFSET, active = true, pressed = false, reserve = true,
+  color = colors.shadow, round = false, fill = true, style, contentStyle, children,
+}: {
+  offset?: number;
+  /** Draw the block. When false the layout is still reserved (no jump on select). */
+  active?: boolean;
+  pressed?: boolean;
+  /** Reserve `offset` px of space right and below for the block. */
+  reserve?: boolean;
+  color?: string;
+  /** Circular block, for round faces (map pins). */
+  round?: boolean;
+  /** Face grows to fill a taller wrapper (equal-height tiles). Off for fixed-size faces. */
+  fill?: boolean;
+  style?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
+  children?: React.ReactNode;
+}) {
+  const shift = active && pressed ? { transform: [{ translateX: offset }, { translateY: offset }] } : null;
+  return (
+    <View style={[reserve && { paddingRight: offset, paddingBottom: offset }, style]}>
+      {active && (
+        <View
+          testID="hard-shadow-block"
+          pointerEvents="none"
+          style={[
+            s.hardBlock,
+            { left: offset, top: offset, right: reserve ? 0 : -offset, bottom: reserve ? 0 : -offset, backgroundColor: color },
+            round && { borderRadius: radius.round },
+          ]}
+        />
+      )}
+      <View testID="hard-shadow-content" style={[fill && s.hardContent, contentStyle, shift]}>{children}</View>
+    </View>
+  );
+}
+
+// Pressable whose face is a HardShadow. `style` lays out the touch target;
+// `contentStyle` styles the face (receives `pressed`).
+export function HardPressable({
+  offset = HARD_OFFSET, active = true, reserve = true, style, contentStyle, children, ...rest
+}: Omit<PressableProps, 'style' | 'children'> & {
+  offset?: number;
+  active?: boolean;
+  reserve?: boolean;
+  style?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle> | ((pressed: boolean) => StyleProp<ViewStyle>);
+  children?: React.ReactNode | ((pressed: boolean) => React.ReactNode);
+}) {
+  return (
+    <Pressable {...rest} style={style}>
+      {({ pressed }) => (
+        <HardShadow
+          offset={offset}
+          active={active}
+          reserve={reserve}
+          pressed={pressed}
+          contentStyle={typeof contentStyle === 'function' ? contentStyle(pressed) : contentStyle}
+        >
+          {typeof children === 'function' ? children(pressed) : children}
+        </HardShadow>
+      )}
+    </Pressable>
+  );
+}
+
+// ─── Segmented control: selected segment = opaque fill + hard shadow block ───
+// Every segment (selected or not) reserves the same shadow gutter, so the
+// selected one sits fully inside the frame with equal inner padding and both
+// have identical 44pt hit areas.
 
 export function SegmentedControl<K extends string>({
-  options, value, onChange, style,
+  options, value, onChange, style, iconOnly = false,
 }: {
   options: ReadonlyArray<{ key: K; label: string; icon?: IconName; accessibilityLabel?: string }>;
   value: K;
   onChange: (key: K) => void;
   style?: StyleProp<ViewStyle>;
+  /** Compact: icon-only segments of fixed, equal size (label becomes the a11y label). */
+  iconOnly?: boolean;
 }) {
   return (
     <View style={[s.segmented, style]}>
@@ -68,23 +151,24 @@ export function SegmentedControl<K extends string>({
         const on = opt.key === value;
         const color = on ? colors.textOnFill : colors.textPrimary;
         return (
-          <Pressable
+          <HardPressable
             key={opt.key}
             onPress={() => onChange(opt.key)}
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
-            accessibilityLabel={opt.accessibilityLabel}
-            style={({ pressed }) => [
-              s.segmentBtn,
+            accessibilityLabel={opt.accessibilityLabel ?? (iconOnly ? opt.label : undefined)}
+            active={on}
+            offset={SEG_SHADOW}
+            style={iconOnly ? s.segmentSlotIcon : s.segmentSlot}
+            contentStyle={(pressed) => [
+              s.segmentFace,
               on && { backgroundColor: colors.action },
-              on && hardShadow(3),
-              on && pressStyle(pressed, 3),
               !on && pressed && { backgroundColor: colors.surface3 },
             ]}
           >
-            {opt.icon && <Icon name={opt.icon} size={16} color={color} />}
-            <Text style={[t.labelCaps, { color }]}>{opt.label}</Text>
-          </Pressable>
+            {opt.icon && <Icon name={opt.icon} size={iconOnly ? 20 : 16} color={color} />}
+            {!(iconOnly && opt.icon) && <Text style={[t.labelCaps, { color }]} numberOfLines={1}>{opt.label}</Text>}
+          </HardPressable>
         );
       })}
     </View>
@@ -138,40 +222,41 @@ export function Btn({
   small?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
-  const base: ViewStyle[] = [s.btn, small ? s.btnSmall : {}];
+  const face: ViewStyle[] = [s.btn, small ? s.btnSmall : {}];
   let textColor: string = colors.textOnFill;
   const primary = variant === 'primary';
 
   if (primary) {
-    base.push({ backgroundColor: colors.action });
+    face.push({ backgroundColor: colors.action });
   } else if (variant === 'secondary') {
-    base.push({ backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.borderStrong });
+    face.push({ backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.borderStrong });
     textColor = colors.textPrimary;
   } else if (variant === 'ghost') {
-    base.push({ backgroundColor: colors.surface3 });
+    face.push({ backgroundColor: colors.surface3 });
     textColor = colors.textPrimary;
   } else {
-    base.push({ backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.danger });
+    face.push({ backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.danger });
     textColor = colors.danger;
   }
 
   return (
-    <Pressable
+    <HardPressable
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityState={{ disabled }}
-      style={({ pressed }) => [
-        base,
-        primary && !disabled && hardShadow(BTN_SHADOW),
-        primary && !disabled && pressStyle(pressed, BTN_SHADOW),
+      offset={BTN_SHADOW}
+      active={primary && !disabled}
+      reserve={primary}
+      style={style}
+      contentStyle={(pressed) => [
+        face,
         !primary && pressed && { backgroundColor: colors.surface3 },
         disabled && s.btnDisabled,
-        style,
       ]}
     >
       <Text style={[small ? t.labelCapsSm : t.labelCaps, { color: textColor }]}>{label}</Text>
-    </Pressable>
+    </HardPressable>
   );
 }
 
@@ -195,44 +280,51 @@ export function Chip({
       : tone === 'confirmed' ? colors.confirmed
         : tone === 'neutral' ? colors.textPrimary
           : colors.action;
-  const wash =
-    tone === 'live' ? colors.liveWash
-      : tone === 'confirmed' ? colors.confirmedWash
+  // Opaque selected face (the wash flattened over the canvas): the hard-shadow
+  // block sits behind it, so the face must not be translucent.
+  const selectedFill =
+    tone === 'live' ? colors.liveSelectedFill
+      : tone === 'confirmed' ? colors.confirmedSelectedFill
         : tone === 'neutral' ? colors.surface3
-          : colors.actionWash;
-  // Without `onPress` the chip is a static tag: no press state, no tap role.
+          : colors.actionSelectedFill;
+  const content = (
+    <>
+      <Text style={[t.labelCapsSm, { color: active ? toneColor : colors.textSecondary }]}>{label}</Text>
+      {trailingIcon && <Icon name={trailingIcon} size={12} color={active ? toneColor : colors.textSecondary} />}
+    </>
+  );
+  // Without `onPress` the chip is a static tag: no press state, no tap role,
+  // no shadow.
   if (!onPress) {
     return (
       <View
         style={[
           s.chip,
           { borderColor: active ? toneColor : colors.borderSubtle },
-          active && { backgroundColor: wash },
+          active && { backgroundColor: selectedFill },
         ]}
       >
-        <Text style={[t.labelCapsSm, { color: active ? toneColor : colors.textSecondary }]}>{label}</Text>
-        {trailingIcon && <Icon name={trailingIcon} size={12} color={active ? toneColor : colors.textSecondary} />}
+        {content}
       </View>
     );
   }
   return (
-    <Pressable
+    <HardPressable
       onPress={onPress}
       hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      style={({ pressed }) => [
+      active={active}
+      offset={CHIP_SHADOW}
+      contentStyle={(pressed) => [
         s.chip,
         { borderColor: active ? toneColor : colors.borderSubtle },
-        active && { backgroundColor: wash },
-        active && hardShadow(3),
-        active && pressStyle(pressed, 3),
+        active && { backgroundColor: selectedFill },
         !active && pressed && { backgroundColor: colors.surface3 },
       ]}
     >
-      <Text style={[t.labelCapsSm, { color: active ? toneColor : colors.textSecondary }]}>{label}</Text>
-      {trailingIcon && <Icon name={trailingIcon} size={12} color={active ? toneColor : colors.textSecondary} />}
-    </Pressable>
+      {content}
+    </HardPressable>
   );
 }
 
@@ -308,19 +400,24 @@ export const inputStyle = {
 export const inputFocusedStyle = { borderBottomColor: colors.action } as const;
 
 const s = StyleSheet.create({
+  hardBlock: { position: 'absolute' },
+  hardContent: { flexGrow: 1 },
+
   segmented: {
     flexDirection: 'row',
-    gap: spacing.xs,
     backgroundColor: colors.surface1,
     borderWidth: 1,
     borderColor: colors.borderSubtle,
-    padding: spacing.xs + 1,
+    padding: spacing.xs,
   },
-  segmentBtn: {
-    flex: 1,
+  // Slot = touch target incl. the reserved shadow gutter; face = the segment.
+  segmentSlot: { flex: 1 },
+  segmentSlotIcon: { width: TAP + SEG_SHADOW },
+  segmentFace: {
     flexDirection: 'row',
     gap: spacing.xs + 2,
     minHeight: TAP,
+    minWidth: TAP,
     paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',

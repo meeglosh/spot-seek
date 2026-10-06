@@ -18,7 +18,8 @@ import { BroadcastSubjectInput } from '../../../components/BroadcastSubjectInput
 import { AddressAutocompleteInput } from '../../../components/AddressAutocompleteInput';
 import { DateTimePicker } from '../../../components/DateTimePicker';
 import MapView, { Marker } from 'react-native-maps';
-import { colors, spacing, hardShadow, pressStyle, TAP, type as t } from '../../../lib/theme';
+import { colors, spacing, TAP, type as t } from '../../../lib/theme';
+import { HardPressable } from '../../../components/ui';
 import { Icon } from '../../../components/icons';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 
@@ -531,28 +532,34 @@ export default function CreateEventScreen() {
         {/* Privacy (maps to isPrivateLocation) */}
         <FormSection title={tr('create.privacy.sectionTitle')}>
           <View style={s.privacyTiles}>
-            <Pressable
+            <HardPressable
               onPress={() => setIsPrivate(false)}
               accessibilityRole="button"
               accessibilityState={{ selected: !isPrivate }}
-              style={({ pressed }) => [s.privacyTile, !isPrivate && s.privacyTileActive, !isPrivate && pressStyle(pressed, 3)]}
+              active={!isPrivate}
+              offset={3}
+              style={s.privacyTileSlot}
+              contentStyle={[s.privacyTile, !isPrivate && s.privacyTileActive]}
             >
               <Text style={[t.labelCaps, { color: !isPrivate ? colors.action : colors.textPrimary }]}>
                 {tr('create.privacy.public')}
               </Text>
               <Text style={[t.bodySm, s.privacyTileSub]}>{tr('create.privacy.publicSub')}</Text>
-            </Pressable>
-            <Pressable
+            </HardPressable>
+            <HardPressable
               onPress={() => setIsPrivate(true)}
               accessibilityRole="button"
               accessibilityState={{ selected: isPrivate }}
-              style={({ pressed }) => [s.privacyTile, isPrivate && s.privacyTileActive, isPrivate && pressStyle(pressed, 3)]}
+              active={isPrivate}
+              offset={3}
+              style={s.privacyTileSlot}
+              contentStyle={[s.privacyTile, isPrivate && s.privacyTileActive]}
             >
               <Text style={[t.labelCaps, { color: isPrivate ? colors.action : colors.textPrimary }]}>
                 {tr('create.privacy.private')}
               </Text>
               <Text style={[t.bodySm, s.privacyTileSub]}>{tr('create.privacy.privateSub')}</Text>
-            </Pressable>
+            </HardPressable>
           </View>
           {isPrivate && !hasVenue && (
             <Text style={[t.bodySm, { color: colors.textTertiary }]}>
@@ -722,8 +729,8 @@ const s = StyleSheet.create({
   successActions: { alignSelf: 'stretch', gap: spacing.md, marginTop: spacing['2xl'], paddingHorizontal: spacing.xl },
 
   privacyTiles: { flexDirection: 'row', gap: spacing.md },
+  privacyTileSlot: { flex: 1 },
   privacyTile: {
-    flex: 1,
     minHeight: TAP,
     borderWidth: 2,
     borderColor: colors.borderSubtle,
@@ -733,8 +740,7 @@ const s = StyleSheet.create({
   },
   privacyTileActive: {
     borderColor: colors.action,
-    backgroundColor: colors.actionWash,
-    ...hardShadow(3),
+    backgroundColor: colors.actionSelectedFill,
   },
   privacyTileSub: { color: colors.textSecondary, textAlign: 'center' },
 

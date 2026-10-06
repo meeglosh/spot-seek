@@ -183,6 +183,7 @@ export default function DiscoverScreen() {
         {/* LIST | MAP toggle + search */}
         <View style={s.controlsRow}>
           <SegmentedControl
+            iconOnly
             value={viewMode}
             onChange={handleModePress}
             options={[
@@ -322,11 +323,12 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
   header: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md },
 
-  controlsRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  controlsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 
   // Underlined search input
   searchRow: {
     flex: 1,
+    minHeight: TAP,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface2,

@@ -8,7 +8,8 @@ import { Text } from '../../components/Text';
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs/types';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '../../components/icons';
-import { colors, hardShadow, type as t } from '../../lib/theme';
+import { colors, compositeOver, type as t } from '../../lib/theme';
+import { HardShadow } from '../../components/ui';
 
 // Tab icons come from the SpotSeek SVG icon set (components/icons), not an
 // icon font (an icon-font link crash once shipped) and not raster PNGs.
@@ -76,7 +77,9 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
         <Animated.View
           pointerEvents="none"
           style={[s.pill, { transform: [{ translateX: pillX }], width: pillWidth }]}
-        />
+        >
+          <HardShadow offset={3} style={s.pillFill} contentStyle={s.pillFace} />
+        </Animated.View>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           // The `href: null` shortcut (used to hide the sponsorship stack
@@ -191,15 +194,14 @@ const s = StyleSheet.create({
     paddingBottom: 14,
   },
   // Active tab indicator: a square block with a 2px action border and the
-  // hard shadow (selected = shadow). Washed fill keeps the label legible.
-  pill: {
-    position: 'absolute',
-    top: 6,
-    bottom: 6,
-    backgroundColor: colors.actionWash,
+  // hard shadow block (selected = shadow). The face is the wash flattened over
+  // the bar colour so it is opaque; the shadow block sits behind it.
+  pill: { position: 'absolute', top: 6, bottom: 6 },
+  pillFill: { flex: 1 },
+  pillFace: {
+    backgroundColor: compositeOver('rgba(0,229,255,0.08)', colors.surfaceSunken),
     borderWidth: 2,
     borderColor: colors.action,
-    ...hardShadow(3),
   },
   tabButton: {
     flex: 1,

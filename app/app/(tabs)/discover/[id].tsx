@@ -14,7 +14,8 @@ import {
 } from '../../../lib/api';
 import { eventShareUrl } from '../../../lib/shareLinks';
 import { formatEventDateTime } from '../../../lib/dateFormat';
-import { colors, spacing, TAP, type as t, hardShadow, pressStyle } from '../../../lib/theme';
+import { colors, spacing, TAP, type as t } from '../../../lib/theme';
+import { HardPressable } from '../../../components/ui';
 import { Icon } from '../../../components/icons';
 import { AppHeader } from '../../../components/AppHeader';
 import { Badge, SectionTitle, Btn, Chip, FieldLabel, inputStyle, inputFocusedStyle } from '../../../components/ui';
@@ -534,13 +535,10 @@ export default function EventDetailScreen() {
         {rsvpError ? (
           <Text style={[t.bodySm, s.rsvpError]}>{rsvpError}</Text>
         ) : null}
-        <Pressable
-          style={({ pressed }) => [
-            s.rsvpBtn,
-            { backgroundColor: rsvpBg, opacity: rsvpLoading ? 0.6 : 1 },
-            !isActive && !rsvpLoading && hardShadow(4),
-            !isActive && !rsvpLoading && pressStyle(pressed, 4),
-          ]}
+        <HardPressable
+          offset={4}
+          active={!isActive && !rsvpLoading}
+          contentStyle={[s.rsvpBtn, { backgroundColor: rsvpBg, opacity: rsvpLoading ? 0.6 : 1 }]}
           onPress={handleRsvp}
           disabled={rsvpLoading}
           accessibilityRole="button"
@@ -550,7 +548,7 @@ export default function EventDetailScreen() {
           ) : (
             <Text style={[t.headlineSm, { color: colors.textOnFill }]}>{rsvpLabel}</Text>
           )}
-        </Pressable>
+        </HardPressable>
         {isActive && (
           <Pressable onPress={handleRsvp} disabled={rsvpLoading} style={s.textLink} accessibilityRole="button">
             <Text style={[t.labelCapsSm, s.cancelText]}>{tr('detail.cancelRsvp')}</Text>

@@ -28,6 +28,11 @@ export default function Index() {
       .catch(() => setOnboardingSeen(true)); // fail open: worst case they miss the slideshow, never a blank app
   }, [auth.status]);
 
+  // Dev-only visual QA: EXPO_PUBLIC_START_ROUTE=__gallery (+ EXPO_PUBLIC_GALLERY=1)
+  // lands on the UI gallery. Inert in Release (__DEV__ is false).
+  if (__DEV__ && process.env.EXPO_PUBLIC_START_ROUTE === '__gallery') {
+    return <Redirect href="/__gallery" />;
+  }
   if (auth.status === 'authenticated') {
     return <Redirect href="/(tabs)/discover" />;
   }
