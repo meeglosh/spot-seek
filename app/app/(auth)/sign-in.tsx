@@ -100,6 +100,9 @@ export default function SignInScreen() {
           {!!error && (
             <Text style={[t.bodySm, s.errorText]}>{error}</Text>
           )}
+          <Pressable onPress={() => router.push('/(auth)/forgot-password' as never)} hitSlop={8} style={s.forgotLink}>
+            <Text style={[t.labelCapsSm, { color: colors.accent }]}>{tr('signIn.forgotLink')}</Text>
+          </Pressable>
         </View>
 
         <View style={s.footer}>
@@ -153,6 +156,7 @@ const s = StyleSheet.create({
   form: { gap: spacing.xl, marginBottom: spacing['2xl'], flexGrow: 1 },
   field: { gap: 0 },
   errorText: { color: colors.danger },
+  forgotLink: { alignSelf: 'flex-start' },
   footer: { gap: spacing.lg },
   switchText: { color: colors.textSecondary, textAlign: 'center' },
   switchLink: { color: colors.accent, fontFamily: fonts.sansBold },

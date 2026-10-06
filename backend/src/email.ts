@@ -39,6 +39,7 @@ const HEADLINES: Record<string, string> = {
   payment_due: 'PAYMENT DUE',
   payment_received: 'PAYMENT RECEIVED',
   payout_sent: 'PAYOUT SENT',
+  password_reset: 'RESET YOUR PASSWORD',
   payment_refunded: 'PAYMENT REFUNDED',
 };
 
@@ -55,10 +56,22 @@ export interface EmailContent {
   body: string;
   eventId?: string;
   baseUrl?: string;
+  /** Generic call-to-action button (used instead of VIEW EVENT when set). */
+  ctaLabel?: string;
+  ctaUrl?: string;
+  /** Replaces the default "you have an account" footer. Escaped. */
+  footer?: string;
 }
 
 export function eventUrl(eventId: string, baseUrl = DEFAULT_PUBLIC_BASE_URL): string {
   return `${baseUrl.replace(/\/+$/, '')}/e/${encodeURIComponent(eventId)}`;
+}
+
+function ctaButton(href: string, label: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 8px 0;">
+<tr><td bgcolor="${CYAN}" style="background-color:${CYAN};border-right:5px solid ${ORANGE};border-bottom:5px solid ${ORANGE};border-radius:0;">
+<a href="${escapeHtml(href)}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:${HEAD_FONT};font-size:20px;line-height:24px;letter-spacing:1px;color:${BG};text-decoration:none;text-transform:uppercase;">${escapeHtml(label)}</a>
+</td></tr></table>`;
 }
 
 export function renderEmailHtml(c: EmailContent): string {
@@ -75,11 +88,10 @@ export function renderEmailHtml(c: EmailContent): string {
     )
     .join('');
 
-  const cta = c.eventId
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 8px 0;">
-<tr><td bgcolor="${CYAN}" style="background-color:${CYAN};border-right:5px solid ${ORANGE};border-bottom:5px solid ${ORANGE};border-radius:0;">
-<a href="${escapeHtml(eventUrl(c.eventId, base))}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:${HEAD_FONT};font-size:20px;line-height:24px;letter-spacing:1px;color:${BG};text-decoration:none;text-transform:uppercase;">VIEW EVENT</a>
-</td></tr></table>`
+  const cta = c.ctaUrl && c.ctaLabel
+    ? ctaButton(c.ctaUrl, c.ctaLabel)
+    : c.eventId
+    ? ctaButton(eventUrl(c.eventId, base), 'VIEW EVENT')
     : '';
 
   const font = 'https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo+Narrow&amp;display=swap';
@@ -112,8 +124,8 @@ ${paragraphs}
 ${cta}
 </td></tr>
 <tr><td style="padding:20px 8px 0 8px;font-family:${BODY_FONT};font-size:13px;line-height:19px;color:#8a8a96;">
-You're getting this because you have a SpotSeek account and this activity involves you.<br>
-You can manage email notifications in Settings in the SpotSeek app.
+${c.footer ? escapeHtml(c.footer) : `You're getting this because you have a SpotSeek account and this activity involves you.<br>
+You can manage email notifications in Settings in the SpotSeek app.`}
 </td></tr>
 </table>
 </td></tr></table>
@@ -123,5 +135,6 @@ You can manage email notifications in Settings in the SpotSeek app.
 
 /** Plain-text fallback, with the event link appended when present. */
 export function renderEmailText(c: EmailContent): string {
+  if (c.ctaUrl && c.ctaLabel) return `${c.body}\n\n${c.ctaLabel}: ${c.ctaUrl}`;
   return c.eventId ? `${c.body}\n\nView event: ${eventUrl(c.eventId, c.baseUrl)}` : c.body;
 }

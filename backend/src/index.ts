@@ -18,15 +18,16 @@ import { reviewsRouter } from './reviews';
 import { allowRequest, tooManyRequests, AUTH_LIMIT_PER_MIN } from './ratelimit';
 import { EMAIL_LOGO_PNG_BASE64 } from './email-logo';
 import { accountRouter } from './account';
+import { passwordResetRouter } from './password-reset';
 import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Sign-up / sign-in attempts are rate limited per client IP (10/min). This is a
+// Sign-up / sign-in / forgot-password requests are rate limited per client IP (10/min). This is a
 // guard in front of Better Auth's handler — Better Auth's own config is untouched.
 // cf-connecting-ip is always set by Cloudflare at the edge (and overwritten if a
 // client sends it); when absent (local/test harness) there is no IP to key on.
-const AUTH_RATE_LIMITED = /^\/api\/auth\/(sign-up|sign-in)(\/|$)/;
+const AUTH_RATE_LIMITED = /^\/api\/auth\/(sign-up|sign-in|request-password-reset)(\/|$)/;
 
 app.all('/api/auth/*', async (c) => {
   if (c.req.method === 'POST' && AUTH_RATE_LIMITED.test(c.req.path)) {
@@ -55,6 +56,7 @@ app.route('/api/reviews', reviewsRouter);
 app.route('/api/payments', paymentsRouter);
 app.route('/api/account', accountRouter);
 app.route('/payments', onboardPagesRouter);
+app.route('/', passwordResetRouter);
 app.route('/', deeplinksRouter);
 
 // GET /api/images/:key — serve R2 images through the Worker.
