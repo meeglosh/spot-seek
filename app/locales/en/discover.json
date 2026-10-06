@@ -29,8 +29,8 @@
     "goingCount_other": "{{count}} going",
     "hostedBy": "Hosted by {{name}}",
     "privateLocation": "{{venue}} — private",
-    "sponsorTag": "⚡ {{name}}",
-    "sponsorTagMore": "⚡ {{name}} +{{count}}"
+    "sponsorTag": "{{name}}",
+    "sponsorTagMore": "{{name}} +{{count}}"
   },
   "map": {
     "liveNow": "Live Now",
@@ -47,7 +47,7 @@
     "clearCount": "Clear ({{count}})",
     "yourInterests": "Your Interests",
     "filterByYourTeamsTitle": "Filter by your teams & sports",
-    "filterByYourTeamsSub": "Sign in to save favourites and filter the feed by them →",
+    "filterByYourTeamsSub": "Sign in to save favourites and filter the feed by them",
     "showOnlyYourTeams": "Show only your teams & sports",
     "moreFavourites": " +{{count}} more",
     "sport": "Sport",
@@ -66,7 +66,7 @@
   "detail": {
     "loadError": "Could not load event.",
     "notFound": "Event not found",
-    "goBack": "← Go back",
+    "goBack": "Go back",
     "liveTonight": "Live Tonight",
     "dateTime": "Date & Time",
     "tba": "TBA",
@@ -86,7 +86,7 @@
       "waze": "Waze"
     },
     "breakdown": "The Breakdown",
-    "authNudge": "Sign in to RSVP and see full venue details →",
+    "authNudge": "Sign in to RSVP and see full venue details",
     "authGateMessage": "Sign in to RSVP, join the guest list, and see full venue details.",
     "cancelRsvp": "Cancel RSVP",
     "shareEvent": "Share event",

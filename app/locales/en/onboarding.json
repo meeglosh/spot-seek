@@ -30,8 +30,8 @@
     }
   },
   "cta": {
-    "next": "NEXT →",
-    "getStarted": "GET STARTED →"
+    "next": "NEXT",
+    "getStarted": "GET STARTED"
   },
   "skip": {
     "label": "SKIP",

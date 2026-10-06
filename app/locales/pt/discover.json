@@ -29,8 +29,8 @@
     "goingCount_other": "{{count}} participantes",
     "hostedBy": "Organizado por {{name}}",
     "privateLocation": "{{venue}} — privado",
-    "sponsorTag": "⚡ {{name}}",
-    "sponsorTagMore": "⚡ {{name}} +{{count}}"
+    "sponsorTag": "{{name}}",
+    "sponsorTagMore": "{{name}} +{{count}}"
   },
   "map": {
     "liveNow": "Em direto agora",
@@ -47,7 +47,7 @@
     "clearCount": "Limpar ({{count}})",
     "yourInterests": "Os teus interesses",
     "filterByYourTeamsTitle": "Filtrar pelas tuas equipas e desportos",
-    "filterByYourTeamsSub": "Inicia sessão para guardar favoritos e filtrar o feed por eles →",
+    "filterByYourTeamsSub": "Inicia sessão para guardar favoritos e filtrar o feed por eles",
     "showOnlyYourTeams": "Mostrar apenas as tuas equipas e desportos",
     "moreFavourites": " +{{count}} mais",
     "sport": "Desporto",
@@ -66,7 +66,7 @@
   "detail": {
     "loadError": "Não foi possível carregar o evento.",
     "notFound": "Evento não encontrado",
-    "goBack": "← Voltar",
+    "goBack": "Voltar",
     "liveTonight": "Em direto esta noite",
     "dateTime": "Data e Hora",
     "tba": "A CONFIRMAR",
@@ -85,7 +85,7 @@
       "waze": "Waze"
     },
     "breakdown": "Os Detalhes",
-    "authNudge": "Inicia sessão para confirmar presença e ver todos os detalhes do local →",
+    "authNudge": "Inicia sessão para confirmar presença e ver todos os detalhes do local",
     "authGateMessage": "Inicia sessão para confirmar presença, entrar na lista de convidados e ver todos os detalhes do local.",
     "cancelRsvp": "Cancelar Confirmação",
     "shareEvent": "Partilhar evento",

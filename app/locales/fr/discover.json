@@ -29,8 +29,8 @@
     "goingCount_other": "{{count}} participants",
     "hostedBy": "Organisé par {{name}}",
     "privateLocation": "{{venue}} — privé",
-    "sponsorTag": "⚡ {{name}}",
-    "sponsorTagMore": "⚡ {{name}} +{{count}}"
+    "sponsorTag": "{{name}}",
+    "sponsorTagMore": "{{name}} +{{count}}"
   },
   "map": {
     "liveNow": "En direct",
@@ -47,7 +47,7 @@
     "clearCount": "Effacer ({{count}})",
     "yourInterests": "Vos centres d'intérêt",
     "filterByYourTeamsTitle": "Filtrer par vos équipes et sports",
-    "filterByYourTeamsSub": "Connectez-vous pour enregistrer vos favoris et filtrer le fil selon ceux-ci →",
+    "filterByYourTeamsSub": "Connectez-vous pour enregistrer vos favoris et filtrer le fil selon ceux-ci",
     "showOnlyYourTeams": "Afficher uniquement vos équipes et sports",
     "moreFavourites": " +{{count}} de plus",
     "sport": "Sport",
@@ -66,7 +66,7 @@
   "detail": {
     "loadError": "Impossible de charger l'événement.",
     "notFound": "Événement introuvable",
-    "goBack": "← Retour",
+    "goBack": "Retour",
     "liveTonight": "En direct ce soir",
     "dateTime": "Date et heure",
     "tba": "À CONFIRMER",
@@ -85,7 +85,7 @@
       "waze": "Waze"
     },
     "breakdown": "Les détails",
-    "authNudge": "Connectez-vous pour confirmer votre présence et voir tous les détails du lieu →",
+    "authNudge": "Connectez-vous pour confirmer votre présence et voir tous les détails du lieu",
     "authGateMessage": "Connectez-vous pour confirmer votre présence, rejoindre la liste des invités et voir tous les détails du lieu.",
     "cancelRsvp": "Annuler ma présence",
     "shareEvent": "Partager l'événement",
