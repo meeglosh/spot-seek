@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { requestPasswordReset } from '../../lib/api';
-import { colors, spacing, type as t } from '../../lib/theme';
+import { colors, radius, spacing, type as t } from '../../lib/theme';
 import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
 
 // Requests a password-reset email. The server never reveals whether the email
@@ -100,5 +100,6 @@ const s = StyleSheet.create({
   sentBox: {
     borderWidth: 1, borderColor: colors.confirmed, backgroundColor: colors.surface2,
     padding: spacing.lg,
+    borderRadius: radius.control,
   },
 });

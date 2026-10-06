@@ -6,7 +6,7 @@ import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../components/AppHeader';
-import { colors, spacing, type as t } from '../../../lib/theme';
+import { colors, radius, spacing, type as t } from '../../../lib/theme';
 import { Btn, Chip, Badge, FieldLabel, inputStyle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
@@ -275,11 +275,10 @@ const s = StyleSheet.create({
 
   card: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.sm,
     marginBottom: spacing.lg,
+    borderRadius: radius.card,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
   categoryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },

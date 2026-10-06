@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Pressable, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { Text } from './Text';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, type as t } from '../lib/theme';
-import { Badge, Btn } from './ui';
+import { colors, spacing, radius, elevation, type as t } from '../lib/theme';
+import { Badge, Btn, Press } from './ui';
 
 import { API_BASE } from '../lib/api';
 import { formatEventDateTime } from '../lib/dateFormat';
@@ -70,11 +70,10 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
   );
 
   return (
-    <Pressable
-      style={({ pressed }) => [s.card, pressed && { backgroundColor: colors.surface2 }]}
-      onPress={goTo}
-      accessibilityRole="button"
-    >
+    // Outer view: opaque surface + soft shadow. Inner view: clips the cover to
+    // the rounded corners (iOS drops a shadow on an overflow:hidden view).
+    <Press style={s.card} onPress={goTo} accessibilityRole="button">
+      <View style={s.clip}>
       {/* Full-bleed cover, dimmed with the scrim token for legibility */}
       {coverSrc && !compact && (
         <View style={s.coverWrap}>
@@ -115,12 +114,12 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
         <View style={s.footer}>
           <View style={s.footerLeft}>
             {typeof event.goingCount === 'number' && (
-              <Text style={[t.labelCaps, { color: colors.textPrimary }]}>
+              <Text style={[t.label, { color: colors.textPrimary }]}>
                 {tr('card.goingCount', { count: event.goingCount })}
               </Text>
             )}
             {event.hostName && (
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]} numberOfLines={1}>
+              <Text style={[t.labelSm, { color: colors.textTertiary }]} numberOfLines={1}>
                 {tr('card.hostedBy', { name: event.hostName })}
               </Text>
             )}
@@ -128,34 +127,28 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
           <Btn label={tr('card.join')} variant="secondary" small onPress={goTo} />
         </View>
       </View>
-    </Pressable>
+      </View>
+    </Press>
   );
 }
 
 const s = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    overflow: 'hidden',
-  },
+  card: { ...elevation(1), borderRadius: radius.card },
+  clip: { borderRadius: radius.card, overflow: 'hidden', backgroundColor: colors.surface1 },
   coverWrap: { width: '100%', height: 160 },
   cover: { width: '100%', height: '100%' },
   mediaDim: { backgroundColor: colors.mediaDim },
   coverBadges: { position: 'absolute', top: spacing.md, left: spacing.md },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm },
+  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.lg, gap: spacing.sm },
   bodyCompact: { paddingTop: spacing.md },
-  venueText: { color: colors.textPrimary, textTransform: 'uppercase' },
+  venueText: { color: colors.textPrimary },
   meta: { gap: 2 },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.sm,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
+    marginTop: spacing.md,
   },
   footerLeft: { flex: 1, gap: 2, paddingRight: spacing.md },
 });

@@ -4,8 +4,8 @@ import { Text } from './Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, type as t } from '../lib/theme';
-import { Btn } from './ui';
+import { colors, radius, spacing, elevation, type as t } from '../lib/theme';
+import { Btn, Press } from './ui';
 
 type Router = ReturnType<typeof useRouter>;
 
@@ -73,9 +73,9 @@ export function AuthGateSheet({
           <Btn label={tr('guestGate.signIn')} onPress={() => go('sign-in')} />
           <Btn label={tr('guestGate.createAccount')} variant="secondary" onPress={() => go('sign-up')} />
         </View>
-        <Pressable onPress={onClose} hitSlop={8} style={s.dismiss}>
-          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('guestGate.keepBrowsing')}</Text>
-        </Pressable>
+        <Press onPress={onClose} hitSlop={8} style={s.dismiss}>
+          <Text style={[t.label, { color: colors.textTertiary }]}>{tr('guestGate.keepBrowsing')}</Text>
+        </Press>
       </View>
     </Modal>
   );
@@ -102,9 +102,9 @@ const s = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.surfaceSunken,
-    borderTopWidth: 2,
-    borderTopColor: colors.action,
+    ...elevation(3),
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     padding: spacing.xl,
     gap: spacing.md,
     alignItems: 'center',

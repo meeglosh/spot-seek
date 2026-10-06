@@ -1,7 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View, FlatList, Pressable, StyleSheet, RefreshControl, TextInput, ActivityIndicator,
-} from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -10,8 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
 import { AppHeader } from '../../../components/AppHeader';
-import { Btn, Chip, SegmentedControl } from '../../../components/ui';
-import { colors, spacing, TAP, type as t } from '../../../lib/theme';
+import { Btn, Chip, SegmentedControl, Press } from '../../../components/ui';
+import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
 import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
 import { useDiscoverFilters, activeFilterCount } from '../../../lib/discover-filters';
@@ -202,20 +200,20 @@ export default function DiscoverScreen() {
                 onChangeText={setSearch}
               />
               {search.length > 0 && (
-                <Pressable
+                <Press
                   onPress={() => setSearch('')}
                   style={s.clearBtn}
                   accessibilityRole="button"
                   accessibilityLabel={trCommon('shell.accessibility.clear')}
                 >
                   <Icon name="close" size={16} color={colors.textTertiary} />
-                </Pressable>
+                </Press>
               )}
             </View>
           )}
 
           {/* Single filters entry point — opens the full filter half-sheet */}
-          <Pressable
+          <Press
             style={[s.filterIconBtn, filterCount > 0 && s.filterIconBtnActive]}
             onPress={openFilters}
             accessibilityRole="button"
@@ -224,10 +222,10 @@ export default function DiscoverScreen() {
             <Icon name="filter" size={20} color={filterCount > 0 ? colors.action : colors.textSecondary} />
             {filterCount > 0 && (
               <View style={s.filterBadge}>
-                <Text style={[t.labelCapsSm, s.filterBadgeText]}>{filterCount}</Text>
+                <Text style={[t.labelSm, s.filterBadgeText]}>{filterCount}</Text>
               </View>
             )}
-          </Pressable>
+          </Press>
         </View>
 
         {/* Active filter summary chips */}
@@ -296,7 +294,7 @@ export default function DiscoverScreen() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />
             }
             ListHeaderComponent={
-              <Text style={[t.labelCaps, s.sectionLabel]}>
+              <Text style={[t.label, s.sectionLabel]}>
                 {displayed.length === 0
                   ? tr('feed.noEventsFound')
                   : tr('feed.upcomingCount', { count: displayed.length })}
@@ -320,18 +318,17 @@ export default function DiscoverScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
-  header: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md },
+  header: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.md },
 
   controlsRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
 
-  // Underlined search input
+  // Filled search input
   searchRow: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface2,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.borderStrong,
+    borderRadius: radius.control,
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
   },
@@ -351,13 +348,12 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface2,
+    borderRadius: radius.control,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: 'transparent',
   },
   filterIconBtnActive: {
-    backgroundColor: colors.actionWash,
     borderColor: colors.action,
-    borderWidth: 2,
   },
   filterBadge: {
     position: 'absolute',
@@ -367,6 +363,7 @@ const s = StyleSheet.create({
     height: 18,
     paddingHorizontal: 4,
     backgroundColor: colors.textPrimary,
+    borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },

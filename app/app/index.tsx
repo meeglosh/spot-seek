@@ -28,6 +28,11 @@ export default function Index() {
       .catch(() => setOnboardingSeen(true)); // fail open: worst case they miss the slideshow, never a blank app
   }, [auth.status]);
 
+  // DEV ONLY (see app/__gallery.tsx): jump straight to a dev route for visual
+  // QA. `__DEV__` is false in Release, so this branch never runs there.
+  if (__DEV__ && process.env.EXPO_PUBLIC_START_ROUTE) {
+    return <Redirect href={process.env.EXPO_PUBLIC_START_ROUTE as never} />;
+  }
   if (auth.status === 'authenticated') {
     return <Redirect href="/(tabs)/discover" />;
   }

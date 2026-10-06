@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from './Text';
 import { Icon } from './icons';
 import { colors, spacing, TAP, type as t } from '../lib/theme';
+import { Press } from './ui';
 
 // ─── StarRating: read-only display, 0-5 float rendered with the icon set ─────
 // Filled star = earned rating (the one place a fill carries meaning); display
@@ -29,7 +30,7 @@ export function StarRating({
         ))}
       </View>
       {label && (
-        <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{label}</Text>
+        <Text style={[t.labelSm, { color: colors.textSecondary }]}>{label}</Text>
       )}
     </View>
   );
@@ -51,7 +52,7 @@ export function StarInput({
         const rating = i + 1;
         const filled = rating <= value;
         return (
-          <Pressable
+          <Press
             key={i}
             onPress={() => onChange(rating)}
             style={s.starHit}
@@ -64,7 +65,7 @@ export function StarInput({
               size={size}
               color={filled ? colors.action : colors.textTertiary}
             />
-          </Pressable>
+          </Press>
         );
       })}
     </View>

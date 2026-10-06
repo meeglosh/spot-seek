@@ -11,13 +11,11 @@
  *  - Tapping outside or submitting with custom text is fine — no validation.
  */
 import React, { useState, useMemo, useRef } from 'react';
-import {
-  View, TextInput, Pressable, StyleSheet,
-} from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { Text } from './Text';
 import { SPORTS } from '../lib/sports-data';
-import { inputStyle, inputFocusedStyle } from './ui';
-import { colors, spacing, TAP, type as t } from '../lib/theme';
+import { inputStyle, inputFocusedStyle, Press } from './ui';
+import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { Icon, type IconName } from './icons';
 
 // ─── Build the suggestion catalogue once ─────────────────────────────────────
@@ -150,7 +148,7 @@ export function BroadcastSubjectInput({
       {showSuggestions && (
         <View style={s.suggestions}>
           {suggestions.map((item, i) => (
-            <Pressable
+            <Press
               key={item.key}
               style={({ pressed }) => [
                 s.row,
@@ -165,11 +163,11 @@ export function BroadcastSubjectInput({
                 <Text style={[t.bodyMdStrong, s.rowLabel]} numberOfLines={1}>
                   {item.label}
                 </Text>
-                <Text style={[t.labelCapsSm, { color: colors.textTertiary }]} numberOfLines={1}>
+                <Text style={[t.labelSm, { color: colors.textTertiary }]} numberOfLines={1}>
                   {item.sublabel}
                 </Text>
               </View>
-            </Pressable>
+            </Press>
           ))}
         </View>
       )}
@@ -187,10 +185,9 @@ export function BroadcastSubjectInput({
 const s = StyleSheet.create({
   suggestions: {
     backgroundColor: colors.surface2,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     marginTop: spacing.xs,
     overflow: 'hidden',
+    borderRadius: radius.card,
   },
   row: {
     flexDirection: 'row',

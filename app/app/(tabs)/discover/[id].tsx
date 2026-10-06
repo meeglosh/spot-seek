@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, ScrollView, Pressable, StyleSheet, ActivityIndicator, Image, Linking, Platform, Share, ActionSheetIOS, Alert, TextInput,
-} from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, Image, Linking, Platform, Share, ActionSheetIOS, Alert, TextInput } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,10 +12,10 @@ import {
 } from '../../../lib/api';
 import { eventShareUrl } from '../../../lib/shareLinks';
 import { formatEventDateTime } from '../../../lib/dateFormat';
-import { colors, spacing, TAP, type as t, hardShadow, pressStyle } from '../../../lib/theme';
+import { colors, radius, spacing, TAP, elevation, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
 import { AppHeader } from '../../../components/AppHeader';
-import { Badge, SectionTitle, Btn, Chip, FieldLabel, inputStyle, inputFocusedStyle } from '../../../components/ui';
+import { Badge, SectionTitle, Btn, Chip, FieldLabel, Press, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { AuthGateSheet } from '../../../components/AuthGate';
 import { StarRating, StarInput } from '../../../components/Stars';
 
@@ -210,11 +208,11 @@ export default function EventDetailScreen() {
         <Text style={[t.bodySm, { color: colors.textSecondary }]}>
           {error || tr('detail.notFound')}
         </Text>
-        <Pressable onPress={leaveDetail} accessibilityRole="button" style={s.textLink}>
-          <Text style={[t.labelCaps, { color: colors.action }]}>
+        <Press onPress={leaveDetail} accessibilityRole="button" style={s.textLink}>
+          <Text style={[t.label, { color: colors.action }]}>
             {tr('detail.goBack')}
           </Text>
-        </Pressable>
+        </Press>
       </View>
     );
   }
@@ -353,14 +351,14 @@ export default function EventDetailScreen() {
             <Image source={coverSrc} style={StyleSheet.absoluteFill} resizeMode="cover" />
           )}
           <View style={[StyleSheet.absoluteFill, s.mediaDim]} />
-          <Pressable
+          <Press
             onPress={handleShare}
             style={({ pressed }) => [s.shareBtn, pressed && s.pressed]}
             accessibilityRole="button"
             accessibilityLabel={tr('detail.shareEvent')}
           >
             <Icon name="share" size={22} color={colors.textOnMedia} />
-          </Pressable>
+          </Press>
           <View style={s.heroContent}>
             <View style={s.heroBadges}>
               {liveTonight && <Badge label={tr('detail.liveTonight')} tone="live" />}
@@ -384,14 +382,14 @@ export default function EventDetailScreen() {
           {/* Meta tile grid */}
           <View style={s.tileRow}>
             <View style={s.tile}>
-              <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('detail.dateTime')}</Text>
+              <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('detail.dateTime')}</Text>
               <Text style={[t.monoData, s.tileValue]}>
                 {dateStr ? `${dateStr}${timeStr ? `\n${timeStr}` : ''}` : tr('detail.tba')}
               </Text>
             </View>
             {statusValue && (
               <View style={s.tile}>
-                <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('detail.status')}</Text>
+                <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('detail.status')}</Text>
                 <Text style={[t.headlineMd, { color: statusColor }]} numberOfLines={1} adjustsFontSizeToFit>
                   {statusValue}
                 </Text>
@@ -402,20 +400,20 @@ export default function EventDetailScreen() {
           {/* Venue card */}
           {event.venueName && (
             <View style={s.venueCard}>
-              <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('detail.venue')}</Text>
+              <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('detail.venue')}</Text>
               <Text style={[t.bodyLg, { color: colors.textPrimary }]}>{event.venueName}</Text>
               {venueDetail && (
                 <Text style={[t.monoData, { color: colors.textSecondary }]}>{venueDetail}</Text>
               )}
               {venueRatingLabel && <StarRating value={reviewsCtx.venue!.avg} size={13} label={venueRatingLabel} />}
               {canShowDirections && (
-                <Pressable
+                <Press
                   style={({ pressed }) => [s.directionsBtn, pressed && s.pressed]}
                   onPress={openDirections}
                   accessibilityRole="button"
                 >
-                  <Text style={[t.labelCaps, { color: colors.action }]}>{tr('detail.getDirections')}</Text>
-                </Pressable>
+                  <Text style={[t.label, { color: colors.action }]}>{tr('detail.getDirections')}</Text>
+                </Press>
               )}
             </View>
           )}
@@ -444,11 +442,11 @@ export default function EventDetailScreen() {
 
           {/* Auth nudge */}
           {auth.status !== 'authenticated' && (
-            <Pressable style={s.authNudge} onPress={() => setGateOpen(true)}>
+            <Press style={s.authNudge} onPress={() => setGateOpen(true)}>
               <Text style={[t.bodySm, { color: colors.textSecondary }]}>
                 {tr('detail.authNudge')}
               </Text>
-            </Pressable>
+            </Press>
           )}
 
           {/* Rate this event — only once it's over, the caller actually went,
@@ -513,7 +511,7 @@ export default function EventDetailScreen() {
                   <View key={r.id} style={s.reviewRow}>
                     <View style={s.reviewHead}>
                       <Text style={[t.bodySm, { color: colors.textPrimary }]}>{r.reviewerName}</Text>
-                      <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>
+                      <Text style={[t.labelSm, { color: colors.textTertiary }]}>
                         {new Date(r.createdAt).toLocaleDateString()}
                       </Text>
                     </View>
@@ -534,13 +532,9 @@ export default function EventDetailScreen() {
         {rsvpError ? (
           <Text style={[t.bodySm, s.rsvpError]}>{rsvpError}</Text>
         ) : null}
-        <Pressable
-          style={({ pressed }) => [
-            s.rsvpBtn,
-            { backgroundColor: rsvpBg, opacity: rsvpLoading ? 0.6 : 1 },
-            !isActive && !rsvpLoading && hardShadow(4),
-            !isActive && !rsvpLoading && pressStyle(pressed, 4),
-          ]}
+        <Press
+          style={[s.rsvpBtn, { backgroundColor: rsvpBg }]}
+          restOpacity={rsvpLoading ? 0.6 : 1}
           onPress={handleRsvp}
           disabled={rsvpLoading}
           accessibilityRole="button"
@@ -548,13 +542,13 @@ export default function EventDetailScreen() {
           {rsvpLoading ? (
             <ActivityIndicator color={colors.textOnFill} />
           ) : (
-            <Text style={[t.headlineSm, { color: colors.textOnFill }]}>{rsvpLabel}</Text>
+            <Text style={[t.button, { color: colors.textOnFill }]}>{rsvpLabel}</Text>
           )}
-        </Pressable>
+        </Press>
         {isActive && (
-          <Pressable onPress={handleRsvp} disabled={rsvpLoading} style={s.textLink} accessibilityRole="button">
-            <Text style={[t.labelCapsSm, s.cancelText]}>{tr('detail.cancelRsvp')}</Text>
-          </Pressable>
+          <Press onPress={handleRsvp} disabled={rsvpLoading} style={s.textLink} accessibilityRole="button">
+            <Text style={[t.labelSm, s.cancelText]}>{tr('detail.cancelRsvp')}</Text>
+          </Press>
         )}
       </View>
 
@@ -600,30 +594,28 @@ const s = StyleSheet.create({
   tile: {
     flex: 1,
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.sm,
     justifyContent: 'space-between',
+    borderRadius: radius.card,
   },
-  tileValue: { color: colors.textPrimary, textTransform: 'uppercase' },
+  tileValue: { color: colors.textPrimary },
 
   // Venue card
   venueCard: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.sm,
+    borderRadius: radius.card,
   },
   directionsBtn: {
     marginTop: spacing.sm,
-    borderWidth: 2,
-    borderColor: colors.action,
+    backgroundColor: colors.actionWash,
     minHeight: TAP,
     paddingVertical: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: radius.control,
   },
   pressed: { opacity: 0.82 },
 
@@ -632,20 +624,21 @@ const s = StyleSheet.create({
 
   authNudge: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
+    borderRadius: radius.card,
   },
 
   // RSVP bar
   rsvpBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: spacing.lg, paddingTop: spacing.md,
-    backgroundColor: colors.canvas,
-    borderTopWidth: 1, borderTopColor: colors.borderSubtle,
+    ...elevation(1),
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
+    shadowOffset: { width: 0, height: -2 },
     gap: spacing.sm,
   },
-  rsvpBtn: { height: 56, alignItems: 'center', justifyContent: 'center' },
+  rsvpBtn: { height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: radius.control },
   rsvpError: { color: colors.danger, textAlign: 'center' },
   cancelText: { color: colors.textTertiary, textAlign: 'center' },
 
@@ -655,10 +648,9 @@ const s = StyleSheet.create({
   // Rate this event
   rateCard: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.lg,
+    borderRadius: radius.card,
   },
   rateField: { gap: spacing.sm },
   textArea: { minHeight: 96 },
@@ -667,10 +659,9 @@ const s = StyleSheet.create({
   reviewList: { gap: spacing.md },
   reviewRow: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.xs,
+    borderRadius: radius.card,
   },
   reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

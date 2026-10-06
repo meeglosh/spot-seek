@@ -2,7 +2,7 @@
  * Settings — account, notification prefs, favourites, and about.
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, TextInput, Pressable, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
+import { View, TextInput, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
 import { Text } from '../components/Text';
 import Slider from '@react-native-community/slider';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -15,10 +15,10 @@ import {
   fetchNotificationPrefs, updateNotificationPrefs, deleteAccount, DeleteAccountBlockedError, getStoredLocale,
   fetchConnectStatus, startConnectOnboarding, type ApiNotificationPrefs, type ApiConnectStatus, type DeleteBlocker,
 } from '../lib/api';
-import { colors, spacing, TAP, type as t } from '../lib/theme';
+import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { Icon } from '../components/icons';
 import { AppHeader } from '../components/AppHeader';
-import { Btn, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle } from '../components/ui';
+import { Btn, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../components/ui';
 import { GuestGate } from '../components/AuthGate';
 import { SUPPORTED_LOCALES, setAppLocale } from '../lib/i18n';
 import { enablePush, disablePush } from '../lib/push';
@@ -329,7 +329,7 @@ export default function SettingsScreen() {
             <View style={s.confirmBox}>
               <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('account.blockedEvents')}</Text>
               {deleteBlocker.events.map((e) => (
-                <Pressable
+                <Press
                   key={e.id}
                   style={s.linkRow}
                   onPress={() => router.push(`/(tabs)/discover/${e.id}` as never)}
@@ -337,7 +337,7 @@ export default function SettingsScreen() {
                 >
                   <Text style={[t.bodyMd, { color: colors.action, flex: 1 }]} numberOfLines={2}>{e.title}</Text>
                   <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-                </Pressable>
+                </Press>
               ))}
             </View>
           ) : null}
@@ -345,7 +345,7 @@ export default function SettingsScreen() {
             <View style={s.confirmBox}>
               <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('account.blockedMoney')}</Text>
               {deleteBlocker.sponsorships.map((sp) => (
-                <Pressable
+                <Press
                   key={sp.id}
                   style={s.linkRow}
                   onPress={() => router.push(`/(tabs)/discover/${sp.eventId}` as never)}
@@ -355,7 +355,7 @@ export default function SettingsScreen() {
                     {sp.eventTitle} · ${(sp.amountCents / 100).toFixed(2)}
                   </Text>
                   <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-                </Pressable>
+                </Press>
               ))}
             </View>
           ) : null}
@@ -390,7 +390,7 @@ export default function SettingsScreen() {
 
           <View style={s.sliderBlock}>
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('notifications.radiusLabel')}</Text>
-            <Text style={[t.labelCaps, { color: colors.action }]}>
+            <Text style={[t.label, { color: colors.action }]}>
               {tr('notifications.radiusValue', { miles: radiusMi, km: milesToKm(radiusMi) })}
             </Text>
             <Slider
@@ -410,7 +410,7 @@ export default function SettingsScreen() {
         {/* LANGUAGE */}
         <View style={s.section}>
           <SectionTitle>{tr('language.title')}</SectionTitle>
-          <Pressable
+          <Press
             style={s.linkRow}
             onPress={() => setAppLocale(null)}
           >
@@ -418,9 +418,9 @@ export default function SettingsScreen() {
             {!storedLocaleOverride ? (
               <Icon name="check" size={18} color={colors.action} />
             ) : null}
-          </Pressable>
+          </Press>
           {SUPPORTED_LOCALES.map(({ code, nativeName }) => (
-            <Pressable
+            <Press
               key={code}
               style={s.linkRow}
               onPress={() => setAppLocale(code)}
@@ -429,7 +429,7 @@ export default function SettingsScreen() {
               {storedLocaleOverride === code ? (
                 <Icon name="check" size={18} color={colors.action} />
               ) : null}
-            </Pressable>
+            </Press>
           ))}
         </View>
 
@@ -462,41 +462,41 @@ export default function SettingsScreen() {
         {/* FAVOURITES */}
         <View style={s.section}>
           <SectionTitle>{tr('favourites.title')}</SectionTitle>
-          <Pressable
+          <Press
             style={s.linkRow}
             onPress={() => router.push('/(auth)/interests' as never)}
           >
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('favourites.manage')}</Text>
             <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Pressable>
+          </Press>
         </View>
 
         {/* ABOUT */}
         <View style={s.section}>
           <SectionTitle>{tr('about.title')}</SectionTitle>
-          <Pressable
+          <Press
             style={s.linkRow}
             onPress={() => Alert.alert(tr('about.terms'), tr('about.comingSoonAlert'))}
           >
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.terms')}</Text>
             <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Pressable>
-          <Pressable
+          </Press>
+          <Press
             style={s.linkRow}
             onPress={() => Alert.alert(tr('about.privacy'), tr('about.comingSoonAlert'))}
           >
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.privacy')}</Text>
             <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Pressable>
-          <Pressable
+          </Press>
+          <Press
             style={s.linkRow}
             onPress={() => Alert.alert(tr('about.contactSupport'), tr('about.comingSoonAlert'))}
           >
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.contactSupport')}</Text>
             <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Pressable>
+          </Press>
 
-          <Text style={[t.labelCapsSm, s.versionText]}>
+          <Text style={[t.labelSm, s.versionText]}>
             {build ? tr('about.versionLabelWithBuild', { version: version ?? '—', build }) : tr('about.versionLabel', { version: version ?? '—' })}
           </Text>
         </View>
@@ -518,6 +518,7 @@ const s = StyleSheet.create({
   confirmBox: {
     borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.surface2,
     padding: spacing.lg, gap: spacing.md,
+    borderRadius: radius.control,
   },
   confirmBtns: { flexDirection: 'row', gap: spacing.md },
   confirmBtn: { flex: 1 },

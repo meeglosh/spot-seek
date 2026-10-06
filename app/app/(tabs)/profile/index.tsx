@@ -1,7 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View, ScrollView, Pressable, StyleSheet, ActivityIndicator, RefreshControl,
-} from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +13,7 @@ import {
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, spacing, radius, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
-import { Btn, Chip, Badge, SegmentBar, SectionTitle } from '../../../components/ui';
+import { Btn, Chip, Badge, SegmentBar, SectionTitle, Press } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { StarRating } from '../../../components/Stars';
 import { SPORTS } from '../../../lib/sports-data';
@@ -177,7 +175,7 @@ export default function ProfileScreen() {
 
               <View style={s.milestone}>
                 <View style={s.milestoneHead}>
-                  <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('hero.partiesAttended')}</Text>
+                  <Text style={[t.label, { color: colors.textSecondary }]}>{tr('hero.partiesAttended')}</Text>
                   <Text style={[t.monoData, { color: colors.textPrimary }]}>{attended} / {milestone}</Text>
                 </View>
                 <SegmentBar value={attended} max={milestone} segments={10} />
@@ -216,22 +214,22 @@ export default function ProfileScreen() {
                     <View style={s.teamLogo}>
                       <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{monogram(f.value)}</Text>
                     </View>
-                    <Text style={[t.labelCaps, s.teamName]} numberOfLines={2}>
-                      {(resolved?.shortName ?? f.value).toUpperCase()}
+                    <Text style={[t.label, s.teamName]} numberOfLines={2}>
+                      {(resolved?.shortName ?? f.value)}
                     </Text>
-                    <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
+                    <Text style={[t.labelSm, { color: colors.textSecondary }]}>
                       {resolved?.leagueName ?? f.sport ?? tr('teams.fallbackLeague')}
                     </Text>
                   </View>
                 );
               })}
-              <Pressable
+              <Press
                 style={({ pressed }) => [s.teamAdd, pressed && { borderColor: colors.action }]}
                 onPress={() => router.push('/(auth)/interests')}
               >
                 <Icon name="plus" size={24} color={colors.textSecondary} />
-                <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('teams.findTeams')}</Text>
-              </Pressable>
+                <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('teams.findTeams')}</Text>
+              </Press>
             </ScrollView>
             {sportFavs.length > 0 && (
               <View style={s.sportChips}>
@@ -242,15 +240,15 @@ export default function ProfileScreen() {
             {/* ── SAVED PARTIES ────────────────────────────────────────────── */}
             <SectionTitle>{tr('saved.sectionTitle')}</SectionTitle>
             {upcoming.length === 0 ? (
-              <Pressable style={s.emptyCard} onPress={() => router.push('/(tabs)/discover')} accessibilityRole="button">
-                <Text style={[t.labelCaps, { color: colors.textSecondary }]}>
+              <Press style={s.emptyCard} onPress={() => router.push('/(tabs)/discover')} accessibilityRole="button">
+                <Text style={[t.label, { color: colors.textSecondary }]}>
                   {tr('saved.empty')}
                 </Text>
-              </Pressable>
+              </Press>
             ) : (
               <View style={s.list}>
                 {upcoming.map((r) => (
-                  <Pressable
+                  <Press
                     key={r.id}
                     accessibilityRole="button"
                     style={({ pressed }) => [s.savedRow, pressed && { backgroundColor: colors.surface2 }]}
@@ -258,10 +256,10 @@ export default function ProfileScreen() {
                       router.push({ pathname: '/(tabs)/discover/[id]', params: { id: r.event.id } })}
                   >
                     <View style={s.rowBody}>
-                      <Text style={[t.labelCaps, s.rowTitle]} numberOfLines={1}>
-                        {(r.event?.title ?? tr('saved.unknownEvent')).toUpperCase()}
+                      <Text style={[t.label, s.rowTitle]} numberOfLines={1}>
+                        {(r.event?.title ?? tr('saved.unknownEvent'))}
                       </Text>
-                      <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
+                      <Text style={[t.labelSm, { color: colors.textSecondary }]}>
                         {fmtEventDate(r.event?.startsAt ?? null, tr, r.event?.venueTimezone ?? null)}
                       </Text>
                     </View>
@@ -270,7 +268,7 @@ export default function ProfileScreen() {
                     ) : (
                       <Icon name="chevronRight" size={20} color={colors.textTertiary} />
                     )}
-                  </Pressable>
+                  </Press>
                 ))}
               </View>
             )}
@@ -289,10 +287,10 @@ export default function ProfileScreen() {
                       <Icon name="grid" size={20} color={colors.textSecondary} />
                     </View>
                     <View style={s.rowBody}>
-                      <Text style={[t.labelCaps, s.rowTitle]} numberOfLines={1}>
-                        {e.title.toUpperCase()}
+                      <Text style={[t.label, s.rowTitle]} numberOfLines={1}>
+                        {e.title}
                       </Text>
-                      <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
+                      <Text style={[t.labelSm, { color: colors.textSecondary }]}>
                         {tr('hosting.attendee', { count: e.rsvpCounts.going })}
                       </Text>
                     </View>
@@ -309,8 +307,8 @@ export default function ProfileScreen() {
                   {data!.reviews.recent.map((r) => (
                     <View key={r.id} style={s.reviewRow}>
                       <View style={s.reviewHead}>
-                        <Text style={[t.labelCaps, s.rowTitle]}>{r.reviewerName}</Text>
-                        <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>
+                        <Text style={[t.label, s.rowTitle]}>{r.reviewerName}</Text>
+                        <Text style={[t.labelSm, { color: colors.textTertiary }]}>
                           {new Date(r.createdAt).toLocaleDateString()}
                         </Text>
                       </View>
@@ -350,16 +348,15 @@ const s = StyleSheet.create({
   // Hero
   heroCard: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.lg,
     marginBottom: spacing.xl,
+    borderRadius: radius.card,
   },
   heroTop: { flexDirection: 'row', gap: spacing.lg, alignItems: 'center' },
   avatar: {
     width: 88, height: 88, borderRadius: radius.round,
-    borderWidth: 2, borderColor: colors.borderStrong,
+    borderWidth: 1, borderColor: colors.borderStrong,
     backgroundColor: colors.surface2,
     alignItems: 'center', justifyContent: 'center',
   },
@@ -372,18 +369,18 @@ const s = StyleSheet.create({
   // Host CTA
   hostCta: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing['2xl'],
+    borderRadius: radius.card,
   },
   hostPlus: {
     width: 56, height: 56,
-    borderWidth: 2, borderColor: colors.action,
+    borderWidth: 1, borderColor: colors.action,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: spacing.xs,
+    borderRadius: radius.control,
   },
   hostBody: { color: colors.textSecondary, textAlign: 'center' },
   hostBtn: { alignSelf: 'stretch', marginTop: spacing.md },
@@ -394,11 +391,10 @@ const s = StyleSheet.create({
   teamCard: {
     width: 148,
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     alignItems: 'center',
     gap: spacing.sm,
+    borderRadius: radius.card,
   },
   teamLogo: {
     width: 64, height: 64, borderRadius: radius.round,
@@ -408,15 +404,16 @@ const s = StyleSheet.create({
   teamName: { color: colors.textPrimary, textAlign: 'center' },
   teamAdd: {
     width: 148,
-    borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: colors.borderSubtle,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
     backgroundColor: colors.surfaceSunken,
     padding: spacing.lg,
     minHeight: TAP,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    borderRadius: radius.card,
   },
   sportChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.xl },
 
@@ -427,9 +424,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
+    borderRadius: radius.card,
   },
   rowBody: { flex: 1, gap: spacing.xs },
   rowTitle: { color: colors.textPrimary },
@@ -440,28 +436,28 @@ const s = StyleSheet.create({
     backgroundColor: colors.surface1,
     padding: spacing.lg,
     opacity: 0.85,
+    borderRadius: radius.card,
   },
   historyIcon: {
     width: 44, height: 44,
     backgroundColor: colors.surface3,
+    borderRadius: radius.control,
     alignItems: 'center', justifyContent: 'center',
   },
   emptyCard: {
     backgroundColor: colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.xl,
     alignItems: 'center',
     marginBottom: spacing.xl,
+    borderRadius: radius.card,
   },
 
   // Recent reviews
   reviewRow: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.xs,
+    borderRadius: radius.card,
   },
   reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

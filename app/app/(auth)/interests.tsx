@@ -3,18 +3,16 @@
  * Shown once after sign-up. Skippable. Data saved to /api/favourites/bulk.
  */
 import React, { useState } from 'react';
-import {
-  View, Pressable, StyleSheet, ScrollView, TextInput,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { Text } from '../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { SPORTS, searchTeams, type Sport } from '../../lib/sports-data';
 import { saveFavouritesBulk } from '../../lib/api';
-import { colors, spacing, hardShadow, pressStyle, TAP, type as t } from '../../lib/theme';
+import { colors, radius, spacing, TAP, type as t } from '../../lib/theme';
 import { Icon } from '../../components/icons';
-import { Btn, Chip, inputStyle, inputFocusedStyle } from '../../components/ui';
+import { Btn, Chip, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
 
 export default function InterestsScreen() {
   const router = useRouter();
@@ -84,13 +82,13 @@ export default function InterestsScreen() {
             {tr('interests.subtitle')}
           </Text>
         </View>
-        <Pressable
+        <Press
           onPress={() => router.replace(target as never)}
           style={s.skip}
           accessibilityRole="button"
         >
-          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('interests.skip')}</Text>
-        </Pressable>
+          <Text style={[t.label, { color: colors.textTertiary }]}>{tr('interests.skip')}</Text>
+        </Press>
       </View>
 
       {/* Team search — underline input per the design */}
@@ -109,26 +107,26 @@ export default function InterestsScreen() {
         {/* Team search results */}
         {searchResults.length > 0 ? (
           <View style={s.section}>
-            <Text style={[t.labelCaps, s.sectionLabel]}>{tr('interests.searchResults')}</Text>
+            <Text style={[t.label, s.sectionLabel]}>{tr('interests.searchResults')}</Text>
             <View style={s.chipGrid}>
               {searchResults.map((team) => {
                 const key = teamKey(team.name);
                 const on = selected.has(key);
                 return (
-                  <Pressable
+                  <Press
                     key={team.id}
-                    style={({ pressed }) => [s.resultChip, on && s.resultChipOn, on && pressStyle(pressed, 3)]}
+                    style={[s.resultChip, on && s.resultChipOn]}
                     onPress={() => toggle(key)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
                   >
-                    <Text style={[t.labelCapsSm, { color: on ? colors.action : colors.textPrimary }]}>
+                    <Text style={[t.labelSm, { color: on ? colors.action : colors.textPrimary }]}>
                       {team.shortName}
                     </Text>
-                    <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>
+                    <Text style={[t.labelSm, { color: colors.textTertiary }]}>
                       {team.leagueName}
                     </Text>
-                  </Pressable>
+                  </Press>
                 );
               })}
             </View>
@@ -137,15 +135,15 @@ export default function InterestsScreen() {
           <>
             {/* Sport category selection */}
             <View style={s.section}>
-              <Text style={[t.labelCaps, s.sectionLabel]}>{tr('interests.sports')}</Text>
+              <Text style={[t.label, s.sectionLabel]}>{tr('interests.sports')}</Text>
               <View style={s.sportGrid}>
                 {SPORTS.map((sport) => {
                   const key = sportKey(sport);
                   const on = selected.has(key);
                   return (
                     <View key={sport.id} style={s.sportBlock}>
-                      <Pressable
-                        style={({ pressed }) => [s.sportRow, on && s.sportRowOn, on && pressStyle(pressed, 3)]}
+                      <Press
+                        style={[s.sportRow, on && s.sportRowOn]}
                         accessibilityRole="button"
                         accessibilityState={{ selected: on, expanded: expandedSport === sport.id }}
                         onPress={() => {
@@ -153,7 +151,7 @@ export default function InterestsScreen() {
                           setExpandedSport(expandedSport === sport.id ? null : sport.id);
                         }}
                       >
-                        <Text style={[t.labelCaps, s.sportName, on && { color: colors.action }]}>
+                        <Text style={[t.label, s.sportName, on && { color: colors.action }]}>
                           {sport.name}
                         </Text>
                         <Icon
@@ -161,14 +159,14 @@ export default function InterestsScreen() {
                           size={18}
                           color={on ? colors.action : colors.textTertiary}
                         />
-                      </Pressable>
+                      </Press>
 
                       {/* Inline team chips */}
                       {expandedSport === sport.id && (
                         <View style={s.teamsPanel}>
                           {sport.leagues.map((league) => (
                             <View key={league.id} style={s.leagueBlock}>
-                              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{league.name}</Text>
+                              <Text style={[t.labelSm, { color: colors.textTertiary }]}>{league.name}</Text>
                               <View style={s.chipGrid}>
                                 {league.teams.map((team) => {
                                   const tk = teamKey(team.name);
@@ -229,26 +227,29 @@ const s = StyleSheet.create({
   sportRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     minHeight: TAP, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    borderWidth: 2, borderColor: colors.borderSubtle,
+    borderWidth: 1, borderColor: 'transparent',
     backgroundColor: colors.surface2,
+    borderRadius: radius.control,
   },
-  sportRowOn: { borderColor: colors.action, backgroundColor: colors.actionWash, ...hardShadow(3) },
+  sportRowOn: { borderColor: colors.action, backgroundColor: colors.actionWash },
   sportName: { flex: 1, color: colors.textPrimary },
   teamsPanel: {
-    borderWidth: 1, borderColor: colors.borderSubtle, backgroundColor: colors.surfaceSunken,
+    backgroundColor: colors.surface1,
     padding: spacing.md, gap: spacing.md,
+    borderRadius: radius.card,
   },
   leagueBlock: { gap: spacing.sm },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   resultChip: {
-    borderWidth: 2, borderColor: colors.borderSubtle, backgroundColor: colors.surface2,
+    borderWidth: 1, borderColor: 'transparent', backgroundColor: colors.surface2,
     minHeight: TAP, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 2,
+    borderRadius: radius.control,
   },
-  resultChipOn: { borderColor: colors.action, backgroundColor: colors.actionWash, ...hardShadow(3) },
+  resultChipOn: { borderColor: colors.action, backgroundColor: colors.actionWash },
   saveBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.md,
-    borderTopWidth: 1, borderTopColor: colors.borderSubtle, backgroundColor: colors.canvas,
+    backgroundColor: colors.canvas,
   },
   selCount: { color: colors.textSecondary },
   saveBtn: { flex: 1 },

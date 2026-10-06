@@ -11,13 +11,11 @@
  *    the old address is worse than no pin.
  */
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  View, TextInput, Pressable, StyleSheet, ActivityIndicator,
-} from 'react-native';
+import { View, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
 import { Text } from './Text';
 import { searchAddresses, type GeocodeSuggestion } from '../lib/api';
-import { inputStyle, inputFocusedStyle } from './ui';
-import { colors, spacing, TAP, type as t } from '../lib/theme';
+import { inputStyle, inputFocusedStyle, Press } from './ui';
+import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { Icon } from './icons';
 
 const DEBOUNCE_MS = 350;
@@ -106,7 +104,7 @@ export function AddressAutocompleteInput({
       {showSuggestions && (
         <View style={s.suggestions}>
           {suggestions.map((item, i) => (
-            <Pressable
+            <Press
               key={`${item.lat},${item.lng},${item.label}`}
               style={({ pressed }) => [
                 s.row,
@@ -119,11 +117,11 @@ export function AddressAutocompleteInput({
               <Icon name="pin" size={18} color={colors.textSecondary} />
               <View style={s.rowLabels}>
                 <Text style={[t.bodyMdStrong, s.rowLabel]} numberOfLines={1}>{item.name}</Text>
-                <Text style={[t.labelCapsSm, { color: colors.textTertiary }]} numberOfLines={1}>
+                <Text style={[t.labelSm, { color: colors.textTertiary }]} numberOfLines={1}>
                   {item.label}
                 </Text>
               </View>
-            </Pressable>
+            </Press>
           ))}
         </View>
       )}
@@ -141,10 +139,9 @@ const s = StyleSheet.create({
   spinner: { position: 'absolute', right: spacing.md, top: 0, bottom: 0 },
   suggestions: {
     backgroundColor: colors.surface2,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     marginTop: spacing.xs,
     overflow: 'hidden',
+    borderRadius: radius.card,
   },
   row: {
     flexDirection: 'row',

@@ -8,7 +8,7 @@ import { Text } from '../../components/Text';
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs/types';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '../../components/icons';
-import { colors, hardShadow, type as t } from '../../lib/theme';
+import { colors, radius, elevation, type as t } from '../../lib/theme';
 
 // Tab icons come from the SpotSeek SVG icon set (components/icons), not an
 // icon font (an icon-font link crash once shipped) and not raster PNGs.
@@ -21,7 +21,7 @@ function TabIcon({ focused, icon }: { focused: boolean; icon: TabIconName }) {
 function TabLabel({ label, focused }: { label: string; focused: boolean }) {
   return (
     <Text
-      style={[t.labelCapsSm, { color: focused ? colors.action : colors.textTertiary }]}
+      style={[t.labelSm, { color: focused ? colors.action : colors.textTertiary }]}
       maxFontSizeMultiplier={1.2}
     >
       {label}
@@ -179,10 +179,10 @@ const s = StyleSheet.create({
   // Safe-area inset lives here as pure padding below the content row — it
   // must not be part of the row's own (resolved, content-driven) height, or
   // the pill's top/bottom-anchored fill stretches into that empty space too.
+  // Level-1 rung: lighter than the canvas, with a soft shadow cast upward.
   tabBarOuter: {
-    backgroundColor: colors.surfaceSunken,
-    borderTopColor: colors.borderSubtle,
-    borderTopWidth: 1,
+    ...elevation(1),
+    shadowOffset: { width: 0, height: -2 },
   },
   tabBarRow: {
     flexDirection: 'row',
@@ -190,16 +190,14 @@ const s = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 14,
   },
-  // Active tab indicator: a square block with a 2px action border and the
-  // hard shadow (selected = shadow). Washed fill keeps the label legible.
+  // Active tab indicator: a soft pill with a washed action fill. No border,
+  // no shadow; the translucent fill sits on the opaque bar.
   pill: {
     position: 'absolute',
     top: 6,
     bottom: 6,
     backgroundColor: colors.actionWash,
-    borderWidth: 2,
-    borderColor: colors.action,
-    ...hardShadow(3),
+    borderRadius: radius.control + 4,
   },
   tabButton: {
     flex: 1,

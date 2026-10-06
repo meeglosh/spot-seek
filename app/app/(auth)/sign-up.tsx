@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import {
-  View, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native';
+import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text } from '../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
 import { colors, fonts, spacing, type as t } from '../../lib/theme';
-import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
+import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -114,7 +112,7 @@ export default function SignUpScreen() {
             onPress={handleSignUp}
             disabled={loading}
           />
-          <Pressable
+          <Press
             onPress={() => router.push({ pathname: '/(auth)/sign-in', params: redirect ? { redirect } : {} } as never)}
             hitSlop={8}
           >
@@ -122,7 +120,7 @@ export default function SignUpScreen() {
               {tr('signUp.switchPrompt')}{' '}
               <Text style={s.switchLink}>{tr('signUp.switchLink')}</Text>
             </Text>
-          </Pressable>
+          </Press>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

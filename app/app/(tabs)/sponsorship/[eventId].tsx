@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useStripe } from '@stripe/stripe-react-native';
 import { AppHeader } from '../../../components/AppHeader';
-import { colors, spacing, type as t } from '../../../lib/theme';
+import { colors, radius, spacing, type as t } from '../../../lib/theme';
 import { Btn, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
@@ -279,12 +279,12 @@ export default function SponsorshipDetailsScreen() {
           {/* ── Event facts ──────────────────────────────────────────────── */}
           <View style={s.factsCard}>
             <View style={s.factRow}>
-              <Text style={[t.labelCaps, s.factLabel]}>{tr('bid.facts.date')}</Text>
+              <Text style={[t.label, s.factLabel]}>{tr('bid.facts.date')}</Text>
               <Text style={[t.monoData, s.factValue]}>{fmtEventDate(event.startsAt, tr, event.venueTimezone)}</Text>
             </View>
             <View style={s.factDivider} />
             <View style={s.factRow}>
-              <Text style={[t.labelCaps, s.factLabel]}>{tr('bid.facts.venue')}</Text>
+              <Text style={[t.label, s.factLabel]}>{tr('bid.facts.venue')}</Text>
               <Text style={[t.monoData, s.factValue]} numberOfLines={1}>
                 {event.isPrivateLocation
                   ? tr('bid.facts.privateVenue')
@@ -295,7 +295,7 @@ export default function SponsorshipDetailsScreen() {
               <>
                 <View style={s.factDivider} />
                 <View style={s.factRow}>
-                  <Text style={[t.labelCaps, s.factLabel]}>{tr('bid.facts.capacity')}</Text>
+                  <Text style={[t.label, s.factLabel]}>{tr('bid.facts.capacity')}</Text>
                   <Text style={[t.monoData, s.factValue]}>{event.capacity}</Text>
                 </View>
               </>
@@ -307,7 +307,7 @@ export default function SponsorshipDetailsScreen() {
           <View style={s.dealList}>
             {DEAL_POINTS.map((p) => (
               <View key={p.title} style={s.dealRow}>
-                <Text style={[t.labelCaps, { color: colors.textPrimary }]}>{p.title}</Text>
+                <Text style={[t.label, { color: colors.textPrimary }]}>{p.title}</Text>
                 <Text style={[t.bodySm, { color: colors.textSecondary }]}>{p.body}</Text>
               </View>
             ))}
@@ -320,24 +320,24 @@ export default function SponsorshipDetailsScreen() {
             openBids.map((bid) => (
               <View key={bid.id} style={s.statusCard}>
                 <View style={s.statusHead}>
-                  <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('bid.yourBid')}</Text>
+                  <Text style={[t.label, { color: colors.textSecondary }]}>{tr('bid.yourBid')}</Text>
                   <Badge label={tr(`statusLabels.${bid.status}`)} tone={BID_TONE[bid.status]} />
                 </View>
                 <Text style={[t.headlineLg, { color: colors.textPrimary }]}>
                   {fmtUsd(bid.amountCents)}
                 </Text>
                 <View style={s.statusRow}>
-                  <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.platformFee')}</Text>
+                  <Text style={[t.labelSm, s.factLabel]}>{tr('bid.platformFee')}</Text>
                   <Text style={[t.monoData, { color: colors.textSecondary }]}>{fmtUsd(bid.platformFeeCents)}</Text>
                 </View>
                 <View style={s.statusRow}>
-                  <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.hostReceives')}</Text>
+                  <Text style={[t.labelSm, s.factLabel]}>{tr('bid.hostReceives')}</Text>
                   <Text style={[t.monoData, { color: colors.confirmed }]}>
                     {fmtUsd(bid.amountCents - bid.platformFeeCents)}
                   </Text>
                 </View>
                 <View style={s.statusRow}>
-                  <Text style={[t.labelCapsSm, s.factLabel]}>{tr('bid.placed')}</Text>
+                  <Text style={[t.labelSm, s.factLabel]}>{tr('bid.placed')}</Text>
                   <Text style={[t.monoData, s.factValue]}>
                     {new Date(bid.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}
                   </Text>
@@ -479,10 +479,9 @@ const s = StyleSheet.create({
 
   factsCard: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.md,
+    borderRadius: radius.card,
   },
   factRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
   factLabel: { color: colors.textSecondary },
@@ -492,18 +491,16 @@ const s = StyleSheet.create({
   dealList: { gap: spacing.md },
   dealRow: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.xs,
+    borderRadius: radius.card,
   },
 
   statusCard: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.lg,
+    borderRadius: radius.card,
   },
   statusHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

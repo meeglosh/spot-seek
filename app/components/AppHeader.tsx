@@ -7,7 +7,8 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text } from './Text';
 import { Icon, type IconName } from './icons';
-import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
+import { colors, radius, spacing, TAP, elevation, type as t } from '../lib/theme';
+import { Press } from './ui';
 import { useAuth } from '../lib/auth';
 import { fetchNotifications } from '../lib/api';
 
@@ -22,7 +23,7 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   // Scoped to 'common' (the app's defaultNS) since these keys live under
   // common.json's `shell` subtree — see lib/i18n.ts for the convention.
   // Aliased to `tr` because `t` is already the theme.type import used
-  // throughout this file (t.headlineSm, t.labelCapsSm, …).
+  // throughout this file (t.headlineSm, t.labelSm, …).
   const { t: tr } = useTranslation('common');
   const slide = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
 
@@ -59,7 +60,7 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
       <Animated.View
         style={[
           s.drawer,
-          { paddingTop: insets.top + spacing.xl, transform: [{ translateX: slide }] },
+          { paddingTop: insets.top + spacing.lg, transform: [{ translateX: slide }] },
         ]}
       >
         <View style={s.drawerProfile}>
@@ -70,14 +71,14 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
             <Text style={[t.headlineSm, { color: colors.textPrimary }]} numberOfLines={1}>
               {name}
             </Text>
-            <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{tr('shell.roleSeeker')}</Text>
+            <Text style={[t.labelSm, { color: colors.textTertiary }]}>{tr('shell.roleSeeker')}</Text>
           </View>
         </View>
 
         <View style={s.drawerDivider} />
 
         {items.map((item) => (
-          <Pressable
+          <Press
             key={item.label}
             accessibilityRole="button"
             style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: colors.surface3 }]}
@@ -85,12 +86,12 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
           >
             <Icon name={item.icon} size={22} color={colors.textSecondary} />
             <Text style={[t.bodyMdStrong, { color: colors.textPrimary }]}>{item.label}</Text>
-          </Pressable>
+          </Press>
         ))}
 
         <View style={s.drawerDivider} />
         {auth.status === 'authenticated' ? (
-          <Pressable
+          <Press
             accessibilityRole="button"
             style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: colors.surface3 }]}
             onPress={() => {
@@ -103,9 +104,9 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
             <Text style={[t.bodyMdStrong, { color: colors.danger }]}>
               {tr('shell.menu.signOut')}
             </Text>
-          </Pressable>
+          </Press>
         ) : (
-          <Pressable
+          <Press
             accessibilityRole="button"
             style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: colors.surface3 }]}
             onPress={() => go('/(auth)/sign-in')}
@@ -114,7 +115,7 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
             <Text style={[t.bodyMdStrong, { color: colors.action }]}>
               {tr('shell.menu.signIn')}
             </Text>
-          </Pressable>
+          </Press>
         )}
       </Animated.View>
     </Modal>
@@ -161,30 +162,30 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
   return (
     <View style={[s.header, { paddingTop: insets.top + spacing.sm }]}>
       {back ? (
-        <Pressable
+        <Press
           onPress={onBack ?? (() => router.back())}
           style={s.headerBtn}
           accessibilityRole="button"
           accessibilityLabel={tr('shell.accessibility.back')}
         >
           <Icon name="back" size={24} color={colors.textPrimary} />
-        </Pressable>
+        </Press>
       ) : (
-        <Pressable
+        <Press
           onPress={() => setMenuOpen(true)}
           style={s.headerBtn}
           accessibilityRole="button"
           accessibilityLabel={tr('shell.accessibility.openMenu')}
         >
           <Icon name="menu" size={24} color={colors.action} />
-        </Pressable>
+        </Press>
       )}
 
       <Text style={[t.headlineMd, s.wordmark]}>SPOT SEEK</Text>
 
       <View style={s.headerRight}>
         {auth.status === 'authenticated' && (
-          <Pressable
+          <Press
             onPress={() => router.push('/notifications' as never)}
             style={s.bellBtn}
             accessibilityRole="button"
@@ -193,23 +194,23 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
             <Icon name="bell" size={24} color={colors.textSecondary} />
             {unread > 0 && (
               <View style={s.bellBadge}>
-                <Text style={[t.labelCapsSm, s.bellBadgeText]} numberOfLines={1}>
+                <Text style={[t.labelSm, s.bellBadgeText]} numberOfLines={1}>
                   {unread > 99 ? '99+' : unread}
                 </Text>
               </View>
             )}
-          </Pressable>
+          </Press>
         )}
 
-        <Pressable
+        <Press
           onPress={() => router.push('/(tabs)/profile' as never)}
           hitSlop={4}
           style={s.avatar}
           accessibilityRole="button"
           accessibilityLabel={tr('shell.accessibility.profile')}
         >
-          <Text style={[t.labelCaps, { color: colors.action }]}>{initial}</Text>
-        </Pressable>
+          <Text style={[t.label, { color: colors.action }]}>{initial}</Text>
+        </Press>
       </View>
 
       <DrawerMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
@@ -224,7 +225,7 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
-    backgroundColor: colors.surfaceSunken,
+    backgroundColor: colors.canvas,
   },
   headerBtn: { width: TAP, height: TAP, alignItems: 'flex-start', justifyContent: 'center' },
   // Brand wordmark is not interactive, so it is not `action` cyan.
@@ -239,6 +240,7 @@ const s = StyleSheet.create({
     minWidth: 18,
     height: 18,
     paddingHorizontal: 3,
+    borderRadius: radius.pill,
     backgroundColor: colors.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -249,7 +251,7 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: radius.round,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.action,
     alignItems: 'center',
     justifyContent: 'center',
@@ -263,21 +265,21 @@ const s = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: DRAWER_WIDTH,
-    backgroundColor: colors.surfaceSunken,
-    borderRightWidth: 1,
-    borderRightColor: colors.borderSubtle,
+    ...elevation(3),
+    borderTopRightRadius: radius.sheet,
+    borderBottomRightRadius: radius.sheet,
     paddingHorizontal: spacing.lg,
   },
   drawerProfile: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.lg },
   drawerAvatar: {
     width: 52, height: 52, borderRadius: radius.round,
-    backgroundColor: colors.surface2,
-    borderWidth: 2, borderColor: colors.borderStrong,
+    backgroundColor: colors.surface1,
     alignItems: 'center', justifyContent: 'center',
   },
   drawerDivider: { height: 1, backgroundColor: colors.borderSubtle, marginVertical: spacing.md },
   drawerItem: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.lg,
     minHeight: TAP + 4, paddingHorizontal: spacing.sm,
+    borderRadius: radius.control,
   },
 });
