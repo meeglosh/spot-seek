@@ -80,8 +80,10 @@
     "shownAfterRsvp": "(se muestra tras confirmar asistencia)",
     "getDirections": "Cómo llegar",
     "directions": {
+      "title": "Abrir indicaciones en",
       "appleMaps": "Apple Maps",
       "googleMaps": "Google Maps",
+      "googleMapsWeb": "Google Maps (web)",
       "waze": "Waze"
     },
     "breakdown": "Los detalles",

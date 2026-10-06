@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Image, Linking, Platform,
+  View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Image,
 } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -15,6 +15,7 @@ import {
   type ApiRsvp, type ApiEvent, type ApiDashboardEvent,
 } from '../../../lib/api';
 import { colors, radius, spacing, elevation, type as t } from '../../../lib/theme';
+import { useOpenDirections, hasDirectionsTarget } from '../../../lib/directions';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 
 type TabKey = 'attending' | 'hosting';
@@ -33,23 +34,6 @@ function dateLabel(iso: string, venueTimezone: string | null = null) {
   return formatEventDateTime(iso, venueTimezone).dateStr;
 }
 
-// Maps deep link for GET DIRECTIONS — coords win, address is the fallback.
-function directionsUrl(e: ApiEvent): string | null {
-  if (e.venueLat != null && e.venueLng != null) {
-    const dest = `${e.venueLat},${e.venueLng}`;
-    return Platform.OS === 'ios'
-      ? `http://maps.apple.com/?daddr=${dest}`
-      : `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
-  }
-  if (e.venueAddress) {
-    const dest = encodeURIComponent(e.venueAddress);
-    return Platform.OS === 'ios'
-      ? `http://maps.apple.com/?daddr=${dest}`
-      : `https://www.google.com/maps/dir/?api=1&destination=${dest}`;
-  }
-  return null;
-}
-
 // ─── Cards ───────────────────────────────────────────────────────────────────
 
 function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
@@ -57,7 +41,8 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
   const e = rsvp.event as ApiEvent;
   const tonight = !!e.startsAt && isToday(e.startsAt);
   const waitlisted = rsvp.state === 'waitlisted';
-  const maps = directionsUrl(e);
+  const openDirections = useOpenDirections();
+  const hasMaps = hasDirectionsTarget({ lat: e.venueLat, lng: e.venueLng, address: e.venueAddress });
   // Urgency (waitlisted / tonight) is carried by the live Badge, not a border.
 
   return (
@@ -96,9 +81,9 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
           </View>
         )}
 
-        {maps && (
+        {hasMaps && (
           <View style={s.cardFooter}>
-            <Btn label={tr('myParties.getDirections')} variant="secondary" small onPress={() => Linking.openURL(maps)} />
+            <Btn label={tr('myParties.getDirections')} variant="secondary" small onPress={() => openDirections({ lat: e.venueLat, lng: e.venueLng, name: e.venueName, address: e.venueAddress })} />
           </View>
         )}
       </View>

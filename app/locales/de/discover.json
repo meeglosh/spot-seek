@@ -80,8 +80,10 @@
     "shownAfterRsvp": "(wird nach Zusage angezeigt)",
     "getDirections": "Route anzeigen",
     "directions": {
+      "title": "Route öffnen in",
       "appleMaps": "Apple Maps",
       "googleMaps": "Google Maps",
+      "googleMapsWeb": "Google Maps (Web)",
       "waze": "Waze"
     },
     "breakdown": "Die Details",

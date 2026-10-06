@@ -80,8 +80,10 @@
     "shownAfterRsvp": "(mostrado após confirmação)",
     "getDirections": "Obter Direções",
     "directions": {
+      "title": "Abrir direções em",
       "appleMaps": "Apple Maps",
       "googleMaps": "Google Maps",
+      "googleMapsWeb": "Google Maps (web)",
       "waze": "Waze"
     },
     "breakdown": "Os Detalhes",

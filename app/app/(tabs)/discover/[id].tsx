@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, Image, Linking, Platform, Share, ActionSheetIOS, Alert, TextInput } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, Image, Platform, Share, Alert, TextInput } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import {
   fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, fetchProfile, fetchEventReviews, submitReview,
   API_BASE, type ApiEvent, type ApiRsvp, type ApiProfile, type ApiEventReviews,
 } from '../../../lib/api';
+import { useOpenDirections } from '../../../lib/directions';
 import { eventShareUrl } from '../../../lib/shareLinks';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 import { colors, radius, spacing, TAP, elevation, type as t } from '../../../lib/theme';
@@ -37,7 +38,7 @@ export default function EventDetailScreen() {
   const insets = useSafeAreaInsets();
   const auth = useAuth();
   const { t: tr } = useTranslation('discover');
-  const { t: trCommon } = useTranslation('common');
+  const openDirectionsSheet = useOpenDirections();
   const { t: trSettings } = useTranslation('settings');
 
   const [event, setEvent] = useState<ApiEvent | null>(null);
@@ -276,52 +277,14 @@ export default function EventDetailScreen() {
   const canShowDirections =
     hasDirectionTarget && (!event.isPrivateLocation || isActive);
 
-  async function openDirections() {
+  function openDirections() {
     if (!event) return;
-
-    // Prefer lat/lng (all three apps take it directly); fall back to the
-    // free-text address only when coordinates aren't set.
-    const ll = event.venueLat != null && event.venueLng != null
-      ? `${event.venueLat},${event.venueLng}`
-      : null;
-    const addr = event.venueAddress ? encodeURIComponent(event.venueAddress) : null;
-    const daddr = ll ?? addr;
-    if (!daddr) return;
-
-    // Native app deep links, each with a web fallback that works even when
-    // the app isn't installed (and canOpenURL — which needs the scheme
-    // whitelisted in LSApplicationQueriesSchemes to ever return true on iOS
-    // — can't confirm it either way).
-    const googleApp = `comgooglemaps://?daddr=${daddr}&directionsmode=driving`;
-    const googleWeb = `https://www.google.com/maps/dir/?api=1&destination=${daddr}`;
-    const wazeApp = ll ? `waze://?ll=${ll}&navigate=yes` : `waze://?q=${daddr}&navigate=yes`;
-    const wazeWeb = ll ? `https://waze.com/ul?ll=${ll}&navigate=yes` : `https://waze.com/ul?q=${daddr}&navigate=yes`;
-
-    const [googleAvailable, wazeAvailable] = await Promise.all([
-      Linking.canOpenURL(googleApp).catch(() => false),
-      Linking.canOpenURL(wazeApp).catch(() => false),
-    ]);
-
-    const options = [
-      { label: tr('detail.directions.appleMaps'), url: `http://maps.apple.com/?daddr=${daddr}` },
-      { label: tr('detail.directions.googleMaps'), url: googleAvailable ? googleApp : googleWeb },
-      { label: tr('detail.directions.waze'), url: wazeAvailable ? wazeApp : wazeWeb },
-    ];
-
-    const open = (url: string) => Linking.openURL(url).catch(() => {});
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: [...options.map((o) => o.label), trCommon('cancel')], cancelButtonIndex: options.length },
-        (index) => { if (index < options.length) open(options[index].url); },
-      );
-    } else {
-      Alert.alert(
-        tr('detail.getDirections'),
-        undefined,
-        [...options.map((o) => ({ text: o.label, onPress: () => open(o.url) })), { text: trCommon('cancel'), style: 'cancel' as const }],
-      );
-    }
+    openDirectionsSheet({
+      lat: event.venueLat,
+      lng: event.venueLng,
+      name: event.venueName,
+      address: event.venueAddress,
+    });
   }
 
   function handleShare() {

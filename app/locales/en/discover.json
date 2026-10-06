@@ -81,8 +81,10 @@
     "presentedBy": "Presented By",
     "getDirections": "Get Directions",
     "directions": {
+      "title": "Open directions in",
       "appleMaps": "Apple Maps",
       "googleMaps": "Google Maps",
+      "googleMapsWeb": "Google Maps (web)",
       "waze": "Waze"
     },
     "breakdown": "The Breakdown",

@@ -80,8 +80,10 @@
     "shownAfterRsvp": "(affiché après confirmation)",
     "getDirections": "Obtenir l'itinéraire",
     "directions": {
+      "title": "Ouvrir l'itinéraire avec",
       "appleMaps": "Apple Maps",
       "googleMaps": "Google Maps",
+      "googleMapsWeb": "Google Maps (web)",
       "waze": "Waze"
     },
     "breakdown": "Les détails",
