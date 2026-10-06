@@ -71,6 +71,10 @@ package in `stitch_spot_seek_event_network.zip` (repo root, untracked —
 
 - **Storage**: Cloudflare R2 (`SPOTSEEK_IMAGES`) for event covers.
 - **Realtime**: Durable Objects (`ChatRoom`) for event chat.
+- **Tooling**: wrangler 4.x (upgraded from 3.114; `@cloudflare/vitest-pool-workers` 0.12.x
+  stays on vitest 3.2 — its 0.13+ needs vitest 4). Rate limits (`AUTH_LIMITER`,
+  `RSVP_LIMITER`, `GUEST_LIMITER`) use the first-class `ratelimits` field in
+  `backend/wrangler.jsonc` (no more `unsafe` block).
 
 > ⚠️ Before writing Expo code, read the versioned docs at
 > https://docs.expo.dev/versions/v57.0.0/ (per `app/AGENTS.md`).
@@ -156,7 +160,7 @@ accumulation flakes that had to be fixed). App jest: 5 theme tests.
 ## 5. Dev environment gotchas (hard-won)
 
 - **The dev app talks to `http://localhost:8787`** (`API_BASE` in
-  `app/lib/api.ts` when `__DEV__`) — a local `wrangler dev` must be running
+  `app/lib/api.ts` when `__DEV__`) — a local `wrangler dev` (wrangler 4) must be running
   or every API call fails with "Could not connect to the server" (blank
   sections, silent 401-style fallbacks). Start it:
   `cd backend && set -a && source ../.env && set +a && npx wrangler dev --port 8787`.
@@ -337,8 +341,8 @@ secrets DATABASE_URL + BETTER_AUTH_SECRET set, BETTER_AUTH_URL as wrangler
 var). `API_BASE` release path in `app/lib/api.ts` now points at it; dev
 builds still use localhost:8787. Smoke-tested: `/` and `/api/feed` return
 live data. Wrangler OAuth is authenticated on this machine; the Cloudflare
-Claude Code plugin (`cloudflare@cloudflare`) is installed. Wrangler is v3 (v4
-upgrade is a pending follow-up — see §11).
+Claude Code plugin (`cloudflare@cloudflare`) is installed. Wrangler is v4 (upgraded from v3 on
+`task/wrangler-v4`).
 
 
 ## 11. Next steps
@@ -379,4 +383,5 @@ upgrade is a pending follow-up — see §11).
 - Wallet drawer item is still a stub.
 - Clean/seed the dev DB before wider TestFlight testing (test fixtures like
   "Past Event", curling events, and sponsor fixtures are visible).
-- Wrangler 3 → 4 upgrade (deploy warns on v3).
+- Wrangler 3 → 4 upgrade: DONE on `task/wrangler-v4` (pending owner merge; first
+  real deploy with v4 is an owner step).
