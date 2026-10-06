@@ -19,6 +19,8 @@ import { AppHeader } from '../../../components/AppHeader';
 import * as Haptics from 'expo-haptics';
 import { Badge, SectionTitle, Btn, Chip, FieldLabel, Press, Skeleton, EmptyState, ErrorState, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { useAuthGate } from '../../../components/AuthGate';
+import { YoureIn } from '../../../components/YoureIn';
+import { momentFor } from '../../../lib/youreIn';
 import { consumePendingIntent } from '../../../lib/guestState';
 import { StarRating, StarInput } from '../../../components/Stars';
 
@@ -50,6 +52,9 @@ export default function EventDetailScreen() {
   const [rsvp, setRsvp] = useState<ApiRsvp | null>(null);
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpError, setRsvpError] = useState('');
+  // The "You're in." moment (phase 5), shown when an RSVP lands as going or waitlisted.
+  const [moment, setMoment] = useState<'going' | 'waitlisted' | null>(null);
+  const pushOfferPending = useRef(false);
   const { requireAuth, gateSheet } = useAuthGate();
 
   const [hostProfile, setHostProfile] = useState<ApiProfile | null>(null);
@@ -179,16 +184,11 @@ export default function EventDetailScreen() {
         if (newRsvp.state === 'going') {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         }
-        // First time going: a natural moment to offer reminders (once per
-        // install; the OS prompt only appears if they accept ours).
-        if (newRsvp.state === 'going') {
-          shouldPromptForPush().then((ask) => {
-            if (!ask) return;
-            Alert.alert(trSettings('notifications.pushPromptTitle'), trSettings('notifications.pushPromptBody'), [
-              { text: trSettings('notifications.pushPromptLater'), style: 'cancel' },
-              { text: trSettings('notifications.pushPromptEnable'), onPress: () => { enablePush(); } },
-            ]);
-          });
+        // The signature moment. The push-permission offer waits until it is
+        // dismissed (an Alert over a Modal does not present on iOS).
+        if (momentFor(newRsvp.state, false)) {
+          setMoment(newRsvp.state as 'going' | 'waitlisted');
+          pushOfferPending.current = newRsvp.state === 'going';
         }
       }
     } catch (err) {
@@ -211,6 +211,30 @@ export default function EventDetailScreen() {
     } finally {
       setRsvpLoading(false);
     }
+  }
+
+  // Dismissing the moment settles into the normal "Going" state underneath.
+  // First time going: a natural moment to offer reminders (once per install;
+  // the OS prompt only appears if they accept ours).
+  function closeMoment() {
+    setMoment(null);
+    if (!pushOfferPending.current) return;
+    pushOfferPending.current = false;
+    shouldPromptForPush().then((ask) => {
+      if (!ask) return;
+      Alert.alert(trSettings('notifications.pushPromptTitle'), trSettings('notifications.pushPromptBody'), [
+        { text: trSettings('notifications.pushPromptLater'), style: 'cancel' },
+        { text: trSettings('notifications.pushPromptEnable'), onPress: () => { enablePush(); } },
+      ]);
+    });
+  }
+
+  // Share and the directions chooser are native sheets; they cannot present
+  // over the Modal, so close the moment first and open them once it is gone.
+  function afterMoment(action: () => void) {
+    pushOfferPending.current = false;
+    setMoment(null);
+    setTimeout(action, 350);
   }
 
   // Finish the RSVP the guest started before signing up. Runs once the event
@@ -559,6 +583,19 @@ export default function EventDetailScreen() {
           </Press>
         )}
       </View>
+
+      {moment && (
+        <YoureIn
+          visible
+          state={moment}
+          title={event.title}
+          when={dateStr ? `${dateStr}${timeStr ? ` ${tr('detail.share.at')} ${timeStr}` : ''}` : null}
+          canGetDirections={canShowDirections}
+          onShare={() => afterMoment(handleShare)}
+          onDirections={() => afterMoment(openDirections)}
+          onDone={closeMoment}
+        />
+      )}
 
       {gateSheet}
     </View>

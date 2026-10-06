@@ -125,5 +125,15 @@
     },
     "errorTitle": "No pudimos cargar esta fiesta",
     "notFoundTitle": "Fiesta no encontrada"
+  },
+  "youreIn": {
+    "going": "Estás dentro.",
+    "waitlist": "Estás en la lista de espera.",
+    "waitlistBody": "Te avisamos en cuanto se libere un sitio.",
+    "share": "Compartir",
+    "directions": "Cómo llegar",
+    "done": "Listo",
+    "announceGoing": "Estás dentro",
+    "announceWaitlist": "Estás en la lista de espera"
   }
 }

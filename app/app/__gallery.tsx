@@ -6,6 +6,7 @@ import { Text } from '../components/Text';
 import { AppHeader } from '../components/AppHeader';
 import { EventCard, type EventItem } from '../components/EventCard';
 import { Icon, ICON_NAMES } from '../components/icons';
+import { YoureIn } from '../components/YoureIn';
 import {
   Btn, Chip, Badge, SegmentedControl, SegmentBar, SectionTitle, FieldLabel,
   LiveDot, Press, Toggle, Skeleton, EventCardSkeleton, RowSkeleton, EmptyState, ErrorState, SoonTag,
@@ -86,7 +87,17 @@ const SWATCHES: ReadonlyArray<[string, string]> = [
 
 export default function Gallery() {
   const insets = useSafeAreaInsets();
-  const { y, sheet } = useLocalSearchParams<{ y?: string; sheet?: string }>();
+  const { y, sheet, moment: momentParam } = useLocalSearchParams<{ y?: string; sheet?: string; moment?: string }>();
+  const [moment, setMoment] = useState<'going' | 'waitlisted' | null>(null);
+  // `&moment=going|waitlisted` replays the "You're in." moment every 4s from
+  // 3s after mount, so a burst of simulator screenshots can catch any frame.
+  useEffect(() => {
+    if (!__DEV__ || (momentParam !== 'going' && momentParam !== 'waitlisted')) return;
+    const play = () => { setMoment(null); setTimeout(() => setMoment(momentParam), 150); };
+    const first = setTimeout(play, 3000);
+    const every = setInterval(play, 4000);
+    return () => { clearTimeout(first); clearInterval(every); };
+  }, [momentParam]);
   const router = useRouter();
   const scroller = useRef<ScrollView>(null);
   const [seg, setSeg] = useState<'list' | 'map'>('list');
@@ -374,6 +385,13 @@ export default function Gallery() {
           </View>
         </Block>
 
+        <Block title="You're in (phase 5 moment)">
+          <View style={s.inline}>
+            <Btn label="Play: going" onPress={() => setMoment('going')} />
+            <Btn label="Play: waitlisted" variant="secondary" onPress={() => setMoment('waitlisted')} />
+          </View>
+        </Block>
+
         <Block title="Icons (round caps and joins, 2px)">
           <View style={s.iconGrid}>
             {ICON_NAMES.map((n) => (
@@ -385,6 +403,18 @@ export default function Gallery() {
           </View>
         </Block>
       </ScrollView>
+      {moment && (
+        <YoureIn
+          visible
+          state={moment}
+          title={SAMPLE_EVENT.title}
+          when="Sat 14 Mar at 17:30"
+          canGetDirections
+          onShare={() => setMoment(null)}
+          onDirections={() => setMoment(null)}
+          onDone={() => setMoment(null)}
+        />
+      )}
     </View>
   );
 }

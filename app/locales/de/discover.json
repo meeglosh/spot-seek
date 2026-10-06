@@ -125,5 +125,15 @@
     },
     "errorTitle": "Party nicht geladen",
     "notFoundTitle": "Party nicht gefunden"
+  },
+  "youreIn": {
+    "going": "Du bist dabei.",
+    "waitlist": "Du stehst auf der Warteliste.",
+    "waitlistBody": "Wir sagen dir Bescheid, sobald ein Platz frei wird.",
+    "share": "Teilen",
+    "directions": "Route anzeigen",
+    "done": "Fertig",
+    "announceGoing": "Du bist dabei",
+    "announceWaitlist": "Du stehst auf der Warteliste"
   }
 }

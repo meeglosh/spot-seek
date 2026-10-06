@@ -125,5 +125,15 @@
     },
     "errorTitle": "Impossible de charger cette soirée",
     "notFoundTitle": "Soirée introuvable"
+  },
+  "youreIn": {
+    "going": "T'es dedans.",
+    "waitlist": "T'es sur la liste d'attente.",
+    "waitlistBody": "On te prévient dès qu'une place se libère.",
+    "share": "Partager",
+    "directions": "Itinéraire",
+    "done": "Terminé",
+    "announceGoing": "Tu y es",
+    "announceWaitlist": "Tu es sur la liste d'attente"
   }
 }

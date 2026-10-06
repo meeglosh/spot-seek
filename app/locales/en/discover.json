@@ -125,5 +125,15 @@
     },
     "errorTitle": "Couldn't load this party",
     "notFoundTitle": "Party not found"
+  },
+  "youreIn": {
+    "going": "You're in.",
+    "waitlist": "You're on the waitlist.",
+    "waitlistBody": "We'll let you know the moment a spot opens.",
+    "share": "Share",
+    "directions": "Get directions",
+    "done": "Done",
+    "announceGoing": "You're in",
+    "announceWaitlist": "You're on the waitlist"
   }
 }
