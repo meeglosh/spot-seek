@@ -1,25 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, Pressable, Image, StyleSheet, Modal, Animated, Dimensions, Alert,
+  View, Pressable, StyleSheet, Modal, Animated, Dimensions, Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, fonts, palette, spacing, type as t } from '../lib/theme';
+import { Text } from './Text';
+import { Icon, type IconName } from './icons';
+import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { useAuth } from '../lib/auth';
 import { fetchNotifications } from '../lib/api';
 
-// Rendered from the Material Symbols "notifications" glyph outline via the
-// same local extraction script used for the tab bar icons — see
-// app/(tabs)/_layout.tsx for why plain tintable PNGs are used instead of the
-// vector-icon font.
-/* eslint-disable @typescript-eslint/no-require-imports */
-const BELL_ICON = require('../assets/icons/icon-bell.png');
-/* eslint-enable @typescript-eslint/no-require-imports */
-
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
 
-type MenuItem = { icon: string; label: string; onPress: () => void };
+type MenuItem = { icon: IconName; label: string; onPress: () => void };
 
 function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const insets = useSafeAreaInsets();
@@ -46,14 +40,14 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   };
 
   const items: MenuItem[] = [
-    { icon: '⚡', label: tr('shell.menu.switchToHosting'), onPress: () => go('/(tabs)/parties/dashboard') },
-    { icon: '◎', label: tr('shell.menu.sponsorships'), onPress: () => go('/(tabs)/sponsorship') },
+    { icon: 'live', label: tr('shell.menu.switchToHosting'), onPress: () => go('/(tabs)/parties/dashboard') },
+    { icon: 'sponsorship', label: tr('shell.menu.sponsorships'), onPress: () => go('/(tabs)/sponsorship') },
     {
-      icon: '▣',
+      icon: 'wallet',
       label: tr('shell.menu.wallet'),
       onPress: () => { onClose(); Alert.alert(tr('shell.menu.wallet'), tr('shell.menu.walletComingSoon')); },
     },
-    { icon: '⚙', label: tr('shell.menu.settings'), onPress: () => go('/settings') },
+    { icon: 'settings', label: tr('shell.menu.settings'), onPress: () => go('/settings') },
   ];
 
   const name = auth.status === 'authenticated' ? auth.user.name : tr('shell.guestName');
@@ -61,7 +55,7 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={s.scrim} onPress={onClose} />
+      <Pressable style={s.scrim} onPress={onClose} accessibilityLabel={tr('shell.accessibility.closeMenu')} />
       <Animated.View
         style={[
           s.drawer,
@@ -70,13 +64,13 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
       >
         <View style={s.drawerProfile}>
           <View style={s.drawerAvatar}>
-            <Text style={[t.headlineSm, { color: colors.fillText }]}>{initial}</Text>
+            <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{initial}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[s.drawerName, { fontFamily: fonts.display }]} numberOfLines={1}>
-              {name.toUpperCase()}
+            <Text style={[t.headlineSm, { color: colors.textPrimary }]} numberOfLines={1}>
+              {name}
             </Text>
-            <Text style={[t.labelCapsSm, { color: colors.live }]}>{tr('shell.roleSeeker')}</Text>
+            <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{tr('shell.roleSeeker')}</Text>
           </View>
         </View>
 
@@ -85,36 +79,39 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
         {items.map((item) => (
           <Pressable
             key={item.label}
-            style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: palette.surfaceHigh }]}
+            accessibilityRole="button"
+            style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: colors.surface3 }]}
             onPress={item.onPress}
           >
-            <Text style={s.drawerIcon}>{item.icon}</Text>
-            <Text style={[s.drawerLabel, { fontFamily: fonts.sansMedium }]}>{item.label}</Text>
+            <Icon name={item.icon} size={22} color={colors.textSecondary} />
+            <Text style={[t.bodyMdStrong, { color: colors.textPrimary }]}>{item.label}</Text>
           </Pressable>
         ))}
 
         <View style={s.drawerDivider} />
         {auth.status === 'authenticated' ? (
           <Pressable
-            style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: palette.surfaceHigh }]}
+            accessibilityRole="button"
+            style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: colors.surface3 }]}
             onPress={() => {
               onClose();
               auth.signOut();
               router.replace('/(auth)');
             }}
           >
-            <Text style={[s.drawerIcon, { color: colors.danger }]}>⏻</Text>
-            <Text style={[s.drawerLabel, { fontFamily: fonts.sansMedium, color: colors.danger }]}>
+            <Icon name="signOut" size={22} color={colors.danger} />
+            <Text style={[t.bodyMdStrong, { color: colors.danger }]}>
               {tr('shell.menu.signOut')}
             </Text>
           </Pressable>
         ) : (
           <Pressable
-            style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: palette.surfaceHigh }]}
+            accessibilityRole="button"
+            style={({ pressed }) => [s.drawerItem, pressed && { backgroundColor: colors.surface3 }]}
             onPress={() => go('/(auth)/sign-in')}
           >
-            <Text style={[s.drawerIcon, { color: colors.accent }]}>→</Text>
-            <Text style={[s.drawerLabel, { fontFamily: fonts.sansMedium, color: colors.accent }]}>
+            <Icon name="signIn" size={22} color={colors.action} />
+            <Text style={[t.bodyMdStrong, { color: colors.action }]}>
               {tr('shell.menu.signIn')}
             </Text>
           </Pressable>
@@ -164,35 +161,36 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
   return (
     <View style={[s.header, { paddingTop: insets.top + spacing.sm }]}>
       {back ? (
-        <Pressable onPress={onBack ?? (() => router.back())} hitSlop={12} style={s.headerBtn}>
-          <Text style={s.headerBtnIcon}>←</Text>
+        <Pressable
+          onPress={onBack ?? (() => router.back())}
+          style={s.headerBtn}
+          accessibilityRole="button"
+          accessibilityLabel={tr('shell.accessibility.back')}
+        >
+          <Icon name="back" size={24} color={colors.textPrimary} />
         </Pressable>
       ) : (
         <Pressable
           onPress={() => setMenuOpen(true)}
-          hitSlop={12}
           style={s.headerBtn}
+          accessibilityRole="button"
           accessibilityLabel={tr('shell.accessibility.openMenu')}
         >
-          <Text style={[s.headerBtnIcon, { color: colors.accent }]}>☰</Text>
+          <Icon name="menu" size={24} color={colors.action} />
         </Pressable>
       )}
 
-      <Text style={[s.wordmark, { fontFamily: fonts.display }]}>SPOT SEEK</Text>
+      <Text style={[t.headlineMd, s.wordmark]}>SPOT SEEK</Text>
 
       <View style={s.headerRight}>
         {auth.status === 'authenticated' && (
           <Pressable
             onPress={() => router.push('/notifications' as never)}
-            hitSlop={12}
             style={s.bellBtn}
+            accessibilityRole="button"
             accessibilityLabel={tr('shell.accessibility.notifications')}
           >
-            <Image
-              source={BELL_ICON}
-              style={[s.bellIcon, { tintColor: colors.textSecondary }]}
-              resizeMode="contain"
-            />
+            <Icon name="bell" size={24} color={colors.textSecondary} />
             {unread > 0 && (
               <View style={s.bellBadge}>
                 <Text style={[t.labelCapsSm, s.bellBadgeText]} numberOfLines={1}>
@@ -205,11 +203,12 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
 
         <Pressable
           onPress={() => router.push('/(tabs)/profile' as never)}
-          hitSlop={12}
+          hitSlop={4}
           style={s.avatar}
+          accessibilityRole="button"
           accessibilityLabel={tr('shell.accessibility.profile')}
         >
-          <Text style={[t.labelCaps, { color: colors.accent }]}>{initial}</Text>
+          <Text style={[t.labelCaps, { color: colors.action }]}>{initial}</Text>
         </Pressable>
       </View>
 
@@ -224,70 +223,61 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    backgroundColor: palette.surfaceLowest,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.surfaceSunken,
   },
-  headerBtn: { width: 36, alignItems: 'flex-start' },
-  headerBtnIcon: { fontSize: 22, color: colors.textPrimary },
-  wordmark: {
-    fontSize: 24,
-    color: colors.accent,
-    letterSpacing: 1,
-    textShadowColor: `${colors.accent}66`,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 12,
-  },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  bellBtn: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
-  bellIcon: { width: 22, height: 22 },
+  headerBtn: { width: TAP, height: TAP, alignItems: 'flex-start', justifyContent: 'center' },
+  // Brand wordmark is not interactive, so it is not `action` cyan.
+  wordmark: { color: colors.textPrimary, letterSpacing: 1 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  bellBtn: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
+  // Unread count is neither action nor live: a neutral paper chip.
   bellBadge: {
     position: 'absolute',
-    top: -6,
-    right: -8,
-    minWidth: 16,
-    height: 16,
+    top: 4,
+    right: 0,
+    minWidth: 18,
+    height: 18,
     paddingHorizontal: 3,
-    borderRadius: 8,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.textPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bellBadgeText: { color: palette.black, fontSize: 9, lineHeight: 11 },
+  bellBadgeText: { color: colors.textOnFill },
+  // Avatars are true circles (radius.round).
   avatar: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.round,
     borderWidth: 2,
-    borderColor: colors.accent,
+    borderColor: colors.action,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: palette.surfaceMid,
+    backgroundColor: colors.surface2,
   },
 
-  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.overlay },
+  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.scrim },
   drawer: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
     width: DRAWER_WIDTH,
-    backgroundColor: palette.surfaceLowest,
+    backgroundColor: colors.surfaceSunken,
     borderRightWidth: 1,
-    borderRightColor: palette.surfaceHighest,
+    borderRightColor: colors.borderSubtle,
     paddingHorizontal: spacing.lg,
   },
   drawerProfile: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.lg },
   drawerAvatar: {
-    width: 52, height: 52, borderRadius: 26,
-    backgroundColor: colors.accent,
+    width: 52, height: 52, borderRadius: radius.round,
+    backgroundColor: colors.surface2,
+    borderWidth: 2, borderColor: colors.borderStrong,
     alignItems: 'center', justifyContent: 'center',
   },
-  drawerName: { fontSize: 20, color: colors.accent },
-  drawerDivider: { height: 1, backgroundColor: palette.surfaceHigh, marginVertical: spacing.md },
+  drawerDivider: { height: 1, backgroundColor: colors.borderSubtle, marginVertical: spacing.md },
   drawerItem: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.lg,
-    paddingVertical: spacing.md + 2, paddingHorizontal: spacing.sm,
+    minHeight: TAP + 4, paddingHorizontal: spacing.sm,
   },
-  drawerIcon: { fontSize: 18, color: colors.textSecondary, width: 24, textAlign: 'center' },
-  drawerLabel: { fontSize: 16, color: colors.textPrimary },
 });

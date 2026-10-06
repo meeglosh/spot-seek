@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, palette, spacing, type as t } from '../../lib/theme';
-import { Badge, Btn } from '../../components/ui';
+import { colors, spacing, TAP, type as t } from '../../lib/theme';
+import { Btn } from '../../components/ui';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -22,8 +23,7 @@ export default function WelcomeScreen() {
 
       {/* Hero */}
       <View style={s.hero}>
-        <Badge label={tr('secureConnection')} tone="live" style={s.badge} />
-        <Text style={[t.displayXl, s.heroTitle]}>{tr('welcome.heroTitle')}</Text>
+        <Text style={[t.displayHero, s.heroTitle]}>{tr('welcome.heroTitle')}</Text>
         <Text style={[t.bodyLg, s.tagline]}>
           {tr('welcome.tagline')}
         </Text>
@@ -35,7 +35,6 @@ export default function WelcomeScreen() {
         <Btn label={tr('welcome.signIn')} variant="secondary" onPress={() => router.push('/(auth)/sign-in')} />
         <Pressable
           onPress={() => router.replace('/(tabs)/discover')}
-          hitSlop={8}
           style={s.skipLink}
           accessibilityLabel={tr('skipForNow')}
         >
@@ -47,31 +46,22 @@ export default function WelcomeScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.xl },
-  brand: { color: colors.accent, textAlign: 'center' },
+  container: { flex: 1, backgroundColor: colors.canvas, paddingHorizontal: spacing.xl },
+  brand: { color: colors.action, textAlign: 'center' },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
-  // Badge defaults to alignSelf: 'flex-start' (correct for left-aligned
-  // headers elsewhere) — center it here to match this screen's centered hero.
-  badge: { alignSelf: 'center' },
   heroTitle: {
-    color: palette.white,
+    color: colors.textPrimary,
     textAlign: 'center',
-    fontSize: 56,
-    lineHeight: 70,
-    // Hard orange offset shadow — no blur (comic-book pop per the design).
-    textShadowColor: palette.secondary,
-    textShadowOffset: { width: 4, height: 4 },
-    textShadowRadius: 0,
   },
   tagline: { color: colors.textSecondary, textAlign: 'center', maxWidth: 300 },
   panel: {
-    backgroundColor: palette.surfaceLowest,
+    backgroundColor: colors.surfaceSunken,
     borderTopWidth: 2,
-    borderTopColor: colors.accent,
+    borderTopColor: colors.action,
     borderWidth: 1,
-    borderColor: palette.outlineVariant,
+    borderColor: colors.borderSubtle,
     padding: spacing.xl,
     gap: spacing.md,
   },
-  skipLink: { alignItems: 'center', paddingTop: spacing.sm },
+  skipLink: { alignItems: 'center', justifyContent: 'center', minHeight: TAP },
 });

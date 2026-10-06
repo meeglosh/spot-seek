@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
+  View, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
+import { Text } from '../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
-import { colors, fonts, palette, spacing, type as t } from '../../lib/theme';
-import { Badge, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
+import { colors, fonts, spacing, type as t } from '../../lib/theme';
+import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -52,11 +53,10 @@ export default function SignInScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Back */}
-        <Pressable onPress={() => router.back()} style={s.back} hitSlop={8}>
-          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('back')}</Text>
-        </Pressable>
+        <View style={s.back}>
+          <BackLink label={tr('back')} onPress={() => router.back()} />
+        </View>
 
-        <Badge label={tr('secureConnection')} tone="live" />
         <Text style={[t.headlineLg, s.title]}>{tr('signIn.title')}</Text>
         <Text style={[t.bodyMd, s.subtitle]}>{tr('signIn.subtitle')}</Text>
 
@@ -101,7 +101,7 @@ export default function SignInScreen() {
             <Text style={[t.bodySm, s.errorText]}>{error}</Text>
           )}
           <Pressable onPress={() => router.push('/(auth)/forgot-password' as never)} hitSlop={8} style={s.forgotLink}>
-            <Text style={[t.labelCapsSm, { color: colors.accent }]}>{tr('signIn.forgotLink')}</Text>
+            <Text style={[t.labelCapsSm, { color: colors.action }]}>{tr('signIn.forgotLink')}</Text>
           </Pressable>
         </View>
 
@@ -135,7 +135,7 @@ export default function SignInScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   // flexGrow (not flex) — a ScrollView's content must be free to exceed the
   // viewport height when the keyboard shrinks available space, not forced to
   // fit it. flex:1 here previously collapsed the form to near-zero height
@@ -145,12 +145,9 @@ const s = StyleSheet.create({
   inner: { flexGrow: 1, paddingHorizontal: spacing.xl },
   back: { marginBottom: spacing['2xl'], alignSelf: 'flex-start' },
   title: {
-    color: palette.white,
+    color: colors.textPrimary,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
-    textShadowColor: palette.secondary,
-    textShadowOffset: { width: 3, height: 3 },
-    textShadowRadius: 0,
   },
   subtitle: { color: colors.textSecondary, marginBottom: spacing['3xl'] },
   form: { gap: spacing.xl, marginBottom: spacing['2xl'], flexGrow: 1 },
@@ -159,6 +156,6 @@ const s = StyleSheet.create({
   forgotLink: { alignSelf: 'flex-start' },
   footer: { gap: spacing.lg },
   switchText: { color: colors.textSecondary, textAlign: 'center' },
-  switchLink: { color: colors.accent, fontFamily: fonts.sansBold },
+  switchLink: { color: colors.action, fontFamily: fonts.sansBold },
   skipLink: { alignItems: 'center', paddingTop: spacing.sm },
 });

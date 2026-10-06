@@ -12,11 +12,13 @@
  */
 import React, { useState, useMemo, useRef } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet,
+  View, TextInput, Pressable, StyleSheet,
 } from 'react-native';
+import { Text } from './Text';
 import { SPORTS } from '../lib/sports-data';
 import { inputStyle, inputFocusedStyle } from './ui';
-import { colors, fonts, palette, spacing, type as t } from '../lib/theme';
+import { colors, spacing, TAP, type as t } from '../lib/theme';
+import { Icon, type IconName } from './icons';
 
 // ─── Build the suggestion catalogue once ─────────────────────────────────────
 
@@ -96,17 +98,12 @@ type Props = {
   placeholder?: string;
 };
 
-// Sharp geometric markers per category — no emoji in HEA.
-const CATEGORY_GLYPH: Record<Suggestion['category'], string> = {
-  league: '◆',
-  team: '●',
-  sport: '■',
-};
-
-const CATEGORY_COLOR: Record<Suggestion['category'], string> = {
-  league: colors.accent,
-  team: colors.textSecondary,
-  sport: colors.live,
+// Category markers come from the SpotSeek icon set. Categories carry no
+// colour meaning, so all three are neutral.
+const CATEGORY_ICON: Record<Suggestion['category'], IconName> = {
+  league: 'trophy',
+  team: 'shield',
+  sport: 'ball',
 };
 
 export function BroadcastSubjectInput({
@@ -132,7 +129,7 @@ export function BroadcastSubjectInput({
 
   return (
     <View>
-      {/* Input — underline style, orange on focus */}
+      {/* Input — underline style, action colour on focus */}
       <TextInput
         ref={inputRef}
         style={[inputStyle, focused && inputFocusedStyle]}
@@ -158,15 +155,14 @@ export function BroadcastSubjectInput({
               style={({ pressed }) => [
                 s.row,
                 i < suggestions.length - 1 && s.rowDivider,
-                pressed && { backgroundColor: palette.surfaceHigh },
+                pressed && { backgroundColor: colors.surface3 },
               ]}
               onPress={() => pick(item.label)}
+              accessibilityRole="button"
             >
-              <Text style={[s.rowGlyph, { color: CATEGORY_COLOR[item.category] }]}>
-                {CATEGORY_GLYPH[item.category]}
-              </Text>
+              <Icon name={CATEGORY_ICON[item.category]} size={18} color={colors.textSecondary} />
               <View style={s.rowLabels}>
-                <Text style={s.rowLabel} numberOfLines={1}>
+                <Text style={[t.bodyMdStrong, s.rowLabel]} numberOfLines={1}>
                   {item.label}
                 </Text>
                 <Text style={[t.labelCapsSm, { color: colors.textTertiary }]} numberOfLines={1}>
@@ -180,7 +176,7 @@ export function BroadcastSubjectInput({
 
       {/* Hint shown when focused but no suggestions yet */}
       {focused && value.length > 0 && suggestions.length === 0 && (
-        <Text style={s.customHint}>
+        <Text style={[t.bodySm, s.customHint]}>
           No matches — your custom value will be used as-is.
         </Text>
       )}
@@ -190,31 +186,29 @@ export function BroadcastSubjectInput({
 
 const s = StyleSheet.create({
   suggestions: {
-    backgroundColor: palette.surfaceMid,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.borderSubtle,
     marginTop: spacing.xs,
     overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: TAP,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     gap: spacing.md,
   },
   rowDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
+    borderBottomColor: colors.borderSubtle,
   },
-  rowGlyph: { fontSize: 12, width: 20, textAlign: 'center' },
   rowLabels: { flex: 1, gap: 1 },
-  rowLabel: { fontSize: 15, color: colors.textPrimary, fontFamily: fonts.sansMedium },
+  rowLabel: { color: colors.textPrimary },
   customHint: {
-    fontSize: 12,
     marginTop: spacing.xs,
     paddingHorizontal: spacing.xs,
     color: colors.textTertiary,
-    fontFamily: fonts.sansRegular,
   },
 });

@@ -1,20 +1,20 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, FlatList, Pressable, StyleSheet, RefreshControl,
-  ActivityIndicator, Image, Linking, Platform,
+  View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Image, Linking, Platform,
 } from 'react-native';
+import { Text } from '../../../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
-import { Btn, Badge } from '../../../components/ui';
+import { Btn, Badge, SegmentedControl } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
   API_BASE, fetchMyRsvps, fetchDashboard,
   type ApiRsvp, type ApiEvent, type ApiDashboardEvent,
 } from '../../../lib/api';
-import { colors, palette, spacing, type as t } from '../../../lib/theme';
+import { colors, spacing, type as t } from '../../../lib/theme';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 
 type TabKey = 'attending' | 'hosting';
@@ -58,7 +58,8 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
   const tonight = !!e.startsAt && isToday(e.startsAt);
   const waitlisted = rsvp.state === 'waitlisted';
   const maps = directionsUrl(e);
-  const topColor = waitlisted ? colors.live : tonight ? colors.accent : palette.outlineVariant;
+  // Urgent (waitlisted / tonight) cards earn a live top rule; others stay quiet.
+  const topColor = waitlisted || tonight ? colors.live : colors.borderSubtle;
 
   return (
     <View style={[s.card, { borderTopColor: topColor }]}>
@@ -70,7 +71,7 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
           {waitlisted && <Badge label={tr('myParties.waitlisted')} tone="live" />}
           <Badge
             label={tonight ? tr('myParties.tonight') : tr('myParties.upcoming')}
-            tone={tonight ? 'accent' : 'neutral'}
+            tone={tonight ? 'live' : 'neutral'}
             dot={tonight}
           />
         </View>
@@ -78,7 +79,7 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
         <View style={s.titleRow}>
           <Text style={[t.headlineMd, s.cardTitle]} numberOfLines={3}>{e.title}</Text>
           <View style={s.timeCol}>
-            <Text style={[t.monoData, { color: colors.live }]}>
+            <Text style={[t.monoData, { color: tonight ? colors.live : colors.textPrimary }]}>
               {e.startsAt ? timeLabel(e.startsAt, e.venueTimezone) : tr('myParties.tbd')}
             </Text>
             {e.startsAt && (
@@ -109,12 +110,12 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
   const { t: tr } = useTranslation('parties');
   const { going, waitlisted, interested } = event.rsvpCounts;
   return (
-    <View style={[s.card, { borderTopColor: colors.accentDim }]}>
+    <View style={[s.card, { borderTopColor: colors.borderSubtle }]}>
       <View style={s.cardBody}>
         <View style={s.badgeRow}>
           <Badge
             label={tr(`myParties.statusLabels.${event.status}`, { defaultValue: event.status })}
-            tone={event.status === 'published' ? 'volt' : 'neutral'}
+            tone={event.status === 'published' ? 'confirmed' : 'neutral'}
             dot={event.status === 'published'}
           />
         </View>
@@ -122,7 +123,7 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
         <View style={s.titleRow}>
           <Text style={[t.headlineMd, s.cardTitle]} numberOfLines={3}>{event.title}</Text>
           <View style={s.timeCol}>
-            <Text style={[t.monoData, { color: colors.live }]}>
+            <Text style={[t.monoData, { color: colors.textPrimary }]}>
               {event.startsAt ? timeLabel(event.startsAt, event.venueTimezone) : tr('myParties.tbd')}
             </Text>
             {event.startsAt && (
@@ -133,12 +134,12 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
 
         <View style={s.statsRow}>
           {[
-            { label: tr('myParties.stats.going'), val: going, color: colors.volt },
+            { label: tr('myParties.stats.going'), val: going, color: colors.confirmed },
             { label: tr('myParties.stats.waitlist'), val: waitlisted, color: colors.live },
             { label: tr('myParties.stats.interested'), val: interested, color: colors.textSecondary },
           ].map(({ label, val, color }) => (
             <View key={label} style={s.stat}>
-              <Text style={[t.monoData, s.statVal, { color }]}>{val}</Text>
+              <Text style={[t.dataMd, { color }]}>{val}</Text>
               <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{label}</Text>
             </View>
           ))}
@@ -214,25 +215,16 @@ export default function MyPartiesScreen() {
       <AppHeader />
 
       <View style={s.headerBlock}>
-        <Text style={[t.headlineLg, { color: colors.accent }]}>{tr('myParties.title')}</Text>
+        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('myParties.title')}</Text>
 
-        {/* Brutalist two-button segmented toggle */}
-        <View style={s.tabs}>
-          {(['attending', 'hosting'] as const).map((key) => {
-            const active = tab === key;
-            return (
-              <Pressable
-                key={key}
-                onPress={() => setTab(key)}
-                style={[s.tabBtn, active && { backgroundColor: colors.fill }]}
-              >
-                <Text style={[t.labelCaps, { color: active ? colors.fillText : colors.textPrimary }]}>
-                  {tr(`myParties.tabs.${key}`)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <SegmentedControl
+          value={tab}
+          onChange={setTab}
+          options={[
+            { key: 'attending', label: tr('myParties.tabs.attending') },
+            { key: 'hosting', label: tr('myParties.tabs.hosting') },
+          ]}
+        />
       </View>
 
       {needsAuth ? (
@@ -243,7 +235,7 @@ export default function MyPartiesScreen() {
         />
       ) : showSpinner ? (
         <View style={s.center}>
-          <ActivityIndicator color={colors.accent} />
+          <ActivityIndicator color={colors.action} />
           <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('myParties.loading')}</Text>
         </View>
       ) : error && activeData === null ? (
@@ -258,7 +250,7 @@ export default function MyPartiesScreen() {
           keyExtractor={(r) => r.id}
           contentContainerStyle={[s.list, { paddingBottom: insets.bottom + spacing['2xl'] }]}
           ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />}
           ListEmptyComponent={
             <View style={s.center}>
               <Text style={[t.headlineMd, s.stateTitle]}>{tr('myParties.emptyAttending.title')}</Text>
@@ -286,7 +278,7 @@ export default function MyPartiesScreen() {
             },
           ]}
           ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />}
           ListEmptyComponent={
             <View style={s.center}>
               <Text style={[t.headlineMd, s.stateTitle]}>{tr('myParties.emptyHosting.title')}</Text>
@@ -320,7 +312,7 @@ export default function MyPartiesScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
 
   headerBlock: {
     paddingHorizontal: spacing.lg,
@@ -329,23 +321,12 @@ const s = StyleSheet.create({
     gap: spacing.lg,
   },
 
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: palette.surfaceHigh,
-    borderWidth: 1,
-    borderColor: palette.outlineVariant,
-    padding: spacing.xs,
-  },
-  tabBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-
   list: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, flexGrow: 1 },
 
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface1,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
     borderTopWidth: 2,
     overflow: 'hidden',
   },
@@ -356,32 +337,27 @@ const s = StyleSheet.create({
   cardTitle: { flex: 1, color: colors.textPrimary },
   timeCol: { alignItems: 'flex-end' },
 
-  venueRow: {
-    borderLeftWidth: 2,
-    borderLeftColor: palette.outlineVariant,
-    paddingLeft: spacing.md,
-  },
+  venueRow: {},
 
   statsRow: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: colors.separator,
+    borderTopColor: colors.borderSubtle,
     paddingTop: spacing.md,
   },
   stat: { flex: 1, alignItems: 'center', gap: 2 },
-  statVal: { fontSize: 20, lineHeight: 24 },
 
   cardFooter: {
     borderTopWidth: 1,
-    borderTopColor: colors.separator,
+    borderTopColor: colors.borderSubtle,
     paddingTop: spacing.md,
   },
 
   footerBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: spacing.lg, paddingTop: spacing.md,
-    backgroundColor: colors.bg,
-    borderTopWidth: 1, borderTopColor: colors.separator,
+    backgroundColor: colors.canvas,
+    borderTopWidth: 1, borderTopColor: colors.borderSubtle,
   },
   footerBtn: { width: '100%' },
 

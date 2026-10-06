@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, Pressable, StyleSheet,
-  ActivityIndicator, RefreshControl,
+  View, ScrollView, Pressable, StyleSheet, ActivityIndicator, RefreshControl,
 } from 'react-native';
+import { Text } from '../../../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +13,8 @@ import {
   type ApiProfile, type ApiRsvp, type ApiFavourite, type ApiDashboardEvent, type ApiHostReviews,
 } from '../../../lib/api';
 import { AppHeader } from '../../../components/AppHeader';
-import { colors, palette, spacing, fonts, type as t, hardShadow } from '../../../lib/theme';
+import { colors, spacing, radius, TAP, type as t } from '../../../lib/theme';
+import { Icon } from '../../../components/icons';
 import { Btn, Chip, Badge, SegmentBar, SectionTitle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { StarRating } from '../../../components/Stars';
@@ -138,14 +139,14 @@ export default function ProfileScreen() {
         <Text style={[t.headlineLg, s.pageTitle]}>{tr('title')}</Text>
 
         {loading ? (
-          <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing['2xl'] }} />
+          <ActivityIndicator color={colors.action} style={{ marginVertical: spacing['2xl'] }} />
         ) : (
           <>
             {/* ── Hero card: avatar / name / chips / milestone ─────────────── */}
             <View style={s.heroCard}>
               <View style={s.heroTop}>
                 <View style={s.avatar}>
-                  <Text style={[s.avatarInitial, { fontFamily: fonts.display }]}>
+                  <Text style={[t.displayXl, s.avatarInitial]}>
                     {user.name.trim().charAt(0).toUpperCase() || 'S'}
                   </Text>
                 </View>
@@ -163,13 +164,12 @@ export default function ProfileScreen() {
               </View>
 
               <View style={s.chipRow}>
-                {data?.profile?.isVerified && <Chip label={tr('hero.verifiedHost')} active tone="volt" />}
-                <Chip label={tr('hero.followers', { count: data?.followers ?? 0 })} active />
-                <Chip label={tr('hero.following', { count: data?.following ?? 0 })} active />
+                {data?.profile?.isVerified && <Chip label={tr('hero.verifiedHost')} active tone="confirmed" />}
+                <Chip label={tr('hero.followers', { count: data?.followers ?? 0 })} tone="neutral" />
+                <Chip label={tr('hero.following', { count: data?.following ?? 0 })} tone="neutral" />
                 {data?.profile?.createdAt && (
                   <Chip
                     label={tr('hero.since', { year: new Date(data.profile.createdAt).getFullYear() })}
-                    active
                     tone="neutral"
                   />
                 )}
@@ -177,7 +177,7 @@ export default function ProfileScreen() {
 
               <View style={s.milestone}>
                 <View style={s.milestoneHead}>
-                  <Text style={[t.labelCaps, { color: colors.accent }]}>{tr('hero.partiesAttended')}</Text>
+                  <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('hero.partiesAttended')}</Text>
                   <Text style={[t.monoData, { color: colors.textPrimary }]}>{attended} / {milestone}</Text>
                 </View>
                 <SegmentBar value={attended} max={milestone} segments={10} />
@@ -190,16 +190,15 @@ export default function ProfileScreen() {
             {/* ── HOST A PARTY CTA ─────────────────────────────────────────── */}
             <View style={s.hostCta}>
               <View style={s.hostPlus}>
-                <Text style={[s.hostPlusGlyph, { fontFamily: fonts.display }]}>+</Text>
+                <Icon name="plus" size={28} color={colors.action} />
               </View>
-              <Text style={[t.headlineMd, { color: palette.black }]}>{tr('hostCta.title')}</Text>
+              <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{tr('hostCta.title')}</Text>
               <Text style={[t.bodyMd, s.hostBody]}>{tr('hostCta.body')}</Text>
-              <Pressable
-                style={({ pressed }) => [s.hostBtn, pressed && { opacity: 0.85 }]}
+              <Btn
+                label={tr('hostCta.button')}
+                style={s.hostBtn}
                 onPress={() => router.push('/(tabs)/parties/create' as never)}
-              >
-                <Text style={[t.labelCaps, { color: palette.secondary }]}>{tr('hostCta.button')}</Text>
-              </Pressable>
+              />
             </View>
 
             {/* ── MY TEAMS (FAVORITES) ─────────────────────────────────────── */}
@@ -215,9 +214,9 @@ export default function ProfileScreen() {
                 return (
                   <View key={f.id} style={s.teamCard}>
                     <View style={s.teamLogo}>
-                      <Text style={[t.headlineSm, { color: colors.accent }]}>{monogram(f.value)}</Text>
+                      <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{monogram(f.value)}</Text>
                     </View>
-                    <Text style={[s.teamName, { fontFamily: fonts.labelBold }]} numberOfLines={2}>
+                    <Text style={[t.labelCaps, s.teamName]} numberOfLines={2}>
                       {(resolved?.shortName ?? f.value).toUpperCase()}
                     </Text>
                     <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
@@ -227,23 +226,23 @@ export default function ProfileScreen() {
                 );
               })}
               <Pressable
-                style={({ pressed }) => [s.teamAdd, pressed && { borderColor: colors.accent }]}
+                style={({ pressed }) => [s.teamAdd, pressed && { borderColor: colors.action }]}
                 onPress={() => router.push('/(auth)/interests')}
               >
-                <Text style={[s.teamAddGlyph, { fontFamily: fonts.display }]}>+</Text>
+                <Icon name="plus" size={24} color={colors.textSecondary} />
                 <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('teams.findTeams')}</Text>
               </Pressable>
             </ScrollView>
             {sportFavs.length > 0 && (
               <View style={s.sportChips}>
-                {sportFavs.map((f) => <Chip key={f.id} label={f.value} active tone="accent" />)}
+                {sportFavs.map((f) => <Chip key={f.id} label={f.value} active tone="neutral" />)}
               </View>
             )}
 
             {/* ── SAVED PARTIES ────────────────────────────────────────────── */}
             <SectionTitle>{tr('saved.sectionTitle')}</SectionTitle>
             {upcoming.length === 0 ? (
-              <Pressable style={s.emptyCard} onPress={() => router.push('/(tabs)/discover')}>
+              <Pressable style={s.emptyCard} onPress={() => router.push('/(tabs)/discover')} accessibilityRole="button">
                 <Text style={[t.labelCaps, { color: colors.textSecondary }]}>
                   {tr('saved.empty')}
                 </Text>
@@ -253,12 +252,13 @@ export default function ProfileScreen() {
                 {upcoming.map((r) => (
                   <Pressable
                     key={r.id}
-                    style={({ pressed }) => [s.savedRow, pressed && { backgroundColor: palette.surfaceMid }]}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [s.savedRow, pressed && { backgroundColor: colors.surface2 }]}
                     onPress={() => r.event &&
                       router.push({ pathname: '/(tabs)/discover/[id]', params: { id: r.event.id } })}
                   >
                     <View style={s.rowBody}>
-                      <Text style={[s.rowTitle, { fontFamily: fonts.labelBold }]} numberOfLines={1}>
+                      <Text style={[t.labelCaps, s.rowTitle]} numberOfLines={1}>
                         {(r.event?.title ?? tr('saved.unknownEvent')).toUpperCase()}
                       </Text>
                       <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
@@ -268,7 +268,7 @@ export default function ProfileScreen() {
                     {r.state === 'waitlisted' ? (
                       <Badge label={tr('saved.waitlist')} tone="live" />
                     ) : (
-                      <Text style={s.rowChevron}>›</Text>
+                      <Icon name="chevronRight" size={20} color={colors.textTertiary} />
                     )}
                   </Pressable>
                 ))}
@@ -276,7 +276,7 @@ export default function ProfileScreen() {
             )}
 
             {/* ── HOSTING HISTORY ──────────────────────────────────────────── */}
-            <SectionTitle accent={colors.live}>{tr('hosting.sectionTitle')}</SectionTitle>
+            <SectionTitle>{tr('hosting.sectionTitle')}</SectionTitle>
             {hostedPast.length === 0 ? (
               <Text style={[t.bodySm, { color: colors.textTertiary, marginBottom: spacing.xl }]}>
                 {tr('hosting.empty')}
@@ -286,10 +286,10 @@ export default function ProfileScreen() {
                 {hostedPast.map((e) => (
                   <View key={e.id} style={s.historyRow}>
                     <View style={s.historyIcon}>
-                      <Text style={{ color: colors.textSecondary, fontSize: 18 }}>▦</Text>
+                      <Icon name="grid" size={20} color={colors.textSecondary} />
                     </View>
                     <View style={s.rowBody}>
-                      <Text style={[s.rowTitle, { fontFamily: fonts.labelBold }]} numberOfLines={1}>
+                      <Text style={[t.labelCaps, s.rowTitle]} numberOfLines={1}>
                         {e.title.toUpperCase()}
                       </Text>
                       <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
@@ -309,7 +309,7 @@ export default function ProfileScreen() {
                   {data!.reviews.recent.map((r) => (
                     <View key={r.id} style={s.reviewRow}>
                       <View style={s.reviewHead}>
-                        <Text style={[s.rowTitle, { fontFamily: fonts.labelBold }]}>{r.reviewerName}</Text>
+                        <Text style={[t.labelCaps, s.rowTitle]}>{r.reviewerName}</Text>
                         <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>
                           {new Date(r.createdAt).toLocaleDateString()}
                         </Text>
@@ -340,7 +340,7 @@ export default function ProfileScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.lg },
   unauthBody: { color: colors.textSecondary, textAlign: 'center', maxWidth: 280 },
@@ -349,21 +349,21 @@ const s = StyleSheet.create({
 
   // Hero
   heroCard: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: colors.accentDim,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.lg,
     marginBottom: spacing.xl,
   },
   heroTop: { flexDirection: 'row', gap: spacing.lg, alignItems: 'center' },
   avatar: {
-    width: 88, height: 88,
-    borderWidth: 2, borderColor: colors.accentDim,
-    backgroundColor: palette.surfaceMid,
+    width: 88, height: 88, borderRadius: radius.round,
+    borderWidth: 2, borderColor: colors.borderStrong,
+    backgroundColor: colors.surface2,
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarInitial: { fontSize: 40, color: colors.accent },
+  avatarInitial: { color: colors.textPrimary, paddingTop: 4 },
   heroId: { flex: 1, gap: spacing.xs },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   milestone: { gap: spacing.sm },
@@ -371,62 +371,53 @@ const s = StyleSheet.create({
 
   // Host CTA
   hostCta: {
-    backgroundColor: palette.secondary,
-    borderWidth: 2,
-    borderColor: palette.black,
+    backgroundColor: colors.surface1,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
     padding: spacing.xl,
     alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing['2xl'],
-    ...hardShadow(palette.secondary, 4),
   },
   hostPlus: {
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: palette.black,
+    width: 56, height: 56,
+    borderWidth: 2, borderColor: colors.action,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: spacing.xs,
   },
-  hostPlusGlyph: { fontSize: 30, color: palette.secondary, lineHeight: 34 },
-  hostBody: { color: palette.onSecondary, textAlign: 'center' },
-  hostBtn: {
-    alignSelf: 'stretch',
-    backgroundColor: palette.black,
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    marginTop: spacing.sm,
-  },
+  hostBody: { color: colors.textSecondary, textAlign: 'center' },
+  hostBtn: { alignSelf: 'stretch', marginTop: spacing.md },
 
   // Teams
   teamScroll: { marginHorizontal: -spacing.lg, marginBottom: spacing.md },
   teamRow: { gap: spacing.md, paddingHorizontal: spacing.lg },
   teamCard: {
     width: 148,
-    backgroundColor: colors.card,
-    borderTopWidth: 2,
-    borderTopColor: colors.accentDim,
+    backgroundColor: colors.surface1,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     alignItems: 'center',
     gap: spacing.sm,
   },
   teamLogo: {
-    width: 64, height: 64, borderRadius: 32,
-    backgroundColor: palette.surfaceHighest,
-    borderWidth: 1, borderColor: palette.outlineVariant,
+    width: 64, height: 64, borderRadius: radius.round,
+    backgroundColor: colors.surface3,
     alignItems: 'center', justifyContent: 'center',
   },
-  teamName: { fontSize: 13, letterSpacing: 0.6, color: colors.textPrimary, textAlign: 'center' },
+  teamName: { color: colors.textPrimary, textAlign: 'center' },
   teamAdd: {
     width: 148,
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: palette.surfaceHighest,
-    backgroundColor: palette.surfaceLowest,
+    borderColor: colors.borderSubtle,
+    backgroundColor: colors.surfaceSunken,
     padding: spacing.lg,
+    minHeight: TAP,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
   },
-  teamAddGlyph: { fontSize: 28, color: colors.textSecondary },
   sportChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.xl },
 
   // Lists
@@ -435,31 +426,30 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.card,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.accentDim,
+    backgroundColor: colors.surface1,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
   },
   rowBody: { flex: 1, gap: spacing.xs },
-  rowTitle: { fontSize: 14, letterSpacing: 0.4, color: colors.textPrimary },
-  rowChevron: { fontSize: 20, color: colors.textTertiary },
+  rowTitle: { color: colors.textPrimary },
   historyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
-    backgroundColor: colors.bgSubtle,
+    backgroundColor: colors.surface1,
     padding: spacing.lg,
     opacity: 0.85,
   },
   historyIcon: {
     width: 44, height: 44,
-    backgroundColor: palette.surfaceHighest,
+    backgroundColor: colors.surface3,
     alignItems: 'center', justifyContent: 'center',
   },
   emptyCard: {
-    backgroundColor: palette.surfaceLowest,
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.borderSubtle,
     padding: spacing.xl,
     alignItems: 'center',
     marginBottom: spacing.xl,
@@ -467,9 +457,9 @@ const s = StyleSheet.create({
 
   // Recent reviews
   reviewRow: {
-    backgroundColor: colors.card,
+    backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.xs,
   },

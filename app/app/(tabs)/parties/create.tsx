@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet, ScrollView,
-  Switch, Platform, KeyboardAvoidingView, Image, ActivityIndicator, Share,
-  type TextInputProps,
+  View, TextInput, Pressable, StyleSheet, ScrollView, Switch, Platform, KeyboardAvoidingView, Image, ActivityIndicator, Share, type TextInputProps,
 } from 'react-native';
+import { Text } from '../../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -19,12 +18,13 @@ import { BroadcastSubjectInput } from '../../../components/BroadcastSubjectInput
 import { AddressAutocompleteInput } from '../../../components/AddressAutocompleteInput';
 import { DateTimePicker } from '../../../components/DateTimePicker';
 import MapView, { Marker } from 'react-native-maps';
-import { colors, palette, spacing, type as t } from '../../../lib/theme';
+import { colors, spacing, hardShadow, pressStyle, TAP, type as t } from '../../../lib/theme';
+import { Icon } from '../../../components/icons';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 
 // ─── HEA form primitives ─────────────────────────────────────────────────────
 
-// Underline input with orange focus state.
+// Underline input with action-coloured focus state.
 function Input(props: TextInputProps) {
   const [focused, setFocused] = useState(false);
   return (
@@ -38,11 +38,11 @@ function Input(props: TextInputProps) {
   );
 }
 
-// Numbered section block: cyan top border, Anton section title.
-function FormSection({ num, title, children }: { num: string; title: string; children: React.ReactNode }) {
+// Form section block: 1px-bordered surface, Anton section title.
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={s.section}>
-      <Text style={[t.headlineMd, { color: colors.accent }]}>{num}. {title}</Text>
+      <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{title}</Text>
       {children}
     </View>
   );
@@ -262,7 +262,7 @@ export default function CreateEventScreen() {
   if (initialising) {
     return (
       <View style={[s.container, s.centerFill]}>
-        <ActivityIndicator color={colors.accent} />
+        <ActivityIndicator color={colors.action} />
       </View>
     );
   }
@@ -289,7 +289,7 @@ export default function CreateEventScreen() {
         <AppHeader back onBack={leaveCreate} />
         <View style={s.centerFill}>
           <View style={s.successGlyphBox}>
-            <Text style={s.successGlyph}>✓</Text>
+            <Icon name="check" size={40} color={colors.confirmed} />
           </View>
           <Text style={[t.headlineLg, s.successTitle]}>{copy.title}</Text>
           <Text style={[t.bodyMd, s.successBody]}>{copy.body}</Text>
@@ -380,14 +380,14 @@ export default function CreateEventScreen() {
             <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('create.cover.add')}</Text>
           )}
           <View style={s.coverOverlay}>
-            <Text style={[t.labelCapsSm, { color: colors.accent }]}>
+            <Text style={[t.labelCapsSm, { color: colors.action }]}>
               {coverSource ? tr('create.cover.change') : tr('create.cover.label')}
             </Text>
           </View>
         </Pressable>
 
-        {/* 01 — The basics */}
-        <FormSection num="01" title={tr('create.basics.sectionTitle')}>
+        {/* The basics */}
+        <FormSection title={tr('create.basics.sectionTitle')}>
           <View style={s.field}>
             <FieldLabel>{tr('create.basics.eventName')}</FieldLabel>
             <Input
@@ -433,8 +433,8 @@ export default function CreateEventScreen() {
           </View>
         </FormSection>
 
-        {/* 02 — Time & place */}
-        <FormSection num="02" title={tr('create.timePlace.sectionTitle')}>
+        {/* Time & place */}
+        <FormSection title={tr('create.timePlace.sectionTitle')}>
           <View style={s.field}>
             <FieldLabel>{tr('create.timePlace.starts')}</FieldLabel>
             <DateTimePicker
@@ -465,8 +465,8 @@ export default function CreateEventScreen() {
             <Switch
               value={hasVenue}
               onValueChange={setHasVenue}
-              trackColor={{ false: palette.surfaceHigh, true: colors.accent }}
-              thumbColor={colors.bg}
+              trackColor={{ false: colors.surface3, true: colors.action }}
+              thumbColor={colors.canvas}
             />
           </View>
 
@@ -512,10 +512,10 @@ export default function CreateEventScreen() {
                     toolbarEnabled={false}
                     pointerEvents="none"
                   >
-                    <Marker coordinate={venueCoords} pinColor={palette.secondary} />
+                    <Marker coordinate={venueCoords} pinColor={colors.action} />
                   </MapView>
                   <View style={s.mapPreviewBadge}>
-                    <Text style={[t.labelCapsSm, { color: colors.accent }]}>{tr('create.timePlace.pinnedOnMap')}</Text>
+                    <Text style={[t.labelCapsSm, { color: colors.action }]}>{tr('create.timePlace.pinnedOnMap')}</Text>
                   </View>
                 </View>
               )}
@@ -528,23 +528,27 @@ export default function CreateEventScreen() {
           )}
         </FormSection>
 
-        {/* 03 — Privacy (maps to isPrivateLocation) */}
-        <FormSection num="03" title={tr('create.privacy.sectionTitle')}>
+        {/* Privacy (maps to isPrivateLocation) */}
+        <FormSection title={tr('create.privacy.sectionTitle')}>
           <View style={s.privacyTiles}>
             <Pressable
               onPress={() => setIsPrivate(false)}
-              style={[s.privacyTile, !isPrivate && s.privacyTileActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: !isPrivate }}
+              style={({ pressed }) => [s.privacyTile, !isPrivate && s.privacyTileActive, !isPrivate && pressStyle(pressed, 3)]}
             >
-              <Text style={[t.labelCaps, { color: !isPrivate ? colors.live : colors.textPrimary }]}>
+              <Text style={[t.labelCaps, { color: !isPrivate ? colors.action : colors.textPrimary }]}>
                 {tr('create.privacy.public')}
               </Text>
               <Text style={[t.bodySm, s.privacyTileSub]}>{tr('create.privacy.publicSub')}</Text>
             </Pressable>
             <Pressable
               onPress={() => setIsPrivate(true)}
-              style={[s.privacyTile, isPrivate && s.privacyTileActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isPrivate }}
+              style={({ pressed }) => [s.privacyTile, isPrivate && s.privacyTileActive, isPrivate && pressStyle(pressed, 3)]}
             >
-              <Text style={[t.labelCaps, { color: isPrivate ? colors.live : colors.textPrimary }]}>
+              <Text style={[t.labelCaps, { color: isPrivate ? colors.action : colors.textPrimary }]}>
                 {tr('create.privacy.private')}
               </Text>
               <Text style={[t.bodySm, s.privacyTileSub]}>{tr('create.privacy.privateSub')}</Text>
@@ -611,31 +615,31 @@ export default function CreateEventScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   centerFill: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
 
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg },
   saveBar: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.canvas,
     borderTopWidth: 1,
-    borderTopColor: colors.separator,
+    borderTopColor: colors.borderSubtle,
   },
   headlineBlock: { gap: spacing.xs },
 
   errorBanner: {
     borderWidth: 1,
     borderColor: colors.danger,
-    backgroundColor: `${palette.errorDim}33`,
+    backgroundColor: colors.dangerWash,
     padding: spacing.md,
   },
 
   coverPicker: {
     height: 160,
-    backgroundColor: palette.surfaceMid,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.borderSubtle,
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
@@ -648,13 +652,13 @@ const s = StyleSheet.create({
     right: 0,
     padding: spacing.sm,
     alignItems: 'center',
-    backgroundColor: colors.overlay,
+    backgroundColor: colors.scrim,
   },
 
   section: {
-    backgroundColor: palette.surfaceLow,
-    borderTopWidth: 1,
-    borderTopColor: colors.accentDim,
+    backgroundColor: colors.surface1,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.lg,
   },
@@ -667,14 +671,14 @@ const s = StyleSheet.create({
   toggleLabels: { flex: 1, paddingRight: spacing.lg, gap: 2 },
   venueFields: {
     borderTopWidth: 1,
-    borderTopColor: colors.separator,
+    borderTopColor: colors.borderSubtle,
     paddingTop: spacing.lg,
     gap: spacing.lg,
   },
   mapPreviewWrap: {
     height: 150,
     borderWidth: 1,
-    borderColor: `${colors.accent}80`,
+    borderColor: colors.borderStrong,
     overflow: 'hidden',
   },
   mapPreview: { flex: 1 },
@@ -682,7 +686,7 @@ const s = StyleSheet.create({
     position: 'absolute',
     top: spacing.sm,
     left: spacing.sm,
-    backgroundColor: colors.overlay,
+    backgroundColor: colors.scrim,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
@@ -692,18 +696,14 @@ const s = StyleSheet.create({
     width: 72,
     height: 72,
     borderWidth: 2,
-    borderColor: colors.volt,
+    borderColor: colors.confirmed,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xl,
   },
-  successGlyph: { fontSize: 36, color: colors.volt },
   successTitle: {
-    color: palette.white,
+    color: colors.textPrimary,
     textAlign: 'center',
-    textShadowColor: palette.secondary,
-    textShadowOffset: { width: 3, height: 3 },
-    textShadowRadius: 0,
   },
   successBody: {
     color: colors.textSecondary,
@@ -713,7 +713,7 @@ const s = StyleSheet.create({
   },
   successWarn: {
     borderWidth: 1,
-    borderColor: `${colors.live}80`,
+    borderColor: colors.live,
     padding: spacing.md,
     gap: spacing.xs,
     marginTop: spacing.xl,
@@ -724,22 +724,24 @@ const s = StyleSheet.create({
   privacyTiles: { flexDirection: 'row', gap: spacing.md },
   privacyTile: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: palette.outlineVariant,
+    minHeight: TAP,
+    borderWidth: 2,
+    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     alignItems: 'center',
     gap: spacing.sm,
   },
   privacyTileActive: {
-    borderColor: colors.live,
-    backgroundColor: `${palette.secondary}1a`,
+    borderColor: colors.action,
+    backgroundColor: colors.actionWash,
+    ...hardShadow(3),
   },
   privacyTileSub: { color: colors.textSecondary, textAlign: 'center' },
 
   confirmBox: {
     borderWidth: 1,
     borderColor: colors.danger,
-    backgroundColor: `${palette.errorDim}1a`,
+    backgroundColor: colors.dangerWash,
     padding: spacing.lg,
     gap: spacing.md,
   },

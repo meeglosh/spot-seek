@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
+  View, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
+import { Text } from '../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
-import { colors, fonts, palette, spacing, type as t } from '../../lib/theme';
-import { Badge, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
+import { colors, fonts, spacing, type as t } from '../../lib/theme';
+import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -52,11 +53,10 @@ export default function SignUpScreen() {
         contentContainerStyle={[s.inner, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable onPress={() => router.back()} style={s.back} hitSlop={8}>
-          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>← Back</Text>
-        </Pressable>
+        <View style={s.back}>
+          <BackLink label={tr('back')} onPress={() => router.back()} />
+        </View>
 
-        <Badge label={tr('secureConnection')} tone="live" />
         <Text style={[t.headlineLg, s.title]}>{tr('signUp.title')}</Text>
         <Text style={[t.bodyMd, s.subtitle]}>{tr('signUp.subtitle')}</Text>
 
@@ -130,16 +130,13 @@ export default function SignUpScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   inner: { flexGrow: 1, paddingHorizontal: spacing.xl },
   back: { marginBottom: spacing['2xl'], alignSelf: 'flex-start' },
   title: {
-    color: palette.white,
+    color: colors.textPrimary,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
-    textShadowColor: palette.secondary,
-    textShadowOffset: { width: 3, height: 3 },
-    textShadowRadius: 0,
   },
   subtitle: { color: colors.textSecondary, marginBottom: spacing['3xl'] },
   form: { gap: spacing.xl, marginBottom: spacing['2xl'], flexGrow: 1 },
@@ -147,5 +144,5 @@ const s = StyleSheet.create({
   errorText: { color: colors.danger },
   footer: { gap: spacing.lg },
   switchText: { color: colors.textSecondary, textAlign: 'center' },
-  switchLink: { color: colors.accent, fontFamily: fonts.sansBold },
+  switchLink: { color: colors.action, fontFamily: fonts.sansBold },
 });

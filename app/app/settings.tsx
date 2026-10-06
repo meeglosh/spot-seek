@@ -2,7 +2,8 @@
  * Settings — account, notification prefs, favourites, and about.
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
+import { View, TextInput, Pressable, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
+import { Text } from '../components/Text';
 import Slider from '@react-native-community/slider';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,7 +15,8 @@ import {
   fetchNotificationPrefs, updateNotificationPrefs, deleteAccount, DeleteAccountBlockedError, getStoredLocale,
   fetchConnectStatus, startConnectOnboarding, type ApiNotificationPrefs, type ApiConnectStatus, type DeleteBlocker,
 } from '../lib/api';
-import { colors, palette, spacing, type as t } from '../lib/theme';
+import { colors, spacing, TAP, type as t } from '../lib/theme';
+import { Icon } from '../components/icons';
 import { AppHeader } from '../components/AppHeader';
 import { Btn, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle } from '../components/ui';
 import { GuestGate } from '../components/AuthGate';
@@ -333,8 +335,8 @@ export default function SettingsScreen() {
                   onPress={() => router.push(`/(tabs)/discover/${e.id}` as never)}
                   accessibilityRole="link"
                 >
-                  <Text style={[t.bodyMd, { color: colors.accent, flex: 1 }]} numberOfLines={2}>{e.title}</Text>
-                  <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
+                  <Text style={[t.bodyMd, { color: colors.action, flex: 1 }]} numberOfLines={2}>{e.title}</Text>
+                  <Icon name="chevronRight" size={18} color={colors.textTertiary} />
                 </Pressable>
               ))}
             </View>
@@ -349,10 +351,10 @@ export default function SettingsScreen() {
                   onPress={() => router.push(`/(tabs)/discover/${sp.eventId}` as never)}
                   accessibilityRole="link"
                 >
-                  <Text style={[t.bodyMd, { color: colors.accent, flex: 1 }]} numberOfLines={2}>
+                  <Text style={[t.bodyMd, { color: colors.action, flex: 1 }]} numberOfLines={2}>
                     {sp.eventTitle} · ${(sp.amountCents / 100).toFixed(2)}
                   </Text>
-                  <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
+                  <Icon name="chevronRight" size={18} color={colors.textTertiary} />
                 </Pressable>
               ))}
             </View>
@@ -371,7 +373,7 @@ export default function SettingsScreen() {
               <Switch
                 value={!!prefs?.emailEnabled}
                 onValueChange={handleEmailToggle}
-                trackColor={{ false: palette.surfaceHigh, true: colors.accent }}
+                trackColor={{ false: colors.surface3, true: colors.action }}
               />
             }
           />
@@ -381,14 +383,14 @@ export default function SettingsScreen() {
               <Switch
                 value={!!prefs?.pushEnabled}
                 onValueChange={handlePushToggle}
-                trackColor={{ false: palette.surfaceHigh, true: colors.accent }}
+                trackColor={{ false: colors.surface3, true: colors.action }}
               />
             }
           />
 
           <View style={s.sliderBlock}>
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('notifications.radiusLabel')}</Text>
-            <Text style={[t.labelCaps, { color: colors.accent }]}>
+            <Text style={[t.labelCaps, { color: colors.action }]}>
               {tr('notifications.radiusValue', { miles: radiusMi, km: milesToKm(radiusMi) })}
             </Text>
             <Slider
@@ -398,9 +400,9 @@ export default function SettingsScreen() {
               value={radiusMi}
               onValueChange={setRadiusMi}
               onSlidingComplete={handleRadiusChange}
-              minimumTrackTintColor={colors.accent}
-              maximumTrackTintColor={palette.surfaceHigh}
-              thumbTintColor={colors.accent}
+              minimumTrackTintColor={colors.action}
+              maximumTrackTintColor={colors.surface3}
+              thumbTintColor={colors.action}
             />
           </View>
         </View>
@@ -414,7 +416,7 @@ export default function SettingsScreen() {
           >
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('language.systemDefault')}</Text>
             {!storedLocaleOverride ? (
-              <Text style={[t.labelCapsSm, { color: colors.accent }]}>✓</Text>
+              <Icon name="check" size={18} color={colors.action} />
             ) : null}
           </Pressable>
           {SUPPORTED_LOCALES.map(({ code, nativeName }) => (
@@ -425,7 +427,7 @@ export default function SettingsScreen() {
             >
               <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{nativeName}</Text>
               {storedLocaleOverride === code ? (
-                <Text style={[t.labelCapsSm, { color: colors.accent }]}>✓</Text>
+                <Icon name="check" size={18} color={colors.action} />
               ) : null}
             </Pressable>
           ))}
@@ -441,7 +443,7 @@ export default function SettingsScreen() {
           ) : connectStatus?.payoutsEnabled ? (
             <SettingsRow
               label={tr('payouts.enabledLabel')}
-              right={<Text style={[t.labelCapsSm, { color: colors.volt }]}>✓</Text>}
+              right={<Icon name="check" size={18} color={colors.confirmed} />}
             />
           ) : connectStatus ? (
             <>
@@ -465,7 +467,7 @@ export default function SettingsScreen() {
             onPress={() => router.push('/(auth)/interests' as never)}
           >
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('favourites.manage')}</Text>
-            <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
+            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
           </Pressable>
         </View>
 
@@ -477,21 +479,21 @@ export default function SettingsScreen() {
             onPress={() => Alert.alert(tr('about.terms'), tr('about.comingSoonAlert'))}
           >
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.terms')}</Text>
-            <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
+            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
           </Pressable>
           <Pressable
             style={s.linkRow}
             onPress={() => Alert.alert(tr('about.privacy'), tr('about.comingSoonAlert'))}
           >
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.privacy')}</Text>
-            <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
+            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
           </Pressable>
           <Pressable
             style={s.linkRow}
             onPress={() => Alert.alert(tr('about.contactSupport'), tr('about.comingSoonAlert'))}
           >
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.contactSupport')}</Text>
-            <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>›</Text>
+            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
           </Pressable>
 
           <Text style={[t.labelCapsSm, s.versionText]}>
@@ -504,7 +506,7 @@ export default function SettingsScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, gap: spacing['2xl'] },
   section: { gap: spacing.md },
   row: {
@@ -514,7 +516,7 @@ const s = StyleSheet.create({
   rowLabels: { flex: 1, gap: 2 },
   fullBtn: { alignSelf: 'stretch' },
   confirmBox: {
-    borderWidth: 1, borderColor: colors.danger, backgroundColor: palette.surfaceMid,
+    borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.surface2,
     padding: spacing.lg, gap: spacing.md,
   },
   confirmBtns: { flexDirection: 'row', gap: spacing.md },
@@ -522,8 +524,8 @@ const s = StyleSheet.create({
   sliderBlock: { gap: spacing.xs, paddingVertical: spacing.md },
   linkRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1, borderBottomColor: colors.separator,
+    minHeight: TAP, paddingVertical: spacing.sm,
+    borderBottomWidth: 1, borderBottomColor: colors.borderSubtle,
   },
   versionText: { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.lg },
 });

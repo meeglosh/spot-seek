@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
+  View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
+import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { requestPasswordReset } from '../../lib/api';
-import { colors, palette, spacing, type as t } from '../../lib/theme';
-import { Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
+import { colors, spacing, type as t } from '../../lib/theme';
+import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
 
 // Requests a password-reset email. The server never reveals whether the email
 // has an account, so on success we always show the same neutral confirmation.
@@ -43,9 +44,9 @@ export default function ForgotPasswordScreen() {
         contentContainerStyle={[s.inner, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable onPress={() => router.back()} style={s.back} hitSlop={8}>
-          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('forgot.backToSignIn')}</Text>
-        </Pressable>
+        <View style={s.back}>
+          <BackLink label={tr('forgot.backToSignIn')} onPress={() => router.back()} />
+        </View>
 
         <Text style={[t.headlineLg, s.title]}>{tr('forgot.title')}</Text>
         <Text style={[t.bodyMd, s.subtitle]}>{tr('forgot.subtitle')}</Text>
@@ -86,21 +87,18 @@ export default function ForgotPasswordScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.canvas },
   inner: { flexGrow: 1, paddingHorizontal: spacing.xl },
   back: { marginBottom: spacing['2xl'], alignSelf: 'flex-start' },
   title: {
-    color: palette.white,
+    color: colors.textPrimary,
     marginBottom: spacing.sm,
-    textShadowColor: palette.secondary,
-    textShadowOffset: { width: 3, height: 3 },
-    textShadowRadius: 0,
   },
   subtitle: { color: colors.textSecondary, marginBottom: spacing['3xl'] },
   form: { marginBottom: spacing['2xl'], gap: spacing.sm },
   errorText: { color: colors.danger },
   sentBox: {
-    borderWidth: 1, borderColor: colors.accent, backgroundColor: palette.surfaceMid,
+    borderWidth: 1, borderColor: colors.confirmed, backgroundColor: colors.surface2,
     padding: spacing.lg,
   },
 });
