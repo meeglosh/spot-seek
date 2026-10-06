@@ -26,7 +26,8 @@
     "notifications": "Cria uma conta para receberes avisos",
     "profile": "Cria uma conta para ver o teu perfil",
     "parties": "Cria uma conta para ver as tuas festas",
-    "message": "Demora um minuto e voltas logo para aqui."
+    "message": "Demora um minuto e voltas logo para aqui.",
+    "report": "Cria uma conta para denunciar esta festa"
   },
   "tabs": {
     "discover": "Descobrir",

@@ -17,7 +17,8 @@ import {
 } from '../lib/api';
 import { colors, radius, spacing, type as t } from '../lib/theme';
 import { Press, RowSkeleton, EmptyState, ErrorState } from '../components/ui';
-import { routeFor } from '../lib/notificationRoutes';
+import { routeFor, iconFor } from '../lib/notificationRoutes';
+import { Icon } from '../components/icons';
 import { AppHeader } from '../components/AppHeader';
 import { GuestGate } from '../components/AuthGate';
 
@@ -134,13 +135,19 @@ export default function NotificationsScreen() {
           <View style={s.list}>
             {notifications.map((n) => {
               const path = routeFor(n.type, n.eventId);
+              const icon = iconFor(n.type);
               return (
                 <Press
                   key={n.id}
                   style={[s.row, !n.read && s.rowUnread]}
                   onPress={path ? () => handlePress(n) : undefined}
                 >
-                  <Text style={[t.bodyLg, s.rowTitle]}>{n.title}</Text>
+                  <View style={s.rowHead}>
+                    {icon && (
+                      <Icon name={icon} size={18} color={n.type === 'event_removed' ? colors.danger : colors.textSecondary} />
+                    )}
+                    <Text style={[t.bodyLg, s.rowTitle, { flex: 1 }]}>{n.title}</Text>
+                  </View>
                   <Text style={[t.bodySm, s.rowBody]}>{n.body}</Text>
                   <Text style={[t.labelSm, s.rowTime]}>{timeAgo(n.createdAt, tr)}</Text>
                 </Press>
@@ -171,6 +178,7 @@ const s = StyleSheet.create({
     borderColor: colors.action,
     backgroundColor: colors.surface2,
   },
+  rowHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   rowTitle: { color: colors.textPrimary },
   rowBody: { color: colors.textSecondary },
   rowTime: { color: colors.textTertiary, marginTop: spacing.xs },

@@ -57,6 +57,11 @@
     "privacy": "Politique de confidentialité",
     "contactSupport": "Contacter le support",
     "versionLabel": "Version {{version}}",
-    "versionLabelWithBuild": "Version {{version}} ({{build}})"
+    "versionLabelWithBuild": "Version {{version}} ({{build}})",
+    "guidelines": "Règles de la communauté"
+  },
+  "safety": {
+    "title": "Sécurité",
+    "blocked": "Personnes bloquées"
   }
 }

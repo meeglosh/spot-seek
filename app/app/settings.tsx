@@ -22,6 +22,7 @@ import { Btn, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle, Press, To
 import { GuestGate } from '../components/AuthGate';
 import { SUPPORTED_LOCALES, setAppLocale } from '../lib/i18n';
 import { enablePush, disablePush } from '../lib/push';
+import { openGuidelines } from '../lib/moderation';
 
 // Typed (case-sensitive) to re-confirm account deletion; sent to the server too.
 const DELETE_WORD = 'DELETE';
@@ -463,9 +464,26 @@ export default function SettingsScreen() {
           </Press>
         </View>
 
+        {/* SAFETY */}
+        <View style={s.section}>
+          <SectionTitle>{tr('safety.title')}</SectionTitle>
+          <Press
+            style={s.linkRow}
+            onPress={() => router.push('/blocked' as never)}
+            accessibilityRole="button"
+          >
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('safety.blocked')}</Text>
+            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
+          </Press>
+        </View>
+
         {/* ABOUT */}
         <View style={s.section}>
           <SectionTitle>{tr('about.title')}</SectionTitle>
+          <Press style={s.linkRow} onPress={openGuidelines} accessibilityRole="link">
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.guidelines')}</Text>
+            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
+          </Press>
           <View style={[s.linkRow, s.linkRowSoon]} accessibilityState={{ disabled: true }}>
             <Text style={[t.bodyMd, { color: colors.textTertiary }]}>{tr('about.terms')}</Text>
             <SoonTag label={trCommon('soon')} />

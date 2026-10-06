@@ -1,0 +1,72 @@
+{
+  "cancel": "Cancel",
+  "banner": {
+    "hidden": "Under review. Only you can see this party right now.",
+    "removed": "Taken down for breaking our guidelines",
+    "guidelinesLink": "Read the guidelines"
+  },
+  "menu": {
+    "report": "Report party",
+    "blockNamed": "Block {{name}}",
+    "blockHost": "Block this host",
+    "more": "More options"
+  },
+  "report": {
+    "title": "Report this party",
+    "subtitle": "What's wrong with it?",
+    "close": "Close",
+    "reasons": {
+      "hate": "Hate or discrimination",
+      "harassment": "Harassment or bullying",
+      "sexual": "Sexual content",
+      "violence": "Violence or dangerous acts",
+      "spam": "Spam or a scam",
+      "other": "Something else"
+    },
+    "noteLabel": "Add a note (optional)",
+    "notePlaceholder": "e.g. What did you see?",
+    "send": "Send report",
+    "sending": "Sending…",
+    "thanks": "Thanks. We'll take a look.",
+    "blockHost": "Block this host",
+    "done": "Done",
+    "errors": {
+      "rateLimited": "Too many reports, try again later.",
+      "ownEvent": "You can't report your own party.",
+      "noteTooLong": "That note is too long. Keep it under 500 characters.",
+      "notFound": "This party isn't available any more.",
+      "signIn": "Sign in to send a report.",
+      "generic": "Couldn't send your report. Try again.",
+      "network": "Couldn't send your report. Check your connection and try again."
+    }
+  },
+  "block": {
+    "title": "Block {{name}}?",
+    "message": "You won't see their parties and they can't RSVP to yours.",
+    "confirm": "Block {{name}}",
+    "thisHost": "this host",
+    "errorTitle": "Couldn't block",
+    "error": "Check your connection and try again."
+  },
+  "blocked": {
+    "title": "Blocked people",
+    "subtitle": "They can't RSVP to your parties, and you won't see theirs.",
+    "emptyTitle": "No one blocked",
+    "empty": "People you block show up here, and you can unblock them any time.",
+    "unblock": "Unblock",
+    "unblockError": "Couldn't unblock. Try again.",
+    "errorTitle": "Couldn't load the list",
+    "loadError": "Check your connection and try again."
+  },
+  "form": {
+    "rejectedFallback": "This doesn't meet our community guidelines.",
+    "rejectedHint": "Change the wording and try again, or save it as a draft.",
+    "guidelinesLink": "Read the guidelines",
+    "saveDraft": "Save as draft",
+    "pausedTitle": "Publishing is paused",
+    "pausedBody": "New parties can't go live from your account right now. You can still save drafts. Questions? Write to hello@spotseek.app.",
+    "removedTitle": "This party was taken down",
+    "removedBody": "It broke our community guidelines, so it can't be edited. Questions? Write to hello@spotseek.app.",
+    "removedBack": "Back to your parties"
+  }
+}

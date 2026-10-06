@@ -53,13 +53,14 @@ export function GuestGate({
 // returns to; `rsvpEventId` lets the event screen finish the RSVP afterwards.
 export type GateIntent =
   | { kind: 'rsvp'; label: string; eventId: string }
+  | { kind: 'report'; eventId: string }
   | { kind: 'host' }
   | { kind: 'favourite' }
   | { kind: 'notifications' }
   | { kind: 'profile' }
   | { kind: 'parties' };
 
-const INTENT_REDIRECT: Record<Exclude<GateIntent['kind'], 'rsvp'>, string> = {
+const INTENT_REDIRECT: Record<Exclude<GateIntent['kind'], 'rsvp' | 'report'>, string> = {
   host: '/(tabs)/parties/create',
   favourite: '/(tabs)/discover/filter',
   notifications: '/notifications',
@@ -84,7 +85,9 @@ export function useAuthGate() {
   }, [auth.status]);
 
   const redirect = intent
-    ? intent.kind === 'rsvp' ? `/(tabs)/discover/${intent.eventId}` : INTENT_REDIRECT[intent.kind]
+    ? intent.kind === 'rsvp' || intent.kind === 'report'
+      ? `/(tabs)/discover/${intent.eventId}`
+      : INTENT_REDIRECT[intent.kind]
     : undefined;
   const title = intent
     ? intent.kind === 'rsvp'

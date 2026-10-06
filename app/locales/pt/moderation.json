@@ -1,0 +1,72 @@
+{
+  "cancel": "Cancelar",
+  "banner": {
+    "hidden": "Em análise. De momento, só tu consegues ver esta festa.",
+    "removed": "Removida por violar as nossas regras",
+    "guidelinesLink": "Ler as regras"
+  },
+  "menu": {
+    "report": "Denunciar festa",
+    "blockNamed": "Bloquear {{name}}",
+    "blockHost": "Bloquear este anfitrião",
+    "more": "Mais opções"
+  },
+  "report": {
+    "title": "Denunciar esta festa",
+    "subtitle": "O que se passa com ela?",
+    "close": "Fechar",
+    "reasons": {
+      "hate": "Ódio ou discriminação",
+      "harassment": "Assédio ou bullying",
+      "sexual": "Conteúdo sexual",
+      "violence": "Violência ou atos perigosos",
+      "spam": "Spam ou burla",
+      "other": "Outra coisa"
+    },
+    "noteLabel": "Adiciona uma nota (opcional)",
+    "notePlaceholder": "p. ex. O que viste?",
+    "send": "Enviar denúncia",
+    "sending": "A enviar…",
+    "thanks": "Obrigado. Vamos dar uma vista de olhos.",
+    "blockHost": "Bloquear este anfitrião",
+    "done": "Concluir",
+    "errors": {
+      "rateLimited": "Demasiadas denúncias, tenta mais tarde.",
+      "ownEvent": "Não podes denunciar a tua própria festa.",
+      "noteTooLong": "A nota é demasiado longa. Mantém-na abaixo de 500 carateres.",
+      "notFound": "Esta festa já não está disponível.",
+      "signIn": "Inicia sessão para enviar uma denúncia.",
+      "generic": "Não conseguimos enviar a tua denúncia. Tenta de novo.",
+      "network": "Não conseguimos enviar a tua denúncia. Verifica a ligação e tenta de novo."
+    }
+  },
+  "block": {
+    "title": "Bloquear {{name}}?",
+    "message": "Não vais ver as festas desta pessoa e ela não pode confirmar presença nas tuas.",
+    "confirm": "Bloquear {{name}}",
+    "thisHost": "este anfitrião",
+    "errorTitle": "Não foi possível bloquear",
+    "error": "Verifica a ligação e tenta de novo."
+  },
+  "blocked": {
+    "title": "Pessoas bloqueadas",
+    "subtitle": "Não podem confirmar presença nas tuas festas e tu não vês as delas.",
+    "emptyTitle": "Ninguém bloqueado",
+    "empty": "As pessoas que bloqueares aparecem aqui, e podes desbloqueá-las quando quiseres.",
+    "unblock": "Desbloquear",
+    "unblockError": "Não foi possível desbloquear. Tenta de novo.",
+    "errorTitle": "Não foi possível carregar a lista",
+    "loadError": "Verifica a ligação e tenta de novo."
+  },
+  "form": {
+    "rejectedFallback": "Isto não cumpre as regras da nossa comunidade.",
+    "rejectedHint": "Muda o texto e tenta de novo, ou guarda como rascunho.",
+    "guidelinesLink": "Ler as regras",
+    "saveDraft": "Guardar como rascunho",
+    "pausedTitle": "As publicações estão em pausa",
+    "pausedBody": "De momento, não podes publicar festas novas a partir da tua conta. Ainda podes guardar rascunhos. Dúvidas? Escreve para hello@spotseek.app.",
+    "removedTitle": "Esta festa foi removida",
+    "removedBody": "Violou as regras da nossa comunidade, por isso não pode ser editada. Dúvidas? Escreve para hello@spotseek.app.",
+    "removedBack": "Voltar às tuas festas"
+  }
+}

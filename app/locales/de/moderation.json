@@ -1,0 +1,72 @@
+{
+  "cancel": "Abbrechen",
+  "banner": {
+    "hidden": "In Prüfung. Im Moment kannst nur du diese Party sehen.",
+    "removed": "Wegen Verstoßes gegen unsere Richtlinien entfernt",
+    "guidelinesLink": "Richtlinien lesen"
+  },
+  "menu": {
+    "report": "Party melden",
+    "blockNamed": "{{name}} blockieren",
+    "blockHost": "Diesen Gastgeber blockieren",
+    "more": "Weitere Optionen"
+  },
+  "report": {
+    "title": "Diese Party melden",
+    "subtitle": "Was stimmt nicht?",
+    "close": "Schließen",
+    "reasons": {
+      "hate": "Hass oder Diskriminierung",
+      "harassment": "Belästigung oder Mobbing",
+      "sexual": "Sexuelle Inhalte",
+      "violence": "Gewalt oder gefährliche Handlungen",
+      "spam": "Spam oder Betrug",
+      "other": "Etwas anderes"
+    },
+    "noteLabel": "Notiz hinzufügen (optional)",
+    "notePlaceholder": "z. B. Was ist dir aufgefallen?",
+    "send": "Meldung senden",
+    "sending": "Wird gesendet…",
+    "thanks": "Danke. Wir sehen es uns an.",
+    "blockHost": "Diesen Gastgeber blockieren",
+    "done": "Fertig",
+    "errors": {
+      "rateLimited": "Zu viele Meldungen, versuche es später noch einmal.",
+      "ownEvent": "Du kannst deine eigene Party nicht melden.",
+      "noteTooLong": "Die Notiz ist zu lang. Bleib unter 500 Zeichen.",
+      "notFound": "Diese Party ist nicht mehr verfügbar.",
+      "signIn": "Melde dich an, um eine Meldung zu senden.",
+      "generic": "Deine Meldung konnte nicht gesendet werden. Versuche es noch einmal.",
+      "network": "Deine Meldung konnte nicht gesendet werden. Prüfe deine Verbindung und versuche es noch einmal."
+    }
+  },
+  "block": {
+    "title": "{{name}} blockieren?",
+    "message": "Du siehst die Partys dieser Person nicht mehr, und sie kann nicht zu deinen zusagen.",
+    "confirm": "{{name}} blockieren",
+    "thisHost": "diesen Gastgeber",
+    "errorTitle": "Blockieren nicht möglich",
+    "error": "Prüfe deine Verbindung und versuche es noch einmal."
+  },
+  "blocked": {
+    "title": "Blockierte Personen",
+    "subtitle": "Sie können nicht zu deinen Partys zusagen, und du siehst ihre nicht.",
+    "emptyTitle": "Niemand blockiert",
+    "empty": "Personen, die du blockierst, erscheinen hier. Du kannst sie jederzeit wieder freigeben.",
+    "unblock": "Freigeben",
+    "unblockError": "Freigeben nicht möglich. Versuche es noch einmal.",
+    "errorTitle": "Liste konnte nicht geladen werden",
+    "loadError": "Prüfe deine Verbindung und versuche es noch einmal."
+  },
+  "form": {
+    "rejectedFallback": "Das entspricht nicht unseren Community-Richtlinien.",
+    "rejectedHint": "Ändere den Wortlaut und versuche es noch einmal, oder speichere die Party als Entwurf.",
+    "guidelinesLink": "Richtlinien lesen",
+    "saveDraft": "Als Entwurf speichern",
+    "pausedTitle": "Veröffentlichen ist pausiert",
+    "pausedBody": "Neue Partys können von deinem Konto aus gerade nicht live gehen. Entwürfe kannst du weiter speichern. Fragen? Schreib an hello@spotseek.app.",
+    "removedTitle": "Diese Party wurde entfernt",
+    "removedBody": "Sie hat gegen unsere Community-Richtlinien verstoßen und kann deshalb nicht bearbeitet werden. Fragen? Schreib an hello@spotseek.app.",
+    "removedBack": "Zurück zu deinen Partys"
+  }
+}

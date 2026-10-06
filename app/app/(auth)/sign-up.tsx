@@ -8,6 +8,7 @@ import { useAuth } from '../../lib/auth';
 import { getOnboardingSeen } from '../../lib/api';
 import { colors, fonts, spacing, type as t } from '../../lib/theme';
 import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
+import { openGuidelines } from '../../lib/moderation';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -117,6 +118,11 @@ export default function SignUpScreen() {
             onPress={handleSignUp}
             disabled={loading}
           />
+          <Text style={[t.bodySm, s.agreeText]}>
+            {tr('signUp.agreeBefore')}
+            <Text style={s.agreeLink} onPress={openGuidelines} accessibilityRole="link">{tr('signUp.agreeLink')}</Text>
+            {tr('signUp.agreeAfter')}
+          </Text>
           <Press
             onPress={() => router.push({ pathname: '/(auth)/sign-in', params: { ...(redirect ? { redirect } : {}), ...(context ? { context } : {}) } } as never)}
             hitSlop={8}
@@ -146,6 +152,8 @@ const s = StyleSheet.create({
   field: { gap: 0 },
   errorText: { color: colors.danger },
   footer: { gap: spacing.lg },
+  agreeText: { color: colors.textTertiary, textAlign: 'center' },
+  agreeLink: { color: colors.actionMuted, textDecorationLine: 'underline' },
   switchText: { color: colors.textSecondary, textAlign: 'center' },
   switchLink: { color: colors.action, fontFamily: fonts.sansBold },
 });

@@ -1,0 +1,72 @@
+{
+  "cancel": "Cancelar",
+  "banner": {
+    "hidden": "En revisión. Ahora mismo solo tú puedes ver esta fiesta.",
+    "removed": "Retirada por incumplir nuestras normas",
+    "guidelinesLink": "Leer las normas"
+  },
+  "menu": {
+    "report": "Denunciar fiesta",
+    "blockNamed": "Bloquear a {{name}}",
+    "blockHost": "Bloquear a este anfitrión",
+    "more": "Más opciones"
+  },
+  "report": {
+    "title": "Denunciar esta fiesta",
+    "subtitle": "¿Qué le pasa?",
+    "close": "Cerrar",
+    "reasons": {
+      "hate": "Odio o discriminación",
+      "harassment": "Acoso o intimidación",
+      "sexual": "Contenido sexual",
+      "violence": "Violencia o actos peligrosos",
+      "spam": "Spam o estafa",
+      "other": "Otra cosa"
+    },
+    "noteLabel": "Añade una nota (opcional)",
+    "notePlaceholder": "p. ej. ¿Qué viste?",
+    "send": "Enviar denuncia",
+    "sending": "Enviando…",
+    "thanks": "Gracias. Le echaremos un vistazo.",
+    "blockHost": "Bloquear a este anfitrión",
+    "done": "Listo",
+    "errors": {
+      "rateLimited": "Demasiadas denuncias, inténtalo más tarde.",
+      "ownEvent": "No puedes denunciar tu propia fiesta.",
+      "noteTooLong": "La nota es demasiado larga. Que no pase de 500 caracteres.",
+      "notFound": "Esta fiesta ya no está disponible.",
+      "signIn": "Inicia sesión para enviar una denuncia.",
+      "generic": "No pudimos enviar tu denuncia. Inténtalo de nuevo.",
+      "network": "No pudimos enviar tu denuncia. Revisa tu conexión e inténtalo de nuevo."
+    }
+  },
+  "block": {
+    "title": "¿Bloquear a {{name}}?",
+    "message": "No verás sus fiestas y no podrá apuntarse a las tuyas.",
+    "confirm": "Bloquear a {{name}}",
+    "thisHost": "este anfitrión",
+    "errorTitle": "No se pudo bloquear",
+    "error": "Revisa tu conexión e inténtalo de nuevo."
+  },
+  "blocked": {
+    "title": "Personas bloqueadas",
+    "subtitle": "No pueden apuntarse a tus fiestas y tú no verás las suyas.",
+    "emptyTitle": "Nadie bloqueado",
+    "empty": "Las personas que bloquees aparecerán aquí, y puedes desbloquearlas cuando quieras.",
+    "unblock": "Desbloquear",
+    "unblockError": "No se pudo desbloquear. Inténtalo de nuevo.",
+    "errorTitle": "No se pudo cargar la lista",
+    "loadError": "Revisa tu conexión e inténtalo de nuevo."
+  },
+  "form": {
+    "rejectedFallback": "Esto no cumple las normas de nuestra comunidad.",
+    "rejectedHint": "Cambia el texto e inténtalo de nuevo, o guárdala como borrador.",
+    "guidelinesLink": "Leer las normas",
+    "saveDraft": "Guardar como borrador",
+    "pausedTitle": "Las publicaciones están en pausa",
+    "pausedBody": "Ahora mismo no puedes publicar fiestas nuevas desde tu cuenta. Aún puedes guardar borradores. ¿Dudas? Escribe a hello@spotseek.app.",
+    "removedTitle": "Esta fiesta se retiró",
+    "removedBody": "Incumplía las normas de nuestra comunidad, así que no se puede editar. ¿Dudas? Escribe a hello@spotseek.app.",
+    "removedBack": "Volver a tus fiestas"
+  }
+}

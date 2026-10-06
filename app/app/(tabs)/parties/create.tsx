@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, TextInput, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, Image, Share, type TextInputProps } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -6,11 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
-import { createEvent, fetchEvent, type ApiEvent } from '../../../lib/api';
+import { createEvent, updateEvent, fetchEvent, type ApiEvent } from '../../../lib/api';
+import { publishProblem, openGuidelines, type PublishProblem } from '../../../lib/moderation';
 import { eventShareUrl } from '../../../lib/shareLinks';
-import { API_BASE, apiFetch, uploadEventCover, deleteEvent } from '../../../lib/api';
+import { API_BASE, uploadEventCover, deleteEvent } from '../../../lib/api';
 import { AppHeader } from '../../../components/AppHeader';
-import { Btn, FieldLabel, inputStyle, inputFocusedStyle, Press, Toggle, Skeleton } from '../../../components/ui';
+import { Btn, FieldLabel, inputStyle, inputFocusedStyle, Press, Toggle, Skeleton, EmptyState } from '../../../components/ui';
 import { GuestGate, goToAuth } from '../../../components/AuthGate';
 import { BroadcastSubjectInput } from '../../../components/BroadcastSubjectInput';
 import { AddressAutocompleteInput } from '../../../components/AddressAutocompleteInput';
@@ -59,6 +60,7 @@ export default function CreateEventScreen() {
   const isEdit = !!eventId;
   const auth = useAuth();
   const { t: tr } = useTranslation('parties');
+  const { t: trMod } = useTranslation('moderation');
 
   // Form state
   const [title, setTitle] = useState('');
@@ -82,6 +84,10 @@ export default function CreateEventScreen() {
   const [loading, setLoading] = useState(false);
   const [initialising, setInitialising] = useState(isEdit);
   const [error, setError] = useState('');
+  // Moderation outcomes from the server: screened content, paused publishing,
+  // or a party that was taken down (edit is blocked).
+  const [problem, setProblem] = useState<PublishProblem | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   // Terminal state: replaces the form with a success screen once the
   // publish/draft/delete round-trip has actually completed.
@@ -109,6 +115,7 @@ export default function CreateEventScreen() {
         }
         setIsPrivate(e.isPrivateLocation);
         setExistingCoverUrl(e.coverImageUrl);
+        if (e.moderationStatus === 'removed') setProblem({ kind: 'event_removed' });
       })
       .catch(() => setError(tr('create.loadError')))
       .finally(() => setInitialising(false));
@@ -177,6 +184,7 @@ export default function CreateEventScreen() {
 
     setLoading(true);
     setError('');
+    setProblem(null);
     try {
       const payload = {
         title: title.trim(),
@@ -195,13 +203,7 @@ export default function CreateEventScreen() {
 
       let savedEvent: ApiEvent;
       if (isEdit && eventId) {
-        const res = await apiFetch(`/api/events/${eventId}`, {
-          method: 'PATCH',
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
-        const { event } = await res.json() as { event: ApiEvent };
-        savedEvent = event;
+        savedEvent = await updateEvent(eventId, payload);
       } else {
         savedEvent = await createEvent(payload);
       }
@@ -222,8 +224,14 @@ export default function CreateEventScreen() {
       setOutcome({ kind: status, savedEventId: savedEvent.id, coverError });
     } catch (err) {
       const msg = (err as Error).message;
+      const found = publishProblem(err);
       if (msg === 'unauthorized') goToAuth(router, 'sign-in', '/(tabs)/parties/create');
-      else setError(msg || tr('create.saveError'));
+      else if (found) {
+        // Keep every field as typed. The panel sits by the title and
+        // description, so bring it into view.
+        setProblem(found);
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+      } else setError(msg || tr('create.saveError'));
     } finally {
       setLoading(false);
     }
@@ -266,6 +274,27 @@ export default function CreateEventScreen() {
           <Skeleton height={52} />
           <Skeleton height={110} />
           <Skeleton height={52} />
+        </View>
+      </View>
+    );
+  }
+
+  // ── Taken down: editing is blocked ────────────────────────────────────────
+  if (problem?.kind === 'event_removed') {
+    return (
+      <View style={s.container}>
+        <AppHeader back onBack={leaveCreate} />
+        <View style={s.centerFill}>
+          <EmptyState
+            icon="block"
+            title={trMod('form.removedTitle')}
+            body={trMod('form.removedBody')}
+            actionLabel={trMod('form.removedBack')}
+            onAction={leaveCreate}
+          />
+          <Press onPress={openGuidelines} accessibilityRole="link" style={s.guidelinesLinkBtn}>
+            <Text style={[t.label, { color: colors.actionMuted }]}>{trMod('form.guidelinesLink')}</Text>
+          </Press>
         </View>
       </View>
     );
@@ -357,6 +386,7 @@ export default function CreateEventScreen() {
       <AppHeader back onBack={leaveCreate} />
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 96 }]}
         keyboardShouldPersistTaps="handled"
       >
@@ -390,8 +420,29 @@ export default function CreateEventScreen() {
           </View>
         </Press>
 
+        {problem?.kind === 'publishing_paused' && (
+          <View style={s.problemPanel} accessibilityRole="alert">
+            <Text style={[t.bodyLg, { color: colors.textPrimary }]}>{trMod('form.pausedTitle')}</Text>
+            <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{trMod('form.pausedBody')}</Text>
+          </View>
+        )}
+
         {/* The basics */}
         <FormSection title={tr('create.basics.sectionTitle')}>
+          {problem?.kind === 'content_rejected' && (
+            <View style={s.problemPanel} accessibilityRole="alert">
+              <Text style={[t.bodyLg, { color: colors.textPrimary }]}>
+                {problem.message ?? trMod('form.rejectedFallback')}
+              </Text>
+              <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{trMod('form.rejectedHint')}</Text>
+              <View style={s.problemActions}>
+                <Press onPress={openGuidelines} accessibilityRole="link" style={s.guidelinesLinkBtn}>
+                  <Text style={[t.label, { color: colors.actionMuted }]}>{trMod('form.guidelinesLink')}</Text>
+                </Press>
+                <Btn label={trMod('form.saveDraft')} variant="secondary" small onPress={() => handleSave('draft')} disabled={!canSave} />
+              </View>
+            </View>
+          )}
           <View style={s.field}>
             <FieldLabel>{tr('create.basics.eventName')}</FieldLabel>
             <Input
@@ -626,6 +677,11 @@ const s = StyleSheet.create({
   },
   headlineBlock: { gap: spacing.xs },
 
+  problemPanel: {
+    backgroundColor: colors.surface2, borderRadius: radius.card, padding: spacing.lg, gap: spacing.sm,
+  },
+  problemActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  guidelinesLinkBtn: { minHeight: TAP, justifyContent: 'center' },
   errorBanner: {
     borderWidth: 1,
     borderColor: colors.danger,

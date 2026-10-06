@@ -128,7 +128,29 @@ export async function apiFetch(path: string, opts: FetchOptions = {}): Promise<R
   return fetch(`${API_BASE}${path}`, { ...rest, headers });
 }
 
+// An API failure that keeps the HTTP status and the backend's machine code
+// (`{ error: 'content_rejected' | 'publishing_paused' | ... }`) so screens can
+// map them to copy. `message` is the backend's `message` when it sent one,
+// else the code, so existing `err.message` handling keeps working.
+export class ApiError extends Error {
+  status: number;
+  code: string;
+  constructor(status: number, code: string, message?: string) {
+    super(message || code);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
+async function apiErrorFrom(res: Response, fallback: string): Promise<ApiError> {
+  const body = await res.json().catch(() => ({})) as { error?: string; message?: string };
+  return new ApiError(res.status, body.error ?? fallback, body.message ?? body.error ?? fallback);
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+export type ModerationStatus = 'ok' | 'flagged' | 'hidden' | 'removed';
 
 export type ApiEvent = {
   id: string;
@@ -150,6 +172,9 @@ export type ApiEvent = {
   isPrivateLocation: boolean;
   createdAt: string;
   updatedAt: string;
+  // Moderation state. 'hidden' = under review (only the host can see it);
+  // 'removed' = taken down. Optional-with-fallback for older cached payloads.
+  moderationStatus?: ModerationStatus;
   // Present on GET /api/events/:id (active sponsors, biggest bid first; []
   // when none). Optional-with-fallback: feed items and older cached payloads
   // may not carry it.
@@ -237,6 +262,9 @@ export async function rsvpToEvent(eventId: string): Promise<ApiRsvp> {
   });
   if (res.status === 409) throw new Error('already_rsvpd');
   if (res.status === 401) throw new Error('unauthorized');
+  // 403 = the host blocked this person. The code is deliberately neutral so
+  // the screen can say "You can't RSVP to this party" without revealing why.
+  if (res.status === 403) throw new ApiError(403, 'rsvp_forbidden');
   if (!res.ok) throw new Error(`RSVP failed: ${res.status}`);
   const { rsvp } = await res.json() as { rsvp: ApiRsvp };
   return rsvp;
@@ -259,12 +287,66 @@ export async function createEvent(input: CreateEventInput): Promise<ApiEvent> {
     body: JSON.stringify(input),
   });
   if (res.status === 401) throw new Error('unauthorized');
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as { error?: string };
-    throw new Error(body.error ?? `Create failed: ${res.status}`);
-  }
+  if (!res.ok) throw await apiErrorFrom(res, `Create failed: ${res.status}`);
   const { event } = await res.json() as { event: ApiEvent };
   return event;
+}
+
+export async function updateEvent(id: string, input: CreateEventInput): Promise<ApiEvent> {
+  const res = await apiFetch(`/api/events/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) throw await apiErrorFrom(res, `Save failed: ${res.status}`);
+  const { event } = await res.json() as { event: ApiEvent };
+  return event;
+}
+
+// ─── Moderation: reports and blocks ───────────────────────────────────────────
+
+export const REPORT_NOTE_MAX = 500;
+
+export type ReportReason = 'hate' | 'harassment' | 'sexual' | 'violence' | 'spam' | 'other';
+
+/** Resolves for 201 and for the duplicate 200; throws ApiError otherwise. */
+export async function reportEvent(
+  eventId: string,
+  reason: ReportReason,
+  note?: string,
+): Promise<{ duplicate: boolean }> {
+  const trimmed = note?.trim();
+  const res = await apiFetch(`/api/events/${eventId}/report`, {
+    method: 'POST',
+    body: JSON.stringify(trimmed ? { reason, note: trimmed } : { reason }),
+  });
+  if (!res.ok) throw await apiErrorFrom(res, `Report failed: ${res.status}`);
+  const body = await res.json().catch(() => ({})) as { duplicate?: boolean };
+  return { duplicate: body.duplicate === true };
+}
+
+export type ApiBlockedUser = {
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  blockedAt: string;
+};
+
+export async function blockUser(userId: string): Promise<void> {
+  const res = await apiFetch(`/api/users/${userId}/block`, { method: 'POST' });
+  if (!res.ok) throw await apiErrorFrom(res, `Block failed: ${res.status}`);
+}
+
+export async function unblockUser(userId: string): Promise<void> {
+  const res = await apiFetch(`/api/users/${userId}/block`, { method: 'DELETE' });
+  if (!res.ok) throw await apiErrorFrom(res, `Unblock failed: ${res.status}`);
+}
+
+export async function fetchBlockedUsers(): Promise<ApiBlockedUser[]> {
+  const res = await apiFetch('/api/users/blocked');
+  if (!res.ok) throw await apiErrorFrom(res, `Blocked list fetch failed: ${res.status}`);
+  const { blocks } = await res.json() as { blocks: ApiBlockedUser[] };
+  return blocks;
 }
 
 export async function fetchDashboard(): Promise<ApiDashboardEvent[]> {
@@ -745,7 +827,9 @@ export type ApiNotificationType =
   | 'payment_received'
   | 'payout_sent'
   | 'payment_refunded'
-  | 'waitlist_promoted';
+  | 'waitlist_promoted'
+  | 'event_under_review'
+  | 'event_removed';
 
 export type ApiNotification = {
   id: string;

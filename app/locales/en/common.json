@@ -26,7 +26,8 @@
     "notifications": "Sign up to get notified",
     "profile": "Sign up to see your profile",
     "parties": "Sign up to see your parties",
-    "message": "It takes a minute, and you land right back here."
+    "message": "It takes a minute, and you land right back here.",
+    "report": "Sign up to report this party"
   },
   "tabs": {
     "discover": "Discover",

@@ -61,6 +61,15 @@ export const ICON_PATHS = {
   trophy: [{ d: 'M6 3h12v6l-3 4H9L6 9z M12 13v5 M8 21h8 M6 5H3v3l3 2 M18 5h3v3l-3 2' }],
   shield: [{ d: 'M12 3l8 3v7l-8 8-8-8V6z' }],
   ball:   [{ d: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 8l4 3-1.5 5h-5L8 11z' }],
+
+  // Moderation / safety
+  more: [
+    { d: 'M4 11h2v2H4z', fill: true },
+    { d: 'M11 11h2v2h-2z', fill: true },
+    { d: 'M18 11h2v2h-2z', fill: true },
+  ],
+  flag:  [{ d: 'M5 21V3 M5 4h13v9H5' }],
+  block: [{ d: 'M8 3h8l5 5v8l-5 5H8l-5-5V8z M6 6l12 12' }],
 } as const satisfies Record<string, readonly IconSegment[]>;
 
 export type IconName = keyof typeof ICON_PATHS;

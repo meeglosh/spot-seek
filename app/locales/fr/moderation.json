@@ -1,0 +1,72 @@
+{
+  "cancel": "Annuler",
+  "banner": {
+    "hidden": "En cours d'examen. Vous seul pouvez voir cette soirée pour l'instant.",
+    "removed": "Retirée pour non-respect de nos règles",
+    "guidelinesLink": "Lire les règles"
+  },
+  "menu": {
+    "report": "Signaler la soirée",
+    "blockNamed": "Bloquer {{name}}",
+    "blockHost": "Bloquer cet hôte",
+    "more": "Plus d'options"
+  },
+  "report": {
+    "title": "Signaler cette soirée",
+    "subtitle": "Qu'est-ce qui ne va pas ?",
+    "close": "Fermer",
+    "reasons": {
+      "hate": "Haine ou discrimination",
+      "harassment": "Harcèlement ou intimidation",
+      "sexual": "Contenu sexuel",
+      "violence": "Violence ou actes dangereux",
+      "spam": "Spam ou arnaque",
+      "other": "Autre chose"
+    },
+    "noteLabel": "Ajouter une note (facultatif)",
+    "notePlaceholder": "p. ex. Qu'avez-vous vu ?",
+    "send": "Envoyer le signalement",
+    "sending": "Envoi…",
+    "thanks": "Merci. On va regarder ça.",
+    "blockHost": "Bloquer cet hôte",
+    "done": "Terminé",
+    "errors": {
+      "rateLimited": "Trop de signalements, réessayez plus tard.",
+      "ownEvent": "Vous ne pouvez pas signaler votre propre soirée.",
+      "noteTooLong": "Cette note est trop longue. Gardez-la sous 500 caractères.",
+      "notFound": "Cette soirée n'est plus disponible.",
+      "signIn": "Connectez-vous pour envoyer un signalement.",
+      "generic": "Impossible d'envoyer votre signalement. Réessayez.",
+      "network": "Impossible d'envoyer votre signalement. Vérifiez votre connexion et réessayez."
+    }
+  },
+  "block": {
+    "title": "Bloquer {{name}} ?",
+    "message": "Vous ne verrez plus ses soirées et cette personne ne pourra pas réserver aux vôtres.",
+    "confirm": "Bloquer {{name}}",
+    "thisHost": "cet hôte",
+    "errorTitle": "Blocage impossible",
+    "error": "Vérifiez votre connexion et réessayez."
+  },
+  "blocked": {
+    "title": "Personnes bloquées",
+    "subtitle": "Elles ne peuvent pas réserver à vos soirées et vous ne verrez pas les leurs.",
+    "emptyTitle": "Personne de bloqué",
+    "empty": "Les personnes que vous bloquez apparaissent ici, et vous pouvez les débloquer à tout moment.",
+    "unblock": "Débloquer",
+    "unblockError": "Déblocage impossible. Réessayez.",
+    "errorTitle": "Impossible de charger la liste",
+    "loadError": "Vérifiez votre connexion et réessayez."
+  },
+  "form": {
+    "rejectedFallback": "Cela ne respecte pas les règles de notre communauté.",
+    "rejectedHint": "Reformulez et réessayez, ou enregistrez-la en brouillon.",
+    "guidelinesLink": "Lire les règles",
+    "saveDraft": "Enregistrer en brouillon",
+    "pausedTitle": "Les publications sont suspendues",
+    "pausedBody": "Vous ne pouvez pas publier de nouvelles soirées depuis votre compte pour le moment. Vous pouvez toujours enregistrer des brouillons. Une question ? Écrivez à hello@spotseek.app.",
+    "removedTitle": "Cette soirée a été retirée",
+    "removedBody": "Elle ne respectait pas les règles de notre communauté, donc elle ne peut pas être modifiée. Une question ? Écrivez à hello@spotseek.app.",
+    "removedBack": "Retour à vos soirées"
+  }
+}

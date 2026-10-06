@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Image, Platform, Share } from 'react-native';
 import { Text } from './Text';
 import { Link, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, radius, elevation, type as t } from '../lib/theme';
 import { Badge, Btn, Press } from './ui';
+import { ReportSheet } from './ReportSheet';
+import { useAuthGate } from './AuthGate';
+import { useAuth } from '../lib/auth';
+import { useBlockHost } from '../lib/useBlockHost';
 
 import { API_BASE } from '../lib/api';
 import { eventShareUrl } from '../lib/shareLinks';
@@ -13,6 +17,7 @@ import { formatEventDateTime } from '../lib/dateFormat';
 
 export type EventItem = {
   id: string;
+  hostId?: string;
   title: string;
   broadcastSubject: string;
   startsAt?: string | null;
@@ -45,6 +50,11 @@ function startsToday(startsAt?: string | null): boolean {
 export function EventCard({ event, compact = false }: { event: EventItem; compact?: boolean }) {
   const router = useRouter();
   const { t: tr } = useTranslation('discover');
+  const { t: trMod } = useTranslation('moderation');
+  const auth = useAuth();
+  const { requireAuth, gateSheet } = useAuthGate();
+  const blockHost = useBlockHost();
+  const [reportOpen, setReportOpen] = useState(false);
 
   const { dateStr, timeStr } = event.startsAt
     ? formatEventDateTime(event.startsAt, event.venueTimezone ?? null)
@@ -71,6 +81,17 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
   const getDirections = () => openDirectionsSheet({
     lat: event.venueLat, lng: event.venueLng, name: event.venueName, address: event.venueAddress,
   });
+
+  // Report: hidden on your own party. Guests see it and get the sign-up sheet.
+  const isOwn = auth.status === 'authenticated' && auth.user.id === event.hostId;
+  const canReport = !isOwn;
+  const reportParty = () => {
+    if (requireAuth({ kind: 'report', eventId: event.id })) setReportOpen(true);
+  };
+  const blockAfterReport = () => {
+    setReportOpen(false);
+    if (event.hostId) setTimeout(() => blockHost({ id: event.hostId!, name: event.hostName }), 400);
+  };
 
   const sponsorTag = event.topSponsor
     ? (event.sponsorCount ?? 1) > 1
@@ -154,8 +175,23 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
     </Press>
   );
 
-  if (!native) return card;
+  const safety = canReport ? (
+    <>
+      {reportOpen && (
+        <ReportSheet
+          visible
+          eventId={event.id}
+          onClose={() => setReportOpen(false)}
+          onBlockHost={event.hostId ? blockAfterReport : undefined}
+        />
+      )}
+      {gateSheet}
+    </>
+  ) : null;
+
+  if (!native) return <>{card}{safety}</>;
   return (
+    <>
     <Link href={{ pathname: '/(tabs)/discover/[id]', params: { id: event.id } }} asChild>
       <Link.Trigger>{card}</Link.Trigger>
       <Link.Menu>
@@ -163,8 +199,13 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
         {canDirections && (
           <Link.MenuAction icon="location" onPress={getDirections}>{tr('card.menu.directions')}</Link.MenuAction>
         )}
+        {canReport && (
+          <Link.MenuAction icon="flag" destructive onPress={reportParty}>{trMod('menu.report')}</Link.MenuAction>
+        )}
       </Link.Menu>
     </Link>
+    {safety}
+    </>
   );
 }
 

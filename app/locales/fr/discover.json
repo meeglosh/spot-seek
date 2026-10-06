@@ -124,7 +124,8 @@
       }
     },
     "errorTitle": "Impossible de charger cette soirée",
-    "notFoundTitle": "Soirée introuvable"
+    "notFoundTitle": "Soirée introuvable",
+    "rsvpForbidden": "Vous ne pouvez pas réserver à cette soirée."
   },
   "youreIn": {
     "going": "T'es dedans.",

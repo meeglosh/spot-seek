@@ -75,6 +75,7 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding-location" options={{ headerShown: false, animation: 'slide_from_right' }} />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="settings" />
+        <Stack.Screen name="blocked" />
       </Stack>
       {/* Overlays the whole app (including the Stack above) during cold
           launch, masking auth-restore and the root redirect underneath. */}

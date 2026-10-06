@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, FlatList, StyleSheet, RefreshControl, TextInput } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { AppHeader } from '../../../components/AppHeader';
 import { Chip, SegmentedControl, Press, Skeleton, EventCardSkeleton, EmptyState, ErrorState } from '../../../components/ui';
 import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
+import { onBlocksChanged } from '../../../lib/moderation';
 import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
 import { useAuthGate } from '../../../components/AuthGate';
@@ -24,6 +25,7 @@ type Filter = typeof FILTERS[number];
 function apiEventToItem(e: ApiEvent): EventItem {
   return {
     id: e.id,
+    hostId: e.hostId,
     title: e.title,
     broadcastSubject: e.broadcastSubject,
     startsAt: e.startsAt,
@@ -131,6 +133,14 @@ export default function DiscoverScreen() {
   }
 
   useEffect(() => { loadFeed(); }, []);
+
+  // Blocking someone (from a card menu or the event page) refreshes the feed so
+  // their parties disappear. A ref keeps the subscription stable.
+  const reloadFeed = useRef<() => void>(() => {});
+  useEffect(() => {
+    reloadFeed.current = () => loadFeed(filter === 'Near me' ? userLocation : null);
+  });
+  useEffect(() => onBlocksChanged(() => reloadFeed.current()), []);
 
   // If location was already granted (e.g. at the onboarding step), use it for
   // the map and "Near me" without asking again. Never prompts from here.

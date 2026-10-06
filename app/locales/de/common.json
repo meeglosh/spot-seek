@@ -26,7 +26,8 @@
     "notifications": "Erstelle ein Konto, um Benachrichtigungen zu erhalten",
     "profile": "Erstelle ein Konto, um dein Profil zu sehen",
     "parties": "Erstelle ein Konto, um deine Partys zu sehen",
-    "message": "Das dauert eine Minute, danach bist du genau hier zurück."
+    "message": "Das dauert eine Minute, danach bist du genau hier zurück.",
+    "report": "Erstelle ein Konto, um diese Party zu melden"
   },
   "tabs": {
     "discover": "Entdecken",

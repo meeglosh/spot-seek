@@ -124,7 +124,8 @@
       }
     },
     "errorTitle": "Party nicht geladen",
-    "notFoundTitle": "Party nicht gefunden"
+    "notFoundTitle": "Party nicht gefunden",
+    "rsvpForbidden": "Du kannst für diese Party nicht zusagen."
   },
   "youreIn": {
     "going": "Du bist dabei.",

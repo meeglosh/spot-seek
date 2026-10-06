@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ScrollView, TextInput, StyleSheet } from 'react-native';
+import { View, ScrollView, TextInput, StyleSheet, ActionSheetIOS, Alert, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../components/Text';
@@ -7,6 +8,9 @@ import { AppHeader } from '../components/AppHeader';
 import { EventCard, type EventItem } from '../components/EventCard';
 import { Icon, ICON_NAMES } from '../components/icons';
 import { YoureIn } from '../components/YoureIn';
+import { ReportForm, ReportSheet } from '../components/ReportSheet';
+import { ModerationBanner } from '../components/ModerationBanner';
+import { BlockedRow } from './blocked';
 import {
   Btn, Chip, Badge, SegmentedControl, SegmentBar, SectionTitle, FieldLabel,
   LiveDot, Press, Toggle, Skeleton, EventCardSkeleton, RowSkeleton, EmptyState, ErrorState, SoonTag,
@@ -87,7 +91,34 @@ const SWATCHES: ReadonlyArray<[string, string]> = [
 
 export default function Gallery() {
   const insets = useSafeAreaInsets();
-  const { y, sheet, moment: momentParam } = useLocalSearchParams<{ y?: string; sheet?: string; moment?: string }>();
+  const { t: trMod } = useTranslation('moderation');
+  const { y, sheet, moment: momentParam, report, block } = useLocalSearchParams<{
+    y?: string; sheet?: string; moment?: string; report?: string; block?: string;
+  }>();
+  const [reportOpen, setReportOpen] = useState(false);
+  // The block confirmation, with the exact copy useBlockHost shows (name: Maya).
+  const showBlockConfirm = React.useCallback(() => {
+    const title = trMod('block.title', { name: 'Maya' });
+    const message = trMod('block.message');
+    const confirm = trMod('block.confirm', { name: 'Maya' });
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { title, message, options: [confirm, trMod('cancel')], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
+        () => {},
+      );
+    } else {
+      Alert.alert(title, message, [{ text: trMod('cancel'), style: 'cancel' }, { text: confirm, style: 'destructive' }]);
+    }
+  }, [trMod]);
+  // `&report=1` opens the real report page sheet and `&block=1` the block
+  // confirmation, both 2.5s after mount, so simulator screenshots can catch them.
+  useEffect(() => {
+    if (!__DEV__) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    if (report === '1') timers.push(setTimeout(() => setReportOpen(true), 2500));
+    if (block === '1') timers.push(setTimeout(showBlockConfirm, 2500));
+    return () => timers.forEach(clearTimeout);
+  }, [report, block, showBlockConfirm]);
   const [moment, setMoment] = useState<'going' | 'waitlisted' | null>(null);
   // `&moment=going|waitlisted` replays the "You're in." moment every 4s from
   // 3s after mount, so a burst of simulator screenshots can catch any frame.
@@ -300,6 +331,49 @@ export default function Gallery() {
           <EventCard event={SAMPLE_QUIET} compact />
         </Block>
 
+        <Block title="Moderation: report sheet">
+          <Btn label={trMod('menu.report')} variant="secondary" onPress={() => setReportOpen(true)} />
+          <Cell label="form, reason picked (inline preview of the page sheet)">
+            <View style={s.stateCard}>
+              <View style={{ padding: spacing.lg }}>
+                <ReportForm
+                  eventId="gallery-1"
+                  initialReason="harassment"
+                  onClose={() => {}}
+                  submitReport={async () => ({ duplicate: false })}
+                />
+              </View>
+            </View>
+          </Cell>
+          <Cell label="confirmation, with the Block this host follow-up">
+            <View style={s.stateCard}>
+              <View style={{ padding: spacing.lg }}>
+                <ReportForm eventId="gallery-1" initialStep="sent" onClose={() => {}} onBlockHost={() => {}} />
+              </View>
+            </View>
+          </Cell>
+        </Block>
+
+        <Block title="Moderation: block host">
+          <Text style={[t.bodyMd, { color: colors.textSecondary }]}>
+            {trMod('block.title', { name: 'Maya' })} {trMod('block.message')}
+          </Text>
+          <Btn label={trMod('block.confirm', { name: 'Maya' })} variant="danger" onPress={showBlockConfirm} />
+          <Cell label="Settings, Blocked people: row">
+            <BlockedRow person={{ displayName: 'Maya Okafor', avatarUrl: null }} onUnblock={() => {}} />
+          </Cell>
+          <Cell label="Settings, Blocked people: empty">
+            <View style={s.stateCard}>
+              <EmptyState icon="users" title={trMod('blocked.emptyTitle')} body={trMod('blocked.empty')} />
+            </View>
+          </Cell>
+        </Block>
+
+        <Block title="Moderation: host banners">
+          <Cell label="hidden (under review)"><ModerationBanner kind="hidden" /></Cell>
+          <Cell label="removed"><ModerationBanner kind="removed" /></Cell>
+        </Block>
+
         <Block title="Skeletons (opaque shimmer, static under Reduce Motion)">
           <EventCardSkeleton />
           <RowSkeleton />
@@ -403,6 +477,12 @@ export default function Gallery() {
           </View>
         </Block>
       </ScrollView>
+      <ReportSheet
+        visible={reportOpen}
+        eventId="gallery-1"
+        onClose={() => setReportOpen(false)}
+        onBlockHost={() => setReportOpen(false)}
+      />
       {moment && (
         <YoureIn
           visible

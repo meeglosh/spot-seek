@@ -124,7 +124,8 @@
       }
     },
     "errorTitle": "Couldn't load this party",
-    "notFoundTitle": "Party not found"
+    "notFoundTitle": "Party not found",
+    "rsvpForbidden": "You can't RSVP to this party."
   },
   "youreIn": {
     "going": "You're in.",

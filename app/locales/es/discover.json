@@ -124,7 +124,8 @@
       }
     },
     "errorTitle": "No pudimos cargar esta fiesta",
-    "notFoundTitle": "Fiesta no encontrada"
+    "notFoundTitle": "Fiesta no encontrada",
+    "rsvpForbidden": "No puedes apuntarte a esta fiesta."
   },
   "youreIn": {
     "going": "Estás dentro.",

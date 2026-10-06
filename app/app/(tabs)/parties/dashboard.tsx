@@ -8,6 +8,8 @@ import { AppHeader } from '../../../components/AppHeader';
 import { Btn, SegmentBar, LiveDot, Press, Skeleton, RowSkeleton, EmptyState, ErrorState } from '../../../components/ui';
 import { Icon } from '../../../components/icons';
 import { GuestGate } from '../../../components/AuthGate';
+import { ModerationBanner } from '../../../components/ModerationBanner';
+import { hostBannerKind } from '../../../lib/moderation';
 import { useAuth } from '../../../lib/auth';
 import {
   API_BASE, fetchDashboard, fetchHostAnalytics, fetchEventBids, fetchConnectStatus,
@@ -222,6 +224,9 @@ export default function CommandCenterScreen() {
                       style={s.activeCover}
                       resizeMode="cover"
                     />
+                  )}
+                  {hostBannerKind(e.moderationStatus) && (
+                    <ModerationBanner kind={hostBannerKind(e.moderationStatus)!} />
                   )}
                   <Text style={[t.headlineMd, { color: colors.textPrimary }]} numberOfLines={2}>
                     {e.title}

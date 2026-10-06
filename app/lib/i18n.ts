@@ -33,6 +33,7 @@ import enSponsorship from '../locales/en/sponsorship.json';
 import enSettings from '../locales/en/settings.json';
 import enNotifications from '../locales/en/notifications.json';
 import enProfile from '../locales/en/profile.json';
+import enModeration from '../locales/en/moderation.json';
 
 import frCommon from '../locales/fr/common.json';
 import frOnboarding from '../locales/fr/onboarding.json';
@@ -43,6 +44,7 @@ import frSponsorship from '../locales/fr/sponsorship.json';
 import frSettings from '../locales/fr/settings.json';
 import frNotifications from '../locales/fr/notifications.json';
 import frProfile from '../locales/fr/profile.json';
+import frModeration from '../locales/fr/moderation.json';
 
 import esCommon from '../locales/es/common.json';
 import esOnboarding from '../locales/es/onboarding.json';
@@ -53,6 +55,7 @@ import esSponsorship from '../locales/es/sponsorship.json';
 import esSettings from '../locales/es/settings.json';
 import esNotifications from '../locales/es/notifications.json';
 import esProfile from '../locales/es/profile.json';
+import esModeration from '../locales/es/moderation.json';
 
 import deCommon from '../locales/de/common.json';
 import deOnboarding from '../locales/de/onboarding.json';
@@ -63,6 +66,7 @@ import deSponsorship from '../locales/de/sponsorship.json';
 import deSettings from '../locales/de/settings.json';
 import deNotifications from '../locales/de/notifications.json';
 import deProfile from '../locales/de/profile.json';
+import deModeration from '../locales/de/moderation.json';
 
 import ptCommon from '../locales/pt/common.json';
 import ptOnboarding from '../locales/pt/onboarding.json';
@@ -73,6 +77,7 @@ import ptSponsorship from '../locales/pt/sponsorship.json';
 import ptSettings from '../locales/pt/settings.json';
 import ptNotifications from '../locales/pt/notifications.json';
 import ptProfile from '../locales/pt/profile.json';
+import ptModeration from '../locales/pt/moderation.json';
 
 export const SUPPORTED_LOCALE_CODES = ['en', 'fr', 'es', 'de', 'pt'] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALE_CODES)[number];
@@ -95,6 +100,7 @@ export const NAMESPACES = [
   'settings',
   'notifications',
   'profile',
+  'moderation',
 ] as const;
 
 function isSupportedLocale(code: string | null | undefined): code is SupportedLocale {
@@ -112,6 +118,7 @@ const resources = {
     settings: enSettings,
     notifications: enNotifications,
     profile: enProfile,
+    moderation: enModeration,
   },
   fr: {
     common: frCommon,
@@ -123,6 +130,7 @@ const resources = {
     settings: frSettings,
     notifications: frNotifications,
     profile: frProfile,
+    moderation: frModeration,
   },
   es: {
     common: esCommon,
@@ -134,6 +142,7 @@ const resources = {
     settings: esSettings,
     notifications: esNotifications,
     profile: esProfile,
+    moderation: esModeration,
   },
   de: {
     common: deCommon,
@@ -145,6 +154,7 @@ const resources = {
     settings: deSettings,
     notifications: deNotifications,
     profile: deProfile,
+    moderation: deModeration,
   },
   pt: {
     common: ptCommon,
@@ -156,6 +166,7 @@ const resources = {
     settings: ptSettings,
     notifications: ptNotifications,
     profile: ptProfile,
+    moderation: ptModeration,
   },
 };
 

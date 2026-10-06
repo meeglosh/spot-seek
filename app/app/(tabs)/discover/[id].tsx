@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, Image, Platform, Share, Alert, TextInput } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator, Image, Platform, Share, Alert, TextInput, ActionSheetIOS } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,6 +23,10 @@ import { YoureIn } from '../../../components/YoureIn';
 import { momentFor } from '../../../lib/youreIn';
 import { consumePendingIntent } from '../../../lib/guestState';
 import { StarRating, StarInput } from '../../../components/Stars';
+import { ReportSheet } from '../../../components/ReportSheet';
+import { ModerationBanner } from '../../../components/ModerationBanner';
+import { useBlockHost } from '../../../lib/useBlockHost';
+import { hostBannerKind, isRsvpForbidden } from '../../../lib/moderation';
 
 
 function startsToday(startsAt?: string | null): boolean {
@@ -45,6 +49,9 @@ export default function EventDetailScreen() {
   const { t: trCommon } = useTranslation('common');
   const openDirectionsSheet = useOpenDirections();
   const { t: trSettings } = useTranslation('settings');
+  const { t: trMod } = useTranslation('moderation');
+  const blockHost = useBlockHost();
+  const [reportOpen, setReportOpen] = useState(false);
 
   const [event, setEvent] = useState<ApiEvent | null>(null);
   const [loading, setLoading] = useState(true); // true = show spinner on initial load
@@ -203,6 +210,9 @@ export default function EventDetailScreen() {
         else setRsvpError(tr('detail.alreadyRsvpd'));
       } else if (msg === 'unauthorized') {
         openGate();
+      } else if (isRsvpForbidden(err)) {
+        // The host blocked this person. Say nothing about why.
+        setRsvpError(tr('detail.rsvpForbidden'));
       } else {
         // Surface the real reason — a generic message here hid a
         // "Unsupported FormDataPart"-class bug on the cover upload for days.
@@ -246,6 +256,52 @@ export default function EventDetailScreen() {
     if (auth.status !== 'authenticated' || !event || !id) return;
     if (consumePendingIntent('rsvp', id)) resumeRsvp.current(true);
   }, [auth.status, event, id]);
+
+  // ── Report / block (members only; never shown on your own party) ──────────
+  function handleReport() {
+    if (!id || !requireAuth({ kind: 'report', eventId: id })) return;
+    setReportOpen(true);
+  }
+
+  function handleBlockHost() {
+    if (!event) return;
+    blockHost({ id: event.hostId, name: hostProfile?.displayName }, leaveDetail);
+  }
+
+  // From the report confirmation: close the page sheet first (a native action
+  // sheet can't present over a Modal), then ask the block question.
+  function blockAfterReport() {
+    setReportOpen(false);
+    setTimeout(handleBlockHost, 400);
+  }
+
+  function openMoreMenu() {
+    const canBlock = auth.status === 'authenticated';
+    const reportLabel = trMod('menu.report');
+    const blockLabel = hostProfile
+      ? trMod('menu.blockNamed', { name: hostProfile.displayName })
+      : trMod('menu.blockHost');
+    if (Platform.OS === 'ios') {
+      const options = canBlock ? [reportLabel, blockLabel, trMod('cancel')] : [reportLabel, trMod('cancel')];
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex: options.length - 1,
+          destructiveButtonIndex: canBlock ? 1 : undefined,
+        },
+        (i) => {
+          if (i === 0) handleReport();
+          else if (canBlock && i === 1) handleBlockHost();
+        },
+      );
+    } else {
+      Alert.alert(reportLabel, undefined, [
+        { text: reportLabel, onPress: handleReport },
+        ...(canBlock ? [{ text: blockLabel, style: 'destructive' as const, onPress: handleBlockHost }] : []),
+        { text: trMod('cancel'), style: 'cancel' as const },
+      ]);
+    }
+  }
 
   if (loading) {
     return (
@@ -383,6 +439,16 @@ export default function EventDetailScreen() {
             <Image source={coverSrc} style={StyleSheet.absoluteFill} resizeMode="cover" />
           )}
           <View style={[StyleSheet.absoluteFill, s.mediaDim]} />
+          {!isHost && (
+            <Press
+              onPress={openMoreMenu}
+              style={({ pressed }) => [s.shareBtn, s.moreBtn, pressed && s.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={trMod('menu.more')}
+            >
+              <Icon name="more" size={22} color={colors.textOnMedia} />
+            </Press>
+          )}
           <Press
             onPress={handleShare}
             style={({ pressed }) => [s.shareBtn, pressed && s.pressed]}
@@ -401,6 +467,10 @@ export default function EventDetailScreen() {
         </View>
 
         <View style={s.content}>
+          {isHost && hostBannerKind(event.moderationStatus) && (
+            <ModerationBanner kind={hostBannerKind(event.moderationStatus)!} />
+          )}
+
           {/* Host row */}
           {hostProfile && (
             <View style={s.hostRow}>
@@ -597,6 +667,13 @@ export default function EventDetailScreen() {
         />
       )}
 
+      <ReportSheet
+        visible={reportOpen}
+        eventId={event.id}
+        onClose={() => setReportOpen(false)}
+        onBlockHost={blockAfterReport}
+      />
+
       {gateSheet}
     </View>
   );
@@ -622,7 +699,9 @@ const s = StyleSheet.create({
     backgroundColor: colors.mediaChip,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: radius.control,
   },
+  moreBtn: { right: spacing.lg + TAP + spacing.sm },
   textLink: { minHeight: TAP, alignItems: 'center', justifyContent: 'center' },
   heroContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: spacing['3xl'], gap: spacing.md },
   heroBadges: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },

@@ -26,7 +26,8 @@
     "notifications": "Créez un compte pour être prévenu",
     "profile": "Créez un compte pour voir votre profil",
     "parties": "Créez un compte pour voir vos soirées",
-    "message": "Ça prend une minute, et vous revenez ici juste après."
+    "message": "Ça prend une minute, et vous revenez ici juste après.",
+    "report": "Créez un compte pour signaler cette soirée"
   },
   "tabs": {
     "discover": "Découvrir",
