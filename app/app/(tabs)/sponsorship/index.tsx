@@ -7,7 +7,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
-import { colors, spacing, type as t } from '../../../lib/theme';
+import { colors, radius, spacing, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
 import { Btn, Chip, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
@@ -277,25 +277,25 @@ export default function SponsorshipHubScreen() {
               </View>
             ) : (
               <View style={s.sponsorBlock}>
-                <Text style={[t.labelCaps, { color: colors.confirmed }]}>
+                <Text style={[t.label, { color: colors.confirmed }]}>
                   {tr('browse.sponsorLabel', { company: sponsor.companyName })}
                 </Text>
                 {summary && (
                   <View style={s.tileGrid}>
                     <View style={s.tile}>
-                      <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.totalBids')}</Text>
+                      <Text style={[t.labelSm, s.tileLabel]}>{tr('browse.stats.totalBids')}</Text>
                       <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{summary.totalBids}</Text>
                     </View>
                     <View style={s.tile}>
-                      <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.active')}</Text>
+                      <Text style={[t.labelSm, s.tileLabel]}>{tr('browse.stats.active')}</Text>
                       <Text style={[t.headlineMd, { color: colors.confirmed }]}>{summary.activeBids}</Text>
                     </View>
                     <View style={s.tile}>
-                      <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.totalSpend')}</Text>
+                      <Text style={[t.labelSm, s.tileLabel]}>{tr('browse.stats.totalSpend')}</Text>
                       <Text style={[t.headlineMd, { color: colors.action }]}>{fmtUsd(summary.totalSpendCents)}</Text>
                     </View>
                     <View style={s.tile}>
-                      <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.stats.reach')}</Text>
+                      <Text style={[t.labelSm, s.tileLabel]}>{tr('browse.stats.reach')}</Text>
                       <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{summary.totalReach}</Text>
                     </View>
                   </View>
@@ -394,14 +394,14 @@ export default function SponsorshipHubScreen() {
                       </View>
                       <View style={s.eventTiles}>
                         <View style={s.eventTile}>
-                          <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.marketplace.date')}</Text>
+                          <Text style={[t.labelSm, s.tileLabel]}>{tr('browse.marketplace.date')}</Text>
                           <Text style={[t.monoData, { color: colors.textPrimary }]}>
                             {fmtEventDate(ev.startsAt, tr, ev.venueTimezone)}
                           </Text>
                         </View>
                         {ev.capacity != null && (
                           <View style={s.eventTile}>
-                            <Text style={[t.labelCapsSm, s.tileLabel]}>{tr('browse.marketplace.capacity')}</Text>
+                            <Text style={[t.labelSm, s.tileLabel]}>{tr('browse.marketplace.capacity')}</Text>
                             <Text style={[t.monoData, { color: colors.textPrimary }]}>{ev.capacity}</Text>
                           </View>
                         )}
@@ -413,7 +413,7 @@ export default function SponsorshipHubScreen() {
                         />
                       )}
                       {myBid?.status === 'active' && paymentStatusLabel(myBid.paymentStatus, tr) && (
-                        <Text style={[t.labelCapsSm, s.tileLabel]}>{paymentStatusLabel(myBid.paymentStatus, tr)}</Text>
+                        <Text style={[t.labelSm, s.tileLabel]}>{paymentStatusLabel(myBid.paymentStatus, tr)}</Text>
                       )}
                       <Btn
                         label={tr('browse.marketplace.review')}
@@ -438,11 +438,10 @@ const s = StyleSheet.create({
 
   registerCard: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.lg,
     marginBottom: spacing['2xl'],
+    borderRadius: radius.card,
   },
   field: { gap: 0 },
   categoryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
@@ -451,11 +450,10 @@ const s = StyleSheet.create({
 
   requestCard: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.sm,
     marginBottom: spacing.md,
+    borderRadius: radius.card,
   },
   requestHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
   requestActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
@@ -467,10 +465,9 @@ const s = StyleSheet.create({
     flexBasis: '47%',
     flexGrow: 1,
     backgroundColor: colors.surface2,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.md,
     gap: spacing.xs,
+    borderRadius: radius.card,
   },
   tileLabel: { color: colors.textSecondary },
 
@@ -478,9 +475,9 @@ const s = StyleSheet.create({
 
   eventCard: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     marginBottom: spacing.xl,
+    borderRadius: radius.card,
+    overflow: 'hidden',
   },
   coverWrap: {
     height: 150,
@@ -497,9 +494,8 @@ const s = StyleSheet.create({
   eventTile: {
     flex: 1,
     backgroundColor: colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.md,
     gap: spacing.xs,
+    borderRadius: radius.card,
   },
 });

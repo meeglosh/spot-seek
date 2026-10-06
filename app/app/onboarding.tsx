@@ -1,14 +1,12 @@
 import React from 'react';
-import {
-  View, Image, Pressable, FlatList, StyleSheet, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent,
-} from 'react-native';
+import { View, Image, FlatList, StyleSheet, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import { Text } from '../components/Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { colors, spacing, TAP, type as t } from '../lib/theme';
-import { Btn, Chip } from '../components/ui';
+import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
+import { Btn, Chip, Press } from '../components/ui';
 import { setOnboardingSeen } from '../lib/api';
 
 // A brand slide has no photo/accent/chips — just the logo mark, wordmark,
@@ -119,7 +117,7 @@ export default function OnboardingScreen() {
             <View style={s.brandCenter}>
               <Image source={BRAND_LOGO} resizeMode="contain" style={s.brandLogo} />
               <Text style={[t.displayXl, s.brandWordmark]}>SPOT SEEK</Text>
-              <Text style={[t.labelCaps, s.brandTagline]}>{tr('brand.tagline')}</Text>
+              <Text style={[t.label, s.brandTagline]}>{tr('brand.tagline')}</Text>
             </View>
           </View>
         </View>
@@ -182,9 +180,9 @@ export default function OnboardingScreen() {
           label={index === SLIDES.length - 1 ? tr('cta.getStarted') : tr('cta.next')}
           onPress={goNext}
         />
-        <Pressable onPress={finish} hitSlop={8} style={s.skipBtn} accessibilityLabel={tr('skip.a11y')}>
-          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('skip.label')}</Text>
-        </Pressable>
+        <Press onPress={finish} hitSlop={8} style={s.skipBtn} accessibilityLabel={tr('skip.a11y')}>
+          <Text style={[t.label, { color: colors.textSecondary }]}>{tr('skip.label')}</Text>
+        </Press>
       </View>
     </View>
   );
@@ -213,12 +211,11 @@ const s = StyleSheet.create({
 
   card: {
     backgroundColor: colors.panelOnMedia,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     marginHorizontal: spacing.xl,
     marginBottom: spacing.md,
     gap: spacing.md,
+    borderRadius: radius.card,
   },
   // Anton's cap-height runs much taller than its nominal font size — a tight
   // lineHeight clips glyph tops (see the ~1.25-1.35x multiplier the theme's

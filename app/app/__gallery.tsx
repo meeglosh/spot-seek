@@ -1,0 +1,365 @@
+import React, { useRef, useState } from 'react';
+import { View, ScrollView, TextInput, StyleSheet } from 'react-native';
+import { Redirect, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '../components/Text';
+import { AppHeader } from '../components/AppHeader';
+import { EventCard, type EventItem } from '../components/EventCard';
+import { Icon, ICON_NAMES } from '../components/icons';
+import {
+  Btn, Chip, Badge, SegmentedControl, SegmentBar, SectionTitle, FieldLabel,
+  LiveDot, Press, inputStyle, inputFocusedStyle,
+} from '../components/ui';
+import {
+  colors, radius, spacing, TAP, elevation, press, type as t,
+} from '../lib/theme';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DEV-ONLY component gallery (visual QA for the Soft Brutalist system).
+//
+// GATING. This route is unreachable in Release builds:
+//   1. The screen returns <Redirect href="/" /> unless `__DEV__` is true.
+//   2. app/index.tsx only redirects here when `__DEV__` is true AND the
+//      EXPO_PUBLIC_START_ROUTE env var names a route, e.g.
+//        EXPO_PUBLIC_START_ROUTE=/__gallery npx expo start --port 8081
+//      Without the var (or in Release) the root redirect is unchanged.
+//   No auth or deep link is needed. `?y=<px>` scrolls the gallery to an offset
+//   (e.g. EXPO_PUBLIC_START_ROUTE="/__gallery?y=900") so every section can be
+//   screenshotted from the simulator without touch automation.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// A frozen "pressed" frame: the same scale + opacity dip <Press> animates to.
+function Pressed({ children }: { children: React.ReactNode }) {
+  return (
+    <View style={{ opacity: press.dip, transform: [{ scale: press.scale }] }}>{children}</View>
+  );
+}
+
+function Block({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={s.block}>
+      <SectionTitle>{title}</SectionTitle>
+      {children}
+    </View>
+  );
+}
+
+function Cell({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <View style={s.cell}>
+      <Text style={[t.labelSm, { color: colors.textTertiary }]}>{label}</Text>
+      {children}
+    </View>
+  );
+}
+
+const SAMPLE_EVENT: EventItem = {
+  id: 'gallery-1',
+  title: 'Arsenal v Spurs: North London Derby',
+  broadcastSubject: 'Premier League',
+  startsAt: new Date(Date.now() + 3 * 3600_000).toISOString(),
+  venueName: 'The Gunners Arms',
+  status: 'published',
+  hostName: 'Maya',
+  goingCount: 42,
+  sponsorCount: 2,
+  topSponsor: 'Volt Cola',
+  venueTimezone: 'Europe/London',
+};
+
+const SAMPLE_QUIET: EventItem = {
+  ...SAMPLE_EVENT,
+  id: 'gallery-2',
+  title: 'Quiet one: Sunday league recap',
+  startsAt: new Date(Date.now() + 3 * 86400_000).toISOString(),
+  topSponsor: null,
+  sponsorCount: 0,
+};
+
+const SWATCHES: ReadonlyArray<[string, string]> = [
+  ['canvas', colors.canvas], ['surface1', colors.surface1], ['surface2', colors.surface2],
+  ['surface3', colors.surface3], ['action', colors.action], ['actionMuted', colors.actionMuted],
+  ['live', colors.live], ['confirmed', colors.confirmed], ['danger', colors.danger],
+];
+
+export default function Gallery() {
+  const insets = useSafeAreaInsets();
+  const { y } = useLocalSearchParams<{ y?: string }>();
+  const scroller = useRef<ScrollView>(null);
+  const [seg, setSeg] = useState<'list' | 'map'>('list');
+  const [seg2, setSeg2] = useState<'a' | 'b' | 'c'>('b');
+  const [time, setTime] = useState('Tonight');
+  const [focus, setFocus] = useState<string | null>(null);
+  const [name, setName] = useState('Derby day at the Arms');
+  const [search, setSearch] = useState('');
+
+  if (!__DEV__) return <Redirect href="/" />;
+
+  return (
+    <View style={s.container}>
+      <AppHeader />
+      <ScrollView
+        ref={scroller}
+        contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing['4xl'] }]}
+        onContentSizeChange={() => {
+          const offset = Number(y);
+          if (offset > 0) scroller.current?.scrollTo({ y: offset, animated: false });
+        }}
+      >
+        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>Component gallery</Text>
+        <Text style={[t.bodySm, { color: colors.textSecondary, marginTop: spacing.xs }]}>
+          Dev only. Soft Brutalist system: states are default, selected, pressed, disabled.
+        </Text>
+
+        <Block title="Colour and elevation">
+          <View style={s.swatchRow}>
+            {SWATCHES.map(([n, c]) => (
+              <View key={n} style={s.swatchWrap}>
+                <View style={[s.swatch, { backgroundColor: c }]} />
+                <Text style={[t.labelSm, { color: colors.textSecondary }]}>{n}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={s.ladder}>
+            {([0, 1, 2, 3] as const).map((lvl) => (
+              <View key={lvl} style={[s.ladderStep, elevation(lvl)]}>
+                <Text style={[t.label, { color: colors.textPrimary }]}>Level {lvl}</Text>
+              </View>
+            ))}
+          </View>
+        </Block>
+
+        <Block title="Type">
+          <Text style={[t.displayHero, { color: colors.textPrimary }]}>Hero</Text>
+          <Text style={[t.displayXl, { color: colors.textPrimary }]}>Display XL</Text>
+          <Text style={[t.headlineLg, { color: colors.textPrimary }]}>Headline large</Text>
+          <Text style={[t.headlineMd, { color: colors.textPrimary }]}>Headline medium</Text>
+          <Text style={[t.headlineSm, { color: colors.textPrimary }]}>Headline small</Text>
+          <Text style={[t.bodyLg, { color: colors.textPrimary }]}>Body large, Archivo Narrow Medium</Text>
+          <Text style={[t.bodyMd, { color: colors.textSecondary }]}>Body medium for reading, warm grey on the canvas.</Text>
+          <Text style={[t.button, { color: colors.textPrimary }]}>Button label, sentence case</Text>
+          <Text style={[t.label, { color: colors.textSecondary }]}>Label, Space Grotesk Medium</Text>
+          <Text style={[t.tag, { color: colors.textTertiary }]}>Tag, tonight</Text>
+          <Text style={[t.monoData, { color: colors.textPrimary }]}>19:45 · 42 going · £1,250</Text>
+        </Block>
+
+        <Block title="Buttons">
+          {(['primary', 'secondary', 'ghost', 'danger'] as const).map((v) => (
+            <View key={v} style={s.stateRow}>
+              <Cell label={`${v}: default`}><Btn label="Join the party" variant={v} /></Cell>
+              <Cell label="pressed"><Pressed><Btn label="Join the party" variant={v} /></Pressed></Cell>
+              <Cell label="disabled"><Btn label="Join the party" variant={v} disabled /></Cell>
+            </View>
+          ))}
+          <Cell label="small"><View style={s.inline}><Btn label="Join" small /><Btn label="Details" small variant="secondary" /></View></Cell>
+        </Block>
+
+        <Block title="Chips">
+          <Cell label="default / selected / pressed">
+            <View style={s.inline}>
+              <Chip label="Tonight" onPress={() => {}} />
+              <Chip label="Tonight" active onPress={() => {}} />
+              <Pressed><Chip label="Tonight" onPress={() => {}} /></Pressed>
+              <Pressed><Chip label="Tonight" active onPress={() => {}} /></Pressed>
+            </View>
+          </Cell>
+          <Cell label="tones, selected">
+            <View style={s.inline}>
+              <Chip label="Action" active tone="action" onPress={() => {}} />
+              <Chip label="Live now" active tone="live" onPress={() => {}} />
+              <Chip label="Going" active tone="confirmed" onPress={() => {}} />
+              <Chip label="Neutral" active tone="neutral" onPress={() => {}} />
+            </View>
+          </Cell>
+          <Cell label="static tag / removable">
+            <View style={s.inline}>
+              <Chip label="Premier League" />
+              <Chip label="Arsenal" active trailingIcon="close" onPress={() => {}} />
+            </View>
+          </Cell>
+          <Cell label="disabled (dimmed wrapper)">
+            <View style={[s.inline, { opacity: 0.4 }]} pointerEvents="none">
+              <Chip label="Near me" onPress={() => {}} />
+              <Chip label="Near me" active onPress={() => {}} />
+            </View>
+          </Cell>
+        </Block>
+
+        <Block title="Badges">
+          <View style={s.inline}>
+            <Badge label="Live" tone="live" />
+            <Badge label="Tonight" tone="live" dot={false} />
+            <Badge label="Going" tone="confirmed" />
+            <Badge label="Open" tone="action" />
+            <Badge label="Premier League" tone="neutral" dot={false} />
+            <Badge label="Volt Cola" tone="confirmed" icon="live" />
+          </View>
+          <View style={s.inline}><LiveDot /><Text style={[t.labelSm, { color: colors.textSecondary }]}>Live dot pulse (static under Reduce Motion)</Text></View>
+        </Block>
+
+        <Block title="Segmented control">
+          <Cell label="hug (default), 2 options">
+            <SegmentedControl
+              value={seg}
+              onChange={setSeg}
+              options={[
+                { key: 'list', label: 'List', icon: 'list' },
+                { key: 'map', label: 'Map', icon: 'map' },
+              ]}
+            />
+          </Cell>
+          <Cell label="fill, 3 options">
+            <SegmentedControl
+              fill
+              value={seg2}
+              onChange={setSeg2}
+              options={[{ key: 'a', label: 'Today' }, { key: 'b', label: 'This week' }, { key: 'c', label: 'Later' }]}
+            />
+          </Cell>
+          <Cell label="narrow container (240pt): must not overflow">
+            <View style={{ width: 240, backgroundColor: colors.surface1, padding: 8, borderRadius: radius.card }}>
+              <SegmentedControl
+                value={seg}
+                onChange={setSeg}
+                options={[
+                  { key: 'list', label: 'List view', icon: 'list' },
+                  { key: 'map', label: 'Map view', icon: 'map' },
+                ]}
+              />
+            </View>
+          </Cell>
+        </Block>
+
+        <Block title="Progress">
+          <SegmentBar value={6} max={10} />
+          <SegmentBar value={9} max={10} tone={colors.confirmed} />
+        </Block>
+
+        <Block title="Discover header controls">
+          <Text style={[t.headlineLg, { color: colors.textPrimary }]}>Discover</Text>
+          <View style={s.controlsRow}>
+            <SegmentedControl
+              value={seg}
+              onChange={setSeg}
+              options={[
+                { key: 'list', label: 'List', icon: 'list', accessibilityLabel: 'List view' },
+                { key: 'map', label: 'Map', icon: 'map', accessibilityLabel: 'Map view' },
+              ]}
+            />
+            <View style={s.searchRow}>
+              <Icon name="search" size={18} color={colors.textTertiary} />
+              <TextInput
+                style={s.searchInput}
+                placeholder="Search events"
+                placeholderTextColor={colors.textTertiary}
+                value={search}
+                onChangeText={setSearch}
+              />
+            </View>
+            <Press style={[s.filterBtn, s.filterBtnActive]} accessibilityRole="button" accessibilityLabel="Filters">
+              <Icon name="filter" size={20} color={colors.action} />
+              <View style={s.filterBadge}><Text style={[t.labelSm, { color: colors.textOnFill }]}>2</Text></View>
+            </Press>
+          </View>
+          <View style={s.inline}>
+            {['Tonight', 'This week', 'Near me', 'All'].map((f) => (
+              <Chip key={f} label={f} active={time === f} onPress={() => setTime(f)} />
+            ))}
+          </View>
+        </Block>
+
+        <Block title="Event card">
+          <EventCard event={SAMPLE_EVENT} />
+          <EventCard event={SAMPLE_QUIET} compact />
+        </Block>
+
+        <Block title="Sample form">
+          <View style={s.form}>
+            <View>
+              <FieldLabel>Event name</FieldLabel>
+              <TextInput
+                style={[inputStyle, focus === 'name' && inputFocusedStyle]}
+                value={name}
+                onChangeText={setName}
+                onFocus={() => setFocus('name')}
+                onBlur={() => setFocus(null)}
+                placeholderTextColor={colors.textTertiary}
+              />
+            </View>
+            <View>
+              <FieldLabel>Venue (focused look)</FieldLabel>
+              <TextInput
+                style={[inputStyle, inputFocusedStyle]}
+                value="The Gunners Arms"
+                editable={false}
+              />
+            </View>
+            <View>
+              <FieldLabel>Capacity (placeholder)</FieldLabel>
+              <TextInput
+                style={inputStyle}
+                placeholder="Leave empty for unlimited"
+                placeholderTextColor={colors.textTertiary}
+              />
+            </View>
+            <View style={s.inline}>
+              <Btn label="Save draft" variant="secondary" style={{ flex: 1 }} />
+              <Btn label="Publish" style={{ flex: 1 }} />
+            </View>
+          </View>
+        </Block>
+
+        <Block title="Icons (round caps and joins, 2px)">
+          <View style={s.iconGrid}>
+            {ICON_NAMES.map((n) => (
+              <View key={n} style={s.iconCell}>
+                <Icon name={n} size={24} color={colors.textPrimary} />
+                <Text style={[t.labelSm, { color: colors.textTertiary }]} numberOfLines={1}>{n}</Text>
+              </View>
+            ))}
+          </View>
+        </Block>
+      </ScrollView>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.canvas },
+  scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+  block: { gap: spacing.md, marginBottom: spacing.sm },
+  cell: { gap: spacing.xs + 2 },
+  stateRow: { gap: spacing.md },
+  inline: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
+
+  swatchRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  swatchWrap: { gap: 4, width: 78 },
+  swatch: { height: 44, borderRadius: radius.control, borderWidth: 1, borderColor: colors.borderSubtle },
+  ladder: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md },
+  ladderStep: { flex: 1, height: 84, borderRadius: radius.card, alignItems: 'center', justifyContent: 'center' },
+
+  controlsRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  searchRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface2,
+    borderRadius: radius.control,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+  },
+  searchInput: { ...t.labelMd, flex: 1, color: colors.textPrimary, minHeight: TAP - 4, paddingVertical: spacing.sm },
+  filterBtn: {
+    width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.surface2, borderRadius: radius.control, borderWidth: 1, borderColor: 'transparent',
+  },
+  filterBtnActive: { borderColor: colors.action },
+  filterBadge: {
+    position: 'absolute', top: -6, right: -6, minWidth: 18, height: 18, paddingHorizontal: 4,
+    backgroundColor: colors.textPrimary, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center',
+  },
+
+  form: { gap: spacing.lg },
+  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  iconCell: { width: 72, alignItems: 'center', gap: 4 },
+});

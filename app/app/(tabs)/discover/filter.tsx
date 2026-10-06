@@ -4,9 +4,7 @@
  * Passes filter state back via router.back() + a shared state atom.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Pressable, StyleSheet, ScrollView, TextInput, Switch,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, TextInput, Switch } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,9 +13,9 @@ import { SPORTS, searchTeams } from '../../../lib/sports-data';
 import { fetchFavourites, type ApiFavourite } from '../../../lib/api';
 import { DateTimePicker } from '../../../components/DateTimePicker';
 import { useDiscoverFilters } from '../../../lib/discover-filters';
-import { colors, spacing, TAP, type as t } from '../../../lib/theme';
+import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
-import { Btn, Chip, SectionTitle } from '../../../components/ui';
+import { Btn, Chip, SectionTitle, Press } from '../../../components/ui';
 import { goToAuth } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 
@@ -97,20 +95,20 @@ export default function FilterScreen() {
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={s.header}>
-        <Pressable
+        <Press
           onPress={closeFilter}
           style={s.closeBtn}
           accessibilityRole="button"
           accessibilityLabel={tr('filters.title')}
         >
           <Icon name="close" size={22} color={colors.textPrimary} />
-        </Pressable>
+        </Press>
         <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{tr('filters.title')}</Text>
-        <Pressable onPress={clearAll} style={s.clearAll} accessibilityRole="button">
-          <Text style={[t.labelCapsSm, { color: activeCount > 0 ? colors.action : colors.textTertiary }]}>
+        <Press onPress={clearAll} style={s.clearAll} accessibilityRole="button">
+          <Text style={[t.labelSm, { color: activeCount > 0 ? colors.action : colors.textTertiary }]}>
             {activeCount > 0 ? tr('filters.clearCount', { count: activeCount }) : tr('filters.clearAll')}
           </Text>
-        </Pressable>
+        </Press>
       </View>
 
       <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 120 }]} showsVerticalScrollIndicator={false}>
@@ -119,7 +117,7 @@ export default function FilterScreen() {
         {auth.status !== 'authenticated' ? (
           <View style={s.section}>
             <SectionTitle>{tr('filters.yourInterests')}</SectionTitle>
-            <Pressable
+            <Press
               style={s.favouriteRow}
               onPress={() => goToAuth(router, 'sign-in', '/(tabs)/discover/filter')}
             >
@@ -131,7 +129,7 @@ export default function FilterScreen() {
                   {tr('filters.filterByYourTeamsSub')}
                 </Text>
               </View>
-            </Pressable>
+            </Press>
           </View>
         ) : favourites.length > 0 && (
           <View style={s.section}>
@@ -211,7 +209,7 @@ export default function FilterScreen() {
           {/* Favourite teams quick-add */}
           {favTeams.length > 0 && teamSearch.length === 0 && (
             <View style={s.favSection}>
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{tr('filters.yourFavouriteTeams')}</Text>
+              <Text style={[t.labelSm, { color: colors.textTertiary }]}>{tr('filters.yourFavouriteTeams')}</Text>
               <View style={s.chipRow}>
                 {favTeams.map((name) => (
                   <Chip
@@ -232,11 +230,11 @@ export default function FilterScreen() {
           <SectionTitle>{tr('filters.dateRange')}</SectionTitle>
           <View style={s.dateRow}>
             <View style={s.datePart}>
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{tr('filters.from')}</Text>
+              <Text style={[t.labelSm, { color: colors.textTertiary }]}>{tr('filters.from')}</Text>
               <DateTimePicker value={after} onChange={setAfter} placeholder={tr('filters.anyDate')} />
             </View>
             <View style={s.datePart}>
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{tr('filters.to')}</Text>
+              <Text style={[t.labelSm, { color: colors.textTertiary }]}>{tr('filters.to')}</Text>
               <DateTimePicker value={before} onChange={setBefore} placeholder={tr('filters.anyDate')} minimumDate={after ?? undefined} />
             </View>
           </View>
@@ -255,9 +253,9 @@ export default function FilterScreen() {
               onChangeText={setVenueSearch}
             />
             {venueSearch.length > 0 && (
-              <Pressable onPress={() => setVenueSearch('')} style={s.clearBtn} accessibilityRole="button">
+              <Press onPress={() => setVenueSearch('')} style={s.clearBtn} accessibilityRole="button">
                 <Icon name="close" size={16} color={colors.textTertiary} />
-              </Pressable>
+              </Press>
             )}
           </View>
         </View>
@@ -284,8 +282,6 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
     paddingTop: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
   },
   closeBtn: { width: TAP, height: TAP, alignItems: 'flex-start', justifyContent: 'center' },
   clearAll: { minHeight: TAP, justifyContent: 'center' },
@@ -298,20 +294,18 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     padding: spacing.lg,
     backgroundColor: colors.surface2,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderRadius: radius.card,
   },
   favouriteLabels: { flex: 1, paddingRight: spacing.lg, gap: 3 },
 
   sportRow: { gap: spacing.sm, paddingRight: spacing.md, flexDirection: 'row' },
 
-  // Underlined search inputs
+  // Filled search inputs
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface2,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.borderStrong,
+    borderRadius: radius.control,
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
   },
@@ -334,7 +328,5 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     backgroundColor: colors.canvas,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
   },
 });

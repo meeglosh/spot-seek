@@ -7,9 +7,9 @@ import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, mapPalette as mp, radius, spacing, TAP, hardShadow, pressStyle, type as t } from '../lib/theme';
+import { colors, mapPalette as mp, radius, spacing, TAP, elevation, type as t } from '../lib/theme';
 import { Icon } from './icons';
-import { Badge, Btn } from './ui';
+import { Badge, Btn, Press } from './ui';
 import type { EventItem } from './EventCard';
 import { formatEventDateTime } from '../lib/dateFormat';
 
@@ -305,7 +305,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
       {/* Event count badge */}
       {mappable.length > 0 && (
         <View style={s.countBadge}>
-          <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>
+          <Text style={[t.labelSm, { color: colors.textSecondary }]}>
             {tr('map.countBadge', { shown: shown.length, total: mappable.length })}
           </Text>
         </View>
@@ -348,7 +348,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
               );
             })()}
             {typeof selected.goingCount === 'number' && (
-              <Text style={[t.labelCapsSm, { color: colors.confirmed }]}>
+              <Text style={[t.labelSm, { color: colors.confirmed }]}>
                 {tr('card.goingCount', { count: selected.goingCount })}
               </Text>
             )}
@@ -378,20 +378,15 @@ function MapChip({
   onPress: () => void;
 }) {
   return (
-    <Pressable
+    <Press
       onPress={onPress}
       hitSlop={{ top: 7, bottom: 7 }}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      style={({ pressed }) => [
-        s.mapChip,
-        active && { borderColor: tone },
-        active && hardShadow(3),
-        active && pressStyle(pressed, 3),
-      ]}
+      style={[s.mapChip, active && { borderColor: tone }]}
     >
-      <Text style={[t.labelCapsSm, { color: active ? tone : colors.textSecondary }]}>{label}</Text>
-    </Pressable>
+      <Text style={[t.labelSm, { color: active ? tone : colors.textSecondary }]}>{label}</Text>
+    </Press>
   );
 }
 
@@ -400,30 +395,32 @@ const s = StyleSheet.create({
   map: { flex: 1 },
 
   // Pins are true circles (radius.round); the selected pin is the only one
-  // that carries the hard shadow.
+  // that carries a soft shadow (its body is opaque, so no text/dot doubling).
   pinWrap: { alignItems: 'center' },
   pin: {
     width: 22,
     height: 22,
     borderRadius: radius.round,
-    borderWidth: 2,
+    borderWidth: 1,
     backgroundColor: colors.mapPin,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pinSelected: { transform: [{ scale: 1.3 }], ...hardShadow(2) },
+  pinSelected: { transform: [{ scale: 1.3 }], ...elevation(2), backgroundColor: colors.mapPin },
   pinCore: { width: 8, height: 8, borderRadius: radius.round },
   pinStem: { width: 2, height: 7 },
 
   // Chip bar over the map
   chipBar: { position: 'absolute', top: spacing.md, left: 0, right: 0 },
   chipRow: { paddingHorizontal: spacing.lg, gap: spacing.sm, flexDirection: 'row' },
+  // Opaque pill floating over the map, level-2 soft shadow.
   mapChip: {
-    backgroundColor: colors.surfaceSunken,
+    ...elevation(2),
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    paddingHorizontal: spacing.md,
+    borderColor: 'transparent',
+    paddingHorizontal: spacing.md + 2,
     paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
   },
 
   // Locate-me control
@@ -435,9 +432,8 @@ const s = StyleSheet.create({
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    ...elevation(2),
+    borderRadius: radius.round,
   },
   locateBtnLifted: { bottom: spacing.lg + 260 },
   locateBtnDisabled: { opacity: 0.5 },
@@ -447,11 +443,10 @@ const s = StyleSheet.create({
     position: 'absolute',
     top: spacing.md + 42,
     left: spacing.lg,
-    backgroundColor: colors.surfaceSunken,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    ...elevation(1),
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
+    borderRadius: radius.pill,
   },
 
   // Empty overlay
@@ -460,23 +455,22 @@ const s = StyleSheet.create({
     bottom: spacing['3xl'],
     left: spacing.xl,
     right: spacing.xl,
-    backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    ...elevation(2),
     padding: spacing.lg,
     alignItems: 'center',
+    borderRadius: radius.card,
   },
   emptyText: { color: colors.textSecondary, textAlign: 'center' },
 
-  // Bottom card — sharp sheet, 1px strong top edge
+  // Bottom card: a sheet rising off the map (level 3, radius.sheet on top).
   bottomCard: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.surface1,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderStrong,
+    ...elevation(3),
+    borderTopLeftRadius: radius.sheet,
+    borderTopRightRadius: radius.sheet,
     padding: spacing.xl,
     paddingTop: spacing.lg,
     gap: spacing.md,
@@ -485,5 +479,5 @@ const s = StyleSheet.create({
   cardBadges: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', flex: 1, paddingRight: spacing.md },
   closeBtn: { width: TAP, height: TAP, alignItems: 'flex-end', justifyContent: 'center', marginTop: -spacing.sm, marginRight: -spacing.sm },
   cardMeta: { gap: 4 },
-  cardVenue: { color: colors.textPrimary, textTransform: 'uppercase' },
+  cardVenue: { color: colors.textPrimary },
 });

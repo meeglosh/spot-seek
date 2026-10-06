@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import {
-  View, TextInput, Pressable, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native';
+import { View, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text } from '../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
 import { colors, fonts, spacing, type as t } from '../../lib/theme';
-import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
+import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -100,9 +98,9 @@ export default function SignInScreen() {
           {!!error && (
             <Text style={[t.bodySm, s.errorText]}>{error}</Text>
           )}
-          <Pressable onPress={() => router.push('/(auth)/forgot-password' as never)} hitSlop={8} style={s.forgotLink}>
-            <Text style={[t.labelCapsSm, { color: colors.action }]}>{tr('signIn.forgotLink')}</Text>
-          </Pressable>
+          <Press onPress={() => router.push('/(auth)/forgot-password' as never)} hitSlop={8} style={s.forgotLink}>
+            <Text style={[t.labelSm, { color: colors.action }]}>{tr('signIn.forgotLink')}</Text>
+          </Press>
         </View>
 
         <View style={s.footer}>
@@ -111,7 +109,7 @@ export default function SignInScreen() {
             onPress={handleSignIn}
             disabled={loading}
           />
-          <Pressable
+          <Press
             onPress={() => router.push({ pathname: '/(auth)/sign-up', params: redirect ? { redirect } : {} } as never)}
             hitSlop={8}
           >
@@ -119,15 +117,15 @@ export default function SignInScreen() {
               {tr('signIn.switchPrompt')}{' '}
               <Text style={s.switchLink}>{tr('signIn.switchLink')}</Text>
             </Text>
-          </Pressable>
-          <Pressable
+          </Press>
+          <Press
             onPress={() => router.replace(target as never)}
             hitSlop={8}
             style={s.skipLink}
             accessibilityLabel={tr('skipForNow')}
           >
-            <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('skipForNow')}</Text>
-          </Pressable>
+            <Text style={[t.label, { color: colors.textSecondary }]}>{tr('skipForNow')}</Text>
+          </Press>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

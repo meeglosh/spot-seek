@@ -14,7 +14,7 @@ import {
   API_BASE, fetchMyRsvps, fetchDashboard,
   type ApiRsvp, type ApiEvent, type ApiDashboardEvent,
 } from '../../../lib/api';
-import { colors, spacing, type as t } from '../../../lib/theme';
+import { colors, radius, spacing, elevation, type as t } from '../../../lib/theme';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 
 type TabKey = 'attending' | 'hosting';
@@ -58,11 +58,11 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
   const tonight = !!e.startsAt && isToday(e.startsAt);
   const waitlisted = rsvp.state === 'waitlisted';
   const maps = directionsUrl(e);
-  // Urgent (waitlisted / tonight) cards earn a live top rule; others stay quiet.
-  const topColor = waitlisted || tonight ? colors.live : colors.borderSubtle;
+  // Urgency (waitlisted / tonight) is carried by the live Badge, not a border.
 
   return (
-    <View style={[s.card, { borderTopColor: topColor }]}>
+    <View style={s.card}>
+      <View style={s.cardClip}>
       {e.coverImageUrl && (
         <Image source={{ uri: `${API_BASE}${e.coverImageUrl}` }} style={s.cardCover} resizeMode="cover" />
       )}
@@ -83,7 +83,7 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
               {e.startsAt ? timeLabel(e.startsAt, e.venueTimezone) : tr('myParties.tbd')}
             </Text>
             {e.startsAt && (
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{dateLabel(e.startsAt, e.venueTimezone)}</Text>
+              <Text style={[t.labelSm, { color: colors.textTertiary }]}>{dateLabel(e.startsAt, e.venueTimezone)}</Text>
             )}
           </View>
         </View>
@@ -102,6 +102,7 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
           </View>
         )}
       </View>
+      </View>
     </View>
   );
 }
@@ -110,7 +111,8 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
   const { t: tr } = useTranslation('parties');
   const { going, waitlisted, interested } = event.rsvpCounts;
   return (
-    <View style={[s.card, { borderTopColor: colors.borderSubtle }]}>
+    <View style={s.card}>
+      <View style={s.cardClip}>
       <View style={s.cardBody}>
         <View style={s.badgeRow}>
           <Badge
@@ -127,7 +129,7 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
               {event.startsAt ? timeLabel(event.startsAt, event.venueTimezone) : tr('myParties.tbd')}
             </Text>
             {event.startsAt && (
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{dateLabel(event.startsAt, event.venueTimezone)}</Text>
+              <Text style={[t.labelSm, { color: colors.textTertiary }]}>{dateLabel(event.startsAt, event.venueTimezone)}</Text>
             )}
           </View>
         </View>
@@ -140,7 +142,7 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
           ].map(({ label, val, color }) => (
             <View key={label} style={s.stat}>
               <Text style={[t.dataMd, { color }]}>{val}</Text>
-              <Text style={[t.labelCapsSm, { color: colors.textTertiary }]}>{label}</Text>
+              <Text style={[t.labelSm, { color: colors.textTertiary }]}>{label}</Text>
             </View>
           ))}
         </View>
@@ -148,6 +150,7 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
         <View style={s.cardFooter}>
           <Btn label={tr('myParties.manage')} variant="secondary" small onPress={onManage} />
         </View>
+      </View>
       </View>
     </View>
   );
@@ -236,7 +239,7 @@ export default function MyPartiesScreen() {
       ) : showSpinner ? (
         <View style={s.center}>
           <ActivityIndicator color={colors.action} />
-          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('myParties.loading')}</Text>
+          <Text style={[t.label, { color: colors.textTertiary }]}>{tr('myParties.loading')}</Text>
         </View>
       ) : error && activeData === null ? (
         <View style={s.center}>
@@ -323,13 +326,10 @@ const s = StyleSheet.create({
 
   list: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, flexGrow: 1 },
 
-  card: {
-    backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    borderTopWidth: 2,
-    overflow: 'hidden',
-  },
+  // Outer = opaque surface + soft shadow; inner clips the cover (iOS drops a
+  // shadow on an overflow:hidden view).
+  card: { ...elevation(1), borderRadius: radius.card },
+  cardClip: { overflow: 'hidden', borderRadius: radius.card, backgroundColor: colors.surface1 },
   cardCover: { width: '100%', height: 150 },
   cardBody: { padding: spacing.lg, gap: spacing.md },
   badgeRow: { flexDirection: 'row', gap: spacing.sm },
@@ -341,7 +341,7 @@ const s = StyleSheet.create({
 
   statsRow: {
     flexDirection: 'row',
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.borderSubtle,
     paddingTop: spacing.md,
   },
@@ -356,8 +356,8 @@ const s = StyleSheet.create({
   footerBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: spacing.lg, paddingTop: spacing.md,
-    backgroundColor: colors.canvas,
-    borderTopWidth: 1, borderTopColor: colors.borderSubtle,
+    ...elevation(1),
+    shadowOffset: { width: 0, height: -2 },
   },
   footerBtn: { width: '100%' },
 

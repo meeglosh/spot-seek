@@ -1,51 +1,61 @@
-// SpotSeek "High-Energy Action" design system, v2 (semantic roles).
-// Cyber-brutalist: near-black canvas, three accents with ONE job each, sharp
-// 0px corners, Anton display caps, hard solid shadows. Dark-only by design.
+// SpotSeek "Soft Brutalist" design system (redesign/soft-v1), dark-only.
 //
-// ─── Colour roles (screens import `colors`, never raw hex) ──────────────────
-//  canvas / surface*   Elevation ladder. In dark mode, higher = lighter:
-//                      sunken (chrome: header, tab bar, drawer)  <  canvas
-//                      < surface1 (cards) < surface2 (inputs, wells)
-//                      < surface3 (pressed, selected fill, track-off).
-//  text*               primary / secondary / tertiary (all >= 4.5:1 on canvas)
-//  border*             subtle = 1px separation, strong = 2px interactive.
-//  action   (cyan)     ONLY interactive/primary: buttons, links, active tab,
-//                      input focus underline, selected state.
-//  live     (orange)   ONLY live / now / urgent / waitlist / needs-attention.
-//  confirmed(lime)     ONLY going / confirmed / sponsored / success.
-//  danger              destructive and errors.
-//  scrim*, media*      overlay tokens (drawer scrim, cover dimming, panels).
-//  shadow              the hard-shadow ink; paper-white because black is
-//                      invisible on a near-black canvas. It is NOT `live`.
+// DIRECTION. Same brand as the hard-brutalist v2 (near-black canvas, cyan as
+// the one action colour, orange = live, lime = confirmed, Anton display) but
+// warmer and more refined: an agency-grade product rather than a poster.
+// Brutalism survives in the structure (flat colour, big type, honest hierarchy,
+// no gradients, no glassy effects); the softness comes from corners, depth,
+// motion and case. Decisions, by area:
 //
-// ─── Depth model ────────────────────────────────────────────────────────────
-//  The hard shadow (solid offset, zero blur) means exactly one thing:
-//  "pressable primary, or currently selected/active". Used on: primary Btn,
-//  the selected Chip / selected card, the active tab indicator, the RSVP
-//  button. Nothing else carries a shadow. Pressed = the shadow collapses: the
-//  element translates by the offset and the shadow drops (see `pressStyle`).
-//
-// ─── Shape & border grammar ─────────────────────────────────────────────────
-//  Corners are 0 everywhere. `radius.round` is the single documented
-//  exception, reserved for true circles: avatars, map pins, the live dot.
-//  1px border = separation. 2px border = interactive or selected.
+//  KEPT      #101014 canvas · cyan action · orange only for live · lime only
+//            for confirmed · Anton for display (screen titles, event names) ·
+//            the 34-icon SVG set · 44pt tap targets · no kickers, no arrows.
+//  CORNERS   A radius lock BY ROLE (see `radius`): controls 10, cards 14,
+//            sheets 20, chips and badges fully pill, circles for avatars/pins.
+//            Nested radii shrink by the padding (inner = outer - inset).
+//  DEPTH     No hard offset shadow. A real elevation ladder (see `elevation`):
+//            canvas < surface1 (cards) < surface2 (raised) < surface3 (sheets,
+//            drawer). Each rung is LIGHTER and carries a soft, blurred,
+//            low-opacity black shadow plus matching Android `elevation`.
+//            Every shadow sits on a view with an OPAQUE background (the helper
+//            always returns one). Never put a shadow on a translucent view:
+//            iOS then shadows the child text (brutalist-v2 rendered selected
+//            chips' labels twice). Also: iOS clips shadows on a view with
+//            `overflow: hidden`, so clip in an inner view and shadow the outer.
+//            Primary buttons carry NO shadow: colour and weight carry them.
+//  PRESS     scale ~0.97 plus an opacity dip over 120ms (`press` + `<Press>`
+//            in components/ui.tsx); scale is dropped under Reduce Motion, the
+//            opacity dip stays.
+//  BORDERS   Mostly gone. Surface contrast separates things. `borderSubtle` is
+//            a low-contrast 1px hairline, used only where two same-level
+//            surfaces meet; `borderStrong` is a 1px focus/selected edge.
+//  TYPE      Anton shrinks (hero 48, XL 34, L 28, M 21, S 17) and goes mixed
+//            case except hero/XL. Buttons and labels are sentence case Space
+//            Grotesk Medium (`button`, `label`, `labelSm`). ALL CAPS is
+//            reserved for the tiny tracked `tag` role (LIVE, TONIGHT).
+//  COLOUR    Warmer, slightly desaturated greys; `actionMuted` is a softer cyan
+//            for secondary emphasis. Every text pair is contrast-tested >= 4.5
+//            in __tests__/App.test.tsx.
+//  SPACING   More generous: scale lg 20 / xl 28 / 2xl 36, and headings get more
+//            room above than below (`space.headingAbove` / `headingBelow`).
+//  ICONS     Same paths, 2px stroke, ROUND caps and joins (`iconStroke`).
+//  MAP       Re-tuned to the warm neutrals (`mapPalette`).
 
 const palette = {
-  // Neutrals (tinted slightly cool, matching the cyan accent)
-  sunken:   '#0b0b0d',
-  canvas:   '#0F0F12',
-  level1:   '#18181c',
-  level2:   '#212126',
-  level3:   '#2c2c32',
-  lineSoft: '#34343a',
-  lineHard: '#7c8a8d',
-  paper:    '#e4e1e6',
-  mist:     '#bac9cc',
-  slate:    '#849396',
-  black:    '#000000',
+  // Warm neutrals
+  sunken:   '#0c0c0e',
+  canvas:   '#101014',
+  level1:   '#1b1a1b',
+  level2:   '#242224',
+  level3:   '#2e2c2d',
+  paper:    '#efebe6',
+  mist:     '#c6c0ba',
+  slate:    '#9b958f',
+  black:    '#0a0a0c',
   white:    '#ffffff',
   // Accents
   cyan:     '#00e5ff',
+  cyanSoft: '#7fd4de',
   orange:   '#ff5e07',
   lime:     '#b4e100',
   rose:     '#ffb4ab',
@@ -53,7 +63,7 @@ const palette = {
 } as const;
 
 export const colors = {
-  // Canvas + surface elevation ladder
+  // Canvas + surface elevation ladder (higher = lighter)
   surfaceSunken: palette.sunken,
   canvas:        palette.canvas,
   surface1:      palette.level1,
@@ -67,87 +77,112 @@ export const colors = {
   textOnFill:    palette.black, // on any saturated accent fill
   textOnMedia:   palette.white, // over cover photos
 
-  // Borders
-  borderSubtle:  palette.lineSoft,
-  borderStrong:  palette.lineHard,
+  // Borders: hairlines, translucent on purpose (they never carry a shadow)
+  borderSubtle:  'rgba(239,235,230,0.08)',
+  borderStrong:  'rgba(239,235,230,0.22)',
 
   // Action = interactive/primary only
   action:        palette.cyan,
-  actionWash:    'rgba(0,229,255,0.08)',
+  actionMuted:   palette.cyanSoft,    // secondary emphasis: ghost buttons, links
+  actionWash:    'rgba(0,229,255,0.10)',
   // Live = live / now / urgent only
   live:          palette.orange,
-  liveWash:      'rgba(255,94,7,0.10)',
+  liveWash:      'rgba(255,94,7,0.12)',
   // Confirmed = going / confirmed / sponsored only
   confirmed:     palette.lime,
-  confirmedWash: 'rgba(180,225,0,0.10)',
+  confirmedWash: 'rgba(180,225,0,0.12)',
   // Danger
   danger:        palette.rose,
   dangerFill:    palette.roseDeep,
-  dangerWash:    'rgba(147,0,10,0.20)',
+  dangerWash:    'rgba(255,180,171,0.12)',
 
   // Overlay / scrim tokens
-  scrim:         'rgba(15,15,18,0.72)',  // drawer / modal backdrop
+  scrim:         'rgba(8,8,10,0.62)',    // drawer / modal backdrop
   scrimSoft:     'rgba(14,14,17,0.28)',  // light veil over full-bleed art
-  mediaDim:      'rgba(15,15,18,0.50)',  // darkens cover photos for legibility
-  mediaChip:     'rgba(15,15,18,0.55)',  // control chip floating on a photo
-  panelOnMedia:  'rgba(24,24,28,0.92)',  // content panel over full-bleed art
-  mapPin:        'rgba(11,11,13,0.92)',  // map pin body
+  mediaDim:      'rgba(16,16,20,0.45)',  // darkens cover photos for legibility
+  mediaChip:     'rgba(16,16,20,0.60)',  // control chip floating on a photo
+  panelOnMedia:  'rgba(27,26,27,0.94)',  // content panel over full-bleed art
+  mapPin:        '#0d0d10',              // map pin body: OPAQUE (it carries a shadow)
 
-  // Hard-shadow ink
-  shadow:        palette.paper,
+  // Shadow ink (always black: soft shadows read as darkness, not as a glow)
+  shadow:        '#000000',
 } as const;
 
 export type Colors = typeof colors;
 
 // Dark-only: both scheme exports point at the same object so any legacy
-// `scheme === 'dark' ? dark : light` picks identical values. Kept because
-// discover/_layout.tsx and the theme tests still import them.
+// `scheme === 'dark' ? dark : light` picks identical values.
 export const dark: Colors = colors;
 export const light: Colors = colors;
 
-// Map style palette, derived from the theme (not hand-picked teal): neutrals
-// for land/roads, `action` for the highway spine and place labels.
+// Map style palette, derived from the warm neutrals.
 export const mapPalette = {
-  land:         palette.sunken,
-  park:         palette.canvas,
-  water:        '#07070a',
-  road:         palette.level2,
-  roadStroke:   palette.sunken,
-  arterial:     palette.level3,
-  highway:      palette.lineSoft,
-  highwayStroke: palette.canvas,
-  boundary:     palette.level3,
-  label:        palette.slate,
-  labelStroke:  palette.sunken,
-  labelPlace:   palette.mist,
-  labelWater:   palette.level3,
+  land:         '#161415',
+  park:         '#191718',
+  water:        '#0c0b0c',
+  road:         '#242123',
+  roadStroke:   '#161415',
+  arterial:     '#2e2a2d',
+  highway:      '#3d393b',
+  highwayStroke: '#191718',
+  boundary:     '#2e2a2d',
+  label:        '#8d8782',
+  labelStroke:  '#161415',
+  labelPlace:   '#c6c0ba',
+  labelWater:   '#4a4648',
 } as const;
 
+// Rhythm: more generous than v2 (lg 16 -> 20, xl 24 -> 28).
 export const spacing = {
   xs: 4,
   sm: 8,
   md: 12,
-  lg: 16,
-  xl: 24,
-  '2xl': 32,
-  '3xl': 48,
-  '4xl': 64,
+  lg: 20,
+  xl: 28,
+  '2xl': 36,
+  '3xl': 52,
+  '4xl': 72,
 } as const;
 
-// Sharp by default. `round` is reserved for true circles (avatars, map pins,
-// the live dot); nothing else may round.
+// Semantic gaps: headings sit further from what is above them than from the
+// content they introduce.
+export const space = {
+  item: 12,         // between sibling items in a group
+  group: 28,        // between groups
+  headingAbove: 32,
+  headingBelow: 12,
+} as const;
+
+// Radius lock BY ROLE. Pick the role, never a number.
+//   control  buttons, inputs, segmented tracks, icon buttons
+//   card     event cards, tiles, panels
+//   sheet    drawer, bottom sheets, modals
+//   pill     chips, badges, progress segments' ends
+//   round    true circles: avatars, map pins, the live dot
 export const radius = {
   none: 0,
+  control: 10,
+  card: 14,
+  sheet: 20,
+  pill: 999,
   round: 999,
 } as const;
 
 // Minimum tap target (iOS HIG 44pt). Use with `hitSlop` for small visuals.
 export const TAP = 44;
 
+// Icon stroke settings: same 24-unit paths, softened by round caps and joins.
+// Use `<Icon caps="square" />` to opt a single glyph back to the hard look.
+export const iconStroke = {
+  width: 2,
+  cap: 'round' as 'round' | 'square',
+  join: 'round' as 'round' | 'miter',
+} as const;
+
 // Font family references, loaded in root _layout.tsx.
 // display = Anton: screen titles, event names, true display moments ONLY
 // body    = Archivo Narrow: all reading text
-// label   = Space Grotesk: metadata / labels / data (tabular numerals)
+// label   = Space Grotesk Medium: buttons, labels, data (tabular numerals)
 export const fonts = {
   display:      'Anton_400Regular',
   sansRegular:  'ArchivoNarrow_400Regular',
@@ -173,50 +208,61 @@ const tnum = ['tabular-nums' as const];
 // clips glyph tops on iOS). Body gets extra line height and a touch of
 // tracking to compensate for light-on-dark halation.
 export const type = {
-  // Display (Anton)
-  displayHero: { fontFamily: fonts.display, fontSize: 56, lineHeight: 68, textTransform: 'uppercase' as const },
-  displayXl:   { fontFamily: fonts.display, fontSize: 40, lineHeight: 52, letterSpacing: -0.5, textTransform: 'uppercase' as const },
-  headlineLg:  { fontFamily: fonts.display, fontSize: 32, lineHeight: 40, textTransform: 'uppercase' as const },
-  headlineMd:  { fontFamily: fonts.display, fontSize: 24, lineHeight: 30, textTransform: 'uppercase' as const },
-  headlineSm:  { fontFamily: fonts.display, fontSize: 18, lineHeight: 24, textTransform: 'uppercase' as const },
+  // Display (Anton). Only hero and XL keep caps.
+  displayHero: { fontFamily: fonts.display, fontSize: 48, lineHeight: 60, textTransform: 'uppercase' as const },
+  displayXl:   { fontFamily: fonts.display, fontSize: 34, lineHeight: 44, letterSpacing: -0.3, textTransform: 'uppercase' as const },
+  headlineLg:  { fontFamily: fonts.display, fontSize: 28, lineHeight: 36, letterSpacing: 0.2 },
+  headlineMd:  { fontFamily: fonts.display, fontSize: 21, lineHeight: 28, letterSpacing: 0.3 },
+  headlineSm:  { fontFamily: fonts.display, fontSize: 17, lineHeight: 24, letterSpacing: 0.3 },
   // Body (Archivo Narrow)
   bodyLg:       { fontFamily: fonts.sansMedium,  fontSize: 18, lineHeight: 27, letterSpacing: 0.1 },
   bodyMd:       { fontFamily: fonts.sansRegular, fontSize: 16, lineHeight: 25, letterSpacing: 0.15 },
   bodyMdStrong: { fontFamily: fonts.sansMedium,  fontSize: 16, lineHeight: 25, letterSpacing: 0.15 },
   bodySm:       { fontFamily: fonts.sansRegular, fontSize: 14, lineHeight: 21, letterSpacing: 0.2 },
-  // Labels / metadata (Space Grotesk)
-  labelCaps:   { fontFamily: fonts.labelBold, fontSize: 12, lineHeight: 16, letterSpacing: 1.2, textTransform: 'uppercase' as const, fontVariant: tnum },
-  labelCapsSm: { fontFamily: fonts.labelBold, fontSize: 11, lineHeight: 14, letterSpacing: 1, textTransform: 'uppercase' as const, fontVariant: tnum },
-  labelMd:     { fontFamily: fonts.label, fontSize: 13, lineHeight: 18, letterSpacing: 0.4, fontVariant: tnum },
+  // Buttons and labels (Space Grotesk Medium, sentence/title case)
+  button:      { fontFamily: fonts.label, fontSize: 15, lineHeight: 20, letterSpacing: 0.1 },
+  buttonSm:    { fontFamily: fonts.label, fontSize: 14, lineHeight: 18, letterSpacing: 0.1 },
+  label:       { fontFamily: fonts.label, fontSize: 14, lineHeight: 20, letterSpacing: 0.1, fontVariant: tnum },
+  labelSm:     { fontFamily: fonts.label, fontSize: 12, lineHeight: 16, letterSpacing: 0.2, fontVariant: tnum },
+  labelMd:     { fontFamily: fonts.label, fontSize: 13, lineHeight: 18, letterSpacing: 0.2, fontVariant: tnum },
+  // The ONLY caps role: tiny tracked metadata tags (LIVE, TONIGHT, sport).
+  tag:         { fontFamily: fonts.labelBold, fontSize: 11, lineHeight: 14, letterSpacing: 1.2, textTransform: 'uppercase' as const, fontVariant: tnum },
   // Data: times, counts, money (tabular numerals so columns do not jitter)
   monoData:    { fontFamily: fonts.label,     fontSize: 14, lineHeight: 20, fontVariant: tnum },
   dataMd:      { fontFamily: fonts.labelBold, fontSize: 20, lineHeight: 24, fontVariant: tnum },
   dataLg:      { fontFamily: fonts.labelBold, fontSize: 24, lineHeight: 30, fontVariant: tnum },
 } as const;
 
-// ─── Depth: the hard shadow ──────────────────────────────────────────────────
-// Solid offset, zero blur, 100% opacity. Means "pressable primary or selected".
-// `elevation` gives Android a comparable lift (Android cannot draw a coloured
-// hard shadow; it is dropped to 0 whenever the shadow is).
-export const HARD_OFFSET = 4;
+// ─── Depth: the elevation ladder ─────────────────────────────────────────────
+// level 0 canvas (flat) · 1 cards/tab bar · 2 raised: selected, popovers ·
+// 3 sheets: drawer, modals. In dark mode a higher level is a LIGHTER surface
+// plus a softer, wider shadow. `elevation()` always returns an OPAQUE
+// backgroundColor so iOS never shadows the child text (see header). Android
+// gets the matching `elevation`. Primary buttons take no elevation at all.
+export type ElevationLevel = 0 | 1 | 2 | 3;
 
-export function hardShadow(offset: number = HARD_OFFSET, color: string = colors.shadow) {
+export const elevationLevels = {
+  0: { bg: colors.canvas,   y: 0,  blur: 0,  opacity: 0,    android: 0 },
+  1: { bg: colors.surface1, y: 2,  blur: 8,  opacity: 0.28, android: 2 },
+  2: { bg: colors.surface2, y: 6,  blur: 16, opacity: 0.34, android: 6 },
+  3: { bg: colors.surface3, y: 14, blur: 28, opacity: 0.45, android: 12 },
+} as const;
+
+export function elevation(level: ElevationLevel) {
+  const l = elevationLevels[level];
   return {
-    shadowColor: color,
-    shadowOffset: { width: offset, height: offset },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: offset,
+    backgroundColor: l.bg,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: l.y },
+    shadowOpacity: l.opacity,
+    shadowRadius: l.blur,
+    elevation: l.android,
   } as const;
 }
 
-// The brutalist press: shadow collapses and the element travels the offset.
-export function pressStyle(pressed: boolean, offset: number = HARD_OFFSET) {
-  return pressed
-    ? ({
-      transform: [{ translateX: offset }, { translateY: offset }],
-      shadowOpacity: 0,
-      elevation: 0,
-    } as const)
-    : null;
-}
+// ─── Press feedback ──────────────────────────────────────────────────────────
+export const press = {
+  scale: 0.97,
+  dip: 0.85,       // opacity while pressed
+  duration: 120,   // ms
+} as const;

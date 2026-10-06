@@ -28,7 +28,7 @@ export default function LaunchSplash({ dismiss, onDone }: Props) {
   // Scoped to 'common' (the app's defaultNS) — the tagline lives under
   // common.json's `brand` subtree since it's app-wide, not screen-specific.
   // Aliased to `tr` because `t` is already the theme.type import used below
-  // (t.labelCaps).
+  // (t.label).
   const { t: tr } = useTranslation('common');
   const opacity = React.useRef(new Animated.Value(1)).current;
 
@@ -48,7 +48,7 @@ export default function LaunchSplash({ dismiss, onDone }: Props) {
       <View style={s.center}>
         <Image source={BRAND_LOGO} resizeMode="contain" style={s.logo} />
         <Text style={[t.displayXl, s.wordmark]}>SPOT SEEK</Text>
-        <Text style={[t.labelCaps, s.tagline]}>{tr('brand.tagline')}</Text>
+        <Text style={[t.label, s.tagline]}>{tr('brand.tagline')}</Text>
       </View>
     </Animated.View>
   );

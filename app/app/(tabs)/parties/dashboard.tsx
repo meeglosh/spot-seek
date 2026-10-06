@@ -1,13 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View, ScrollView, Pressable, StyleSheet, RefreshControl, ActivityIndicator, Image,
-} from 'react-native';
+import { View, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, Image } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
-import { Btn, SegmentBar, LiveDot } from '../../../components/ui';
+import { Btn, SegmentBar, LiveDot, Press } from '../../../components/ui';
 import { Icon } from '../../../components/icons';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
@@ -15,7 +13,7 @@ import {
   API_BASE, fetchDashboard, fetchHostAnalytics, fetchEventBids, fetchConnectStatus,
   type ApiDashboardEvent, type ApiHostAnalyticsEvent, type ApiConnectStatus,
 } from '../../../lib/api';
-import { colors, spacing, type as t } from '../../../lib/theme';
+import { colors, radius, spacing, type as t } from '../../../lib/theme';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -147,7 +145,7 @@ export default function CommandCenterScreen() {
       {loading && !refreshing ? (
         <View style={s.center}>
           <ActivityIndicator color={colors.action} />
-          <Text style={[t.labelCaps, { color: colors.textTertiary }]}>{tr('dashboard.loading')}</Text>
+          <Text style={[t.label, { color: colors.textTertiary }]}>{tr('dashboard.loading')}</Text>
         </View>
       ) : error && events.length === 0 ? (
         <View style={s.center}>
@@ -166,21 +164,21 @@ export default function CommandCenterScreen() {
             <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('dashboard.commandCenter')}</Text>
 
             {showPayoutBanner && (
-              <Pressable style={s.payoutBanner} onPress={() => router.push('/settings' as never)} accessibilityRole="button">
+              <Press style={s.payoutBanner} onPress={() => router.push('/settings' as never)} accessibilityRole="button">
                 <Text style={[t.bodySm, s.payoutBannerText]}>{tr('dashboard.payoutBanner')}</Text>
                 <Icon name="chevronRight" size={18} color={colors.action} />
-              </Pressable>
+              </Press>
             )}
 
             <View style={s.statTiles}>
               <View style={s.statTile}>
-                <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('dashboard.totalRsvp')}</Text>
+                <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('dashboard.totalRsvp')}</Text>
                 <Text style={[t.dataLg, { color: colors.textPrimary }]}>
                   {totalRsvp.toLocaleString('en-US')}
                 </Text>
               </View>
               <View style={s.statTile}>
-                <Text style={[t.labelCapsSm, { color: colors.textSecondary }]}>{tr('dashboard.sponsorRev')}</Text>
+                <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('dashboard.sponsorRev')}</Text>
                 <Text style={[t.dataLg, { color: colors.confirmed }]}>
                   {fmtMoney(sponsorRevCents)}
                 </Text>
@@ -229,9 +227,9 @@ export default function CommandCenterScreen() {
 
                   <View style={s.activeFooter}>
                     {sponsored ? (
-                      <Text style={[t.labelCaps, { color: colors.confirmed }]}>{sponsoredLabel(sponsorCount, tr)}</Text>
+                      <Text style={[t.label, { color: colors.confirmed }]}>{sponsoredLabel(sponsorCount, tr)}</Text>
                     ) : pending ? (
-                      <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('dashboard.pendingSponsor')}</Text>
+                      <Text style={[t.label, { color: colors.textSecondary }]}>{tr('dashboard.pendingSponsor')}</Text>
                     ) : (
                       <Btn label={tr('dashboard.findSponsors')} variant="ghost" small onPress={() => findSponsors(e.id)} />
                     )}
@@ -248,7 +246,7 @@ export default function CommandCenterScreen() {
             <Text style={[t.bodyMd, s.emptyLine]}>{tr('dashboard.emptyDrafts')}</Text>
           ) : (
             drafts.map((e) => (
-              <Pressable
+              <Press
                 key={e.id}
                 onPress={() => edit(e.id)}
                 style={({ pressed }) => [s.rowCard, pressed && s.rowPressed]}
@@ -261,7 +259,7 @@ export default function CommandCenterScreen() {
                   </Text>
                 </View>
                 <Icon name="chevronRight" size={20} color={colors.textTertiary} />
-              </Pressable>
+              </Press>
             ))
           )}
 
@@ -277,7 +275,7 @@ export default function CommandCenterScreen() {
               const attendees = stats?.confirmedAttendees ?? e.rsvpCounts.going;
               const endRef = e.endsAt ?? e.startsAt;
               return (
-                <Pressable
+                <Press
                   key={e.id}
                   onPress={() => edit(e.id)}
                   style={({ pressed }) => [s.rowCard, s.completedCard, pressed && s.rowPressed]}
@@ -291,12 +289,12 @@ export default function CommandCenterScreen() {
                     </Text>
                   </View>
                   <View style={s.rowRight}>
-                    {sponsored && <Text style={[t.labelCapsSm, { color: colors.confirmed }]}>{sponsoredLabel(sponsorCount, tr)}</Text>}
+                    {sponsored && <Text style={[t.labelSm, { color: colors.confirmed }]}>{sponsoredLabel(sponsorCount, tr)}</Text>}
                     <Text style={[t.monoData, { color: colors.textSecondary }]}>
                       {tr('dashboard.attendees', { count: attendees })}
                     </Text>
                   </View>
-                </Pressable>
+                </Press>
               );
             })
           )}
@@ -338,16 +336,16 @@ const s = StyleSheet.create({
     backgroundColor: colors.surface2,
     padding: spacing.md,
     marginTop: spacing.md,
+    borderRadius: radius.control,
   },
   payoutBannerText: { color: colors.textPrimary, flex: 1 },
   statTiles: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
   statTile: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     backgroundColor: colors.surface1,
     padding: spacing.lg,
     gap: spacing.xs,
+    borderRadius: radius.card,
   },
 
   sectionHeader: {
@@ -361,16 +359,14 @@ const s = StyleSheet.create({
 
   activeCard: {
     backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     padding: spacing.lg,
     gap: spacing.md,
+    borderRadius: radius.card,
+    overflow: 'hidden',
   },
   activeCover: {
     width: '100%',
     height: 128,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
   },
   rsvpRow: {
     flexDirection: 'row',
@@ -391,14 +387,13 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
     backgroundColor: colors.surface1,
     padding: spacing.lg,
+    borderRadius: radius.card,
   },
-  rowPressed: { backgroundColor: colors.surface2, borderColor: colors.borderStrong },
+  rowPressed: { backgroundColor: colors.surface2 },
   rowText: { flex: 1, gap: 2 },
-  rowTitle: { color: colors.textPrimary, textTransform: 'uppercase' },
+  rowTitle: { color: colors.textPrimary },
   rowRight: { alignItems: 'flex-end', gap: 2 },
   completedCard: { opacity: 0.7 },
   struck: { textDecorationLine: 'line-through' },

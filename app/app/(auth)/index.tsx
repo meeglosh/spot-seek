@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, TAP, type as t } from '../../lib/theme';
-import { Btn } from '../../components/ui';
+import { colors, radius, spacing, TAP, elevation, type as t } from '../../lib/theme';
+import { Btn, Press } from '../../components/ui';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -33,13 +33,13 @@ export default function WelcomeScreen() {
       <View style={s.panel}>
         <Btn label={tr('welcome.createAccount')} onPress={() => router.push('/(auth)/sign-up')} />
         <Btn label={tr('welcome.signIn')} variant="secondary" onPress={() => router.push('/(auth)/sign-in')} />
-        <Pressable
+        <Press
           onPress={() => router.replace('/(tabs)/discover')}
           style={s.skipLink}
           accessibilityLabel={tr('skipForNow')}
         >
-          <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{tr('skipForNow')}</Text>
-        </Pressable>
+          <Text style={[t.label, { color: colors.textSecondary }]}>{tr('skipForNow')}</Text>
+        </Press>
       </View>
     </View>
   );
@@ -55,13 +55,10 @@ const s = StyleSheet.create({
   },
   tagline: { color: colors.textSecondary, textAlign: 'center', maxWidth: 300 },
   panel: {
-    backgroundColor: colors.surfaceSunken,
-    borderTopWidth: 2,
-    borderTopColor: colors.action,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    ...elevation(2),
     padding: spacing.xl,
     gap: spacing.md,
+    borderRadius: radius.card,
   },
   skipLink: { alignItems: 'center', justifyContent: 'center', minHeight: TAP },
 });

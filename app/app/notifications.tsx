@@ -5,7 +5,7 @@
  * state for this pass so a user can still see what was new.
  */
 import React, { useState, useCallback, useRef } from 'react';
-import { View, ScrollView, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { Text } from '../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +15,8 @@ import { useAuth } from '../lib/auth';
 import {
   fetchNotifications, markNotificationsRead, type ApiNotification,
 } from '../lib/api';
-import { colors, spacing, type as t } from '../lib/theme';
+import { colors, radius, spacing, type as t } from '../lib/theme';
+import { Press } from '../components/ui';
 import { routeFor } from '../lib/notificationRoutes';
 import { AppHeader } from '../components/AppHeader';
 import { GuestGate } from '../components/AuthGate';
@@ -120,15 +121,15 @@ export default function NotificationsScreen() {
             {notifications.map((n) => {
               const path = routeFor(n.type, n.eventId);
               return (
-                <Pressable
+                <Press
                   key={n.id}
                   style={[s.row, !n.read && s.rowUnread]}
                   onPress={path ? () => handlePress(n) : undefined}
                 >
                   <Text style={[t.bodyLg, s.rowTitle]}>{n.title}</Text>
                   <Text style={[t.bodySm, s.rowBody]}>{n.body}</Text>
-                  <Text style={[t.labelCapsSm, s.rowTime]}>{timeAgo(n.createdAt, tr)}</Text>
-                </Pressable>
+                  <Text style={[t.labelSm, s.rowTime]}>{timeAgo(n.createdAt, tr)}</Text>
+                </Press>
               );
             })}
           </View>
@@ -148,9 +149,10 @@ const s = StyleSheet.create({
   row: {
     backgroundColor: colors.surface1,
     borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderColor: 'transparent',
     padding: spacing.lg,
     gap: spacing.xs,
+    borderRadius: radius.card,
   },
   // Unread = a full action-coloured border and a raised surface (no side stripe).
   rowUnread: {

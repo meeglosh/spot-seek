@@ -1,13 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Pressable, Animated, AccessibilityInfo, StyleSheet,
-  type ViewStyle, type StyleProp,
+  type ViewStyle, type StyleProp, type PressableProps,
 } from 'react-native';
 import { Text } from './Text';
 import { Icon, type IconName } from './icons';
-import {
-  colors, radius, spacing, type as t, TAP, hardShadow, pressStyle,
-} from '../lib/theme';
+import { colors, radius, spacing, space, type as t, TAP, elevation, press } from '../lib/theme';
 
 // ─── Reduce Motion ────────────────────────────────────────────────────────────
 
@@ -22,6 +20,55 @@ export function useReduceMotion(): boolean {
     return () => { mounted = false; sub.remove(); };
   }, []);
   return reduce;
+}
+
+// ─── Press: the one pressable. Gentle 0.97 scale + opacity dip over 120ms ────
+// Drop-in for Pressable; `style` may be a function of { pressed }. Reduce
+// Motion drops the scale and keeps the opacity dip (a state change must still
+// be visible). `restOpacity` lets a disabled control sit at e.g. 0.4.
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+type PressStyle = StyleProp<ViewStyle> | ((s: { pressed: boolean }) => StyleProp<ViewStyle>);
+
+export type PressProps = Omit<PressableProps, 'style' | 'children'> & {
+  style?: PressStyle;
+  restOpacity?: number;
+  children?: React.ReactNode;
+};
+
+export function Press({
+  style, restOpacity = 1, disabled, onPressIn, onPressOut, children, ...rest
+}: PressProps) {
+  const reduceMotion = useReduceMotion();
+  const v = useRef(new Animated.Value(0)).current;
+  const [pressed, setPressed] = useState(false);
+
+  const to = (toValue: number) => {
+    Animated.timing(v, { toValue, duration: press.duration, useNativeDriver: true }).start();
+  };
+
+  const resolved = typeof style === 'function' ? style({ pressed }) : style;
+  const live = !disabled;
+
+  return (
+    <AnimatedPressable
+      {...rest}
+      disabled={disabled}
+      onPressIn={(e) => { if (live) { setPressed(true); to(1); } onPressIn?.(e); }}
+      onPressOut={(e) => { setPressed(false); to(0); onPressOut?.(e); }}
+      style={[
+        resolved,
+        {
+          opacity: v.interpolate({ inputRange: [0, 1], outputRange: [restOpacity, restOpacity * press.dip] }),
+          transform: [{
+            scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, reduceMotion ? 1 : press.scale] }),
+          }],
+        },
+      ]}
+    >
+      {children}
+    </AnimatedPressable>
+  );
 }
 
 // ─── Live dot: a true circle (radius.round) that pulses subtly ───────────────
@@ -52,39 +99,51 @@ export function LiveDot({ color = colors.live, size = 8 }: { color?: string; siz
   );
 }
 
-// ─── Segmented control: the selected segment is "selected" = fill + shadow ───
+// ─── Segmented control ───────────────────────────────────────────────────────
+// A recessed track (surface2) holding a raised thumb (surface3, opaque, with a
+// soft level-1 shadow). Sizing: segments hug their content by default and the
+// control never exceeds its container (`maxWidth: '100%'`, labels truncate).
+// Pass `fill` to stretch the control and share the width equally. The thumb's
+// radius is the track's minus the track padding, so the curves stay concentric.
+
+const SEG_PAD = 3;
 
 export function SegmentedControl<K extends string>({
-  options, value, onChange, style,
+  options, value, onChange, style, fill = false,
 }: {
   options: ReadonlyArray<{ key: K; label: string; icon?: IconName; accessibilityLabel?: string }>;
   value: K;
   onChange: (key: K) => void;
   style?: StyleProp<ViewStyle>;
+  fill?: boolean;
 }) {
   return (
-    <View style={[s.segmented, style]}>
+    <View style={[s.segmented, fill ? s.segmentedFill : s.segmentedHug, style]}>
       {options.map((opt) => {
         const on = opt.key === value;
-        const color = on ? colors.textOnFill : colors.textPrimary;
         return (
-          <Pressable
+          <Press
             key={opt.key}
             onPress={() => onChange(opt.key)}
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
             accessibilityLabel={opt.accessibilityLabel}
-            style={({ pressed }) => [
+            style={[
               s.segmentBtn,
-              on && { backgroundColor: colors.action },
-              on && hardShadow(3),
-              on && pressStyle(pressed, 3),
-              !on && pressed && { backgroundColor: colors.surface3 },
+              fill ? s.segmentFill : s.segmentHug,
+              on && s.segmentOn,
             ]}
           >
-            {opt.icon && <Icon name={opt.icon} size={16} color={color} />}
-            <Text style={[t.labelCaps, { color }]}>{opt.label}</Text>
-          </Pressable>
+            {opt.icon && (
+              <Icon name={opt.icon} size={16} color={on ? colors.action : colors.textTertiary} />
+            )}
+            <Text
+              style={[t.label, { color: on ? colors.textPrimary : colors.textSecondary }]}
+              numberOfLines={1}
+            >
+              {opt.label}
+            </Text>
+          </Press>
         );
       })}
     </View>
@@ -95,38 +154,34 @@ export function SegmentedControl<K extends string>({
 
 export function BackLink({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable
+    <Press
       onPress={onPress}
       accessibilityRole="button"
       style={s.backLink}
     >
       <Icon name="back" size={18} color={colors.textSecondary} />
-      <Text style={[t.labelCaps, { color: colors.textSecondary }]}>{label}</Text>
-    </Pressable>
+      <Text style={[t.label, { color: colors.textSecondary }]}>{label}</Text>
+    </Press>
   );
 }
 
-// ─── Section title: Anton caps over a 1px rule ───────────────────────────────
+// ─── Section title: Anton, mixed case, room above and less below ─────────────
 
 export function SectionTitle({ children }: { children: string }) {
   return (
     <View style={s.sectionWrap}>
       <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{children}</Text>
-      <View style={s.sectionRule} />
     </View>
   );
 }
 
 // ─── Buttons ──────────────────────────────────────────────────────────────────
-// primary   solid action fill, black text, hard shadow (pressable primary).
-//           Press collapses the shadow: the block travels the offset.
-// secondary 2px strong border, transparent (interactive = 2px)
-// ghost     quiet filled well
-// danger    2px danger border
+// primary   solid action fill, dark text. NO shadow: colour and weight carry it.
+// secondary raised neutral fill (surface3), no border
+// ghost     no fill, soft cyan text (tertiary emphasis)
+// danger    danger wash, danger text
 
 type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-
-const BTN_SHADOW = 4;
 
 export function Btn({
   label, onPress, variant = 'primary', disabled = false, small = false, style,
@@ -138,47 +193,29 @@ export function Btn({
   small?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
-  const base: ViewStyle[] = [s.btn, small ? s.btnSmall : {}];
+  let bg: string = colors.action;
   let textColor: string = colors.textOnFill;
-  const primary = variant === 'primary';
-
-  if (primary) {
-    base.push({ backgroundColor: colors.action });
-  } else if (variant === 'secondary') {
-    base.push({ backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.borderStrong });
-    textColor = colors.textPrimary;
-  } else if (variant === 'ghost') {
-    base.push({ backgroundColor: colors.surface3 });
-    textColor = colors.textPrimary;
-  } else {
-    base.push({ backgroundColor: 'transparent', borderWidth: 2, borderColor: colors.danger });
-    textColor = colors.danger;
-  }
+  if (variant === 'secondary') { bg = colors.surface3; textColor = colors.textPrimary; }
+  else if (variant === 'ghost') { bg = 'transparent'; textColor = colors.actionMuted; }
+  else if (variant === 'danger') { bg = colors.dangerWash; textColor = colors.danger; }
 
   return (
-    <Pressable
+    <Press
       onPress={onPress}
       disabled={disabled}
+      restOpacity={disabled ? 0.4 : 1}
       accessibilityRole="button"
       accessibilityState={{ disabled }}
-      style={({ pressed }) => [
-        base,
-        primary && !disabled && hardShadow(BTN_SHADOW),
-        primary && !disabled && pressStyle(pressed, BTN_SHADOW),
-        !primary && pressed && { backgroundColor: colors.surface3 },
-        disabled && s.btnDisabled,
-        style,
-      ]}
+      style={[s.btn, small && s.btnSmall, { backgroundColor: bg }, style]}
     >
-      <Text style={[small ? t.labelCapsSm : t.labelCaps, { color: textColor }]}>{label}</Text>
-    </Pressable>
+      <Text style={[small ? t.buttonSm : t.button, { color: textColor }]}>{label}</Text>
+    </Press>
   );
 }
 
-// ─── Chip: square tag. Selected = 2px tone border + wash + hard shadow ───────
-// Corners are square on purpose: the set's chamfer motif lives in the icons;
-// a clipped-corner chip would need a bespoke SVG border per tone and does not
-// earn its weight.
+// ─── Chip: pill. Selected = tone wash + tone text + faint tone edge ──────────
+// No shadow, no stacked layers: a selected chip is ONE view with ONE label
+// (brutalist-v2 shadowed a translucent chip and iOS drew the label twice).
 
 export function Chip({
   label, active = false, onPress, tone = 'action', trailingIcon,
@@ -200,43 +237,33 @@ export function Chip({
       : tone === 'confirmed' ? colors.confirmedWash
         : tone === 'neutral' ? colors.surface3
           : colors.actionWash;
+  const fg = active ? toneColor : colors.textSecondary;
+  const frame: ViewStyle = active
+    ? { backgroundColor: wash, borderColor: `${toneColor}55` }
+    : { backgroundColor: colors.surface2, borderColor: 'transparent' };
+  const content = (
+    <>
+      <Text style={[t.labelMd, { color: fg }]} numberOfLines={1}>{label}</Text>
+      {trailingIcon && <Icon name={trailingIcon} size={12} color={fg} />}
+    </>
+  );
   // Without `onPress` the chip is a static tag: no press state, no tap role.
-  if (!onPress) {
-    return (
-      <View
-        style={[
-          s.chip,
-          { borderColor: active ? toneColor : colors.borderSubtle },
-          active && { backgroundColor: wash },
-        ]}
-      >
-        <Text style={[t.labelCapsSm, { color: active ? toneColor : colors.textSecondary }]}>{label}</Text>
-        {trailingIcon && <Icon name={trailingIcon} size={12} color={active ? toneColor : colors.textSecondary} />}
-      </View>
-    );
-  }
+  if (!onPress) return <View style={[s.chip, frame]}>{content}</View>;
   return (
-    <Pressable
+    <Press
       onPress={onPress}
       hitSlop={{ top: 6, bottom: 6, left: 2, right: 2 }}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      style={({ pressed }) => [
-        s.chip,
-        { borderColor: active ? toneColor : colors.borderSubtle },
-        active && { backgroundColor: wash },
-        active && hardShadow(3),
-        active && pressStyle(pressed, 3),
-        !active && pressed && { backgroundColor: colors.surface3 },
-      ]}
+      style={[s.chip, frame]}
     >
-      <Text style={[t.labelCapsSm, { color: active ? toneColor : colors.textSecondary }]}>{label}</Text>
-      {trailingIcon && <Icon name={trailingIcon} size={12} color={active ? toneColor : colors.textSecondary} />}
-    </Pressable>
+      {content}
+    </Press>
   );
 }
 
 // ─── Badge: state marker. Pulsing dot only for tone="live" ───────────────────
+// Tiny caps tag (the one place caps live), on an opaque surface3 pill.
 
 export function Badge({
   label, tone = 'live', dot = true, icon, style,
@@ -258,12 +285,12 @@ export function Badge({
       {dot && !icon && (tone === 'live'
         ? <LiveDot color={toneColor} size={7} />
         : <View style={[s.badgeDot, { backgroundColor: toneColor }]} />)}
-      <Text style={[t.labelCapsSm, { color: tone === 'neutral' ? colors.textPrimary : toneColor }]}>{label}</Text>
+      <Text style={[t.tag, { color: tone === 'neutral' ? colors.textPrimary : toneColor }]}>{label}</Text>
     </View>
   );
 }
 
-// ─── Segmented progress bar (mechanical, not smooth) ─────────────────────────
+// ─── Segmented progress bar ──────────────────────────────────────────────────
 
 export function SegmentBar({
   value, max, segments = 10, tone = colors.action,
@@ -286,51 +313,57 @@ export function SegmentBar({
   );
 }
 
-// ─── Field label + underlined input styling ──────────────────────────────────
+// ─── Field label + input styling ─────────────────────────────────────────────
 
 export function FieldLabel({ children, color = colors.textSecondary }: { children: string; color?: string }) {
-  return <Text style={[t.labelCaps, { color, marginBottom: spacing.sm }]}>{children}</Text>;
+  return <Text style={[t.label, { color, marginBottom: spacing.sm }]}>{children}</Text>;
 }
 
-// Underline-only input frame: 2px strong bottom border (interactive = 2px),
-// turning to the action colour on focus. Focus never uses `live`.
+// Filled well (surface2) with control radius. The 1px edge is transparent at
+// rest and turns action on focus, so focusing never shifts layout.
 export const inputStyle = {
   ...t.bodyMdStrong,
   backgroundColor: colors.surface2,
-  borderBottomWidth: 2,
-  borderBottomColor: colors.borderStrong,
+  borderWidth: 1,
+  borderColor: 'transparent',
+  borderRadius: radius.control,
   color: colors.textPrimary,
-  minHeight: TAP,
-  paddingHorizontal: spacing.md,
+  minHeight: TAP + 4,
+  paddingHorizontal: spacing.lg - 4,
   paddingVertical: spacing.md,
 } as const;
 
-export const inputFocusedStyle = { borderBottomColor: colors.action } as const;
+export const inputFocusedStyle = { borderColor: colors.action } as const;
 
 const s = StyleSheet.create({
   segmented: {
     flexDirection: 'row',
-    gap: spacing.xs,
-    backgroundColor: colors.surface1,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    padding: spacing.xs + 1,
+    gap: 2,
+    backgroundColor: colors.surface2,
+    borderRadius: radius.control,
+    padding: SEG_PAD,
+    maxWidth: '100%',
   },
+  segmentedHug: { alignSelf: 'flex-start', flexShrink: 1 },
+  segmentedFill: { alignSelf: 'stretch' },
   segmentBtn: {
-    flex: 1,
     flexDirection: 'row',
-    gap: spacing.xs + 2,
-    minHeight: TAP,
+    gap: 6,
+    minHeight: TAP - SEG_PAD,
     paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: radius.control - SEG_PAD,
   },
+  segmentHug: { flexShrink: 1, minWidth: 0 },
+  segmentFill: { flex: 1, minWidth: 0 },
+  // Opaque thumb, soft level-1 shadow.
+  segmentOn: { ...elevation(1), backgroundColor: colors.surface3 },
   backLink: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     minHeight: TAP, alignSelf: 'flex-start',
   },
-  sectionWrap: { gap: spacing.sm, marginBottom: spacing.lg },
-  sectionRule: { height: 1, backgroundColor: colors.borderSubtle },
+  sectionWrap: { marginTop: space.headingAbove - spacing.sm, marginBottom: space.headingBelow },
 
   btn: {
     alignItems: 'center',
@@ -338,18 +371,19 @@ const s = StyleSheet.create({
     minHeight: TAP + 8,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
+    borderRadius: radius.control,
   },
   // Small buttons keep the 44pt minimum tap height.
   btnSmall: { minHeight: TAP, paddingVertical: spacing.sm, paddingHorizontal: spacing.lg },
-  btnDisabled: { opacity: 0.4 },
 
   chip: {
-    borderWidth: 2,
-    minHeight: 32,
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    minHeight: 34,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs + 2,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.md + 2,
     paddingVertical: spacing.xs,
   },
   badge: {
@@ -357,12 +391,13 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     backgroundColor: colors.surface3,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs + 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
     alignSelf: 'flex-start',
   },
   badgeDot: { width: 7, height: 7, borderRadius: radius.round },
 
   segRow: { flexDirection: 'row', gap: 3 },
-  seg: { flex: 1, height: 8 },
+  seg: { flex: 1, height: 6, borderRadius: 3 },
 });
