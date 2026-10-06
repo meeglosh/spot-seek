@@ -41,7 +41,7 @@ function fmtUsd(cents: number): string {
 function fmtEventDate(iso: string | null, tr: (key: string) => string, venueTimezone: string | null = null): string {
   if (!iso) return tr('browse.dateTbc');
   const { dateStr, timeStr } = formatEventDateTime(iso, venueTimezone);
-  return `${dateStr} · ${timeStr}`.toUpperCase();
+  return `${dateStr} · ${timeStr}`;
 }
 
 const DEAL_POINT_KEYS = ['yourBid', 'platformFee', 'hostDecision', 'payment'] as const;
@@ -280,7 +280,7 @@ export default function SponsorshipDetailsScreen() {
             </>
           ) : (
             <Text style={[t.headlineLg, s.coverFallback]} numberOfLines={1}>
-              {event.broadcastSubject.toUpperCase()}
+              {event.broadcastSubject}
             </Text>
           )}
         </View>
@@ -303,7 +303,7 @@ export default function SponsorshipDetailsScreen() {
               <Text style={[t.monoData, s.factValue]} numberOfLines={1}>
                 {event.isPrivateLocation
                   ? tr('bid.facts.privateVenue')
-                  : (event.venueName ?? tr('bid.facts.venueTbc')).toUpperCase()}
+                  : (event.venueName ?? tr('bid.facts.venueTbc'))}
               </Text>
             </View>
             {event.capacity != null && (
@@ -354,7 +354,7 @@ export default function SponsorshipDetailsScreen() {
                 <View style={s.statusRow}>
                   <Text style={[t.labelSm, s.factLabel]}>{tr('bid.placed')}</Text>
                   <Text style={[t.monoData, s.factValue]}>
-                    {new Date(bid.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}
+                    {new Date(bid.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </Text>
                 </View>
                 {bid.note != null && bid.note !== '' && (

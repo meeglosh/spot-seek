@@ -49,7 +49,7 @@ function fmtUsd(cents: number): string {
 function fmtEventDate(iso: string | null, tr: (key: string) => string, venueTimezone: string | null = null): string {
   if (!iso) return tr('browse.dateTbc');
   const { dateStr, timeStr } = formatEventDateTime(iso, venueTimezone);
-  return `${dateStr} · ${timeStr}`.toUpperCase();
+  return `${dateStr} · ${timeStr}`;
 }
 
 // Mirrors the payment-status text on the bid detail screen
@@ -387,7 +387,7 @@ export default function SponsorshipHubScreen() {
                         </>
                       ) : (
                         <Text style={[t.headlineLg, s.coverFallback]} numberOfLines={1}>
-                          {ev.broadcastSubject.toUpperCase()}
+                          {ev.broadcastSubject}
                         </Text>
                       )}
                     </View>

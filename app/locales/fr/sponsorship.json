@@ -1,49 +1,49 @@
 {
   "statusLabels": {
     "pending": "En attente",
-    "active": "Active",
-    "rejected": "Refusée",
-    "cancelled": "Annulée"
+    "active": "Actif",
+    "rejected": "Refusé",
+    "cancelled": "Annulé"
   },
   "browse": {
-    "title": "Espace sponsoring",
-    "subtitle": "Opportunités de ciblage à haut rendement.",
+    "title": "Parrainages",
+    "subtitle": "Soutenez une soirée locale et mettez votre nom dans la salle.",
     "guestGate": {
-      "title": "Espace sponsoring",
-      "message": "Connectez-vous pour inscrire votre marque, parcourir les soirées à fort engagement et enchérir sur des sponsorings."
+      "title": "Parrainages",
+      "message": "Connectez-vous pour inscrire votre entreprise, parcourir les soirées et faire une offre."
     },
     "filters": {
       "all": "Tout",
       "today": "Aujourd'hui",
       "week": "Cette semaine"
     },
-    "dateTbc": "DATE À CONFIRMER",
+    "dateTbc": "Date à confirmer",
     "register": {
-      "title": "Devenir sponsor",
-      "description": "Inscrivez votre entreprise pour enchérir sur des soirées de visionnage. Les hôtes acceptent ou refusent chaque offre — des frais de plateforme de 15 % s'appliquent aux offres acceptées.",
+      "title": "S'inscrire comme sponsor",
+      "description": "Inscrivez votre entreprise pour faire des offres sur des soirées. Les hôtes acceptent ou refusent chaque offre. Si une offre est acceptée, SpotSeek prélève 15 % de frais.",
       "companyName": "Nom de l'entreprise",
-      "companyNamePlaceholder": "ex. Voltage Drinks Co.",
+      "companyNamePlaceholder": "ex. Volt Cola",
       "website": "Site web (facultatif)",
       "websitePlaceholder": "https://…",
       "categories": "Catégories (facultatif)",
       "budgetMin": "Budget min. (facultatif)",
       "budgetMax": "Budget max. (facultatif)",
       "budgetPlaceholder": "$",
-      "submit": "S'inscrire comme sponsor",
-      "errorRequired": "Le nom de l'entreprise est requis.",
-      "errorSignIn": "Connectez-vous d'abord pour vous inscrire comme sponsor.",
-      "errorFailed": "L'inscription a échoué. Réessayez."
+      "submit": "S'inscrire",
+      "errorRequired": "Ajoutez le nom de votre entreprise.",
+      "errorSignIn": "Connectez-vous pour vous inscrire comme sponsor.",
+      "errorFailed": "Inscription impossible. Vérifiez vos informations et réessayez."
     },
     "sponsorLabel": "Sponsor · {{company}}",
     "stats": {
-      "totalBids": "Offres totales",
+      "totalBids": "Offres",
       "active": "Actives",
-      "totalSpend": "Dépenses totales",
+      "totalSpend": "Dépensé",
       "reach": "Portée"
     },
     "requests": {
-      "sectionTitle": "Demandes de sponsoring",
-      "fallbackEventTitle": "Événement",
+      "sectionTitle": "Demandes de parrainage",
+      "fallbackEventTitle": "Soirée",
       "newRequest": "Nouvelle demande",
       "goingCount_one": "{{count}} participant",
       "goingCount_other": "{{count}} participants",
@@ -51,103 +51,126 @@
       "accept": "Accepter"
     },
     "marketplace": {
-      "sectionTitle": "Ouvert au sponsoring",
-      "empty": "Aucun événement publié ne correspond à ce filtre.",
-      "privateVenue": "Lieu privé — révélé après confirmation",
+      "sectionTitle": "Cherchent un sponsor",
+      "empty": "Aucune soirée ne correspond à ce filtre. Essayez une autre période.",
+      "privateVenue": "Lieu privé, communiqué après réservation",
       "venueTbc": "Lieu à confirmer",
       "date": "Date",
       "capacity": "Capacité",
       "yourBid": "Votre offre · {{amount}} · {{status}}",
-      "review": "Examiner pour sponsoring",
-      "emptyTitle": "Aucun événement ici",
-      "showAll": "Afficher tous les événements"
+      "review": "Voir et faire une offre",
+      "emptyTitle": "Aucune soirée ici",
+      "showAll": "Voir toutes les soirées"
     }
   },
   "bid": {
     "guestGate": {
-      "title": "Sponsorisez cette soirée",
-      "message": "Connectez-vous pour consulter les conditions de sponsoring et faire une offre pour cette soirée de visionnage."
+      "title": "Parrainer cette soirée",
+      "message": "Connectez-vous pour lire les conditions et faire une offre."
     },
-    "loadError": "Impossible de charger cet événement.",
-    "eventNotFound": "Événement introuvable.",
-    "openForBids": "Ouvert aux offres",
+    "loadError": "Réessayez.",
+    "eventNotFound": "Soirée introuvable.",
+    "openForBids": "Offres ouvertes",
     "facts": {
       "date": "Date",
       "venue": "Lieu",
-      "privateVenue": "PRIVÉ — APRÈS CONFIRMATION",
-      "venueTbc": "À CONFIRMER",
+      "privateVenue": "Communiqué après réservation",
+      "venueTbc": "À confirmer",
       "capacity": "Capacité"
     },
-    "dealTitle": "L'accord",
+    "dealTitle": "Comment ça marche",
     "dealPoints": {
       "yourBid": {
         "title": "Votre offre",
-        "body": "Proposez un montant de sponsoring pour cet événement. L'hôte voit votre offre et votre message."
+        "body": "Proposez un montant pour cette soirée. L'hôte le voit avec votre note."
       },
       "platformFee": {
-        "title": "Frais de plateforme — 15 %",
-        "body": "SpotSeek conserve 15 % d'une offre acceptée. L'hôte reçoit le reste."
+        "title": "15 % de frais de plateforme",
+        "body": "SpotSeek garde 15 % d'une offre acceptée. L'hôte reçoit le reste."
       },
       "hostDecision": {
-        "title": "Décision de l'hôte",
-        "body": "L'hôte accepte ou refuse votre offre. Vous pouvez l'annuler tant qu'elle est en attente."
+        "title": "L'hôte décide",
+        "body": "L'hôte accepte ou refuse. Vous pouvez annuler tant que c'est en attente."
       },
       "payment": {
         "title": "Paiement",
-        "body": "Débité uniquement après acceptation par l'hôte. Les paiements sont actuellement en mode test — aucun montant réel n'est débité."
+        "body": "Vous n'êtes débité qu'une fois l'offre acceptée. Les paiements sont en mode test pour l'instant : aucun vrai argent ne bouge."
       }
     },
-    "statusTitle": "Statut du sponsoring",
+    "statusTitle": "Statut de l'offre",
     "yourBid": "Votre offre",
     "platformFee": "Frais de plateforme (15 %)",
     "hostReceives": "L'hôte reçoit",
-    "placed": "Placée",
+    "placed": "Envoyée",
     "note": "Note : {{note}}",
     "cancelBid": "Annuler l'offre",
-    "hostAccepted": "L'hôte a accepté cette offre.",
+    "hostAccepted": "L'hôte a accepté votre offre.",
     "payment": {
       "due": "Paiement dû",
       "payNow": "Payer maintenant",
-      "notLiveYet": "Les paiements ne sont pas encore actifs — vous serez averti dès que cela sera possible.",
-      "payError": "Impossible de démarrer le paiement — réessayez.",
-      "paid": "Payé · en attente de l'événement",
+      "notLiveYet": "Les paiements ne sont pas encore actifs. On vous prévient dès que vous pourrez finir.",
+      "payError": "Impossible de lancer le paiement. Réessayez.",
+      "paid": "Payé, en attente de la soirée",
       "released": "Versé à l'hôte",
       "refunded": "Remboursé",
-      "processing": "Paiement reçu — confirmation en cours…",
-      "cancelled": "Paiement annulé. Vous pouvez payer à tout moment.",
-      "payFailed": "Le paiement n'a pas abouti — essayez une autre carte.",
-      "stillProcessing": "Votre paiement est en cours de traitement. Il passera bientôt à payé."
+      "processing": "Paiement reçu. Confirmation en cours…",
+      "cancelled": "Paiement annulé. Vous pouvez payer quand vous voulez.",
+      "payFailed": "Le paiement n'est pas passé. Essayez une autre carte.",
+      "stillProcessing": "Votre paiement est en cours de traitement. Ça se mettra à jour bientôt."
     },
-    "testNoteAccepted": "Le paiement n'est traité qu'après acceptation par l'hôte — les paiements sont en mode test, aucun débit réel.",
+    "testNoteAccepted": "Vous n'êtes débité qu'une fois l'offre acceptée. Les paiements sont en mode test, aucun vrai débit.",
     "sponsorProfileNeeded": {
-      "title": "Profil de sponsor requis",
-      "body": "Seuls les sponsors inscrits peuvent enchérir. Inscrivez votre entreprise dans l'espace sponsoring, puis revenez faire une offre.",
-      "cta": "S'inscrire dans l'espace"
+      "title": "Inscrivez-vous d'abord comme sponsor",
+      "body": "Seuls les sponsors inscrits peuvent faire une offre. Inscrivez-vous dans Parrainages, puis revenez faire votre offre.",
+      "cta": "S'inscrire comme sponsor"
     },
     "lastBid": "Dernière offre · {{amount}} · {{status}}",
     "bidAmountLabel": "Montant de l'offre (USD)",
     "bidAmountPlaceholder": "ex. 250",
-    "noteLabel": "Note à l'hôte (facultatif)",
-    "notePlaceholder": "Ce que votre marque apporte à la soirée…",
-    "feeSummary": "FRAIS DE PLATEFORME (15 %) : {{fee}} · L'HÔTE REÇOIT : {{host}}",
-    "placeBid": "Faire une offre",
-    "testNotePending": "Le paiement n'est traité qu'après acceptation de votre offre par l'hôte — les paiements sont en mode test, aucun débit réel.",
+    "noteLabel": "Note pour l'hôte (facultatif)",
+    "notePlaceholder": "Ce que votre entreprise apporte à la soirée",
+    "feeSummary": "Frais de plateforme (15 %) : {{fee}} · L'hôte reçoit : {{host}}",
+    "placeBid": "Faire l'offre",
+    "testNotePending": "Vous n'êtes débité que si l'hôte accepte. Les paiements sont en mode test, aucun vrai débit.",
     "errors": {
       "signIn": "Connectez-vous pour faire une offre.",
-      "failed": "L'offre a échoué. Réessayez.",
+      "failed": "Impossible d'envoyer l'offre. Réessayez.",
       "cancelFailed": "Impossible d'annuler l'offre. Réessayez."
     },
-    "errorTitle": "Impossible de charger cet événement",
-    "notFoundTitle": "Événement introuvable",
-    "backToMarketplace": "Retour aux sponsorings"
+    "errorTitle": "Impossible de charger cette soirée",
+    "notFoundTitle": "Soirée introuvable",
+    "backToMarketplace": "Retour aux parrainages"
   },
   "findSponsors": {
+    "title": "Trouver des sponsors",
+    "guestMessage": "Connectez-vous pour parcourir les sponsors et leur envoyer des demandes pour votre soirée.",
+    "forEvent": "Pour {{title}}",
+    "searchPlaceholder": "Chercher un sponsor",
+    "allCategories": "Toutes catégories",
+    "sort": {
+      "sponsored": "Les plus actifs",
+      "budget": "Plus gros budget",
+      "name": "Nom de A à Z"
+    },
+    "sponsoredCount_one": "{{count}} parrainage",
+    "sponsoredCount_other": "{{count}} parrainages",
+    "budget": "Budget : {{min}} à {{max}}",
+    "noCap": "sans plafond",
+    "requestSent": "Demande envoyée",
+    "request": "Demander un parrainage",
+    "send": "Envoyer la demande",
+    "amountLabel": "Montant demandé ($)",
+    "amountPlaceholder": "500",
+    "noteLabel": "Note (facultatif)",
+    "notePlaceholder": "Pourquoi votre soirée est un bon choix",
+    "errorAmount": "Saisissez un montant supérieur à 0 $.",
+    "errorSend": "Impossible d'envoyer la demande. Réessayez.",
     "errorTitle": "Impossible de charger les sponsors",
-    "loadError": "Impossible de charger les sponsors.",
-    "emptyTitle": "Aucun sponsor pour l’instant",
-    "empty": "Aucun sponsor ne s’est encore inscrit. Revenez plus tard.",
+    "loadError": "Vérifiez votre connexion et réessayez.",
+    "emptyTitle": "Aucun sponsor pour l'instant",
+    "empty": "Aucun sponsor inscrit pour l'instant. Repassez bientôt.",
     "noMatchTitle": "Aucun résultat",
-    "noMatch": "Aucun sponsor ne correspond à votre recherche ou catégorie.",
+    "noMatch": "Aucun sponsor ne correspond à cette recherche ou catégorie.",
     "clearSearch": "Effacer la recherche"
   }
 }

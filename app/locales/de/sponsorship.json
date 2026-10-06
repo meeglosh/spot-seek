@@ -1,153 +1,176 @@
 {
   "statusLabels": {
-    "pending": "Ausstehend",
+    "pending": "Offen",
     "active": "Aktiv",
     "rejected": "Abgelehnt",
     "cancelled": "Storniert"
   },
   "browse": {
-    "title": "Sponsoring-Hub",
-    "subtitle": "Hochertragreiche Targeting-Möglichkeiten.",
+    "title": "Sponsoring",
+    "subtitle": "Unterstütze eine lokale Watch Party und bring deinen Namen in den Raum.",
     "guestGate": {
-      "title": "Sponsoring-Hub",
-      "message": "Melde dich an, um deine Marke zu registrieren, Watch Partys mit hohem Engagement zu durchsuchen und auf Sponsorings zu bieten."
+      "title": "Sponsoring",
+      "message": "Melde dich an, um dein Unternehmen zu registrieren, Partys zu stöbern und zu bieten."
     },
     "filters": {
       "all": "Alle",
       "today": "Heute",
       "week": "Diese Woche"
     },
-    "dateTbc": "DATUM OFFEN",
+    "dateTbc": "Datum offen",
     "register": {
-      "title": "Werde Sponsor",
-      "description": "Registriere dein Unternehmen, um auf Watch Partys zu bieten. Gastgeber nehmen jedes Gebot an oder lehnen es ab — bei angenommenen Geboten fällt eine Plattformgebühr von 15 % an.",
-      "companyName": "Firmenname",
-      "companyNamePlaceholder": "z. B. Voltage Drinks Co.",
+      "title": "Als Sponsor registrieren",
+      "description": "Registriere dein Unternehmen, um auf Watch Partys zu bieten. Gastgeber nehmen jedes Gebot an oder lehnen es ab. Bei einem angenommenen Gebot behält SpotSeek 15 % Gebühr.",
+      "companyName": "Name des Unternehmens",
+      "companyNamePlaceholder": "z. B. Volt Cola",
       "website": "Website (optional)",
       "websitePlaceholder": "https://…",
       "categories": "Kategorien (optional)",
       "budgetMin": "Budget min. (optional)",
       "budgetMax": "Budget max. (optional)",
       "budgetPlaceholder": "$",
-      "submit": "Als Sponsor registrieren",
-      "errorRequired": "Firmenname ist erforderlich.",
-      "errorSignIn": "Melde dich zuerst an, um dich als Sponsor zu registrieren.",
-      "errorFailed": "Registrierung fehlgeschlagen. Versuch es erneut."
+      "submit": "Registrieren",
+      "errorRequired": "Gib den Namen deines Unternehmens ein.",
+      "errorSignIn": "Melde dich an, um dich als Sponsor zu registrieren.",
+      "errorFailed": "Die Registrierung hat nicht geklappt. Prüf deine Angaben und versuch es nochmal."
     },
     "sponsorLabel": "Sponsor · {{company}}",
     "stats": {
-      "totalBids": "Gebote gesamt",
+      "totalBids": "Gebote",
       "active": "Aktiv",
-      "totalSpend": "Ausgaben gesamt",
+      "totalSpend": "Ausgegeben",
       "reach": "Reichweite"
     },
     "requests": {
       "sectionTitle": "Sponsoring-Anfragen",
-      "fallbackEventTitle": "Event",
+      "fallbackEventTitle": "Party",
       "newRequest": "Neue Anfrage",
-      "goingCount_one": "{{count}} Teilnehmer",
-      "goingCount_other": "{{count}} Teilnehmer",
+      "goingCount_one": "{{count}} dabei",
+      "goingCount_other": "{{count}} dabei",
       "decline": "Ablehnen",
       "accept": "Annehmen"
     },
     "marketplace": {
-      "sectionTitle": "Offen für Sponsoring",
-      "empty": "Kein veröffentlichtes Event passt zu diesem Filter.",
-      "privateVenue": "Privater Ort — wird nach Zusage angezeigt",
+      "sectionTitle": "Sponsoren gesucht",
+      "empty": "Keine Party passt zu diesem Filter. Probier einen anderen Zeitraum.",
+      "privateVenue": "Privater Ort, nach Zusage sichtbar",
       "venueTbc": "Ort offen",
       "date": "Datum",
-      "capacity": "Kapazität",
+      "capacity": "Plätze",
       "yourBid": "Dein Gebot · {{amount}} · {{status}}",
-      "review": "Für Sponsoring prüfen",
-      "emptyTitle": "Keine Events hier",
-      "showAll": "Alle Events anzeigen"
+      "review": "Ansehen und bieten",
+      "emptyTitle": "Hier ist keine Party",
+      "showAll": "Alle Partys zeigen"
     }
   },
   "bid": {
     "guestGate": {
-      "title": "Sponsere diese Party",
-      "message": "Melde dich an, um die Sponsoring-Bedingungen zu prüfen und ein Gebot für diese Watch Party abzugeben."
+      "title": "Diese Party sponsern",
+      "message": "Melde dich an, um die Bedingungen zu lesen und zu bieten."
     },
-    "loadError": "Dieses Event konnte nicht geladen werden.",
-    "eventNotFound": "Event nicht gefunden.",
+    "loadError": "Versuch es nochmal.",
+    "eventNotFound": "Party nicht gefunden.",
     "openForBids": "Offen für Gebote",
     "facts": {
       "date": "Datum",
       "venue": "Ort",
-      "privateVenue": "PRIVAT — NACH ZUSAGE",
-      "venueTbc": "OFFEN",
-      "capacity": "Kapazität"
+      "privateVenue": "Nach Zusage sichtbar",
+      "venueTbc": "Offen",
+      "capacity": "Plätze"
     },
-    "dealTitle": "Der Deal",
+    "dealTitle": "So läuft's",
     "dealPoints": {
       "yourBid": {
         "title": "Dein Gebot",
-        "body": "Biete einen Sponsoring-Betrag für dieses Event. Der Gastgeber sieht dein Gebot und deine Notiz."
+        "body": "Nenn einen Betrag für diese Party. Der Gastgeber sieht ihn zusammen mit deiner Nachricht."
       },
       "platformFee": {
-        "title": "Plattformgebühr — 15 %",
-        "body": "SpotSeek behält 15 % eines angenommenen Gebots ein. Der Gastgeber erhält den Rest."
+        "title": "15 % Plattformgebühr",
+        "body": "SpotSeek behält 15 % eines angenommenen Gebots. Der Rest geht an den Gastgeber."
       },
       "hostDecision": {
-        "title": "Entscheidung des Gastgebers",
-        "body": "Der Gastgeber nimmt dein Gebot an oder lehnt es ab. Du kannst es stornieren, solange es aussteht."
+        "title": "Der Gastgeber entscheidet",
+        "body": "Der Gastgeber nimmt an oder lehnt ab. Solange es offen ist, kannst du stornieren."
       },
       "payment": {
         "title": "Zahlung",
-        "body": "Wird erst berechnet, nachdem der Gastgeber zugestimmt hat. Zahlungen laufen derzeit im Testmodus — es fließt kein echtes Geld."
+        "body": "Du zahlst erst, wenn der Gastgeber annimmt. Zahlungen laufen vorerst im Testmodus, es fließt kein echtes Geld."
       }
     },
-    "statusTitle": "Sponsoring-Status",
+    "statusTitle": "Gebotsstatus",
     "yourBid": "Dein Gebot",
     "platformFee": "Plattformgebühr (15 %)",
     "hostReceives": "Gastgeber erhält",
     "placed": "Abgegeben",
-    "note": "Notiz: {{note}}",
+    "note": "Nachricht: {{note}}",
     "cancelBid": "Gebot stornieren",
-    "hostAccepted": "Der Gastgeber hat dieses Gebot angenommen.",
+    "hostAccepted": "Der Gastgeber hat dein Gebot angenommen.",
     "payment": {
       "due": "Zahlung fällig",
-      "payNow": "Jetzt bezahlen",
-      "notLiveYet": "Zahlungen sind noch nicht aktiv — du wirst benachrichtigt, sobald dies abgeschlossen werden kann.",
-      "payError": "Zahlung konnte nicht gestartet werden — bitte erneut versuchen.",
-      "paid": "Bezahlt · wartet auf Event",
+      "payNow": "Jetzt zahlen",
+      "notLiveYet": "Zahlungen sind noch nicht live. Wir sagen dir Bescheid, sobald du das abschließen kannst.",
+      "payError": "Die Zahlung konnte nicht gestartet werden. Versuch es nochmal.",
+      "paid": "Bezahlt, die Party steht noch aus",
       "released": "An Gastgeber ausgezahlt",
       "refunded": "Erstattet",
-      "processing": "Zahlung eingegangen — wird bestätigt…",
-      "cancelled": "Zahlung abgebrochen. Du kannst jederzeit bezahlen.",
-      "payFailed": "Die Zahlung ist fehlgeschlagen — versuche eine andere Karte.",
-      "stillProcessing": "Deine Zahlung wird noch verarbeitet. Sie erscheint in Kürze als bezahlt."
+      "processing": "Zahlung eingegangen. Wird bestätigt…",
+      "cancelled": "Zahlung abgebrochen. Du kannst jederzeit zahlen.",
+      "payFailed": "Die Zahlung ist nicht durchgegangen. Probier eine andere Karte.",
+      "stillProcessing": "Deine Zahlung wird noch verarbeitet. Der Status aktualisiert sich gleich."
     },
-    "testNoteAccepted": "Die Zahlung wird erst verarbeitet, nachdem der Gastgeber zustimmt — Zahlungen laufen im Testmodus, keine echten Belastungen.",
+    "testNoteAccepted": "Du zahlst erst, wenn der Gastgeber annimmt. Zahlungen laufen im Testmodus, es wird nichts echt abgebucht.",
     "sponsorProfileNeeded": {
-      "title": "Sponsor-Profil erforderlich",
-      "body": "Nur registrierte Sponsoren können bieten. Registriere dein Unternehmen im Sponsoring-Hub und komm dann zurück, um ein Gebot abzugeben.",
-      "cta": "Im Hub registrieren"
+      "title": "Erst als Sponsor registrieren",
+      "body": "Nur registrierte Sponsoren können bieten. Registriere dich unter Sponsoring und komm dann zurück, um zu bieten.",
+      "cta": "Als Sponsor registrieren"
     },
     "lastBid": "Letztes Gebot · {{amount}} · {{status}}",
-    "bidAmountLabel": "Gebotsbetrag (USD)",
+    "bidAmountLabel": "Gebot (USD)",
     "bidAmountPlaceholder": "z. B. 250",
-    "noteLabel": "Notiz an den Gastgeber (optional)",
-    "notePlaceholder": "Was deine Marke zur Party beiträgt…",
-    "feeSummary": "PLATTFORMGEBÜHR (15 %): {{fee}} · GASTGEBER ERHÄLT: {{host}}",
+    "noteLabel": "Nachricht an den Gastgeber (optional)",
+    "notePlaceholder": "Was dein Unternehmen zur Nacht beiträgt",
+    "feeSummary": "Plattformgebühr (15 %): {{fee}} · Gastgeber erhält: {{host}}",
     "placeBid": "Gebot abgeben",
-    "testNotePending": "Die Zahlung wird erst verarbeitet, nachdem der Gastgeber dein Gebot annimmt — Zahlungen laufen im Testmodus, keine echten Belastungen.",
+    "testNotePending": "Du zahlst nur, wenn der Gastgeber annimmt. Zahlungen laufen im Testmodus, es wird nichts echt abgebucht.",
     "errors": {
-      "signIn": "Melde dich an, um ein Gebot abzugeben.",
-      "failed": "Gebot fehlgeschlagen. Versuch es erneut.",
-      "cancelFailed": "Gebot konnte nicht storniert werden. Versuch es erneut."
+      "signIn": "Melde dich an, um zu bieten.",
+      "failed": "Das Gebot ging nicht durch. Versuch es nochmal.",
+      "cancelFailed": "Das Gebot konnte nicht storniert werden. Versuch es nochmal."
     },
-    "errorTitle": "Event konnte nicht geladen werden",
-    "notFoundTitle": "Event nicht gefunden",
-    "backToMarketplace": "Zurück zu Sponsorings"
+    "errorTitle": "Party nicht geladen",
+    "notFoundTitle": "Party nicht gefunden",
+    "backToMarketplace": "Zurück zum Sponsoring"
   },
   "findSponsors": {
-    "errorTitle": "Sponsoren konnten nicht geladen werden",
-    "loadError": "Sponsoren konnten nicht geladen werden.",
+    "title": "Sponsoren finden",
+    "guestMessage": "Melde dich an, um Sponsoren zu stöbern und Anfragen für deine Party zu senden.",
+    "forEvent": "Für {{title}}",
+    "searchPlaceholder": "Sponsoren suchen",
+    "allCategories": "Alle Kategorien",
+    "sort": {
+      "sponsored": "Meist gesponsert",
+      "budget": "Größtes Budget",
+      "name": "Name A bis Z"
+    },
+    "sponsoredCount_one": "{{count}} gesponsert",
+    "sponsoredCount_other": "{{count}} gesponsert",
+    "budget": "Budget: {{min}} bis {{max}}",
+    "noCap": "ohne Limit",
+    "requestSent": "Anfrage gesendet",
+    "request": "Sponsoring anfragen",
+    "send": "Anfrage senden",
+    "amountLabel": "Gewünschter Betrag ($)",
+    "amountPlaceholder": "500",
+    "noteLabel": "Nachricht (optional)",
+    "notePlaceholder": "Warum deine Party passt",
+    "errorAmount": "Gib einen Betrag über 0 $ ein.",
+    "errorSend": "Die Anfrage konnte nicht gesendet werden. Versuch es nochmal.",
+    "errorTitle": "Sponsoren nicht geladen",
+    "loadError": "Prüf deine Verbindung und versuch es nochmal.",
     "emptyTitle": "Noch keine Sponsoren",
-    "empty": "Noch hat sich kein Sponsor registriert. Schau später wieder vorbei.",
+    "empty": "Noch hat sich kein Sponsor registriert. Schau bald wieder rein.",
     "noMatchTitle": "Keine Treffer",
-    "noMatch": "Kein Sponsor passt zu deiner Suche oder Kategorie.",
+    "noMatch": "Kein Sponsor passt zu dieser Suche oder Kategorie.",
     "clearSearch": "Suche löschen"
   }
 }

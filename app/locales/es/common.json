@@ -10,14 +10,14 @@
   "loading": "Cargando…",
   "comingSoon": "Próximamente",
   "brand": {
-    "tagline": "NUNCA MÁS VEAS SOLO"
+    "tagline": "Nunca veas solo"
   },
   "guestGate": {
-    "membersOnly": "Solo para miembros",
+    "membersOnly": "Necesitas una cuenta para esto",
     "signIn": "Iniciar sesión",
     "createAccount": "Crear cuenta",
     "keepBrowsing": "Seguir explorando",
-    "joinTheAction": "Únete a la acción"
+    "joinTheAction": "Únete a SpotSeek"
   },
   "tabs": {
     "discover": "Descubrir",
@@ -26,15 +26,15 @@
   },
   "shell": {
     "menu": {
-      "switchToHosting": "Cambiar a modo anfitrión",
+      "switchToHosting": "Cambiar a organizar",
       "sponsorships": "Patrocinios",
       "wallet": "Cartera",
       "settings": "Ajustes",
       "signOut": "Cerrar sesión",
       "signIn": "Iniciar sesión"
     },
-    "guestName": "Buscador",
-    "roleSeeker": "Buscador",
+    "guestName": "Invitado",
+    "roleSeeker": "Asistente",
     "accessibility": {
       "openMenu": "Abrir menú",
       "notifications": "Notificaciones",

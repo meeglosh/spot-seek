@@ -2,50 +2,50 @@
   "title": "Definições",
   "guestGate": {
     "title": "Definições",
-    "message": "Inicia sessão para gerir a tua conta e as tuas preferências de notificação."
+    "message": "Inicia sessão para gerir a tua conta e os alertas."
   },
   "account": {
     "title": "Conta",
     "signedInAs": "Sessão iniciada como",
     "signOut": "Terminar sessão",
     "deleteAccount": "Eliminar conta",
-    "deleteConfirm": "Excluir a sua conta? Isto remove permanentemente o seu perfil, as suas confirmações e todos os eventos passados, rascunhos ou cancelados que organiza. Esta ação não pode ser desfeita.",
-    "keepIt": "Manter",
-    "yesDelete": "Sim, eliminar",
-    "deleteFallbackError": "Não foi possível eliminar a conta.",
-    "typeToConfirm": "Escreva {{word}} para confirmar",
-    "blockedEvents": "Ainda organiza eventos futuros. Cancele-os primeiro para que os participantes sejam avisados e os patrocinadores reembolsados, e tente novamente:",
-    "blockedMoney": "Ainda há pagamentos de patrocínio em curso, por isso a sua conta ainda não pode ser excluída. Tente novamente quando forem liberados ou reembolsados:"
+    "deleteConfirm": "Eliminar a tua conta? Isto remove para sempre o teu perfil, as tuas confirmações e as festas passadas, em rascunho ou canceladas que organizas. Não dá para desfazer.",
+    "keepIt": "Manter a conta",
+    "yesDelete": "Eliminar conta",
+    "deleteFallbackError": "Não foi possível eliminar a conta. Tenta de novo.",
+    "typeToConfirm": "Escreve {{word}} para confirmar",
+    "blockedEvents": "Ainda organizas festas futuras. Cancela-as primeiro, para os convidados serem avisados e os patrocinadores reembolsados, e tenta de novo:",
+    "blockedMoney": "Há pagamentos de patrocínio em curso, por isso ainda não podemos eliminar a conta. Tenta de novo quando forem libertados ou reembolsados:"
   },
   "notifications": {
     "title": "Notificações",
-    "loadError": "Não foi possível carregar as definições de notificações.",
+    "loadError": "Não foi possível carregar as definições de notificações. Tenta de novo.",
     "email": "Notificações por e-mail",
-    "emailError": "Não foi possível guardar as notificações por e-mail — tenta novamente.",
+    "emailError": "Não foi possível guardar a definição de e-mail. Tenta de novo.",
     "push": "Notificações push",
     "radiusLabel": "Raio de alertas próximos",
     "radiusValue": "{{miles}} mi / {{km}} km",
-    "radiusError": "Não foi possível guardar o raio — tenta novamente.",
-    "pushError": "Não foi possível atualizar as notificações push — tente novamente.",
+    "radiusError": "Não foi possível guardar o raio. Tenta de novo.",
+    "pushError": "Não foi possível atualizar as notificações push. Tenta de novo.",
     "pushDeniedTitle": "As notificações estão desativadas",
-    "pushDeniedBody": "Permita as notificações do SpotSeek nos Ajustes do seu iPhone para receber alertas de eventos.",
-    "openSettings": "Abrir Ajustes",
-    "pushPromptTitle": "Receber lembretes de eventos?",
-    "pushPromptBody": "Ative as notificações para lembrarmos você antes de a sua watch party começar.",
+    "pushDeniedBody": "Ativa as notificações do SpotSeek nas Definições do iPhone para receberes alertas.",
+    "openSettings": "Abrir Definições",
+    "pushPromptTitle": "Queres um aviso antes de começar?",
+    "pushPromptBody": "Lembramos-te antes de a tua festa arrancar.",
     "pushPromptLater": "Agora não",
     "pushPromptEnable": "Ativar"
   },
   "language": {
     "title": "Idioma",
-    "systemDefault": "Idioma do sistema"
+    "systemDefault": "Predefinição do sistema"
   },
   "payouts": {
     "title": "Pagamentos",
     "notConfigured": "Os pagamentos ainda não estão configurados.",
     "setup": "Configurar pagamentos",
-    "setupError": "Não foi possível iniciar a configuração de pagamentos — tenta novamente.",
-    "notLiveYet": "Os pagamentos ainda não estão ativos — serás notificado quando isto puder ser concluído.",
-    "enabledLabel": "Pagamentos ativados"
+    "setupError": "Não foi possível iniciar a configuração. Tenta de novo.",
+    "notLiveYet": "Os pagamentos ainda não estão ativos. Avisamos-te quando puderes concluir isto.",
+    "enabledLabel": "Pagamentos ativos"
   },
   "favourites": {
     "title": "Favoritos",
@@ -53,9 +53,9 @@
   },
   "about": {
     "title": "Sobre",
-    "terms": "Termos de Serviço",
-    "privacy": "Política de Privacidade",
-    "contactSupport": "Contactar suporte",
+    "terms": "Termos de serviço",
+    "privacy": "Política de privacidade",
+    "contactSupport": "Contactar o suporte",
     "versionLabel": "Versão {{version}}",
     "versionLabelWithBuild": "Versão {{version}} ({{build}})"
   }

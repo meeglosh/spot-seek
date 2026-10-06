@@ -2,10 +2,10 @@
   "title": "Benachrichtigungen",
   "guestGate": {
     "title": "Benachrichtigungen",
-    "message": "Melde dich an, um Aktivitäten zu deinen Partys und Sponsorings zu sehen."
+    "message": "Melde dich an, um zu sehen, was bei deinen Partys und Sponsorings passiert."
   },
-  "loadError": "Benachrichtigungen konnten nicht geladen werden.",
-  "empty": "Noch keine Benachrichtigungen — Aktivitäten zu deinen Partys erscheinen hier.",
+  "loadError": "Prüf deine Verbindung und versuch es nochmal.",
+  "empty": "Noch keine Benachrichtigungen. Zusagen und News zu deinen Partys landen hier.",
   "timeAgo": {
     "justNow": "gerade eben",
     "minutes_one": "vor {{count}} Min.",
@@ -21,7 +21,7 @@
     "years_one": "vor {{count}} Jahr",
     "years_other": "vor {{count}} Jahren"
   },
-  "errorTitle": "Benachrichtigungen konnten nicht geladen werden",
-  "emptyTitle": "Alles erledigt",
+  "errorTitle": "Benachrichtigungen nicht geladen",
+  "emptyTitle": "Nichts Neues",
   "emptyCta": "Party finden"
 }

@@ -2,105 +2,105 @@
   "myParties": {
     "title": "Mes soirées",
     "tabs": {
-      "attending": "Participations",
-      "hosting": "Organisées"
+      "attending": "J'y vais",
+      "hosting": "J'organise"
     },
-    "waitlisted": "Sur liste d'attente",
+    "waitlisted": "Liste d'attente",
     "tonight": "Ce soir",
     "upcoming": "À venir",
-    "tbd": "À CONFIRMER",
+    "tbd": "À confirmer",
     "statusLabels": {
-      "published": "publiée",
-      "draft": "brouillon",
-      "completed": "terminée",
-      "cancelled": "annulée"
+      "published": "Publiée",
+      "draft": "Brouillon",
+      "completed": "Terminée",
+      "cancelled": "Annulée"
     },
-    "getDirections": "Obtenir l'itinéraire",
+    "getDirections": "Itinéraire",
     "manage": "Gérer",
     "stats": {
-      "going": "Participants",
-      "waitlist": "Liste d'attente",
+      "going": "Inscrits",
+      "waitlist": "Attente",
       "interested": "Intéressés"
     },
     "guestGate": {
-      "title": "Entrez dans la partie",
-      "message": "Connectez-vous pour suivre vos confirmations et organiser vos propres soirées de visionnage."
+      "title": "Vos soirées sont ici",
+      "message": "Connectez-vous pour voir vos réservations et organiser vos propres soirées."
     },
     "loading": "Chargement",
     "signalLost": "Signal perdu",
-    "loadError": "Impossible de charger vos soirées.",
+    "loadError": "Vérifiez votre connexion et réessayez.",
     "emptyAttending": {
-      "title": "Aucune soirée pour l'instant",
-      "body": "Confirmez votre présence à une soirée de visionnage et elle apparaîtra ici.",
+      "title": "Aucune réservation",
+      "body": "Réservez une soirée et elle apparaîtra ici.",
       "cta": "Trouver une soirée"
     },
     "emptyHosting": {
       "title": "Organisez votre première soirée",
-      "body": "Créez une soirée de visionnage et réunissez votre équipe.",
-      "cta": "Créer une soirée"
+      "body": "Choisissez le programme, l'heure, et ouvrez la porte.",
+      "cta": "Organiser une soirée"
     },
-    "createFooter": "+ Créer une soirée"
+    "createFooter": "+ Organiser une soirée"
   },
   "dashboard": {
     "guestGate": {
-      "title": "Centre de commande",
-      "message": "Connectez-vous pour créer et gérer vos soirées de visionnage."
+      "title": "Tableau de bord hôte",
+      "message": "Connectez-vous pour organiser des soirées et gérer votre liste d'invités."
     },
-    "noDateSet": "Aucune date définie",
+    "noDateSet": "Pas de date",
     "tonightAt": "Ce soir à {{time}}",
     "dateAt": "{{date}} à {{time}}",
     "loading": "Chargement",
     "signalLost": "Signal perdu",
-    "loadError": "Impossible de charger le tableau de bord.",
-    "hostDashboard": "Tableau de bord hôte",
-    "commandCenter": "Centre de commande",
-    "totalRsvp": "Total des confirmations",
-    "sponsorRev": "Revenus sponsoring",
-    "payoutBanner": "Configurez les versements pour recevoir les fonds des sponsors",
-    "activeParties": "Soirées actives",
-    "emptyActive": "Aucune soirée en direct. Publiez-en une pour apparaître ici.",
-    "rsvps": "Confirmations",
-    "sponsored": "Sponsorisée",
-    "pendingSponsor": "Sponsoring en attente",
+    "loadError": "Vérifiez votre connexion et réessayez.",
+    "hostDashboard": "Hôte",
+    "commandCenter": "Tableau de bord hôte",
+    "totalRsvp": "Total des réservations",
+    "sponsorRev": "Revenus sponsors",
+    "payoutBanner": "Configurez les versements pour être payé par les sponsors",
+    "activeParties": "Soirées en cours",
+    "emptyActive": "Rien en cours. Publiez une soirée et elle apparaîtra ici.",
+    "rsvps": "Réservations",
+    "sponsored": "Parrainée",
+    "sponsoredCount": "Parrainée ×{{count}}",
+    "pendingSponsor": "Sponsor en attente",
     "findSponsors": "Trouver des sponsors",
     "manage": "Gérer",
     "drafts": "Brouillons",
-    "emptyDrafts": "Aucun brouillon en réserve.",
-    "edited": "Modifié le {{date}}",
-    "completed": "Terminée",
-    "emptyCompleted": "Rien au tableau d'honneur pour l'instant.",
+    "emptyDrafts": "Aucun brouillon. Ce que vous enregistrez sans finir apparaît ici.",
+    "edited": "Modifiée le {{date}}",
+    "completed": "Soirées passées",
+    "emptyCompleted": "Aucune soirée passée pour l'instant.",
     "cancelled": "Annulée",
     "ended": "Terminée le {{date}}",
     "endedNoDate": "Terminée",
-    "attendees_one": "{{count}} participant",
-    "attendees_other": "{{count}} participants",
-    "createFooter": "+ Créer une soirée",
-    "sponsoredCount": "Sponsorisée ×{{count}}",
-    "emptyActiveTitle": "Aucune soirée en cours",
-    "emptyActiveCta": "Créer une soirée"
+    "attendees_one": "{{count}} invité",
+    "attendees_other": "{{count}} invités",
+    "createFooter": "+ Organiser une soirée",
+    "emptyActiveTitle": "Rien en cours",
+    "emptyActiveCta": "Organiser une soirée"
   },
   "create": {
     "guestGate": {
-      "title": "Organisez une soirée",
-      "message": "Connectez-vous pour créer des soirées de visionnage, réunir votre public et gérer les confirmations."
+      "title": "Organiser une soirée",
+      "message": "Connectez-vous pour organiser une soirée et gérer votre liste d'invités."
     },
-    "loadError": "Impossible de charger l'événement pour modification.",
+    "loadError": "Impossible de charger cette soirée pour la modifier. Réessayez.",
     "outcome": {
       "published": {
-        "title": "Soirée publiée",
-        "body": "Votre soirée de visionnage est en ligne sur le fil de découverte."
+        "title": "Votre soirée est en ligne",
+        "body": "On peut la trouver dans Découvrir et réserver dès maintenant."
       },
       "draft": {
         "title": "Brouillon enregistré",
-        "body": "Reprenez-le à tout moment depuis les brouillons de votre centre de commande."
+        "body": "Reprenez-le quand vous voulez depuis vos brouillons."
       },
       "deleted": {
         "title": "Soirée supprimée",
-        "body": "La soirée et ses confirmations ont été supprimées."
+        "body": "La soirée et ses réservations ont disparu."
       },
-      "coverErrorLabel": "Échec de l'image de couverture",
-      "coverUploadFailed": "Échec de l'envoi de la couverture.",
-      "coverErrorBody": "{{error}} — vous pouvez réessayer depuis Modifier la soirée.",
+      "coverErrorLabel": "La photo de couverture n'a pas été envoyée",
+      "coverUploadFailed": "La photo de couverture n'a pas été envoyée.",
+      "coverErrorBody": "{{error}} Vous pourrez la rajouter depuis Modifier la soirée.",
       "viewParty": "Voir la soirée",
       "shareParty": "Partager la soirée",
       "done": "Terminé"
@@ -109,7 +109,7 @@
       "edit": "Modifier la soirée",
       "create": "Organiser une soirée"
     },
-    "subtitle": "Configurez votre soirée de visionnage et réunissez votre équipe.",
+    "subtitle": "Choisissez le programme, l'heure et le lieu.",
     "cover": {
       "add": "+ Ajouter une photo de couverture",
       "change": "Changer la photo",
@@ -117,50 +117,50 @@
     },
     "basics": {
       "sectionTitle": "L'essentiel",
-      "eventName": "Nom de l'événement",
-      "eventNamePlaceholder": "ex. soirée Arsenal - Chelsea",
-      "whatIsBeingWatched": "Ce qui sera diffusé",
+      "eventName": "Nom de la soirée",
+      "eventNamePlaceholder": "ex. PSG - OM chez moi",
+      "whatIsBeingWatched": "Qu'est-ce qu'on regarde ?",
       "description": "Description",
-      "descriptionPlaceholder": "Dites à vos invités à quoi s'attendre…",
-      "maxCapacity": "Capacité maximale",
-      "unlimitedHint": "Vide = illimité",
+      "descriptionPlaceholder": "À quoi s'attendre ? Repas, ambiance, dress code…",
+      "maxCapacity": "Invités max.",
+      "unlimitedHint": "Laissez vide pour ne pas limiter",
       "capacityPlaceholder": "ex. 30"
     },
     "timePlace": {
-      "sectionTitle": "Date et lieu",
+      "sectionTitle": "Quand et où",
       "starts": "Début",
-      "startsPlaceholder": "Définir la date et l'heure",
+      "startsPlaceholder": "Choisir date et heure",
       "ends": "Fin",
-      "endsPlaceholder": "Heure de fin (facultatif)",
+      "endsPlaceholder": "Facultatif",
       "addVenue": "Ajouter un lieu",
-      "addVenueSub": "Indiquez à vos invités où se rendre",
+      "addVenueSub": "Dites aux invités où venir",
       "venueName": "Nom du lieu",
-      "venueNamePlaceholder": "Nom du lieu",
+      "venueNamePlaceholder": "ex. Le Café du Coin",
       "address": "Adresse",
-      "pinnedOnMap": "Épinglé sur la carte",
-      "pickAddressHint": "Choisissez une adresse suggérée pour épingler cette soirée sur la carte Découverte."
+      "pinnedOnMap": "Épinglée sur la carte",
+      "pickAddressHint": "Choisissez une adresse suggérée pour épingler cette soirée sur la carte Découvrir."
     },
     "privacy": {
-      "sectionTitle": "Confidentialité",
+      "sectionTitle": "Qui peut venir",
       "public": "Publique",
-      "publicSub": "Tout le monde peut rejoindre",
+      "publicSub": "Tout le monde peut réserver",
       "private": "Privée",
-      "privateSub": "Sur invitation uniquement — adresse masquée jusqu'à confirmation",
-      "venueHint": "Ajoutez un lieu ci-dessus pour masquer son adresse aux non-participants."
+      "privateSub": "Sur invitation. L'adresse reste cachée jusqu'à la réservation.",
+      "venueHint": "Ajoutez un lieu ci-dessus pour cacher son adresse aux non-invités."
     },
     "actions": {
-      "saveAsDraft": "Enregistrer comme brouillon",
-      "saveAsDraftInstead": "Enregistrer comme brouillon à la place",
+      "saveAsDraft": "Enregistrer le brouillon",
+      "saveAsDraftInstead": "Enregistrer en brouillon",
       "deleteParty": "Supprimer la soirée",
-      "deleteConfirm": "Supprimer cette soirée ? Cette action est irréversible.",
-      "keepIt": "Conserver",
-      "yesDelete": "Oui, supprimer",
+      "deleteConfirm": "Supprimer cette soirée ? Ses réservations partent avec, et c'est irréversible.",
+      "keepIt": "Garder la soirée",
+      "yesDelete": "Supprimer la soirée",
       "saving": "Enregistrement…",
-      "saveChanges": "Enregistrer les modifications",
+      "saveChanges": "Enregistrer",
       "publishParty": "Publier la soirée"
     },
-    "saveError": "Impossible d'enregistrer l'événement.",
-    "deleteError": "Impossible de supprimer la soirée.",
+    "saveError": "Impossible d'enregistrer la soirée. Vérifiez votre connexion et réessayez.",
+    "deleteError": "Impossible de supprimer la soirée. Réessayez.",
     "share": {
       "whenWithTime": "{{date}} à {{time}}"
     },

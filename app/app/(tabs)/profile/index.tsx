@@ -55,7 +55,7 @@ function fmtEventDate(
 ): string {
   if (!iso) return tr('saved.dateTbc');
   const { dateStr, timeStr } = formatEventDateTime(iso, venueTimezone);
-  return `${dateStr} · ${timeStr}`.toUpperCase();
+  return `${dateStr} · ${timeStr}`;
 }
 
 export default function ProfileScreen() {

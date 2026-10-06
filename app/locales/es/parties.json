@@ -2,114 +2,114 @@
   "myParties": {
     "title": "Mis fiestas",
     "tabs": {
-      "attending": "Asistencias",
-      "hosting": "Organizadas"
+      "attending": "Voy",
+      "hosting": "Organizo"
     },
     "waitlisted": "En lista de espera",
     "tonight": "Esta noche",
     "upcoming": "Próximas",
-    "tbd": "POR CONFIRMAR",
+    "tbd": "Por confirmar",
     "statusLabels": {
-      "published": "publicada",
-      "draft": "borrador",
-      "completed": "finalizada",
-      "cancelled": "cancelada"
+      "published": "Publicada",
+      "draft": "Borrador",
+      "completed": "Finalizada",
+      "cancelled": "Cancelada"
     },
     "getDirections": "Cómo llegar",
     "manage": "Gestionar",
     "stats": {
-      "going": "Asistentes",
-      "waitlist": "Lista de espera",
+      "going": "Van",
+      "waitlist": "En espera",
       "interested": "Interesados"
     },
     "guestGate": {
-      "title": "Entra en el juego",
-      "message": "Inicia sesión para seguir tus confirmaciones y organizar tus propias fiestas de visualización."
+      "title": "Tus fiestas viven aquí",
+      "message": "Inicia sesión para ver tus asistencias y organizar tus propias fiestas."
     },
     "loading": "Cargando",
-    "signalLost": "Señal perdida",
-    "loadError": "No se pudieron cargar tus fiestas.",
+    "signalLost": "Sin señal",
+    "loadError": "Revisa tu conexión e inténtalo de nuevo.",
     "emptyAttending": {
-      "title": "Aún no hay fiestas",
-      "body": "Confirma tu asistencia a una fiesta de visualización y aparecerá aquí.",
+      "title": "Aún no te has apuntado",
+      "body": "Apúntate a una fiesta y aparecerá aquí.",
       "cta": "Buscar una fiesta"
     },
     "emptyHosting": {
       "title": "Organiza tu primera fiesta",
-      "body": "Crea una fiesta de visualización y reúne al equipo.",
-      "cta": "Crear fiesta"
+      "body": "Elige qué ver, pon hora y abre la puerta.",
+      "cta": "Organizar una fiesta"
     },
-    "createFooter": "+ Crear fiesta"
+    "createFooter": "+ Organizar una fiesta"
   },
   "dashboard": {
     "guestGate": {
-      "title": "Centro de mando",
-      "message": "Inicia sesión para crear y gestionar tus fiestas de visualización."
+      "title": "Panel de anfitrión",
+      "message": "Inicia sesión para organizar fiestas y gestionar tu lista de invitados."
     },
-    "noDateSet": "Sin fecha definida",
+    "noDateSet": "Sin fecha",
     "tonightAt": "Esta noche a las {{time}}",
     "dateAt": "{{date}} a las {{time}}",
     "loading": "Cargando",
-    "signalLost": "Señal perdida",
-    "loadError": "No se pudo cargar el panel.",
-    "hostDashboard": "Panel del anfitrión",
-    "commandCenter": "Centro de mando",
-    "totalRsvp": "Confirmaciones totales",
-    "sponsorRev": "Ingresos por patrocinio",
-    "payoutBanner": "Configura los pagos para recibir los fondos de los patrocinadores",
-    "activeParties": "Fiestas activas",
-    "emptyActive": "No hay fiestas en vivo. Publica una para aparecer aquí.",
-    "rsvps": "Confirmaciones",
+    "signalLost": "Sin señal",
+    "loadError": "Revisa tu conexión e inténtalo de nuevo.",
+    "hostDashboard": "Organizando",
+    "commandCenter": "Panel de anfitrión",
+    "totalRsvp": "Asistencias totales",
+    "sponsorRev": "Ingresos de patrocinio",
+    "payoutBanner": "Configura los cobros para que te paguen los patrocinadores",
+    "activeParties": "Fiestas en directo",
+    "emptyActive": "Nada en directo. Publica una fiesta y aparecerá aquí.",
+    "rsvps": "Asistencias",
     "sponsored": "Patrocinada",
-    "pendingSponsor": "Patrocinio pendiente",
+    "sponsoredCount": "Patrocinada ×{{count}}",
+    "pendingSponsor": "Patrocinador pendiente",
     "findSponsors": "Buscar patrocinadores",
     "manage": "Gestionar",
     "drafts": "Borradores",
-    "emptyDrafts": "No hay borradores en la banca.",
-    "edited": "Editado {{date}}",
-    "completed": "Finalizada",
-    "emptyCompleted": "Aún nada en el historial.",
+    "emptyDrafts": "Sin borradores. Lo que dejes a medias aparecerá aquí.",
+    "edited": "Editada {{date}}",
+    "completed": "Fiestas pasadas",
+    "emptyCompleted": "Aún no hay fiestas pasadas.",
     "cancelled": "Cancelada",
-    "ended": "Finalizada {{date}}",
-    "endedNoDate": "Finalizada",
-    "attendees_one": "{{count}} asistente",
-    "attendees_other": "{{count}} asistentes",
-    "createFooter": "+ Crear fiesta",
-    "sponsoredCount": "Patrocinada ×{{count}}",
-    "emptyActiveTitle": "Ninguna fiesta activa",
-    "emptyActiveCta": "Crear una fiesta"
+    "ended": "Terminó {{date}}",
+    "endedNoDate": "Terminó",
+    "attendees_one": "{{count}} invitado",
+    "attendees_other": "{{count}} invitados",
+    "createFooter": "+ Organizar una fiesta",
+    "emptyActiveTitle": "Nada en directo",
+    "emptyActiveCta": "Organizar una fiesta"
   },
   "create": {
     "guestGate": {
       "title": "Organiza una fiesta",
-      "message": "Inicia sesión para crear fiestas de visualización, reunir a tu gente y gestionar confirmaciones."
+      "message": "Inicia sesión para organizar una fiesta y gestionar tu lista de invitados."
     },
-    "loadError": "No se pudo cargar el evento para editar.",
+    "loadError": "No pudimos cargar la fiesta para editarla. Inténtalo de nuevo.",
     "outcome": {
       "published": {
-        "title": "Fiesta publicada",
-        "body": "Tu fiesta de visualización ya está en vivo en el feed de descubrimiento."
+        "title": "Tu fiesta ya está en directo",
+        "body": "La gente puede encontrarla en Descubrir y apuntarse ya."
       },
       "draft": {
         "title": "Borrador guardado",
-        "body": "Retómalo cuando quieras desde los borradores de tu centro de mando."
+        "body": "Retómalo desde tus borradores cuando quieras."
       },
       "deleted": {
         "title": "Fiesta eliminada",
-        "body": "La fiesta y sus confirmaciones han sido eliminadas."
+        "body": "La fiesta y sus asistencias han desaparecido."
       },
-      "coverErrorLabel": "Error en la imagen de portada",
-      "coverUploadFailed": "No se pudo subir la portada.",
-      "coverErrorBody": "{{error}} — puedes reintentarlo desde Editar fiesta.",
+      "coverErrorLabel": "La foto de portada no se subió",
+      "coverUploadFailed": "La foto de portada no se subió.",
+      "coverErrorBody": "{{error}} Puedes volver a añadirla desde Editar fiesta.",
       "viewParty": "Ver fiesta",
       "shareParty": "Compartir fiesta",
       "done": "Listo"
     },
     "headline": {
       "edit": "Editar fiesta",
-      "create": "Organiza una fiesta"
+      "create": "Organizar una fiesta"
     },
-    "subtitle": "Configura tu fiesta de visualización y reúne al equipo.",
+    "subtitle": "Elige qué ver, pon hora y di dónde.",
     "cover": {
       "add": "+ Añadir foto de portada",
       "change": "Cambiar foto",
@@ -117,50 +117,50 @@
     },
     "basics": {
       "sectionTitle": "Lo básico",
-      "eventName": "Nombre del evento",
-      "eventNamePlaceholder": "ej. fiesta Arsenal vs Chelsea",
-      "whatIsBeingWatched": "Qué se va a ver",
+      "eventName": "Nombre de la fiesta",
+      "eventNamePlaceholder": "p. ej. Arsenal v Chelsea en mi casa",
+      "whatIsBeingWatched": "¿Qué vais a ver?",
       "description": "Descripción",
-      "descriptionPlaceholder": "Cuéntale a la gente qué esperar…",
-      "maxCapacity": "Aforo máximo",
-      "unlimitedHint": "Vacío = ilimitado",
-      "capacityPlaceholder": "ej. 30"
+      "descriptionPlaceholder": "¿Qué puede esperar la gente? Comida, volumen, dress code…",
+      "maxCapacity": "Máximo de invitados",
+      "unlimitedHint": "Déjalo en blanco para no poner límite",
+      "capacityPlaceholder": "p. ej. 30"
     },
     "timePlace": {
-      "sectionTitle": "Fecha y lugar",
+      "sectionTitle": "Cuándo y dónde",
       "starts": "Empieza",
-      "startsPlaceholder": "Definir fecha y hora",
+      "startsPlaceholder": "Elegir fecha y hora",
       "ends": "Termina",
-      "endsPlaceholder": "Hora de fin (opcional)",
-      "addVenue": "Añadir un local",
-      "addVenueSub": "Que los asistentes sepan dónde presentarse",
-      "venueName": "Nombre del local",
-      "venueNamePlaceholder": "Nombre del local",
+      "endsPlaceholder": "Opcional",
+      "addVenue": "Añadir un lugar",
+      "addVenueSub": "Di a los invitados dónde presentarse",
+      "venueName": "Nombre del lugar",
+      "venueNamePlaceholder": "p. ej. El Rincón",
       "address": "Dirección",
-      "pinnedOnMap": "Fijado en el mapa",
+      "pinnedOnMap": "Fijada en el mapa",
       "pickAddressHint": "Elige una dirección sugerida para fijar esta fiesta en el mapa de Descubrir."
     },
     "privacy": {
-      "sectionTitle": "Privacidad",
+      "sectionTitle": "Quién puede venir",
       "public": "Pública",
-      "publicSub": "Cualquiera puede unirse",
+      "publicSub": "Cualquiera puede apuntarse",
       "private": "Privada",
-      "privateSub": "Solo con invitación — dirección oculta hasta confirmar asistencia",
-      "venueHint": "Añade un local arriba para ocultar su dirección a quienes no asistan."
+      "privateSub": "Solo con invitación. La dirección se oculta hasta que alguien se apunta.",
+      "venueHint": "Añade un lugar arriba para ocultar su dirección a quien no esté apuntado."
     },
     "actions": {
-      "saveAsDraft": "Guardar como borrador",
-      "saveAsDraftInstead": "Guardar como borrador en su lugar",
+      "saveAsDraft": "Guardar borrador",
+      "saveAsDraftInstead": "Mejor guardar como borrador",
       "deleteParty": "Eliminar fiesta",
-      "deleteConfirm": "¿Eliminar esta fiesta? Esta acción no se puede deshacer.",
-      "keepIt": "Conservar",
-      "yesDelete": "Sí, eliminar",
+      "deleteConfirm": "¿Eliminar esta fiesta? Sus asistencias se van con ella y no se puede deshacer.",
+      "keepIt": "Conservar fiesta",
+      "yesDelete": "Eliminar fiesta",
       "saving": "Guardando…",
       "saveChanges": "Guardar cambios",
       "publishParty": "Publicar fiesta"
     },
-    "saveError": "No se pudo guardar el evento.",
-    "deleteError": "No se pudo eliminar la fiesta.",
+    "saveError": "No pudimos guardar la fiesta. Revisa tu conexión e inténtalo de nuevo.",
+    "deleteError": "No pudimos eliminar la fiesta. Inténtalo de nuevo.",
     "share": {
       "whenWithTime": "{{date}} a las {{time}}"
     },

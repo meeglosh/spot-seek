@@ -2,152 +2,175 @@
   "statusLabels": {
     "pending": "Pending",
     "active": "Active",
-    "rejected": "Rejected",
+    "rejected": "Declined",
     "cancelled": "Cancelled"
   },
   "browse": {
-    "title": "Sponsorship Hub",
-    "subtitle": "High-yield targeting opportunities.",
+    "title": "Sponsorships",
+    "subtitle": "Back a local watch party and get your name in the room.",
     "guestGate": {
-      "title": "Sponsorship Hub",
-      "message": "Sign in to register your brand, browse high-engagement watch parties, and bid on sponsorships."
+      "title": "Sponsorships",
+      "message": "Sign in to register your business, browse parties and place a bid."
     },
     "filters": {
       "all": "All",
       "today": "Today",
-      "week": "This Week"
+      "week": "This week"
     },
-    "dateTbc": "DATE TBC",
+    "dateTbc": "Date TBA",
     "register": {
-      "title": "Become a Sponsor",
-      "description": "Register your company to bid on watch parties. Hosts accept or reject each bid — a 15% platform fee applies to accepted bids.",
-      "companyName": "Company Name",
-      "companyNamePlaceholder": "e.g. Voltage Drinks Co.",
-      "website": "Website (Optional)",
+      "title": "Register as a sponsor",
+      "description": "Register your business to bid on watch parties. Hosts accept or decline each bid. If a bid is accepted, SpotSeek keeps a 15% fee.",
+      "companyName": "Business name",
+      "companyNamePlaceholder": "e.g. Volt Cola",
+      "website": "Website (optional)",
       "websitePlaceholder": "https://…",
-      "categories": "Categories (Optional)",
-      "budgetMin": "Budget Min (Optional)",
-      "budgetMax": "Budget Max (Optional)",
+      "categories": "Categories (optional)",
+      "budgetMin": "Budget min (optional)",
+      "budgetMax": "Budget max (optional)",
       "budgetPlaceholder": "$",
-      "submit": "Register as Sponsor",
-      "errorRequired": "Company name is required.",
-      "errorSignIn": "Sign in first to register as a sponsor.",
-      "errorFailed": "Registration failed. Try again."
+      "submit": "Register",
+      "errorRequired": "Add your business name.",
+      "errorSignIn": "Sign in to register as a sponsor.",
+      "errorFailed": "Couldn't register you. Check your details and try again."
     },
     "sponsorLabel": "Sponsor · {{company}}",
     "stats": {
-      "totalBids": "Total Bids",
+      "totalBids": "Bids",
       "active": "Active",
-      "totalSpend": "Total Spend",
+      "totalSpend": "Spent",
       "reach": "Reach"
     },
     "requests": {
-      "sectionTitle": "Sponsorship Requests",
-      "fallbackEventTitle": "Event",
-      "newRequest": "New Request",
+      "sectionTitle": "Sponsor requests",
+      "fallbackEventTitle": "Party",
+      "newRequest": "New request",
       "goingCount_one": "{{count}} going",
       "goingCount_other": "{{count}} going",
       "decline": "Decline",
       "accept": "Accept"
     },
     "marketplace": {
-      "sectionTitle": "Open for Sponsorship",
-      "empty": "No published events match this filter.",
-      "privateVenue": "Private location — revealed after RSVP",
-      "venueTbc": "Venue TBC",
+      "sectionTitle": "Looking for sponsors",
+      "empty": "No parties match this filter. Try another date range.",
+      "privateVenue": "Private location, shared after RSVP",
+      "venueTbc": "Venue TBA",
       "date": "Date",
       "capacity": "Capacity",
       "yourBid": "Your bid · {{amount}} · {{status}}",
-      "review": "Review for Sponsorship",
-      "emptyTitle": "No events here",
-      "showAll": "Show all events"
+      "review": "Review and bid",
+      "emptyTitle": "No parties here",
+      "showAll": "Show all parties"
     }
   },
   "bid": {
     "guestGate": {
       "title": "Sponsor this party",
-      "message": "Sign in to review sponsorship terms and place a bid on this watch party."
+      "message": "Sign in to review the terms and place a bid."
     },
-    "loadError": "Could not load this event.",
-    "eventNotFound": "Event not found.",
-    "openForBids": "Open for Bids",
+    "loadError": "Try again.",
+    "eventNotFound": "Party not found.",
+    "openForBids": "Open for bids",
     "facts": {
       "date": "Date",
       "venue": "Venue",
-      "privateVenue": "PRIVATE — AFTER RSVP",
-      "venueTbc": "TBC",
+      "privateVenue": "Shared after RSVP",
+      "venueTbc": "TBA",
       "capacity": "Capacity"
     },
-    "dealTitle": "The Deal",
+    "dealTitle": "How it works",
     "dealPoints": {
       "yourBid": {
-        "title": "Your Bid",
-        "body": "Offer a sponsorship amount for this event. The host sees your bid and note."
+        "title": "Your bid",
+        "body": "Offer an amount for this party. The host sees it along with your note."
       },
       "platformFee": {
-        "title": "Platform Fee — 15%",
-        "body": "SpotSeek keeps 15% of an accepted bid. The host receives the remainder."
+        "title": "15% platform fee",
+        "body": "SpotSeek keeps 15% of an accepted bid. The host gets the rest."
       },
       "hostDecision": {
-        "title": "Host Decision",
-        "body": "The host accepts or rejects your bid. You can cancel while it is pending."
+        "title": "The host decides",
+        "body": "The host accepts or declines. You can cancel while it's pending."
       },
       "payment": {
         "title": "Payment",
-        "body": "Charged only after the host accepts. Payments are currently in test mode — no real money moves."
+        "body": "You're charged only after the host accepts. Payments are in test mode for now, so no real money moves."
       }
     },
-    "statusTitle": "Sponsorship Status",
-    "yourBid": "Your Bid",
-    "platformFee": "Platform Fee (15%)",
-    "hostReceives": "Host Receives",
+    "statusTitle": "Bid status",
+    "yourBid": "Your bid",
+    "platformFee": "Platform fee (15%)",
+    "hostReceives": "Host gets",
     "placed": "Placed",
     "note": "Note: {{note}}",
-    "cancelBid": "Cancel Bid",
-    "hostAccepted": "The host accepted this bid.",
+    "cancelBid": "Cancel bid",
+    "hostAccepted": "The host accepted your bid.",
     "payment": {
       "due": "Payment due",
       "payNow": "Pay now",
-      "notLiveYet": "Payments aren't live yet — you'll be notified when this can be completed.",
-      "payError": "Could not start payment — try again.",
-      "paid": "Paid · awaiting event",
+      "notLiveYet": "Payments aren't live yet. We'll let you know when you can finish this.",
+      "payError": "Couldn't start the payment. Try again.",
+      "paid": "Paid, waiting for the party",
       "released": "Paid out to host",
       "refunded": "Refunded",
-      "processing": "Payment received — confirming…",
+      "processing": "Payment received. Confirming…",
       "cancelled": "Payment cancelled. You can pay any time.",
-      "payFailed": "Payment did not go through — try another card.",
-      "stillProcessing": "Your payment is still processing. This will update to paid shortly."
+      "payFailed": "Payment didn't go through. Try another card.",
+      "stillProcessing": "Your payment is still processing. This will update shortly."
     },
-    "testNoteAccepted": "Payment is processed only after the host accepts — payments are in test mode, no real charges.",
+    "testNoteAccepted": "You're charged only after the host accepts. Payments are in test mode, so no real charges.",
     "sponsorProfileNeeded": {
-      "title": "Sponsor Profile Needed",
-      "body": "Only registered sponsors can bid. Register your company in the Sponsorship Hub, then come back to place a bid.",
-      "cta": "Register in the Hub"
+      "title": "Register as a sponsor first",
+      "body": "Only registered sponsors can bid. Register in Sponsorships, then come back to place your bid.",
+      "cta": "Register as a sponsor"
     },
     "lastBid": "Last bid · {{amount}} · {{status}}",
-    "bidAmountLabel": "Bid Amount (USD)",
+    "bidAmountLabel": "Bid amount (USD)",
     "bidAmountPlaceholder": "e.g. 250",
-    "noteLabel": "Note to Host (Optional)",
-    "notePlaceholder": "What your brand brings to the party…",
-    "feeSummary": "PLATFORM FEE (15%): {{fee}} · HOST RECEIVES: {{host}}",
-    "placeBid": "Place Bid",
-    "testNotePending": "Payment is processed only after the host accepts your bid — payments are in test mode, no real charges.",
+    "noteLabel": "Note to host (optional)",
+    "notePlaceholder": "What your business brings to the night",
+    "feeSummary": "Platform fee (15%): {{fee}} · Host gets: {{host}}",
+    "placeBid": "Place bid",
+    "testNotePending": "You're charged only if the host accepts. Payments are in test mode, so no real charges.",
     "errors": {
       "signIn": "Sign in to place a bid.",
-      "failed": "Bid failed. Try again.",
-      "cancelFailed": "Could not cancel the bid. Try again."
+      "failed": "Couldn't place the bid. Try again.",
+      "cancelFailed": "Couldn't cancel the bid. Try again."
     },
-    "errorTitle": "Couldn't load this event",
-    "notFoundTitle": "Event not found",
+    "errorTitle": "Couldn't load this party",
+    "notFoundTitle": "Party not found",
     "backToMarketplace": "Back to sponsorships"
   },
   "findSponsors": {
+    "title": "Find sponsors",
+    "guestMessage": "Sign in to browse sponsors and send requests for your party.",
+    "forEvent": "For {{title}}",
+    "searchPlaceholder": "Search sponsors",
+    "allCategories": "All categories",
+    "sort": {
+      "sponsored": "Most sponsored",
+      "budget": "Biggest budget",
+      "name": "Name A to Z"
+    },
+    "sponsoredCount_one": "{{count}} sponsored",
+    "sponsoredCount_other": "{{count}} sponsored",
+    "budget": "Budget: {{min}} to {{max}}",
+    "noCap": "no cap",
+    "requestSent": "Request sent",
+    "request": "Request sponsorship",
+    "send": "Send request",
+    "amountLabel": "Amount you're asking for ($)",
+    "amountPlaceholder": "500",
+    "noteLabel": "Note (optional)",
+    "notePlaceholder": "Why your party is a good fit",
+    "errorAmount": "Enter an amount above $0.",
+    "errorSend": "Couldn't send the request. Try again.",
     "errorTitle": "Couldn't load sponsors",
-    "loadError": "Could not load sponsors.",
+    "loadError": "Check your connection and try again.",
     "emptyTitle": "No sponsors yet",
-    "empty": "No sponsors have registered yet. Check back later.",
+    "empty": "No sponsors have registered yet. Check back soon.",
     "noMatchTitle": "No matches",
-    "noMatch": "No sponsors match your search or category.",
+    "noMatch": "No sponsors match that search or category.",
     "clearSearch": "Clear search"
   }
 }

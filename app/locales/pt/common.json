@@ -2,39 +2,39 @@
   "cancel": "Cancelar",
   "save": "Guardar",
   "back": "Voltar",
-  "done": "Concluído",
-  "retry": "Tentar novamente",
+  "done": "Concluir",
+  "retry": "Tentar de novo",
   "delete": "Eliminar",
   "edit": "Editar",
   "close": "Fechar",
   "loading": "A carregar…",
-  "comingSoon": "Brevemente",
+  "comingSoon": "Em breve",
   "brand": {
-    "tagline": "NUNCA MAIS VEJAS SOZINHO"
+    "tagline": "Nunca vejas sozinho"
   },
   "guestGate": {
-    "membersOnly": "Apenas para membros",
+    "membersOnly": "Precisas de uma conta para isto",
     "signIn": "Iniciar sessão",
     "createAccount": "Criar conta",
     "keepBrowsing": "Continuar a explorar",
-    "joinTheAction": "Junta-te à ação"
+    "joinTheAction": "Junta-te ao SpotSeek"
   },
   "tabs": {
     "discover": "Descobrir",
-    "myParties": "As Minhas Festas",
+    "myParties": "Minhas festas",
     "profile": "Perfil"
   },
   "shell": {
     "menu": {
-      "switchToHosting": "Mudar para modo Anfitrião",
+      "switchToHosting": "Passar a organizar",
       "sponsorships": "Patrocínios",
       "wallet": "Carteira",
       "settings": "Definições",
       "signOut": "Terminar sessão",
       "signIn": "Iniciar sessão"
     },
-    "guestName": "Fã",
-    "roleSeeker": "Fã",
+    "guestName": "Convidado",
+    "roleSeeker": "Participante",
     "accessibility": {
       "openMenu": "Abrir menu",
       "notifications": "Notificações",
@@ -47,8 +47,8 @@
   "soon": "Em breve",
   "datePicker": {
     "clear": "Limpar",
-    "done": "Concluído",
+    "done": "Concluir",
     "title": "Data e hora",
-    "placeholder": "Escolher data e hora"
+    "placeholder": "Definir data e hora"
   }
 }

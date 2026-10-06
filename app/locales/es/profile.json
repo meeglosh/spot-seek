@@ -1,8 +1,8 @@
 {
-  "title": "Espacio personal",
+  "title": "Tu perfil",
   "guestGate": {
-    "title": "Espacio personal",
-    "message": "Inicia sesión para seguir tus confirmaciones, equipos e historial como anfitrión."
+    "title": "Tu perfil",
+    "message": "Inicia sesión para ver tus asistencias, equipos e historial como anfitrión."
   },
   "hero": {
     "verifiedHost": "Anfitrión verificado",
@@ -11,34 +11,34 @@
     "following_one": "{{count}} seguido",
     "following_other": "{{count}} seguidos",
     "since": "Desde {{year}}",
-    "partiesAttended": "Fiestas asistidas",
-    "nextMilestone": "Próximo hito: {{count}} fiestas asistidas."
+    "partiesAttended": "Fiestas a las que fuiste",
+    "nextMilestone": "Próximo hito: {{count}} fiestas a las que has ido."
   },
   "hostCta": {
     "title": "Organiza una fiesta",
-    "body": "Crea un nuevo evento e invita a tu equipo.",
-    "button": "Iniciar configuración"
+    "body": "Elige un partido o un final y avisa a tu gente.",
+    "button": "Organizar una fiesta"
   },
   "teams": {
-    "sectionTitle": "Mis equipos (favoritos)",
+    "sectionTitle": "Mis equipos",
     "fallbackLeague": "Siguiendo",
     "findTeams": "Buscar equipos"
   },
   "saved": {
-    "sectionTitle": "Fiestas guardadas",
-    "empty": "Confirma asistencia a una fiesta y aparecerá aquí.",
+    "sectionTitle": "Tus asistencias",
+    "empty": "Apúntate a una fiesta y aparecerá aquí.",
     "waitlist": "Lista de espera",
-    "unknownEvent": "Evento desconocido",
-    "dateTbc": "FECHA POR CONFIRMAR",
-    "emptyTitle": "Nada guardado aún",
-    "emptyCta": "Explorar eventos"
+    "unknownEvent": "Fiesta desconocida",
+    "dateTbc": "Fecha por confirmar",
+    "emptyTitle": "Aún no te has apuntado",
+    "emptyCta": "Explorar fiestas"
   },
   "hosting": {
     "sectionTitle": "Historial como anfitrión",
-    "empty": "Aún no has organizado nada. Tus eventos pasados aparecerán aquí.",
-    "attendee_one": "Finalizada · {{count}} asistente",
-    "attendee_other": "Finalizada · {{count}} asistentes",
-    "emptyTitle": "Sin historial como anfitrión",
+    "empty": "Aún no has organizado nada. Tus fiestas pasadas aparecerán aquí.",
+    "attendee_one": "Finalizada · {{count}} invitado",
+    "attendee_other": "Finalizada · {{count}} invitados",
+    "emptyTitle": "Nada organizado todavía",
     "emptyCta": "Organizar una fiesta"
   },
   "reviews": {

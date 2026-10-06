@@ -2,10 +2,10 @@
   "title": "Notifications",
   "guestGate": {
     "title": "Notifications",
-    "message": "Connectez-vous pour voir l'activité de vos soirées et sponsorings."
+    "message": "Connectez-vous pour suivre ce qui se passe sur vos soirées et parrainages."
   },
-  "loadError": "Impossible de charger les notifications.",
-  "empty": "Aucune notification pour l'instant — l'activité de vos soirées apparaîtra ici.",
+  "loadError": "Vérifiez votre connexion et réessayez.",
+  "empty": "Aucune notification pour l'instant. Les réservations et nouvelles de vos soirées arrivent ici.",
   "timeAgo": {
     "justNow": "à l'instant",
     "minutes_one": "il y a {{count}} min",
@@ -21,7 +21,7 @@
     "years_one": "il y a {{count}} an",
     "years_other": "il y a {{count}} ans"
   },
-  "errorTitle": "Impossible de charger les notifications",
-  "emptyTitle": "Vous êtes à jour",
+  "errorTitle": "Chargement impossible",
+  "emptyTitle": "Rien de neuf",
   "emptyCta": "Trouver une soirée"
 }

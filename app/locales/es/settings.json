@@ -2,36 +2,36 @@
   "title": "Ajustes",
   "guestGate": {
     "title": "Ajustes",
-    "message": "Inicia sesión para gestionar tu cuenta y tus preferencias de notificación."
+    "message": "Inicia sesión para gestionar tu cuenta y tus avisos."
   },
   "account": {
     "title": "Cuenta",
     "signedInAs": "Sesión iniciada como",
     "signOut": "Cerrar sesión",
     "deleteAccount": "Eliminar cuenta",
-    "deleteConfirm": "¿Eliminar tu cuenta? Se eliminarán de forma permanente tu perfil, tus confirmaciones de asistencia y todos los eventos pasados, borradores o cancelados que organices. Esta acción no se puede deshacer.",
-    "keepIt": "Conservar",
-    "yesDelete": "Sí, eliminar",
-    "deleteFallbackError": "No se pudo eliminar la cuenta.",
+    "deleteConfirm": "¿Eliminar tu cuenta? Se borrarán para siempre tu perfil, tus asistencias y las fiestas pasadas, en borrador o canceladas que organices. No se puede deshacer.",
+    "keepIt": "Conservar mi cuenta",
+    "yesDelete": "Eliminar cuenta",
+    "deleteFallbackError": "No pudimos eliminar tu cuenta. Inténtalo de nuevo.",
     "typeToConfirm": "Escribe {{word}} para confirmar",
-    "blockedEvents": "Todavía organizas eventos próximos. Cancélalos primero para avisar a los asistentes y reembolsar a los patrocinadores, y vuelve a intentarlo:",
-    "blockedMoney": "Aún hay pagos de patrocinio en curso, así que no se puede eliminar tu cuenta todavía. Inténtalo de nuevo cuando se liberen o reembolsen:"
+    "blockedEvents": "Aún organizas fiestas próximas. Cancélalas primero para avisar a los invitados y reembolsar a los patrocinadores, y vuelve a intentarlo:",
+    "blockedMoney": "Hay pagos de patrocinio en curso, así que todavía no podemos eliminar tu cuenta. Vuelve a intentarlo cuando se liberen o reembolsen:"
   },
   "notifications": {
     "title": "Notificaciones",
-    "loadError": "No se pudieron cargar los ajustes de notificaciones.",
+    "loadError": "No pudimos cargar tus ajustes de notificaciones. Inténtalo de nuevo.",
     "email": "Notificaciones por correo",
-    "emailError": "No se pudieron guardar las notificaciones por correo — inténtalo de nuevo.",
+    "emailError": "No pudimos guardar el ajuste de correo. Inténtalo de nuevo.",
     "push": "Notificaciones push",
-    "radiusLabel": "Radio de alertas cercanas",
+    "radiusLabel": "Radio de avisos cercanos",
     "radiusValue": "{{miles}} mi / {{km}} km",
-    "radiusError": "No se pudo guardar el radio — inténtalo de nuevo.",
-    "pushError": "No se pudieron actualizar las notificaciones push — inténtalo de nuevo.",
+    "radiusError": "No pudimos guardar el radio. Inténtalo de nuevo.",
+    "pushError": "No pudimos actualizar las notificaciones push. Inténtalo de nuevo.",
     "pushDeniedTitle": "Las notificaciones están desactivadas",
-    "pushDeniedBody": "Permite las notificaciones de SpotSeek en los Ajustes de tu iPhone para recibir alertas de eventos.",
+    "pushDeniedBody": "Activa las notificaciones de SpotSeek en los Ajustes de tu iPhone para recibir avisos.",
     "openSettings": "Abrir Ajustes",
-    "pushPromptTitle": "¿Recibir recordatorios de eventos?",
-    "pushPromptBody": "Activa las notificaciones para que te avisemos antes de que empiece tu watch party.",
+    "pushPromptTitle": "¿Quieres un aviso antes de que empiece?",
+    "pushPromptBody": "Te recordaremos antes de que arranque tu fiesta.",
     "pushPromptLater": "Ahora no",
     "pushPromptEnable": "Activar"
   },
@@ -40,12 +40,12 @@
     "systemDefault": "Idioma del sistema"
   },
   "payouts": {
-    "title": "Pagos",
-    "notConfigured": "Los pagos aún no están configurados.",
-    "setup": "Configurar pagos",
-    "setupError": "No se pudo iniciar la configuración de pagos — inténtalo de nuevo.",
-    "notLiveYet": "Los pagos aún no están activos — se te avisará cuando esto pueda completarse.",
-    "enabledLabel": "Pagos habilitados"
+    "title": "Cobros",
+    "notConfigured": "Los cobros aún no están configurados.",
+    "setup": "Configurar cobros",
+    "setupError": "No pudimos iniciar la configuración de cobros. Inténtalo de nuevo.",
+    "notLiveYet": "Los pagos aún no están activos. Te avisaremos cuando puedas terminar esto.",
+    "enabledLabel": "Cobros activados"
   },
   "favourites": {
     "title": "Favoritos",

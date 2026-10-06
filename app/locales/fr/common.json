@@ -10,14 +10,14 @@
   "loading": "Chargement…",
   "comingSoon": "Bientôt disponible",
   "brand": {
-    "tagline": "NE PLUS JAMAIS REGARDER SEUL"
+    "tagline": "Ne regardez jamais seul"
   },
   "guestGate": {
-    "membersOnly": "Réservé aux membres",
+    "membersOnly": "Il vous faut un compte pour ça",
     "signIn": "Se connecter",
     "createAccount": "Créer un compte",
     "keepBrowsing": "Continuer à explorer",
-    "joinTheAction": "Rejoindre l'action"
+    "joinTheAction": "Rejoindre SpotSeek"
   },
   "tabs": {
     "discover": "Découvrir",
@@ -27,14 +27,14 @@
   "shell": {
     "menu": {
       "switchToHosting": "Passer en mode hôte",
-      "sponsorships": "Sponsoring",
+      "sponsorships": "Parrainages",
       "wallet": "Portefeuille",
-      "settings": "Paramètres",
+      "settings": "Réglages",
       "signOut": "Se déconnecter",
       "signIn": "Se connecter"
     },
-    "guestName": "Chercheur",
-    "roleSeeker": "Chercheur",
+    "guestName": "Invité",
+    "roleSeeker": "Participant",
     "accessibility": {
       "openMenu": "Ouvrir le menu",
       "notifications": "Notifications",
@@ -47,8 +47,8 @@
   "soon": "Bientôt",
   "datePicker": {
     "clear": "Effacer",
-    "done": "OK",
+    "done": "Terminé",
     "title": "Date et heure",
-    "placeholder": "Choisir la date et l’heure"
+    "placeholder": "Choisir date et heure"
   }
 }

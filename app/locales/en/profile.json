@@ -1,49 +1,49 @@
 {
-  "title": "Personal Hub",
+  "title": "Your profile",
   "guestGate": {
-    "title": "Personal Hub",
-    "message": "Sign in to track your RSVPs, teams, and hosting record."
+    "title": "Your profile",
+    "message": "Sign in to see your RSVPs, teams and hosting history."
   },
   "hero": {
-    "verifiedHost": "Verified Host",
-    "followers_one": "{{count}} Follower",
-    "followers_other": "{{count}} Followers",
-    "following_one": "{{count}} Following",
-    "following_other": "{{count}} Following",
+    "verifiedHost": "Verified host",
+    "followers_one": "{{count}} follower",
+    "followers_other": "{{count}} followers",
+    "following_one": "{{count}} following",
+    "following_other": "{{count}} following",
     "since": "Since {{year}}",
-    "partiesAttended": "Parties Attended",
+    "partiesAttended": "Parties attended",
     "nextMilestone": "Next milestone: {{count}} parties attended."
   },
   "hostCta": {
-    "title": "Host a Party",
-    "body": "Create a new event and invite your squad.",
-    "button": "Initialize Setup"
+    "title": "Host a party",
+    "body": "Pick a game or a finale and invite people over.",
+    "button": "Host a party"
   },
   "teams": {
-    "sectionTitle": "My Teams (Favorites)",
+    "sectionTitle": "My teams",
     "fallbackLeague": "Following",
-    "findTeams": "Find Teams"
+    "findTeams": "Find teams"
   },
   "saved": {
-    "sectionTitle": "Saved Parties",
-    "empty": "RSVP to a party and it shows up here.",
+    "sectionTitle": "Your RSVPs",
+    "empty": "RSVP to a party and it'll show up here.",
     "waitlist": "Waitlist",
-    "unknownEvent": "Unknown event",
-    "dateTbc": "DATE TBC",
-    "emptyTitle": "Nothing saved yet",
-    "emptyCta": "Browse events"
+    "unknownEvent": "Unknown party",
+    "dateTbc": "Date TBA",
+    "emptyTitle": "No RSVPs yet",
+    "emptyCta": "Browse parties"
   },
   "hosting": {
-    "sectionTitle": "Hosting History",
-    "empty": "Nothing hosted yet. Your past events will show up here.",
-    "attendee_one": "Completed · {{count}} attendee",
-    "attendee_other": "Completed · {{count}} attendees",
-    "emptyTitle": "No hosting history",
+    "sectionTitle": "Hosting history",
+    "empty": "You haven't hosted yet. Past parties show up here.",
+    "attendee_one": "Completed · {{count}} guest",
+    "attendee_other": "Completed · {{count}} guests",
+    "emptyTitle": "Nothing hosted yet",
     "emptyCta": "Host a party"
   },
   "reviews": {
     "sectionTitle": "Reviews",
     "ratingSummary": "{{avg}} · {{count}}"
   },
-  "signOut": "Sign Out"
+  "signOut": "Sign out"
 }

@@ -1,45 +1,45 @@
 {
-  "title": "Espaço Pessoal",
+  "title": "O teu perfil",
   "guestGate": {
-    "title": "Espaço Pessoal",
-    "message": "Inicia sessão para acompanhares as tuas confirmações, equipas e histórico de anfitrião."
+    "title": "O teu perfil",
+    "message": "Inicia sessão para ver as tuas confirmações, equipas e histórico de anfitrião."
   },
   "hero": {
-    "verifiedHost": "Anfitrião Verificado",
-    "followers_one": "{{count}} Seguidor",
-    "followers_other": "{{count}} Seguidores",
-    "following_one": "{{count}} A Seguir",
-    "following_other": "{{count}} A Seguir",
+    "verifiedHost": "Anfitrião verificado",
+    "followers_one": "{{count}} seguidor",
+    "followers_other": "{{count}} seguidores",
+    "following_one": "{{count}} a seguir",
+    "following_other": "{{count}} a seguir",
     "since": "Desde {{year}}",
-    "partiesAttended": "Festas Frequentadas",
-    "nextMilestone": "Próximo marco: {{count}} festas frequentadas."
+    "partiesAttended": "Festas a que foste",
+    "nextMilestone": "Próximo marco: {{count}} festas."
   },
   "hostCta": {
-    "title": "Organiza uma Festa",
-    "body": "Cria um novo evento e convida a tua equipa.",
-    "button": "Iniciar Configuração"
+    "title": "Organizar festa",
+    "body": "Escolhe um jogo ou um final e convida malta lá para casa.",
+    "button": "Organizar festa"
   },
   "teams": {
-    "sectionTitle": "As Minhas Equipas (Favoritos)",
+    "sectionTitle": "As minhas equipas",
     "fallbackLeague": "A seguir",
-    "findTeams": "Encontrar Equipas"
+    "findTeams": "Procurar equipas"
   },
   "saved": {
-    "sectionTitle": "Festas Guardadas",
+    "sectionTitle": "As tuas confirmações",
     "empty": "Confirma presença numa festa e ela aparece aqui.",
-    "waitlist": "Lista de Espera",
-    "unknownEvent": "Evento desconhecido",
-    "dateTbc": "DATA A CONFIRMAR",
-    "emptyTitle": "Nada guardado ainda",
-    "emptyCta": "Explorar eventos"
+    "waitlist": "Em espera",
+    "unknownEvent": "Festa desconhecida",
+    "dateTbc": "Data por definir",
+    "emptyTitle": "Ainda sem confirmações",
+    "emptyCta": "Ver festas"
   },
   "hosting": {
-    "sectionTitle": "Histórico de Anfitrião",
-    "empty": "Ainda não organizaste nada. Os teus eventos passados aparecem aqui.",
-    "attendee_one": "Concluída · {{count}} participante",
-    "attendee_other": "Concluída · {{count}} participantes",
-    "emptyTitle": "Sem histórico como anfitrião",
-    "emptyCta": "Organizar uma festa"
+    "sectionTitle": "Histórico de anfitrião",
+    "empty": "Ainda não organizaste nenhuma. As festas passadas aparecem aqui.",
+    "attendee_one": "Concluída · {{count}} convidado",
+    "attendee_other": "Concluída · {{count}} convidados",
+    "emptyTitle": "Ainda nada organizado",
+    "emptyCta": "Organizar festa"
   },
   "reviews": {
     "sectionTitle": "Avaliações",

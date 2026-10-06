@@ -21,12 +21,8 @@ function fmtUsd(cents: number): string {
   return `$${str}`;
 }
 
-const SORTS = [
-  { key: 'sponsored', label: 'Most Sponsored' },
-  { key: 'budget', label: 'Highest Budget' },
-  { key: 'name', label: 'Name A–Z' },
-] as const;
-type SortKey = typeof SORTS[number]['key'];
+const SORTS = ['sponsored', 'budget', 'name'] as const;
+type SortKey = typeof SORTS[number];
 
 function sortSponsors(list: ApiSponsorProfile[], sort: SortKey): ApiSponsorProfile[] {
   const sorted = [...list];
@@ -92,7 +88,7 @@ export default function BrowseSponsorsScreen() {
   async function handleSend(sponsorId: string) {
     const cents = Math.round(Number(amount) * 100);
     if (!amount.trim() || !Number.isFinite(cents) || cents <= 0) {
-      setSendError('Enter a valid amount.');
+      setSendError(tr('findSponsors.errorAmount'));
       return;
     }
     if (!eventId) return;
@@ -103,7 +99,7 @@ export default function BrowseSponsorsScreen() {
       setSentIds((prev) => new Set(prev).add(sponsorId));
       setOpenId(null);
     } catch (err) {
-      setSendError((err as Error).message || 'Could not send request.');
+      setSendError((err as Error).message || tr('findSponsors.errorSend'));
     } finally {
       setSending(false);
     }
@@ -127,8 +123,8 @@ export default function BrowseSponsorsScreen() {
       <View style={s.container}>
         <AppHeader back />
         <GuestGate
-          title="Find Sponsors"
-          message="Sign in to browse sponsors and request sponsorship for your event."
+          title={tr('findSponsors.title')}
+          message={tr('findSponsors.guestMessage')}
           redirect={eventId ? `/(tabs)/sponsorship/browse?eventId=${eventId}` : '/(tabs)/sponsorship/browse'}
         />
       </View>
@@ -142,16 +138,16 @@ export default function BrowseSponsorsScreen() {
         contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing['2xl'] }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>Find Sponsors</Text>
+        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('findSponsors.title')}</Text>
         <Text style={[t.bodyMd, s.subtitle]} numberOfLines={1}>
-          {event ? `For "${event.title}"` : 'Loading event…'}
+          {event ? tr('findSponsors.forEvent', { title: event.title }) : trCommon('loading')}
         </Text>
 
         {!loading && !error && sponsors.length > 0 && (
           <>
             <TextInput
               style={[inputStyle, s.searchInput]}
-              placeholder="Search sponsors…"
+              placeholder={tr('findSponsors.searchPlaceholder')}
               placeholderTextColor={colors.textTertiary}
               value={query}
               onChangeText={setQuery}
@@ -161,7 +157,7 @@ export default function BrowseSponsorsScreen() {
 
             {categories.length > 0 && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipScroll} contentContainerStyle={s.chipRow}>
-                <Chip label="All Categories" active={category === null} onPress={() => setCategory(null)} />
+                <Chip label={tr('findSponsors.allCategories')} active={category === null} onPress={() => setCategory(null)} />
                 {categories.map((cat) => (
                   <Chip key={cat} label={cat} active={category === cat} onPress={() => setCategory((prev) => (prev === cat ? null : cat))} />
                 ))}
@@ -170,7 +166,7 @@ export default function BrowseSponsorsScreen() {
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipScroll} contentContainerStyle={s.chipRow}>
               {SORTS.map((opt) => (
-                <Chip key={opt.key} label={opt.label} tone="action" active={sort === opt.key} onPress={() => setSort(opt.key)} />
+                <Chip key={opt} label={tr(`findSponsors.sort.${opt}`)} tone="action" active={sort === opt} onPress={() => setSort(opt)} />
               ))}
             </ScrollView>
           </>
@@ -216,7 +212,7 @@ export default function BrowseSponsorsScreen() {
                     {sp.companyName}
                   </Text>
                   {(sp.sponsorshipCount ?? 0) > 0 && (
-                    <Badge label={`${sp.sponsorshipCount} sponsored`} tone="confirmed" dot={false} />
+                    <Badge label={tr('findSponsors.sponsoredCount', { count: sp.sponsorshipCount })} tone="confirmed" dot={false} />
                   )}
                 </View>
                 {sp.website && (
@@ -224,9 +220,10 @@ export default function BrowseSponsorsScreen() {
                 )}
                 {(sp.budgetMinCents != null || sp.budgetMaxCents != null) && (
                   <Text style={[t.monoData, { color: colors.textSecondary }]}>
-                    Budget: {sp.budgetMinCents != null ? fmtUsd(sp.budgetMinCents) : '$0'}
-                    {' – '}
-                    {sp.budgetMaxCents != null ? fmtUsd(sp.budgetMaxCents) : '+'}
+                    {tr('findSponsors.budget', {
+                      min: sp.budgetMinCents != null ? fmtUsd(sp.budgetMinCents) : '$0',
+                      max: sp.budgetMaxCents != null ? fmtUsd(sp.budgetMaxCents) : tr('findSponsors.noCap'),
+                    })}
                   </Text>
                 )}
                 {sp.categories && sp.categories.length > 0 && (
@@ -236,14 +233,14 @@ export default function BrowseSponsorsScreen() {
                 )}
 
                 {wasSent ? (
-                  <Badge label="Request sent" tone="confirmed" />
+                  <Badge label={tr('findSponsors.requestSent')} tone="confirmed" />
                 ) : isOpen ? (
                   <View style={s.requestForm}>
                     <View style={s.field}>
-                      <FieldLabel>Proposed Amount ($)</FieldLabel>
+                      <FieldLabel>{tr('findSponsors.amountLabel')}</FieldLabel>
                       <TextInput
                         style={inputStyle}
-                        placeholder="500"
+                        placeholder={tr('findSponsors.amountPlaceholder')}
                         placeholderTextColor={colors.textTertiary}
                         value={amount}
                         onChangeText={setAmount}
@@ -251,10 +248,10 @@ export default function BrowseSponsorsScreen() {
                       />
                     </View>
                     <View style={s.field}>
-                      <FieldLabel>Note (Optional)</FieldLabel>
+                      <FieldLabel>{tr('findSponsors.noteLabel')}</FieldLabel>
                       <TextInput
                         style={[inputStyle, s.noteInput]}
-                        placeholder="Why this event is a good fit…"
+                        placeholder={tr('findSponsors.notePlaceholder')}
                         placeholderTextColor={colors.textTertiary}
                         value={note}
                         onChangeText={setNote}
@@ -263,9 +260,9 @@ export default function BrowseSponsorsScreen() {
                     </View>
                     {sendError !== '' && <Text style={[t.bodySm, { color: colors.danger }]}>{sendError}</Text>}
                     <View style={s.requestActions}>
-                      <Btn label="Cancel" variant="ghost" small style={s.requestBtn} onPress={() => setOpenId(null)} disabled={sending} />
+                      <Btn label={trCommon('cancel')} variant="ghost" small style={s.requestBtn} onPress={() => setOpenId(null)} disabled={sending} />
                       <Btn
-                        label={sending ? '…' : 'Send Request'}
+                        label={sending ? '…' : tr('findSponsors.send')}
                         small
                         style={s.requestBtn}
                         onPress={() => handleSend(sp.id)}
@@ -274,7 +271,7 @@ export default function BrowseSponsorsScreen() {
                     </View>
                   </View>
                 ) : (
-                  <Btn label="Request Sponsorship" variant="secondary" small onPress={() => openRequest(sp.id)} />
+                  <Btn label={tr('findSponsors.request')} variant="secondary" small onPress={() => openRequest(sp.id)} />
                 )}
               </View>
             );

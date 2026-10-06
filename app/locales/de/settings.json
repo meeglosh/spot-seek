@@ -2,59 +2,59 @@
   "title": "Einstellungen",
   "guestGate": {
     "title": "Einstellungen",
-    "message": "Melde dich an, um dein Konto und deine Benachrichtigungseinstellungen zu verwalten."
+    "message": "Melde dich an, um dein Konto und deine Hinweise zu verwalten."
   },
   "account": {
     "title": "Konto",
     "signedInAs": "Angemeldet als",
     "signOut": "Abmelden",
     "deleteAccount": "Konto löschen",
-    "deleteConfirm": "Konto löschen? Dadurch werden dein Profil, deine Zusagen sowie alle vergangenen, entworfenen oder abgesagten Veranstaltungen, die du ausrichtest, endgültig gelöscht. Dies kann nicht rückgängig gemacht werden.",
-    "keepIt": "Behalten",
-    "yesDelete": "Ja, löschen",
-    "deleteFallbackError": "Konto konnte nicht gelöscht werden.",
-    "typeToConfirm": "Gib {{word}} zur Bestätigung ein",
-    "blockedEvents": "Du richtest noch bevorstehende Veranstaltungen aus. Sage sie zuerst ab, damit Teilnehmende benachrichtigt und Sponsoren erstattet werden, und versuche es dann erneut:",
-    "blockedMoney": "Sponsoring-Zahlungen sind noch in Bearbeitung, daher kann dein Konto noch nicht gelöscht werden. Versuche es erneut, sobald sie ausgezahlt oder erstattet wurden:"
+    "deleteConfirm": "Dein Konto löschen? Dein Profil, deine Zusagen und alle vergangenen, entworfenen oder abgesagten Partys, die du veranstaltest, werden dauerhaft entfernt. Das lässt sich nicht rückgängig machen.",
+    "keepIt": "Konto behalten",
+    "yesDelete": "Konto löschen",
+    "deleteFallbackError": "Dein Konto konnte nicht gelöscht werden. Versuch es nochmal.",
+    "typeToConfirm": "Tippe {{word}} zur Bestätigung",
+    "blockedEvents": "Du veranstaltest noch kommende Partys. Sag sie zuerst ab, damit Gäste Bescheid wissen und Sponsoren ihr Geld zurückbekommen, dann versuch es nochmal:",
+    "blockedMoney": "Sponsoring-Zahlungen laufen noch, deshalb können wir dein Konto noch nicht löschen. Versuch es nochmal, sobald sie ausgezahlt oder erstattet sind:"
   },
   "notifications": {
     "title": "Benachrichtigungen",
-    "loadError": "Benachrichtigungseinstellungen konnten nicht geladen werden.",
+    "loadError": "Deine Benachrichtigungseinstellungen konnten nicht geladen werden. Versuch es nochmal.",
     "email": "E-Mail-Benachrichtigungen",
-    "emailError": "E-Mail-Benachrichtigungen konnten nicht gespeichert werden — bitte erneut versuchen.",
+    "emailError": "Die E-Mail-Einstellung konnte nicht gespeichert werden. Versuch es nochmal.",
     "push": "Push-Benachrichtigungen",
-    "radiusLabel": "Radius für Benachrichtigungen in der Nähe",
+    "radiusLabel": "Radius für Hinweise in der Nähe",
     "radiusValue": "{{miles}} mi / {{km}} km",
-    "radiusError": "Radius konnte nicht gespeichert werden — bitte erneut versuchen.",
-    "pushError": "Push-Benachrichtigungen konnten nicht aktualisiert werden — versuche es erneut.",
+    "radiusError": "Der Radius konnte nicht gespeichert werden. Versuch es nochmal.",
+    "pushError": "Push-Benachrichtigungen konnten nicht aktualisiert werden. Versuch es nochmal.",
     "pushDeniedTitle": "Benachrichtigungen sind aus",
-    "pushDeniedBody": "Erlaube Mitteilungen für SpotSeek in den iPhone-Einstellungen, um Event-Hinweise zu erhalten.",
+    "pushDeniedBody": "Aktiviere Benachrichtigungen für SpotSeek in den iPhone-Einstellungen, um Hinweise zu bekommen.",
     "openSettings": "Einstellungen öffnen",
-    "pushPromptTitle": "Event-Erinnerungen erhalten?",
-    "pushPromptBody": "Aktiviere Mitteilungen, damit wir dich erinnern, bevor deine Watch Party beginnt.",
+    "pushPromptTitle": "Kurz vorher erinnert werden?",
+    "pushPromptBody": "Wir geben dir Bescheid, bevor deine Watch Party losgeht.",
     "pushPromptLater": "Nicht jetzt",
     "pushPromptEnable": "Aktivieren"
   },
   "language": {
     "title": "Sprache",
-    "systemDefault": "Systemsprache"
+    "systemDefault": "Systemstandard"
   },
   "payouts": {
     "title": "Auszahlungen",
-    "notConfigured": "Zahlungen sind noch nicht konfiguriert.",
+    "notConfigured": "Auszahlungen sind noch nicht eingerichtet.",
     "setup": "Auszahlungen einrichten",
-    "setupError": "Einrichtung der Auszahlungen konnte nicht gestartet werden — bitte erneut versuchen.",
-    "notLiveYet": "Zahlungen sind noch nicht aktiv — du wirst benachrichtigt, sobald dies abgeschlossen werden kann.",
-    "enabledLabel": "Auszahlungen aktiviert"
+    "setupError": "Die Einrichtung konnte nicht gestartet werden. Versuch es nochmal.",
+    "notLiveYet": "Zahlungen sind noch nicht live. Wir sagen dir Bescheid, sobald du das abschließen kannst.",
+    "enabledLabel": "Auszahlungen aktiv"
   },
   "favourites": {
     "title": "Favoriten",
     "manage": "Favoriten verwalten"
   },
   "about": {
-    "title": "Über",
+    "title": "Info",
     "terms": "Nutzungsbedingungen",
-    "privacy": "Datenschutzrichtlinie",
+    "privacy": "Datenschutzerklärung",
     "contactSupport": "Support kontaktieren",
     "versionLabel": "Version {{version}}",
     "versionLabelWithBuild": "Version {{version}} ({{build}})"

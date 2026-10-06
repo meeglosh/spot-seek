@@ -2,152 +2,175 @@
   "statusLabels": {
     "pending": "Pendente",
     "active": "Ativo",
-    "rejected": "Rejeitado",
+    "rejected": "Recusado",
     "cancelled": "Cancelado"
   },
   "browse": {
-    "title": "Centro de Patrocínios",
-    "subtitle": "Oportunidades de segmentação de alto rendimento.",
+    "title": "Patrocínios",
+    "subtitle": "Apoia uma festa local e põe o teu nome na sala.",
     "guestGate": {
-      "title": "Centro de Patrocínios",
-      "message": "Inicia sessão para registares a tua marca, explorares festas de grande adesão e licitares em patrocínios."
+      "title": "Patrocínios",
+      "message": "Inicia sessão para registar o teu negócio, ver festas e fazer uma proposta."
     },
     "filters": {
-      "all": "Todos",
+      "all": "Tudo",
       "today": "Hoje",
-      "week": "Esta Semana"
+      "week": "Esta semana"
     },
-    "dateTbc": "DATA A CONFIRMAR",
+    "dateTbc": "Data por definir",
     "register": {
-      "title": "Torna-te Patrocinador",
-      "description": "Regista a tua empresa para licitares em festas de visionamento. Os anfitriões aceitam ou rejeitam cada oferta — aplica-se uma taxa de plataforma de 15% às ofertas aceites.",
-      "companyName": "Nome da Empresa",
-      "companyNamePlaceholder": "ex. Voltage Drinks Co.",
-      "website": "Website (Opcional)",
+      "title": "Registar como patrocinador",
+      "description": "Regista o teu negócio para fazeres propostas a festas. Os anfitriões aceitam ou recusam cada uma. Se for aceite, o SpotSeek fica com uma taxa de 15%.",
+      "companyName": "Nome do negócio",
+      "companyNamePlaceholder": "ex.: Volt Cola",
+      "website": "Website (opcional)",
       "websitePlaceholder": "https://…",
-      "categories": "Categorias (Opcional)",
-      "budgetMin": "Orçamento Mín. (Opcional)",
-      "budgetMax": "Orçamento Máx. (Opcional)",
+      "categories": "Categorias (opcional)",
+      "budgetMin": "Orçamento mín. (opcional)",
+      "budgetMax": "Orçamento máx. (opcional)",
       "budgetPlaceholder": "$",
-      "submit": "Registar como Patrocinador",
-      "errorRequired": "O nome da empresa é obrigatório.",
-      "errorSignIn": "Inicia sessão primeiro para te registares como patrocinador.",
-      "errorFailed": "Falha no registo. Tenta novamente."
+      "submit": "Registar",
+      "errorRequired": "Indica o nome do negócio.",
+      "errorSignIn": "Inicia sessão para te registares como patrocinador.",
+      "errorFailed": "Não foi possível registar-te. Verifica os dados e tenta de novo."
     },
     "sponsorLabel": "Patrocinador · {{company}}",
     "stats": {
-      "totalBids": "Total de Ofertas",
+      "totalBids": "Propostas",
       "active": "Ativas",
-      "totalSpend": "Gasto Total",
+      "totalSpend": "Gasto",
       "reach": "Alcance"
     },
     "requests": {
-      "sectionTitle": "Pedidos de Patrocínio",
-      "fallbackEventTitle": "Evento",
-      "newRequest": "Novo Pedido",
-      "goingCount_one": "{{count}} participante",
-      "goingCount_other": "{{count}} participantes",
+      "sectionTitle": "Pedidos de patrocínio",
+      "fallbackEventTitle": "Festa",
+      "newRequest": "Novo pedido",
+      "goingCount_one": "{{count}} vai",
+      "goingCount_other": "{{count}} vão",
       "decline": "Recusar",
       "accept": "Aceitar"
     },
     "marketplace": {
-      "sectionTitle": "Aberto a Patrocínio",
-      "empty": "Nenhum evento publicado corresponde a este filtro.",
-      "privateVenue": "Local privado — revelado após confirmação",
-      "venueTbc": "Local a confirmar",
+      "sectionTitle": "À procura de patrocinadores",
+      "empty": "Nenhuma festa corresponde a este filtro. Experimenta outras datas.",
+      "privateVenue": "Local privado, partilhado após confirmação",
+      "venueTbc": "Local por definir",
       "date": "Data",
       "capacity": "Capacidade",
-      "yourBid": "A tua oferta · {{amount}} · {{status}}",
-      "review": "Rever para Patrocínio",
-      "emptyTitle": "Sem eventos aqui",
-      "showAll": "Mostrar todos os eventos"
+      "yourBid": "A tua proposta · {{amount}} · {{status}}",
+      "review": "Ver e propor",
+      "emptyTitle": "Sem festas aqui",
+      "showAll": "Mostrar todas as festas"
     }
   },
   "bid": {
     "guestGate": {
-      "title": "Patrocina esta festa",
-      "message": "Inicia sessão para reveres os termos do patrocínio e fazeres uma oferta nesta festa de visionamento."
+      "title": "Patrocinar esta festa",
+      "message": "Inicia sessão para ver as condições e fazer uma proposta."
     },
-    "loadError": "Não foi possível carregar este evento.",
-    "eventNotFound": "Evento não encontrado.",
-    "openForBids": "Aberto a Ofertas",
+    "loadError": "Tenta de novo.",
+    "eventNotFound": "Festa não encontrada.",
+    "openForBids": "Aberta a propostas",
     "facts": {
       "date": "Data",
       "venue": "Local",
-      "privateVenue": "PRIVADO — APÓS CONFIRMAÇÃO",
-      "venueTbc": "A CONFIRMAR",
+      "privateVenue": "Partilhado após confirmação",
+      "venueTbc": "Por definir",
       "capacity": "Capacidade"
     },
-    "dealTitle": "O Acordo",
+    "dealTitle": "Como funciona",
     "dealPoints": {
       "yourBid": {
-        "title": "A Tua Oferta",
-        "body": "Propõe um valor de patrocínio para este evento. O anfitrião vê a tua oferta e a tua nota."
+        "title": "A tua proposta",
+        "body": "Oferece um valor por esta festa. O anfitrião vê-o junto com a tua nota."
       },
       "platformFee": {
-        "title": "Taxa de Plataforma — 15%",
-        "body": "A SpotSeek fica com 15% de uma oferta aceite. O anfitrião recebe o restante."
+        "title": "Taxa de 15%",
+        "body": "O SpotSeek fica com 15% de uma proposta aceite. O anfitrião recebe o resto."
       },
       "hostDecision": {
-        "title": "Decisão do Anfitrião",
-        "body": "O anfitrião aceita ou rejeita a tua oferta. Podes cancelá-la enquanto estiver pendente."
+        "title": "O anfitrião decide",
+        "body": "O anfitrião aceita ou recusa. Podes cancelar enquanto estiver pendente."
       },
       "payment": {
         "title": "Pagamento",
-        "body": "Cobrado apenas depois de o anfitrião aceitar. Os pagamentos estão atualmente em modo de teste — nenhum valor real é movimentado."
+        "body": "Só pagas depois de o anfitrião aceitar. Por agora os pagamentos estão em modo de teste, por isso não move dinheiro real."
       }
     },
-    "statusTitle": "Estado do Patrocínio",
-    "yourBid": "A Tua Oferta",
-    "platformFee": "Taxa de Plataforma (15%)",
-    "hostReceives": "O Anfitrião Recebe",
-    "placed": "Feita",
+    "statusTitle": "Estado da proposta",
+    "yourBid": "A tua proposta",
+    "platformFee": "Taxa da plataforma (15%)",
+    "hostReceives": "O anfitrião recebe",
+    "placed": "Feita em",
     "note": "Nota: {{note}}",
-    "cancelBid": "Cancelar Oferta",
-    "hostAccepted": "O anfitrião aceitou esta oferta.",
+    "cancelBid": "Cancelar proposta",
+    "hostAccepted": "O anfitrião aceitou a tua proposta.",
     "payment": {
-      "due": "Pagamento pendente",
+      "due": "Pagamento em falta",
       "payNow": "Pagar agora",
-      "notLiveYet": "Os pagamentos ainda não estão ativos — serás notificado quando isto puder ser concluído.",
-      "payError": "Não foi possível iniciar o pagamento — tenta novamente.",
-      "paid": "Pago · a aguardar o evento",
+      "notLiveYet": "Os pagamentos ainda não estão ativos. Avisamos-te quando puderes concluir isto.",
+      "payError": "Não foi possível iniciar o pagamento. Tenta de novo.",
+      "paid": "Pago, à espera da festa",
       "released": "Pago ao anfitrião",
       "refunded": "Reembolsado",
-      "processing": "Pagamento recebido — confirmando…",
-      "cancelled": "Pagamento cancelado. Você pode pagar quando quiser.",
-      "payFailed": "O pagamento não foi concluído — tente outro cartão.",
-      "stillProcessing": "Seu pagamento ainda está sendo processado. Em breve aparecerá como pago."
+      "processing": "Pagamento recebido. A confirmar…",
+      "cancelled": "Pagamento cancelado. Podes pagar quando quiseres.",
+      "payFailed": "O pagamento não passou. Tenta outro cartão.",
+      "stillProcessing": "O pagamento ainda está a ser processado. Atualiza dentro de momentos."
     },
-    "testNoteAccepted": "O pagamento só é processado depois de o anfitrião aceitar — os pagamentos estão em modo de teste, sem cobranças reais.",
+    "testNoteAccepted": "Só pagas depois de o anfitrião aceitar. Os pagamentos estão em modo de teste, sem cobranças reais.",
     "sponsorProfileNeeded": {
-      "title": "Perfil de Patrocinador Necessário",
-      "body": "Só patrocinadores registados podem licitar. Regista a tua empresa no Centro de Patrocínios e volta depois para fazer uma oferta.",
-      "cta": "Registar no Centro"
+      "title": "Regista-te primeiro como patrocinador",
+      "body": "Só patrocinadores registados podem propor. Regista-te em Patrocínios e volta para fazer a tua proposta.",
+      "cta": "Registar como patrocinador"
     },
-    "lastBid": "Última oferta · {{amount}} · {{status}}",
-    "bidAmountLabel": "Valor da Oferta (USD)",
-    "bidAmountPlaceholder": "ex. 250",
-    "noteLabel": "Nota ao Anfitrião (Opcional)",
-    "notePlaceholder": "O que a tua marca traz à festa…",
-    "feeSummary": "TAXA DE PLATAFORMA (15%): {{fee}} · O ANFITRIÃO RECEBE: {{host}}",
-    "placeBid": "Fazer Oferta",
-    "testNotePending": "O pagamento só é processado depois de o anfitrião aceitar a tua oferta — os pagamentos estão em modo de teste, sem cobranças reais.",
+    "lastBid": "Última proposta · {{amount}} · {{status}}",
+    "bidAmountLabel": "Valor da proposta (USD)",
+    "bidAmountPlaceholder": "ex.: 250",
+    "noteLabel": "Nota para o anfitrião (opcional)",
+    "notePlaceholder": "O que o teu negócio traz à noite",
+    "feeSummary": "Taxa da plataforma (15%): {{fee}} · Anfitrião recebe: {{host}}",
+    "placeBid": "Fazer proposta",
+    "testNotePending": "Só pagas se o anfitrião aceitar. Os pagamentos estão em modo de teste, sem cobranças reais.",
     "errors": {
-      "signIn": "Inicia sessão para fazeres uma oferta.",
-      "failed": "A oferta falhou. Tenta novamente.",
-      "cancelFailed": "Não foi possível cancelar a oferta. Tenta novamente."
+      "signIn": "Inicia sessão para fazer uma proposta.",
+      "failed": "Não foi possível fazer a proposta. Tenta de novo.",
+      "cancelFailed": "Não foi possível cancelar a proposta. Tenta de novo."
     },
-    "errorTitle": "Não foi possível carregar este evento",
-    "notFoundTitle": "Evento não encontrado",
+    "errorTitle": "Não deu para carregar esta festa",
+    "notFoundTitle": "Festa não encontrada",
     "backToMarketplace": "Voltar aos patrocínios"
   },
   "findSponsors": {
-    "errorTitle": "Não foi possível carregar os patrocinadores",
-    "loadError": "Não foi possível carregar os patrocinadores.",
-    "emptyTitle": "Ainda não há patrocinadores",
-    "empty": "Ainda nenhum patrocinador se registou. Volta mais tarde.",
+    "title": "Procurar patrocinadores",
+    "guestMessage": "Inicia sessão para ver patrocinadores e enviar pedidos para a tua festa.",
+    "forEvent": "Para {{title}}",
+    "searchPlaceholder": "Procurar patrocinadores",
+    "allCategories": "Todas as categorias",
+    "sort": {
+      "sponsored": "Mais patrocínios",
+      "budget": "Maior orçamento",
+      "name": "Nome A a Z"
+    },
+    "sponsoredCount_one": "{{count}} patrocínio",
+    "sponsoredCount_other": "{{count}} patrocínios",
+    "budget": "Orçamento: {{min}} a {{max}}",
+    "noCap": "sem limite",
+    "requestSent": "Pedido enviado",
+    "request": "Pedir patrocínio",
+    "send": "Enviar pedido",
+    "amountLabel": "Valor que pedes ($)",
+    "amountPlaceholder": "500",
+    "noteLabel": "Nota (opcional)",
+    "notePlaceholder": "Porque é que a tua festa é uma boa aposta",
+    "errorAmount": "Indica um valor acima de $0.",
+    "errorSend": "Não foi possível enviar o pedido. Tenta de novo.",
+    "errorTitle": "Não deu para carregar os patrocinadores",
+    "loadError": "Verifica a ligação e tenta de novo.",
+    "emptyTitle": "Ainda sem patrocinadores",
+    "empty": "Ainda não há patrocinadores registados. Volta daqui a pouco.",
     "noMatchTitle": "Sem resultados",
-    "noMatch": "Nenhum patrocinador corresponde à tua pesquisa ou categoria.",
+    "noMatch": "Nenhum patrocinador corresponde a essa pesquisa ou categoria.",
     "clearSearch": "Limpar pesquisa"
   }
 }

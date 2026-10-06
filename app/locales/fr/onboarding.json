@@ -1,40 +1,40 @@
 {
   "brand": {
-    "tagline": "NE PLUS JAMAIS REGARDER SEUL"
+    "tagline": "Ne regardez jamais seul"
   },
   "seeker": {
-    "headline": "TROUVEZ VOTRE TRIBU",
-    "body": "Découvrez des soirées de visionnage locales pour les événements que vous aimez. Ne regardez plus jamais seul.",
+    "headline": "Trouvez votre salle",
+    "body": "Le match, le final, la cérémonie, la soirée électorale. Trouvez une soirée près de chez vous et passez la porte.",
     "chips": {
-      "liveSports": "SPORT EN DIRECT",
-      "awards": "CÉRÉMONIES",
-      "bigEvents": "GRANDS ÉVÉNEMENTS"
+      "liveSports": "Sport en direct",
+      "awards": "Cérémonies",
+      "bigEvents": "Grandes soirées"
     }
   },
   "host": {
-    "headline": "MENEZ L'EXPÉRIENCE",
-    "body": "Organisez votre propre soirée de visionnage. Créez une communauté autour de votre passion et menez la fête.",
+    "headline": "Organisez la soirée",
+    "body": "Choisissez le programme, le lieu et la liste d'invités. Un bar, un toit ou votre salon, tout marche.",
     "chips": {
-      "yourVenue": "VOTRE LIEU",
-      "yourCrowd": "VOTRE PUBLIC",
-      "yourRules": "VOS RÈGLES"
+      "yourVenue": "Votre salle",
+      "yourCrowd": "Vos invités",
+      "yourRules": "Vos règles"
     }
   },
   "sponsor": {
-    "headline": "NOURRISSEZ LA PASSION",
-    "body": "Associez-vous à des événements locaux. Sponsorisez des soirées de visionnage pour toucher le public et débloquer des avantages exclusifs.",
+    "headline": "Soutenez la soirée",
+    "body": "Parrainez une soirée locale et montrez votre nom à ceux qui sont dans la salle. Les hôtes valident chaque sponsor.",
     "chips": {
-      "vipAccess": "ACCÈS VIP",
-      "gearDrops": "ÉQUIPEMENTS EXCLUSIFS",
-      "partnerDeals": "OFFRES PARTENAIRES"
+      "vipAccess": "Vrais événements",
+      "gearDrops": "Validé par l'hôte",
+      "partnerDeals": "Frais clairs"
     }
   },
   "cta": {
-    "next": "SUIVANT",
-    "getStarted": "COMMENCER"
+    "next": "Suivant",
+    "getStarted": "C'est parti"
   },
   "skip": {
-    "label": "PASSER",
-    "a11y": "Passer l'introduction"
+    "label": "Passer",
+    "a11y": "Passer la présentation"
   }
 }

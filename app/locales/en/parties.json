@@ -1,21 +1,21 @@
 {
   "myParties": {
-    "title": "My Parties",
+    "title": "My parties",
     "tabs": {
-      "attending": "attending",
-      "hosting": "hosting"
+      "attending": "Going",
+      "hosting": "Hosting"
     },
     "waitlisted": "Waitlisted",
     "tonight": "Tonight",
     "upcoming": "Upcoming",
-    "tbd": "TBD",
+    "tbd": "TBA",
     "statusLabels": {
-      "published": "published",
-      "draft": "draft",
-      "completed": "completed",
-      "cancelled": "cancelled"
+      "published": "Published",
+      "draft": "Draft",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
     },
-    "getDirections": "Get Directions",
+    "getDirections": "Get directions",
     "manage": "Manage",
     "stats": {
       "going": "Going",
@@ -23,144 +23,144 @@
       "interested": "Interested"
     },
     "guestGate": {
-      "title": "Get in the game",
-      "message": "Sign in to track your RSVPs and run your own watch parties."
+      "title": "Your parties live here",
+      "message": "Sign in to see your RSVPs and host your own watch parties."
     },
     "loading": "Loading",
     "signalLost": "Signal lost",
-    "loadError": "Could not load your parties.",
+    "loadError": "Check your connection and try again.",
     "emptyAttending": {
-      "title": "No parties yet",
-      "body": "RSVP to a watch party and it will show up here.",
-      "cta": "Find a Party"
+      "title": "No RSVPs yet",
+      "body": "RSVP to a watch party and it'll show up here.",
+      "cta": "Find a party"
     },
     "emptyHosting": {
       "title": "Host your first party",
-      "body": "Create a watch party and rally the squad.",
-      "cta": "Create Party"
+      "body": "Pick what's on, set a time and open the door.",
+      "cta": "Host a party"
     },
-    "createFooter": "+ Create Party"
+    "createFooter": "+ Host a party"
   },
   "dashboard": {
     "guestGate": {
-      "title": "Command Center",
-      "message": "Sign in to create and manage your watch parties."
+      "title": "Host dashboard",
+      "message": "Sign in to host watch parties and manage your guest list."
     },
     "noDateSet": "No date set",
-    "tonightAt": "Tonight @ {{time}}",
-    "dateAt": "{{date}} @ {{time}}",
+    "tonightAt": "Tonight at {{time}}",
+    "dateAt": "{{date}} at {{time}}",
     "loading": "Loading",
     "signalLost": "Signal lost",
-    "loadError": "Could not load dashboard.",
-    "hostDashboard": "Host Dashboard",
-    "commandCenter": "Command Center",
-    "totalRsvp": "Total RSVP",
-    "sponsorRev": "Sponsor Rev",
-    "payoutBanner": "Set up payouts to receive sponsor funds",
-    "activeParties": "Active Parties",
-    "emptyActive": "No live parties. Publish one to get on the board.",
+    "loadError": "Check your connection and try again.",
+    "hostDashboard": "Hosting",
+    "commandCenter": "Host dashboard",
+    "totalRsvp": "Total RSVPs",
+    "sponsorRev": "Sponsor income",
+    "payoutBanner": "Set up payouts to get paid by sponsors",
+    "activeParties": "Live parties",
+    "emptyActive": "Nothing live. Publish a party and it shows up here.",
     "rsvps": "RSVPs",
     "sponsored": "Sponsored",
     "sponsoredCount": "Sponsored ×{{count}}",
-    "pendingSponsor": "Pending Sponsor",
-    "findSponsors": "Find Sponsors",
+    "pendingSponsor": "Sponsor pending",
+    "findSponsors": "Find sponsors",
     "manage": "Manage",
     "drafts": "Drafts",
-    "emptyDrafts": "No drafts on the bench.",
+    "emptyDrafts": "No drafts. Anything you save unfinished shows up here.",
     "edited": "Edited {{date}}",
-    "completed": "Completed",
-    "emptyCompleted": "Nothing in the record books yet.",
+    "completed": "Past parties",
+    "emptyCompleted": "No past parties yet.",
     "cancelled": "Cancelled",
     "ended": "Ended {{date}}",
     "endedNoDate": "Ended",
-    "attendees_one": "{{count}} attendee",
-    "attendees_other": "{{count}} attendees",
-    "createFooter": "+ Create Party",
-    "emptyActiveTitle": "No live parties",
-    "emptyActiveCta": "Create a party"
+    "attendees_one": "{{count}} guest",
+    "attendees_other": "{{count}} guests",
+    "createFooter": "+ Host a party",
+    "emptyActiveTitle": "Nothing live",
+    "emptyActiveCta": "Host a party"
   },
   "create": {
     "guestGate": {
-      "title": "Host a Party",
-      "message": "Sign in to create watch parties, rally your crowd, and manage RSVPs."
+      "title": "Host a party",
+      "message": "Sign in to host a watch party and manage your guest list."
     },
-    "loadError": "Could not load event for editing.",
+    "loadError": "Couldn't load this party for editing. Try again.",
     "outcome": {
       "published": {
-        "title": "Party Published",
-        "body": "Your watch party is live on the Discover feed."
+        "title": "Your party's live",
+        "body": "People can find it in Discover and RSVP now."
       },
       "draft": {
-        "title": "Draft Saved",
-        "body": "Pick it back up any time from your Command Center drafts."
+        "title": "Draft saved",
+        "body": "Pick it back up from your drafts any time."
       },
       "deleted": {
-        "title": "Party Deleted",
-        "body": "The party and its RSVPs have been removed."
+        "title": "Party deleted",
+        "body": "The party and its RSVPs are gone."
       },
-      "coverErrorLabel": "Cover image failed",
-      "coverUploadFailed": "Cover upload failed.",
-      "coverErrorBody": "{{error}} — you can retry from Edit Party.",
-      "viewParty": "View Party",
-      "shareParty": "Share Party",
+      "coverErrorLabel": "Cover photo didn't upload",
+      "coverUploadFailed": "Cover photo didn't upload.",
+      "coverErrorBody": "{{error}} You can add it again from Edit party.",
+      "viewParty": "View party",
+      "shareParty": "Share party",
       "done": "Done"
     },
     "headline": {
-      "edit": "Edit Party",
-      "create": "Host a Party"
+      "edit": "Edit party",
+      "create": "Host a party"
     },
-    "subtitle": "Set up your watch party and rally the squad.",
+    "subtitle": "Pick what's on, set a time and say where.",
     "cover": {
-      "add": "+ Add Cover Photo",
-      "change": "Change Photo",
-      "label": "Cover Photo"
+      "add": "+ Add a cover photo",
+      "change": "Change photo",
+      "label": "Cover photo"
     },
     "basics": {
-      "sectionTitle": "The Basics",
-      "eventName": "Event Name",
-      "eventNamePlaceholder": "e.g. Arsenal v Chelsea watch party",
-      "whatIsBeingWatched": "What Is Being Watched",
+      "sectionTitle": "The basics",
+      "eventName": "Party name",
+      "eventNamePlaceholder": "e.g. Arsenal v Chelsea at mine",
+      "whatIsBeingWatched": "What are you watching?",
       "description": "Description",
-      "descriptionPlaceholder": "Tell people what to expect…",
-      "maxCapacity": "Max Capacity",
-      "unlimitedHint": "Blank = unlimited",
+      "descriptionPlaceholder": "What should people expect? Food, volume, dress code…",
+      "maxCapacity": "Max guests",
+      "unlimitedHint": "Leave blank for no limit",
       "capacityPlaceholder": "e.g. 30"
     },
     "timePlace": {
-      "sectionTitle": "Time & Place",
+      "sectionTitle": "When and where",
       "starts": "Starts",
-      "startsPlaceholder": "Set date & time",
+      "startsPlaceholder": "Set date and time",
       "ends": "Ends",
-      "endsPlaceholder": "Optional end time",
-      "addVenue": "Add a Venue",
-      "addVenueSub": "Let attendees know where to show up",
-      "venueName": "Venue Name",
-      "venueNamePlaceholder": "Venue name",
+      "endsPlaceholder": "Optional",
+      "addVenue": "Add a venue",
+      "addVenueSub": "Tell guests where to show up",
+      "venueName": "Venue name",
+      "venueNamePlaceholder": "e.g. The Red Lion",
       "address": "Address",
-      "pinnedOnMap": "Pinned on map",
+      "pinnedOnMap": "Pinned on the map",
       "pickAddressHint": "Pick a suggested address to pin this party on the Discover map."
     },
     "privacy": {
-      "sectionTitle": "Privacy",
+      "sectionTitle": "Who can come",
       "public": "Public",
-      "publicSub": "Anyone can join",
+      "publicSub": "Anyone can RSVP",
       "private": "Private",
-      "privateSub": "Invite only — address hidden until RSVP",
-      "venueHint": "Add a venue above to hide its address from non-attendees."
+      "privateSub": "Invite only. The address stays hidden until someone RSVPs.",
+      "venueHint": "Add a venue above to hide its address from non-guests."
     },
     "actions": {
-      "saveAsDraft": "Save as Draft",
-      "saveAsDraftInstead": "Save as Draft Instead",
-      "deleteParty": "Delete Party",
-      "deleteConfirm": "Delete this party? This cannot be undone.",
-      "keepIt": "Keep It",
-      "yesDelete": "Yes, Delete",
+      "saveAsDraft": "Save draft",
+      "saveAsDraftInstead": "Save as draft instead",
+      "deleteParty": "Delete party",
+      "deleteConfirm": "Delete this party? Its RSVPs go with it, and this can't be undone.",
+      "keepIt": "Keep party",
+      "yesDelete": "Delete party",
       "saving": "Saving…",
-      "saveChanges": "Save Changes",
-      "publishParty": "Publish Party"
+      "saveChanges": "Save changes",
+      "publishParty": "Publish party"
     },
-    "saveError": "Could not save event.",
-    "deleteError": "Could not delete the party.",
+    "saveError": "Couldn't save the party. Check your connection and try again.",
+    "deleteError": "Couldn't delete the party. Try again.",
     "share": {
       "whenWithTime": "{{date}} at {{time}}"
     },

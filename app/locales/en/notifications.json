@@ -2,10 +2,10 @@
   "title": "Notifications",
   "guestGate": {
     "title": "Notifications",
-    "message": "Sign in to see activity on your parties and sponsorships."
+    "message": "Sign in to see what's happening with your parties and sponsorships."
   },
-  "loadError": "Could not load notifications.",
-  "empty": "No notifications yet — activity on your parties shows up here.",
+  "loadError": "Check your connection and try again.",
+  "empty": "No notifications yet. RSVPs and updates from your parties land here.",
   "timeAgo": {
     "justNow": "just now",
     "minutes_one": "{{count}}m ago",
@@ -22,6 +22,6 @@
     "years_other": "{{count}}y ago"
   },
   "errorTitle": "Couldn't load notifications",
-  "emptyTitle": "All caught up",
+  "emptyTitle": "Nothing new",
   "emptyCta": "Find a party"
 }

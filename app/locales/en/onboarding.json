@@ -1,40 +1,40 @@
 {
   "brand": {
-    "tagline": "NEVER WATCH ALONE"
+    "tagline": "Never watch alone"
   },
   "seeker": {
-    "headline": "FIND YOUR CROWD",
-    "body": "Discover local watch parties for the events you love. Never watch alone again.",
+    "headline": "Find your room",
+    "body": "The game, the finale, the award show, election night. Find a watch party near you and show up.",
     "chips": {
-      "liveSports": "LIVE SPORTS",
-      "awards": "AWARDS",
-      "bigEvents": "BIG EVENTS"
+      "liveSports": "Live sports",
+      "awards": "Award shows",
+      "bigEvents": "Big nights"
     }
   },
   "host": {
-    "headline": "LEAD THE EXPERIENCE",
-    "body": "Host your own watch party. Build a community around your passion and lead the fun.",
+    "headline": "Host the night",
+    "body": "Pick what's on, say where, and set the guest list. A bar, a rooftop or your living room all work.",
     "chips": {
-      "yourVenue": "YOUR VENUE",
-      "yourCrowd": "YOUR CROWD",
-      "yourRules": "YOUR RULES"
+      "yourVenue": "Your room",
+      "yourCrowd": "Your guest list",
+      "yourRules": "Your rules"
     }
   },
   "sponsor": {
-    "headline": "FUEL THE PASSION",
-    "body": "Partner with local events. Sponsor watch parties to reach the crowd and unlock exclusive perks.",
+    "headline": "Back the night",
+    "body": "Sponsor a local watch party and put your name in front of the people in the room. Hosts approve every sponsor.",
     "chips": {
-      "vipAccess": "VIP ACCESS",
-      "gearDrops": "GEAR DROPS",
-      "partnerDeals": "PARTNER DEALS"
+      "vipAccess": "Real events",
+      "gearDrops": "Host approved",
+      "partnerDeals": "Clear fees"
     }
   },
   "cta": {
-    "next": "NEXT",
-    "getStarted": "GET STARTED"
+    "next": "Next",
+    "getStarted": "Get started"
   },
   "skip": {
-    "label": "SKIP",
+    "label": "Skip",
     "a11y": "Skip onboarding"
   }
 }

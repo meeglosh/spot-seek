@@ -1,8 +1,8 @@
 {
-  "title": "Espace personnel",
+  "title": "Votre profil",
   "guestGate": {
-    "title": "Espace personnel",
-    "message": "Connectez-vous pour suivre vos confirmations, vos équipes et votre historique d'organisation."
+    "title": "Votre profil",
+    "message": "Connectez-vous pour voir vos réservations, vos équipes et votre historique d'hôte."
   },
   "hero": {
     "verifiedHost": "Hôte vérifié",
@@ -11,34 +11,34 @@
     "following_one": "{{count}} abonnement",
     "following_other": "{{count}} abonnements",
     "since": "Depuis {{year}}",
-    "partiesAttended": "Soirées suivies",
-    "nextMilestone": "Prochain palier : {{count}} soirées suivies."
+    "partiesAttended": "Soirées vécues",
+    "nextMilestone": "Prochain palier : {{count}} soirées."
   },
   "hostCta": {
     "title": "Organiser une soirée",
-    "body": "Créez un nouvel événement et invitez votre équipe.",
-    "button": "Démarrer la configuration"
+    "body": "Choisissez un match ou un final et invitez du monde.",
+    "button": "Organiser une soirée"
   },
   "teams": {
-    "sectionTitle": "Mes équipes (favoris)",
+    "sectionTitle": "Mes équipes",
     "fallbackLeague": "Suivi",
     "findTeams": "Trouver des équipes"
   },
   "saved": {
-    "sectionTitle": "Soirées enregistrées",
-    "empty": "Réservez une place pour une soirée et elle apparaîtra ici.",
-    "waitlist": "Liste d'attente",
-    "unknownEvent": "Événement inconnu",
-    "dateTbc": "DATE À CONFIRMER",
-    "emptyTitle": "Rien d’enregistré",
-    "emptyCta": "Parcourir les événements"
+    "sectionTitle": "Vos réservations",
+    "empty": "Réservez une soirée et elle apparaîtra ici.",
+    "waitlist": "Attente",
+    "unknownEvent": "Soirée inconnue",
+    "dateTbc": "Date à confirmer",
+    "emptyTitle": "Aucune réservation",
+    "emptyCta": "Parcourir les soirées"
   },
   "hosting": {
-    "sectionTitle": "Historique d'organisation",
-    "empty": "Rien organisé pour l'instant. Vos événements passés apparaîtront ici.",
-    "attendee_one": "Terminée · {{count}} participant",
-    "attendee_other": "Terminée · {{count}} participants",
-    "emptyTitle": "Aucun historique",
+    "sectionTitle": "Historique d'hôte",
+    "empty": "Vous n'avez encore rien organisé. Vos soirées passées apparaîtront ici.",
+    "attendee_one": "Terminée · {{count}} invité",
+    "attendee_other": "Terminée · {{count}} invités",
+    "emptyTitle": "Rien d'organisé",
     "emptyCta": "Organiser une soirée"
   },
   "reviews": {

@@ -2,36 +2,36 @@
   "title": "Settings",
   "guestGate": {
     "title": "Settings",
-    "message": "Sign in to manage your account and notification preferences."
+    "message": "Sign in to manage your account and alerts."
   },
   "account": {
     "title": "Account",
     "signedInAs": "Signed in as",
-    "signOut": "Sign Out",
-    "deleteAccount": "Delete Account",
-    "deleteConfirm": "Delete your account? This permanently removes your profile, RSVPs, and any past, draft, or cancelled events you host. This cannot be undone.",
-    "keepIt": "Keep It",
-    "yesDelete": "Yes, Delete",
-    "deleteFallbackError": "Could not delete account.",
+    "signOut": "Sign out",
+    "deleteAccount": "Delete account",
+    "deleteConfirm": "Delete your account? This permanently removes your profile, your RSVPs, and any past, draft or cancelled parties you host. This can't be undone.",
+    "keepIt": "Keep my account",
+    "yesDelete": "Delete account",
+    "deleteFallbackError": "Couldn't delete your account. Try again.",
     "typeToConfirm": "Type {{word}} to confirm",
-    "blockedEvents": "You still host upcoming events. Cancel them first so attendees are notified and sponsors are refunded, then try again:",
-    "blockedMoney": "Sponsorship payments are still in progress, so your account can't be deleted yet. Try again once they are released or refunded:"
+    "blockedEvents": "You still host upcoming parties. Cancel them first so guests are told and sponsors are refunded, then try again:",
+    "blockedMoney": "Sponsorship payments are still in progress, so we can't delete your account yet. Try again once they're released or refunded:"
   },
   "notifications": {
     "title": "Notifications",
-    "loadError": "Could not load notification settings.",
+    "loadError": "Couldn't load your notification settings. Try again.",
     "email": "Email notifications",
-    "emailError": "Could not save email notifications — try again.",
+    "emailError": "Couldn't save your email setting. Try again.",
     "push": "Push notifications",
     "radiusLabel": "Nearby alert radius",
     "radiusValue": "{{miles}} mi / {{km}} km",
-    "radiusError": "Could not save radius — try again.",
-    "pushError": "Could not update push notifications — try again.",
+    "radiusError": "Couldn't save the radius. Try again.",
+    "pushError": "Couldn't update push notifications. Try again.",
     "pushDeniedTitle": "Notifications are off",
-    "pushDeniedBody": "Allow notifications for SpotSeek in your iPhone Settings to get event alerts.",
+    "pushDeniedBody": "Turn on notifications for SpotSeek in your iPhone Settings to get alerts.",
     "openSettings": "Open Settings",
-    "pushPromptTitle": "Get event reminders?",
-    "pushPromptBody": "Turn on notifications so we can remind you before your watch party starts.",
+    "pushPromptTitle": "Want a nudge before it starts?",
+    "pushPromptBody": "We'll remind you before your watch party kicks off.",
     "pushPromptLater": "Not now",
     "pushPromptEnable": "Turn on"
   },
@@ -41,11 +41,11 @@
   },
   "payouts": {
     "title": "Payouts",
-    "notConfigured": "Payments are not configured yet.",
+    "notConfigured": "Payouts aren't set up yet.",
     "setup": "Set up payouts",
-    "setupError": "Could not start payout setup — try again.",
-    "notLiveYet": "Payments aren't live yet — you'll be notified when this can be completed.",
-    "enabledLabel": "Payouts enabled"
+    "setupError": "Couldn't start payout setup. Try again.",
+    "notLiveYet": "Payments aren't live yet. We'll let you know when you can finish this.",
+    "enabledLabel": "Payouts on"
   },
   "favourites": {
     "title": "Favourites",
@@ -53,9 +53,9 @@
   },
   "about": {
     "title": "About",
-    "terms": "Terms of Service",
-    "privacy": "Privacy Policy",
-    "contactSupport": "Contact Support",
+    "terms": "Terms of service",
+    "privacy": "Privacy policy",
+    "contactSupport": "Contact support",
     "versionLabel": "Version {{version}}",
     "versionLabelWithBuild": "Version {{version}} ({{build}})"
   }

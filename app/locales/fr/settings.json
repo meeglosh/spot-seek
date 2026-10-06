@@ -1,38 +1,38 @@
 {
-  "title": "Paramètres",
+  "title": "Réglages",
   "guestGate": {
-    "title": "Paramètres",
-    "message": "Connectez-vous pour gérer votre compte et vos préférences de notification."
+    "title": "Réglages",
+    "message": "Connectez-vous pour gérer votre compte et vos alertes."
   },
   "account": {
     "title": "Compte",
     "signedInAs": "Connecté en tant que",
     "signOut": "Se déconnecter",
     "deleteAccount": "Supprimer le compte",
-    "deleteConfirm": "Supprimer votre compte ? Cela supprime définitivement votre profil, vos réponses et tous les événements passés, brouillons ou annulés que vous organisez. Cette action est irréversible.",
-    "keepIt": "Conserver",
-    "yesDelete": "Oui, supprimer",
-    "deleteFallbackError": "Impossible de supprimer le compte.",
-    "typeToConfirm": "Saisissez {{word}} pour confirmer",
-    "blockedEvents": "Vous organisez encore des événements à venir. Annulez-les d'abord pour que les participants soient prévenus et les sponsors remboursés, puis réessayez :",
-    "blockedMoney": "Des paiements de parrainage sont encore en cours, votre compte ne peut donc pas être supprimé pour le moment. Réessayez une fois qu'ils sont versés ou remboursés :"
+    "deleteConfirm": "Supprimer votre compte ? Cela efface définitivement votre profil, vos réservations et vos soirées passées, en brouillon ou annulées. C'est irréversible.",
+    "keepIt": "Garder mon compte",
+    "yesDelete": "Supprimer le compte",
+    "deleteFallbackError": "Impossible de supprimer votre compte. Réessayez.",
+    "typeToConfirm": "Tapez {{word}} pour confirmer",
+    "blockedEvents": "Vous organisez encore des soirées à venir. Annulez-les d'abord pour prévenir les invités et rembourser les sponsors, puis réessayez :",
+    "blockedMoney": "Des paiements de parrainage sont en cours, on ne peut donc pas supprimer votre compte. Réessayez une fois qu'ils sont versés ou remboursés :"
   },
   "notifications": {
     "title": "Notifications",
-    "loadError": "Impossible de charger les paramètres de notification.",
+    "loadError": "Impossible de charger vos réglages de notifications. Réessayez.",
     "email": "Notifications par e-mail",
-    "emailError": "Impossible d'enregistrer les notifications par e-mail — réessayez.",
+    "emailError": "Impossible d'enregistrer le réglage e-mail. Réessayez.",
     "push": "Notifications push",
-    "radiusLabel": "Rayon d'alerte à proximité",
+    "radiusLabel": "Rayon des alertes à proximité",
     "radiusValue": "{{miles}} mi / {{km}} km",
-    "radiusError": "Impossible d'enregistrer le rayon — réessayez.",
-    "pushError": "Impossible de mettre à jour les notifications push — réessayez.",
+    "radiusError": "Impossible d'enregistrer le rayon. Réessayez.",
+    "pushError": "Impossible de modifier les notifications push. Réessayez.",
     "pushDeniedTitle": "Les notifications sont désactivées",
-    "pushDeniedBody": "Autorisez les notifications pour SpotSeek dans les Réglages de votre iPhone pour recevoir les alertes d'événements.",
+    "pushDeniedBody": "Activez les notifications SpotSeek dans les Réglages de votre iPhone pour recevoir des alertes.",
     "openSettings": "Ouvrir les Réglages",
-    "pushPromptTitle": "Recevoir des rappels d'événements ?",
-    "pushPromptBody": "Activez les notifications pour qu'on vous rappelle avant le début de votre soirée match.",
-    "pushPromptLater": "Plus tard",
+    "pushPromptTitle": "Un rappel avant le coup d'envoi ?",
+    "pushPromptBody": "On vous prévient avant le début de votre soirée.",
+    "pushPromptLater": "Pas maintenant",
     "pushPromptEnable": "Activer"
   },
   "language": {
@@ -41,10 +41,10 @@
   },
   "payouts": {
     "title": "Versements",
-    "notConfigured": "Les paiements ne sont pas encore configurés.",
+    "notConfigured": "Les versements ne sont pas encore configurés.",
     "setup": "Configurer les versements",
-    "setupError": "Impossible de démarrer la configuration des versements — réessayez.",
-    "notLiveYet": "Les paiements ne sont pas encore actifs — vous serez averti dès que cela sera possible.",
+    "setupError": "Impossible de lancer la configuration. Réessayez.",
+    "notLiveYet": "Les paiements ne sont pas encore actifs. On vous prévient dès que vous pourrez finir.",
     "enabledLabel": "Versements activés"
   },
   "favourites": {

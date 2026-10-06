@@ -3,21 +3,21 @@
   "save": "Speichern",
   "back": "Zurück",
   "done": "Fertig",
-  "retry": "Erneut versuchen",
+  "retry": "Nochmal versuchen",
   "delete": "Löschen",
   "edit": "Bearbeiten",
   "close": "Schließen",
   "loading": "Wird geladen…",
-  "comingSoon": "Demnächst verfügbar",
+  "comingSoon": "Demnächst",
   "brand": {
-    "tagline": "NIE WIEDER ALLEIN SCHAUEN"
+    "tagline": "Nie wieder allein schauen"
   },
   "guestGate": {
-    "membersOnly": "Nur für Mitglieder",
+    "membersOnly": "Dafür brauchst du ein Konto",
     "signIn": "Anmelden",
     "createAccount": "Konto erstellen",
     "keepBrowsing": "Weiter stöbern",
-    "joinTheAction": "Mach mit"
+    "joinTheAction": "Bei SpotSeek mitmachen"
   },
   "tabs": {
     "discover": "Entdecken",
@@ -26,15 +26,15 @@
   },
   "shell": {
     "menu": {
-      "switchToHosting": "Zum Gastgeber-Modus wechseln",
+      "switchToHosting": "Zum Gastgeben wechseln",
       "sponsorships": "Sponsoring",
       "wallet": "Wallet",
       "settings": "Einstellungen",
       "signOut": "Abmelden",
       "signIn": "Anmelden"
     },
-    "guestName": "Fan",
-    "roleSeeker": "Fan",
+    "guestName": "Gast",
+    "roleSeeker": "Gast",
     "accessibility": {
       "openMenu": "Menü öffnen",
       "notifications": "Benachrichtigungen",

@@ -1,40 +1,40 @@
 {
   "brand": {
-    "tagline": "NIE WIEDER ALLEIN SCHAUEN"
+    "tagline": "Nie wieder allein schauen"
   },
   "seeker": {
-    "headline": "FIND DEINE CREW",
-    "body": "Entdecke lokale Watch Partys für die Events, die du liebst. Schau nie wieder allein.",
+    "headline": "Finde deinen Raum",
+    "body": "Das Spiel, das Finale, die Preisverleihung, die Wahlnacht. Finde eine Watch Party in deiner Nähe und komm vorbei.",
     "chips": {
-      "liveSports": "LIVE-SPORT",
-      "awards": "AWARDS",
-      "bigEvents": "GROSSE EVENTS"
+      "liveSports": "Live-Sport",
+      "awards": "Preisverleihungen",
+      "bigEvents": "Große Nächte"
     }
   },
   "host": {
-    "headline": "FÜHR DAS ERLEBNIS",
-    "body": "Veranstalte deine eigene Watch Party. Bau eine Community rund um deine Leidenschaft auf und führ den Spaß an.",
+    "headline": "Lade zur Nacht ein",
+    "body": "Such aus, was läuft, sag wo und stell die Gästeliste zusammen. Bar, Dachterrasse oder Wohnzimmer, alles geht.",
     "chips": {
-      "yourVenue": "DEIN ORT",
-      "yourCrowd": "DEINE CREW",
-      "yourRules": "DEINE REGELN"
+      "yourVenue": "Dein Raum",
+      "yourCrowd": "Deine Gäste",
+      "yourRules": "Deine Regeln"
     }
   },
   "sponsor": {
-    "headline": "BEFEUERE DIE LEIDENSCHAFT",
-    "body": "Werde Partner lokaler Events. Sponsere Watch Partys, erreiche die Crowd und sichere dir exklusive Vorteile.",
+    "headline": "Unterstütze die Nacht",
+    "body": "Sponsere eine lokale Watch Party und bring deinen Namen zu den Leuten im Raum. Gastgeber bestätigen jeden Sponsor.",
     "chips": {
-      "vipAccess": "VIP-ZUGANG",
-      "gearDrops": "GEAR-DROPS",
-      "partnerDeals": "PARTNER-DEALS"
+      "vipAccess": "Echte Events",
+      "gearDrops": "Vom Gastgeber bestätigt",
+      "partnerDeals": "Klare Gebühren"
     }
   },
   "cta": {
-    "next": "WEITER",
-    "getStarted": "LOS GEHT'S"
+    "next": "Weiter",
+    "getStarted": "Los geht's"
   },
   "skip": {
-    "label": "ÜBERSPRINGEN",
+    "label": "Überspringen",
     "a11y": "Einführung überspringen"
   }
 }

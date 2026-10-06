@@ -1,45 +1,45 @@
 {
-  "title": "Persönlicher Bereich",
+  "title": "Dein Profil",
   "guestGate": {
-    "title": "Persönlicher Bereich",
-    "message": "Melde dich an, um deine Zusagen, Teams und Gastgeber-Historie zu verfolgen."
+    "title": "Dein Profil",
+    "message": "Melde dich an, um deine Zusagen, Teams und deine Gastgeber-Historie zu sehen."
   },
   "hero": {
     "verifiedHost": "Verifizierter Gastgeber",
     "followers_one": "{{count}} Follower",
     "followers_other": "{{count}} Follower",
-    "following_one": "{{count}} Abo",
-    "following_other": "{{count}} Abos",
+    "following_one": "{{count}} folgt",
+    "following_other": "{{count}} folgt",
     "since": "Seit {{year}}",
     "partiesAttended": "Besuchte Partys",
     "nextMilestone": "Nächster Meilenstein: {{count}} besuchte Partys."
   },
   "hostCta": {
-    "title": "Veranstalte eine Party",
-    "body": "Erstelle ein neues Event und lade deine Crew ein.",
-    "button": "Setup starten"
+    "title": "Party planen",
+    "body": "Such ein Spiel oder ein Finale aus und lade Leute ein.",
+    "button": "Party planen"
   },
   "teams": {
-    "sectionTitle": "Meine Teams (Favoriten)",
-    "fallbackLeague": "Gefolgt",
+    "sectionTitle": "Meine Teams",
+    "fallbackLeague": "Folgst du",
     "findTeams": "Teams finden"
   },
   "saved": {
-    "sectionTitle": "Gespeicherte Partys",
-    "empty": "Sag für eine Party zu und sie erscheint hier.",
+    "sectionTitle": "Deine Zusagen",
+    "empty": "Sag zu einer Party zu, dann taucht sie hier auf.",
     "waitlist": "Warteliste",
-    "unknownEvent": "Unbekanntes Event",
-    "dateTbc": "DATUM OFFEN",
-    "emptyTitle": "Noch nichts gespeichert",
-    "emptyCta": "Events durchsuchen"
+    "unknownEvent": "Unbekannte Party",
+    "dateTbc": "Datum offen",
+    "emptyTitle": "Noch keine Zusagen",
+    "emptyCta": "Partys ansehen"
   },
   "hosting": {
     "sectionTitle": "Gastgeber-Historie",
-    "empty": "Noch nichts veranstaltet. Deine vergangenen Events erscheinen hier.",
-    "attendee_one": "Abgeschlossen · {{count}} Teilnehmer",
-    "attendee_other": "Abgeschlossen · {{count}} Teilnehmer",
+    "empty": "Du hast noch nicht eingeladen. Vergangene Partys erscheinen hier.",
+    "attendee_one": "Beendet · {{count}} Gast",
+    "attendee_other": "Beendet · {{count}} Gäste",
     "emptyTitle": "Noch nichts veranstaltet",
-    "emptyCta": "Party veranstalten"
+    "emptyCta": "Party planen"
   },
   "reviews": {
     "sectionTitle": "Bewertungen",

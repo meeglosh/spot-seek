@@ -1,40 +1,40 @@
 {
   "brand": {
-    "tagline": "NUNCA MAIS VEJAS SOZINHO"
+    "tagline": "Nunca vejas sozinho"
   },
   "seeker": {
-    "headline": "ENCONTRA O TEU GRUPO",
-    "body": "Descobre festas de visionamento locais para os eventos que adoras. Nunca mais vejas sozinho.",
+    "headline": "Encontra a tua sala",
+    "body": "O jogo, o final de temporada, a gala de prémios, a noite eleitoral. Encontra uma festa perto de ti e aparece.",
     "chips": {
-      "liveSports": "DESPORTO EM DIRETO",
-      "awards": "GALAS",
-      "bigEvents": "GRANDES EVENTOS"
+      "liveSports": "Desporto ao vivo",
+      "awards": "Galas de prémios",
+      "bigEvents": "Grandes noites"
     }
   },
   "host": {
-    "headline": "LIDERA A EXPERIÊNCIA",
-    "body": "Organiza a tua própria festa de visionamento. Cria uma comunidade em torno da tua paixão e lidera a diversão.",
+    "headline": "Organiza a noite",
+    "body": "Escolhe o que dá, diz onde e define a lista de convidados. Um bar, um terraço ou a tua sala servem.",
     "chips": {
-      "yourVenue": "O TEU LOCAL",
-      "yourCrowd": "O TEU GRUPO",
-      "yourRules": "AS TUAS REGRAS"
+      "yourVenue": "A tua sala",
+      "yourCrowd": "Os teus convidados",
+      "yourRules": "As tuas regras"
     }
   },
   "sponsor": {
-    "headline": "ALIMENTA A PAIXÃO",
-    "body": "Torna-te parceiro de eventos locais. Patrocina festas de visionamento para chegares ao público e desbloqueares vantagens exclusivas.",
+    "headline": "Apoia a noite",
+    "body": "Patrocina uma festa local e põe o teu nome à frente de quem está na sala. Os anfitriões aprovam cada patrocinador.",
     "chips": {
-      "vipAccess": "ACESSO VIP",
-      "gearDrops": "MERCHANDISE EXCLUSIVO",
-      "partnerDeals": "OFERTAS DE PARCEIROS"
+      "vipAccess": "Eventos reais",
+      "gearDrops": "Aprovado pelo anfitrião",
+      "partnerDeals": "Taxas claras"
     }
   },
   "cta": {
-    "next": "SEGUINTE",
-    "getStarted": "COMEÇAR"
+    "next": "Seguinte",
+    "getStarted": "Começar"
   },
   "skip": {
-    "label": "SALTAR",
+    "label": "Saltar",
     "a11y": "Saltar introdução"
   }
 }

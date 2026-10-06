@@ -2,10 +2,10 @@
   "title": "Notificações",
   "guestGate": {
     "title": "Notificações",
-    "message": "Inicia sessão para veres a atividade das tuas festas e patrocínios."
+    "message": "Inicia sessão para ver o que se passa com as tuas festas e patrocínios."
   },
-  "loadError": "Não foi possível carregar as notificações.",
-  "empty": "Ainda não há notificações — a atividade das tuas festas aparece aqui.",
+  "loadError": "Verifica a ligação e tenta de novo.",
+  "empty": "Ainda sem notificações. As confirmações e novidades das tuas festas aparecem aqui.",
   "timeAgo": {
     "justNow": "agora mesmo",
     "minutes_one": "há {{count}} min",
@@ -21,7 +21,7 @@
     "years_one": "há {{count}} ano",
     "years_other": "há {{count}} anos"
   },
-  "errorTitle": "Não foi possível carregar as notificações",
-  "emptyTitle": "Tudo em dia",
+  "errorTitle": "Não deu para carregar as notificações",
+  "emptyTitle": "Nada de novo",
   "emptyCta": "Encontrar uma festa"
 }
