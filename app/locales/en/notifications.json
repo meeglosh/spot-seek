@@ -20,5 +20,8 @@
     "months_other": "{{count}}mo ago",
     "years_one": "{{count}}y ago",
     "years_other": "{{count}}y ago"
-  }
+  },
+  "errorTitle": "Couldn't load notifications",
+  "emptyTitle": "All caught up",
+  "emptyCta": "Find a party"
 }

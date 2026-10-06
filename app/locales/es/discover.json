@@ -15,12 +15,20 @@
     "filterAll": "Todos",
     "locating": "Localizando…",
     "loadingEvents": "Cargando eventos…",
-    "loadError": "No se pudieron cargar los eventos. ¿Está activo el servidor?",
+    "loadError": "No se pudieron cargar los eventos. Revisa tu conexión e inténtalo de nuevo.",
     "noEventsFound": "No se encontraron eventos",
     "upcomingCount_one": "{{count}} evento próximo",
     "upcomingCount_other": "{{count}} eventos próximos",
     "emptySearch": "Ningún evento coincide con tu búsqueda.",
-    "emptyDefault": "Aún no hay eventos publicados."
+    "emptyDefault": "Aún no hay eventos publicados.",
+    "errorTitle": "No se pudieron cargar los eventos",
+    "emptySearchTitle": "Sin coincidencias",
+    "clearSearch": "Borrar búsqueda",
+    "emptyFilteredTitle": "Nada encaja con estos filtros",
+    "emptyFiltered": "Ningún evento publicado coincide con tus filtros.",
+    "clearFilters": "Borrar filtros",
+    "emptyDefaultTitle": "Aún no hay eventos",
+    "hostOne": "Organizar una fiesta"
   },
   "card": {
     "today": "Hoy",
@@ -30,7 +38,11 @@
     "hostedBy": "Organizado por {{name}}",
     "privateLocation": "{{venue}} — privado",
     "sponsorTag": "{{name}}",
-    "sponsorTagMore": "{{name}} +{{count}}"
+    "sponsorTagMore": "{{name}} +{{count}}",
+    "menu": {
+      "share": "Compartir",
+      "directions": "Cómo llegar"
+    }
   },
   "map": {
     "liveNow": "En vivo",
@@ -110,6 +122,8 @@
         "update": "Actualizar reseña"
       }
     },
-    "presentedBy": "Presentado por"
+    "presentedBy": "Presentado por",
+    "errorTitle": "No se pudo cargar este evento",
+    "notFoundTitle": "Evento no encontrado"
   }
 }

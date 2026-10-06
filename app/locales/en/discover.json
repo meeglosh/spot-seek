@@ -15,12 +15,20 @@
     "filterAll": "All",
     "locating": "Locating…",
     "loadingEvents": "Loading events…",
-    "loadError": "Could not load events. Is the backend running?",
+    "loadError": "Could not load events. Check your connection and try again.",
     "noEventsFound": "No events found",
     "upcomingCount_one": "{{count}} upcoming event",
     "upcomingCount_other": "{{count}} upcoming events",
     "emptySearch": "No events match your search.",
-    "emptyDefault": "No published events yet."
+    "emptyDefault": "No published events yet.",
+    "errorTitle": "Couldn't load events",
+    "emptySearchTitle": "No matches",
+    "clearSearch": "Clear search",
+    "emptyFilteredTitle": "Nothing fits these filters",
+    "emptyFiltered": "No published events match the filters you set.",
+    "clearFilters": "Clear filters",
+    "emptyDefaultTitle": "No events yet",
+    "hostOne": "Host a party"
   },
   "card": {
     "today": "Today",
@@ -30,7 +38,11 @@
     "hostedBy": "Hosted by {{name}}",
     "privateLocation": "{{venue}} — private",
     "sponsorTag": "{{name}}",
-    "sponsorTagMore": "{{name}} +{{count}}"
+    "sponsorTagMore": "{{name}} +{{count}}",
+    "menu": {
+      "share": "Share",
+      "directions": "Get directions"
+    }
   },
   "map": {
     "liveNow": "Live Now",
@@ -110,6 +122,8 @@
         "submit": "Submit Review",
         "update": "Update Review"
       }
-    }
+    },
+    "errorTitle": "Couldn't load this event",
+    "notFoundTitle": "Event not found"
   }
 }

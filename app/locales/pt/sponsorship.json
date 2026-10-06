@@ -58,7 +58,9 @@
       "date": "Data",
       "capacity": "Capacidade",
       "yourBid": "A tua oferta · {{amount}} · {{status}}",
-      "review": "Rever para Patrocínio"
+      "review": "Rever para Patrocínio",
+      "emptyTitle": "Sem eventos aqui",
+      "showAll": "Mostrar todos os eventos"
     }
   },
   "bid": {
@@ -134,6 +136,18 @@
       "signIn": "Inicia sessão para fazeres uma oferta.",
       "failed": "A oferta falhou. Tenta novamente.",
       "cancelFailed": "Não foi possível cancelar a oferta. Tenta novamente."
-    }
+    },
+    "errorTitle": "Não foi possível carregar este evento",
+    "notFoundTitle": "Evento não encontrado",
+    "backToMarketplace": "Voltar aos patrocínios"
+  },
+  "findSponsors": {
+    "errorTitle": "Não foi possível carregar os patrocinadores",
+    "loadError": "Não foi possível carregar os patrocinadores.",
+    "emptyTitle": "Ainda não há patrocinadores",
+    "empty": "Ainda nenhum patrocinador se registou. Volta mais tarde.",
+    "noMatchTitle": "Sem resultados",
+    "noMatch": "Nenhum patrocinador corresponde à tua pesquisa ou categoria.",
+    "clearSearch": "Limpar pesquisa"
   }
 }

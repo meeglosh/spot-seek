@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet, Image, Platform, Share } from 'react-native';
 import { Text } from './Text';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, radius, elevation, type as t } from '../lib/theme';
 import { Badge, Btn, Press } from './ui';
 
 import { API_BASE } from '../lib/api';
+import { eventShareUrl } from '../lib/shareLinks';
+import { useOpenDirections, hasDirectionsTarget } from '../lib/directions';
 import { formatEventDateTime } from '../lib/dateFormat';
 
 export type EventItem = {
@@ -54,6 +56,21 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
 
   const today = startsToday(event.startsAt);
   const goTo = () => router.push({ pathname: '/(tabs)/discover/[id]', params: { id: event.id } });
+  const openDirectionsSheet = useOpenDirections();
+
+  // Long-press menu actions reuse the same logic as the detail screen.
+  const canDirections =
+    !event.isPrivateLocation &&
+    hasDirectionsTarget({ lat: event.venueLat, lng: event.venueLng, address: event.venueAddress });
+  const shareEvent = () => {
+    const link = eventShareUrl(event.id);
+    const when = [dateStr, timeStr].filter(Boolean).join(' ');
+    const message = [event.title, when].filter(Boolean).join('\n');
+    Share.share(Platform.OS === 'ios' ? { message, url: link } : { message: `${message}\n${link}` }).catch(() => {});
+  };
+  const getDirections = () => openDirectionsSheet({
+    lat: event.venueLat, lng: event.venueLng, name: event.venueName, address: event.venueAddress,
+  });
 
   const sponsorTag = event.topSponsor
     ? (event.sponsorCount ?? 1) > 1
@@ -69,10 +86,16 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
     </View>
   );
 
-  return (
+  // iOS: wrapped in an expo-router Link so a long press opens the NATIVE
+  // context menu (Share, Get directions) and a tap navigates through the Link.
+  // The Link supplies onPress, so the card carries none of its own there.
+  // Elsewhere the card is a plain Press.
+  const native = Platform.OS === 'ios';
+
+  const card = (
     // Outer view: opaque surface + soft shadow. Inner view: clips the cover to
     // the rounded corners (iOS drops a shadow on an overflow:hidden view).
-    <Press style={s.card} onPress={goTo} accessibilityRole="button">
+    <Press style={s.card} onPress={native ? undefined : goTo} accessibilityRole="button">
       <View style={s.clip}>
       {/* Full-bleed cover, dimmed with the scrim token for legibility */}
       {coverSrc && !compact && (
@@ -129,6 +152,19 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
       </View>
       </View>
     </Press>
+  );
+
+  if (!native) return card;
+  return (
+    <Link href={{ pathname: '/(tabs)/discover/[id]', params: { id: event.id } }} asChild>
+      <Link.Trigger>{card}</Link.Trigger>
+      <Link.Menu>
+        <Link.MenuAction icon="square.and.arrow.up" onPress={shareEvent}>{tr('card.menu.share')}</Link.MenuAction>
+        {canDirections && (
+          <Link.MenuAction icon="location" onPress={getDirections}>{tr('card.menu.directions')}</Link.MenuAction>
+        )}
+      </Link.Menu>
+    </Link>
   );
 }
 

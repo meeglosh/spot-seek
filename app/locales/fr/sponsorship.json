@@ -58,7 +58,9 @@
       "date": "Date",
       "capacity": "Capacité",
       "yourBid": "Votre offre · {{amount}} · {{status}}",
-      "review": "Examiner pour sponsoring"
+      "review": "Examiner pour sponsoring",
+      "emptyTitle": "Aucun événement ici",
+      "showAll": "Afficher tous les événements"
     }
   },
   "bid": {
@@ -134,6 +136,18 @@
       "signIn": "Connectez-vous pour faire une offre.",
       "failed": "L'offre a échoué. Réessayez.",
       "cancelFailed": "Impossible d'annuler l'offre. Réessayez."
-    }
+    },
+    "errorTitle": "Impossible de charger cet événement",
+    "notFoundTitle": "Événement introuvable",
+    "backToMarketplace": "Retour aux sponsorings"
+  },
+  "findSponsors": {
+    "errorTitle": "Impossible de charger les sponsors",
+    "loadError": "Impossible de charger les sponsors.",
+    "emptyTitle": "Aucun sponsor pour l’instant",
+    "empty": "Aucun sponsor ne s’est encore inscrit. Revenez plus tard.",
+    "noMatchTitle": "Aucun résultat",
+    "noMatch": "Aucun sponsor ne correspond à votre recherche ou catégorie.",
+    "clearSearch": "Effacer la recherche"
   }
 }

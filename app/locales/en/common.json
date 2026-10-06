@@ -29,7 +29,6 @@
       "switchToHosting": "Switch to Hosting",
       "sponsorships": "Sponsorships",
       "wallet": "Wallet",
-      "walletComingSoon": "Coming soon.",
       "settings": "Settings",
       "signOut": "Sign Out",
       "signIn": "Sign In"
@@ -44,5 +43,12 @@
       "closeMenu": "Close menu",
       "clear": "Clear"
     }
+  },
+  "soon": "Soon",
+  "datePicker": {
+    "clear": "Clear",
+    "done": "Done",
+    "title": "Date & time",
+    "placeholder": "Set date & time"
   }
 }

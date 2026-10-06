@@ -75,7 +75,9 @@
     "attendees_one": "{{count}} participant",
     "attendees_other": "{{count}} participants",
     "createFooter": "+ Créer une soirée",
-    "sponsoredCount": "Sponsorisée ×{{count}}"
+    "sponsoredCount": "Sponsorisée ×{{count}}",
+    "emptyActiveTitle": "Aucune soirée en cours",
+    "emptyActiveCta": "Créer une soirée"
   },
   "create": {
     "guestGate": {
@@ -161,6 +163,7 @@
     "deleteError": "Impossible de supprimer la soirée.",
     "share": {
       "whenWithTime": "{{date}} à {{time}}"
-    }
+    },
+    "loading": "Chargement de votre soirée"
   }
 }

@@ -56,7 +56,6 @@
     "terms": "Términos del servicio",
     "privacy": "Política de privacidad",
     "contactSupport": "Contactar con soporte",
-    "comingSoonAlert": "Próximamente.",
     "versionLabel": "Versión {{version}}",
     "versionLabelWithBuild": "Versión {{version}} ({{build}})"
   }

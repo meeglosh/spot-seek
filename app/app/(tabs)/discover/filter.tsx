@@ -1,10 +1,10 @@
 /**
- * Full-screen filter page — High-Energy Action restyle.
+ * Filter form sheet — High-Energy Action restyle.
  * Navigated to from the Discover header filter buttons.
  * Passes filter state back via router.back() + a shared state atom.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TextInput, Switch } from 'react-native';
+import { View, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,9 +15,12 @@ import { DateTimePicker } from '../../../components/DateTimePicker';
 import { useDiscoverFilters } from '../../../lib/discover-filters';
 import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
-import { Btn, Chip, SectionTitle, Press } from '../../../components/ui';
+import { Btn, Chip, SectionTitle, Press, Toggle } from '../../../components/ui';
 import { goToAuth } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
+
+// spacing.lg top + 44pt tap row + spacing.md bottom
+const HEADER_H = spacing.lg + TAP + spacing.md;
 
 export default function FilterScreen() {
   const router = useRouter();
@@ -92,27 +95,8 @@ export default function FilterScreen() {
   const favSports = favourites.filter((f) => f.type === 'sport').map((f) => f.value);
 
   return (
-    <View style={[s.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={s.header}>
-        <Press
-          onPress={closeFilter}
-          style={s.closeBtn}
-          accessibilityRole="button"
-          accessibilityLabel={tr('filters.title')}
-        >
-          <Icon name="close" size={22} color={colors.textPrimary} />
-        </Press>
-        <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{tr('filters.title')}</Text>
-        <Press onPress={clearAll} style={s.clearAll} accessibilityRole="button">
-          <Text style={[t.labelSm, { color: activeCount > 0 ? colors.action : colors.textTertiary }]}>
-            {activeCount > 0 ? tr('filters.clearCount', { count: activeCount }) : tr('filters.clearAll')}
-          </Text>
-        </Press>
-      </View>
-
-      <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 120 }]} showsVerticalScrollIndicator={false}>
-
+    <View style={s.container} collapsable={false}>
+      <ScrollView contentInsetAdjustmentBehavior="never" contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + 120 }]} showsVerticalScrollIndicator={false}>
         {/* Your favourites quick-apply — sign-in nudge for guests */}
         {auth.status !== 'authenticated' ? (
           <View style={s.section}>
@@ -144,12 +128,7 @@ export default function FilterScreen() {
                   {favourites.length > 3 ? tr('filters.moreFavourites', { count: favourites.length - 3 }) : ''}
                 </Text>
               </View>
-              <Switch
-                value={useFavourites}
-                onValueChange={setUseFavourites}
-                trackColor={{ false: colors.borderSubtle, true: colors.action }}
-                thumbColor={colors.canvas}
-              />
+              <Toggle value={useFavourites} onValueChange={setUseFavourites} />
             </View>
           </View>
         )}
@@ -262,12 +241,34 @@ export default function FilterScreen() {
 
       </ScrollView>
 
+      {/* react-native-screens form sheets accept ONE ScrollView plus ONE other
+          subview, so the header and the apply bar share this overlay. The
+          scroll view reserves HEADER_H at its top and room for the bar. */}
+      <View style={s.overlay} pointerEvents="box-none" collapsable={false}>
+      <View style={s.header}>
+        <Press
+          onPress={closeFilter}
+          style={s.closeBtn}
+          accessibilityRole="button"
+          accessibilityLabel={tr('filters.title')}
+        >
+          <Icon name="close" size={22} color={colors.textPrimary} />
+        </Press>
+        <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{tr('filters.title')}</Text>
+        <Press onPress={clearAll} style={s.clearAll} accessibilityRole="button">
+          <Text style={[t.labelSm, { color: activeCount > 0 ? colors.action : colors.textTertiary }]}>
+            {activeCount > 0 ? tr('filters.clearCount', { count: activeCount }) : tr('filters.clearAll')}
+          </Text>
+        </Press>
+      </View>
+
       {/* Apply bar */}
       <View style={[s.applyBar, { paddingBottom: insets.bottom + spacing.md }]}>
         <Btn
           label={activeCount > 0 ? tr('filters.showResults', { count: activeCount }) : tr('filters.showAllEvents')}
           onPress={apply}
         />
+      </View>
       </View>
     </View>
   );
@@ -281,11 +282,14 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.lg,
+    backgroundColor: colors.canvas,
+    height: HEADER_H,
   },
+  overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'space-between' },
   closeBtn: { width: TAP, height: TAP, alignItems: 'flex-start', justifyContent: 'center' },
   clearAll: { minHeight: TAP, justifyContent: 'center' },
-  scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, gap: spacing['2xl'] },
+  scroll: { paddingHorizontal: spacing.lg, paddingTop: HEADER_H, gap: spacing.lg },
   section: { gap: spacing.md },
 
   favouriteRow: {

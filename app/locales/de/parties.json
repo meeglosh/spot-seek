@@ -75,7 +75,9 @@
     "attendees_one": "{{count}} Teilnehmer",
     "attendees_other": "{{count}} Teilnehmer",
     "createFooter": "+ Party erstellen",
-    "sponsoredCount": "Gesponsert ×{{count}}"
+    "sponsoredCount": "Gesponsert ×{{count}}",
+    "emptyActiveTitle": "Keine aktiven Partys",
+    "emptyActiveCta": "Party erstellen"
   },
   "create": {
     "guestGate": {
@@ -161,6 +163,7 @@
     "deleteError": "Party konnte nicht gelöscht werden.",
     "share": {
       "whenWithTime": "{{date}} um {{time}}"
-    }
+    },
+    "loading": "Deine Party wird geladen"
   }
 }

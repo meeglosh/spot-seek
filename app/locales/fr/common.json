@@ -29,7 +29,6 @@
       "switchToHosting": "Passer en mode hôte",
       "sponsorships": "Sponsoring",
       "wallet": "Portefeuille",
-      "walletComingSoon": "Bientôt disponible.",
       "settings": "Paramètres",
       "signOut": "Se déconnecter",
       "signIn": "Se connecter"
@@ -44,5 +43,12 @@
       "closeMenu": "Fermer le menu",
       "clear": "Effacer"
     }
+  },
+  "soon": "Bientôt",
+  "datePicker": {
+    "clear": "Effacer",
+    "done": "OK",
+    "title": "Date et heure",
+    "placeholder": "Choisir la date et l’heure"
   }
 }

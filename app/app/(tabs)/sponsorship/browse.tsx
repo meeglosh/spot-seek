@@ -1,13 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, ScrollView, StyleSheet, TextInput, ActivityIndicator,
+  View, ScrollView, StyleSheet, TextInput,
 } from 'react-native';
 import { Text } from '../../../components/Text';
+import { useTranslation } from 'react-i18next';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, radius, spacing, type as t } from '../../../lib/theme';
-import { Btn, Chip, Badge, FieldLabel, inputStyle } from '../../../components/ui';
+import { Btn, Chip, Badge, FieldLabel, RowSkeleton, EmptyState, ErrorState, inputStyle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
@@ -45,6 +46,8 @@ export default function BrowseSponsorsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
+  const { t: tr } = useTranslation('sponsorship');
+  const { t: trCommon } = useTranslation('common');
 
   const [event, setEvent] = useState<ApiEvent | null>(null);
   const [sponsors, setSponsors] = useState<ApiSponsorProfile[]>([]);
@@ -71,11 +74,11 @@ export default function BrowseSponsorsScreen() {
       setEvent(ev);
       setSponsors(list);
     } catch {
-      setError('Could not load sponsors.');
+      setError(tr('findSponsors.loadError'));
     } finally {
       setLoading(false);
     }
-  }, [eventId, auth.status]);
+  }, [eventId, auth.status, tr]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -174,17 +177,34 @@ export default function BrowseSponsorsScreen() {
         )}
 
         {loading ? (
-          <ActivityIndicator color={colors.action} style={{ marginVertical: spacing['2xl'] }} />
+          <View style={s.skeletons} accessibilityLabel={trCommon('loading')}>
+            <RowSkeleton lines={3} />
+            <RowSkeleton lines={3} />
+            <RowSkeleton lines={3} />
+          </View>
         ) : error ? (
-          <Text style={[t.bodySm, { color: colors.danger }]}>{error}</Text>
+          <ErrorState
+            title={tr('findSponsors.errorTitle')}
+            message={error}
+            retryLabel={trCommon('retry')}
+            onRetry={() => { setLoading(true); load(); }}
+          />
         ) : sponsors.length === 0 ? (
-          <Text style={[t.bodySm, { color: colors.textTertiary }]}>
-            No sponsors have registered yet — check back later.
-          </Text>
+          <EmptyState
+            icon="sponsorship"
+            title={tr('findSponsors.emptyTitle')}
+            body={tr('findSponsors.empty')}
+            style={s.emptyCard}
+          />
         ) : visible.length === 0 ? (
-          <Text style={[t.bodySm, { color: colors.textTertiary }]}>
-            No sponsors match your search.
-          </Text>
+          <EmptyState
+            icon="search"
+            title={tr('findSponsors.noMatchTitle')}
+            body={tr('findSponsors.noMatch')}
+            actionLabel={tr('findSponsors.clearSearch')}
+            onAction={() => { setQuery(''); setCategory(null); }}
+            style={s.emptyCard}
+          />
         ) : (
           visible.map((sp) => {
             const isOpen = openId === sp.id;
@@ -273,6 +293,8 @@ const s = StyleSheet.create({
   chipScroll: { marginBottom: spacing.md },
   chipRow: { gap: spacing.sm, paddingRight: spacing.lg },
 
+  skeletons: { gap: spacing.md, marginTop: spacing.lg },
+  emptyCard: { backgroundColor: colors.surface1, borderRadius: radius.card },
   card: {
     backgroundColor: colors.surface1,
     padding: spacing.lg,

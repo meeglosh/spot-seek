@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Pressable, Animated, AccessibilityInfo, StyleSheet,
+  View, Pressable, Animated, AccessibilityInfo, StyleSheet, Switch,
   type ViewStyle, type StyleProp, type PressableProps,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Text } from './Text';
 import { Icon, type IconName } from './icons';
 import { colors, radius, spacing, space, type as t, TAP, elevation, press } from '../lib/theme';
@@ -96,6 +97,159 @@ export function LiveDot({ color = colors.live, size = 8 }: { color?: string; siz
         width: size, height: size, borderRadius: radius.round, backgroundColor: color, opacity,
       }}
     />
+  );
+}
+
+// ─── Toggle: the NATIVE Switch, themed with tokens ───────────────────────────
+// Track: surface3 off, action on. Thumb: paper (opaque, high contrast on both).
+// `ios_backgroundColor` keeps the off track on-token when iOS paints the rim.
+
+export function Toggle({
+  value, onValueChange, disabled, accessibilityLabel,
+}: {
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+  disabled?: boolean;
+  accessibilityLabel?: string;
+}) {
+  return (
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      disabled={disabled}
+      accessibilityLabel={accessibilityLabel}
+      trackColor={{ false: colors.surface3, true: colors.action }}
+      thumbColor={colors.textPrimary}
+      ios_backgroundColor={colors.surface3}
+    />
+  );
+}
+
+// ─── Skeleton: opaque surface with a slow shimmer ────────────────────────────
+// A surface2 block with an opaque surface3 layer fading in and out over it
+// (never a translucent view, so no shadow or bleed artefacts). Static under
+// Reduce Motion. The loop is stopped on unmount.
+
+export function Skeleton({
+  width = '100%', height = 16, radius: r = radius.control, style,
+}: {
+  width?: number | `${number}%`;
+  height?: number | `${number}%`;
+  radius?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const reduceMotion = useReduceMotion();
+  const glow = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduceMotion) { glow.setValue(0); return; }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glow, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(glow, { toValue: 0, duration: 900, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => { loop.stop(); glow.setValue(0); };
+  }, [reduceMotion, glow]);
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={[{ width, height, borderRadius: r, backgroundColor: colors.surface2, overflow: 'hidden' }, style]}
+    >
+      <Animated.View
+        style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface3, opacity: glow }]}
+      />
+    </View>
+  );
+}
+
+// A card-shaped skeleton matching EventCard (cover, badge, title, meta, footer).
+export function EventCardSkeleton() {
+  const { t: tr } = useTranslation('common');
+  return (
+    <View style={s.skelCard} accessibilityLabel={tr('loading')} accessible>
+      <Skeleton height={120} radius={0} />
+      <View style={s.skelBody}>
+        <Skeleton width="30%" height={20} radius={radius.pill} />
+        <Skeleton width="80%" height={22} />
+        <Skeleton width="55%" height={14} />
+        <View style={s.skelFooter}>
+          <Skeleton width="35%" height={16} />
+          <Skeleton width={72} height={TAP} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// A row-shaped skeleton for list rows (notifications, sponsorship, dashboard).
+export function RowSkeleton({ lines = 2 }: { lines?: number }) {
+  return (
+    <View style={s.skelRow}>
+      <Skeleton width="60%" height={18} />
+      {Array.from({ length: lines }, (_, i) => (
+        <Skeleton key={i} width={i === lines - 1 ? '40%' : '90%'} height={14} />
+      ))}
+    </View>
+  );
+}
+
+// ─── EmptyState: icon, title, why it is empty, one primary next action ───────
+// Pass `actionLabel` + `onAction` only when an existing route/action fits.
+
+export function EmptyState({
+  icon, title, body, actionLabel, onAction, style,
+}: {
+  icon: IconName;
+  title: string;
+  body: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[s.stateWrap, style]}>
+      <View style={s.stateIcon}>
+        <Icon name={icon} size={28} color={colors.textSecondary} />
+      </View>
+      <Text style={[t.headlineSm, s.stateTitle]}>{title}</Text>
+      <Text style={[t.bodyMd, s.stateBody]}>{body}</Text>
+      {actionLabel && onAction && <Btn label={actionLabel} onPress={onAction} style={s.stateBtn} />}
+    </View>
+  );
+}
+
+// ─── ErrorState: what failed + Retry (calls the existing loader) ─────────────
+
+export function ErrorState({
+  title, message, retryLabel, onRetry, style,
+}: {
+  title: string;
+  message?: string;
+  retryLabel: string;
+  onRetry: () => void;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <View style={[s.stateWrap, style]} accessibilityRole="alert">
+      <View style={[s.stateIcon, { backgroundColor: colors.dangerWash }]}>
+        <Icon name="shield" size={28} color={colors.danger} />
+      </View>
+      <Text style={[t.headlineSm, s.stateTitle]}>{title}</Text>
+      {message ? <Text style={[t.bodyMd, s.stateBody]}>{message}</Text> : null}
+      <Btn label={retryLabel} variant="secondary" onPress={onRetry} style={s.stateBtn} />
+    </View>
+  );
+}
+
+// ─── SoonTag: a quiet "Soon" marker for stubbed features ─────────────────────
+
+export function SoonTag({ label }: { label: string }) {
+  return (
+    <View style={s.soonTag}>
+      <Text style={[t.tag, { color: colors.textSecondary }]}>{label}</Text>
+    </View>
   );
 }
 
@@ -397,6 +551,20 @@ const s = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   badgeDot: { width: 7, height: 7, borderRadius: radius.round },
+
+  skelCard: { ...elevation(1), borderRadius: radius.card, overflow: 'hidden' },
+  skelBody: { padding: spacing.lg, gap: spacing.sm },
+  skelFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md },
+  skelRow: { backgroundColor: colors.surface1, borderRadius: radius.card, padding: spacing.lg, gap: spacing.sm },
+  stateWrap: { alignItems: 'center', paddingVertical: spacing['2xl'], paddingHorizontal: spacing.xl, gap: spacing.sm },
+  stateIcon: {
+    width: 64, height: 64, borderRadius: radius.round, backgroundColor: colors.surface2,
+    alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm,
+  },
+  stateTitle: { color: colors.textPrimary, textAlign: 'center' },
+  stateBody: { color: colors.textSecondary, textAlign: 'center', maxWidth: 320 },
+  stateBtn: { marginTop: spacing.md, maxWidth: 320, width: '100%' },
+  soonTag: { backgroundColor: colors.surface3, borderRadius: radius.pill, paddingHorizontal: spacing.sm + 2, paddingVertical: 3 },
 
   segRow: { flexDirection: 'row', gap: 3 },
   seg: { flex: 1, height: 6, borderRadius: 3 },

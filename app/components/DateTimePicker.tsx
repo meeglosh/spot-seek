@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Pressable, StyleSheet, Modal, Platform,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Text } from './Text';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 import { colors, radius, spacing, TAP, elevation, type as t } from '../lib/theme';
@@ -15,7 +16,8 @@ type Props = {
   minimumDate?: Date;
 };
 
-export function DateTimePicker({ value, onChange, placeholder = 'Set date & time', minimumDate }: Props) {
+export function DateTimePicker({ value, onChange, placeholder, minimumDate }: Props) {
+  const { t: tr } = useTranslation('common');
   const [showPicker, setShowPicker] = useState(false);
   const [mode, setMode] = useState<'date' | 'time'>('date');
   // Staging date so we confirm date then time in two steps on Android
@@ -76,10 +78,10 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
             { color: value ? colors.textPrimary : colors.textTertiary },
           ]}
         >
-          {formatted ?? placeholder}
+          {formatted ?? placeholder ?? tr('datePicker.placeholder')}
         </Text>
         {value && (
-          <Press onPress={clear} style={s.clearBtn} accessibilityRole="button">
+          <Press onPress={clear} style={s.clearBtn} accessibilityRole="button" accessibilityLabel={tr('datePicker.clear')}>
             <Icon name="close" size={16} color={colors.textTertiary} />
           </Press>
         )}
@@ -103,11 +105,11 @@ export function DateTimePicker({ value, onChange, placeholder = 'Set date & time
           <View style={s.sheet}>
             <View style={s.sheetHeader}>
               <Press onPress={clear} style={s.sheetBtn} accessibilityRole="button">
-                <Text style={[t.label, { color: colors.textSecondary }]}>Clear</Text>
+                <Text style={[t.label, { color: colors.textSecondary }]}>{tr('datePicker.clear')}</Text>
               </Press>
-              <Text style={[t.label, { color: colors.textPrimary }]}>Date & Time</Text>
+              <Text style={[t.label, { color: colors.textPrimary }]}>{tr('datePicker.title')}</Text>
               <Press onPress={confirmIOS} style={s.sheetBtn} accessibilityRole="button">
-                <Text style={[t.label, { color: colors.action }]}>Done</Text>
+                <Text style={[t.label, { color: colors.action }]}>{tr('datePicker.done')}</Text>
               </Press>
             </View>
             <RNDateTimePicker

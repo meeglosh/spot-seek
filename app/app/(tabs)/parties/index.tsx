@@ -1,13 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, FlatList, StyleSheet, RefreshControl, ActivityIndicator, Image,
+  View, FlatList, StyleSheet, RefreshControl, Image,
 } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
-import { Btn, Badge, SegmentedControl } from '../../../components/ui';
+import { Btn, Badge, SegmentedControl, EventCardSkeleton, EmptyState, ErrorState } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
@@ -222,16 +222,17 @@ export default function MyPartiesScreen() {
           redirect="/(tabs)/parties"
         />
       ) : showSpinner ? (
-        <View style={s.center}>
-          <ActivityIndicator color={colors.action} />
-          <Text style={[t.label, { color: colors.textTertiary }]}>{tr('myParties.loading')}</Text>
+        <View style={[s.list, { gap: spacing.lg }]} accessibilityLabel={tr('myParties.loading')}>
+          <EventCardSkeleton />
+          <EventCardSkeleton />
         </View>
       ) : error && activeData === null ? (
-        <View style={s.center}>
-          <Text style={[t.headlineMd, s.stateTitle]}>{tr('myParties.signalLost')}</Text>
-          <Text style={[t.bodyMd, s.stateBody]}>{error}</Text>
-          <Btn label={trCommon('retry')} variant="secondary" onPress={() => load(tab)} />
-        </View>
+        <ErrorState
+          title={tr('myParties.signalLost')}
+          message={error}
+          retryLabel={trCommon('retry')}
+          onRetry={() => load(tab)}
+        />
       ) : tab === 'attending' ? (
         <FlatList
           data={attendingItems}
@@ -240,13 +241,13 @@ export default function MyPartiesScreen() {
           ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />}
           ListEmptyComponent={
-            <View style={s.center}>
-              <Text style={[t.headlineMd, s.stateTitle]}>{tr('myParties.emptyAttending.title')}</Text>
-              <Text style={[t.bodyMd, s.stateBody]}>
-                {tr('myParties.emptyAttending.body')}
-              </Text>
-              <Btn label={tr('myParties.emptyAttending.cta')} onPress={() => router.push('/(tabs)/discover')} />
-            </View>
+            <EmptyState
+              icon="ball"
+              title={tr('myParties.emptyAttending.title')}
+              body={tr('myParties.emptyAttending.body')}
+              actionLabel={tr('myParties.emptyAttending.cta')}
+              onAction={() => router.push('/(tabs)/discover')}
+            />
           }
           renderItem={({ item }) => <AttendingCard rsvp={item} />}
           showsVerticalScrollIndicator={false}
@@ -268,13 +269,13 @@ export default function MyPartiesScreen() {
           ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />}
           ListEmptyComponent={
-            <View style={s.center}>
-              <Text style={[t.headlineMd, s.stateTitle]}>{tr('myParties.emptyHosting.title')}</Text>
-              <Text style={[t.bodyMd, s.stateBody]}>
-                {tr('myParties.emptyHosting.body')}
-              </Text>
-              <Btn label={tr('myParties.emptyHosting.cta')} onPress={() => router.push('/(tabs)/parties/create' as never)} />
-            </View>
+            <EmptyState
+              icon="parties"
+              title={tr('myParties.emptyHosting.title')}
+              body={tr('myParties.emptyHosting.body')}
+              actionLabel={tr('myParties.emptyHosting.cta')}
+              onAction={() => router.push('/(tabs)/parties/create' as never)}
+            />
           }
           renderItem={({ item }) => (
             <HostingCard event={item} onManage={() => router.push('/(tabs)/parties/dashboard' as never)} />
@@ -345,14 +346,4 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
   },
   footerBtn: { width: '100%' },
-
-  center: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing['2xl'],
-    gap: spacing.lg,
-  },
-  stateTitle: { color: colors.textPrimary, textAlign: 'center' },
-  stateBody: { color: colors.textSecondary, textAlign: 'center', maxWidth: 280 },
 });

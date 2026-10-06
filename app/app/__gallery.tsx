@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, TextInput, StyleSheet } from 'react-native';
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../components/Text';
 import { AppHeader } from '../components/AppHeader';
@@ -8,7 +8,8 @@ import { EventCard, type EventItem } from '../components/EventCard';
 import { Icon, ICON_NAMES } from '../components/icons';
 import {
   Btn, Chip, Badge, SegmentedControl, SegmentBar, SectionTitle, FieldLabel,
-  LiveDot, Press, inputStyle, inputFocusedStyle,
+  LiveDot, Press, Toggle, Skeleton, EventCardSkeleton, RowSkeleton, EmptyState, ErrorState, SoonTag,
+  inputStyle, inputFocusedStyle,
 } from '../components/ui';
 import {
   colors, radius, spacing, TAP, elevation, press, type as t,
@@ -25,7 +26,8 @@ import {
 //      Without the var (or in Release) the root redirect is unchanged.
 //   No auth or deep link is needed. `?y=<px>` scrolls the gallery to an offset
 //   (e.g. EXPO_PUBLIC_START_ROUTE="/__gallery?y=900") so every section can be
-//   screenshotted from the simulator without touch automation.
+//   screenshotted from the simulator without touch automation. `&sheet=1`
+//   opens the filter form sheet on mount (same reason).
 // ─────────────────────────────────────────────────────────────────────────────
 
 // A frozen "pressed" frame: the same scale + opacity dip <Press> animates to.
@@ -84,7 +86,8 @@ const SWATCHES: ReadonlyArray<[string, string]> = [
 
 export default function Gallery() {
   const insets = useSafeAreaInsets();
-  const { y } = useLocalSearchParams<{ y?: string }>();
+  const { y, sheet } = useLocalSearchParams<{ y?: string; sheet?: string }>();
+  const router = useRouter();
   const scroller = useRef<ScrollView>(null);
   const [seg, setSeg] = useState<'list' | 'map'>('list');
   const [seg2, setSeg2] = useState<'a' | 'b' | 'c'>('b');
@@ -92,6 +95,19 @@ export default function Gallery() {
   const [focus, setFocus] = useState<string | null>(null);
   const [name, setName] = useState('Derby day at the Arms');
   const [search, setSearch] = useState('');
+  const [notify, setNotify] = useState(true);
+  const [venue, setVenue] = useState(false);
+
+  // The filter is a form sheet over the Discover feed, so the feed has to be
+  // underneath it: open Discover first, then present the sheet on top.
+  const openSheet = React.useCallback(() => {
+    router.push('/(tabs)/discover' as never);
+    setTimeout(() => router.push('/(tabs)/discover/filter' as never), 1200);
+  }, [router]);
+
+  useEffect(() => {
+    if (__DEV__ && sheet === '1') openSheet();
+  }, [sheet, openSheet]);
 
   if (!__DEV__) return <Redirect href="/" />;
 
@@ -273,6 +289,55 @@ export default function Gallery() {
           <EventCard event={SAMPLE_QUIET} compact />
         </Block>
 
+        <Block title="Skeletons (opaque shimmer, static under Reduce Motion)">
+          <EventCardSkeleton />
+          <RowSkeleton />
+          <View style={s.inline}>
+            <Skeleton width={56} height={56} radius={radius.round} />
+            <Skeleton width={160} height={18} />
+          </View>
+        </Block>
+
+        <Block title="Empty and error states">
+          <View style={s.stateCard}>
+            <EmptyState
+              icon="calendar"
+              title="No events yet"
+              body="Nothing is published for this window."
+              actionLabel="Host a party"
+              onAction={() => {}}
+            />
+          </View>
+          <View style={s.stateCard}>
+            <ErrorState
+              title="Couldn't load events"
+              message="Check your connection and try again."
+              retryLabel="Retry"
+              onRetry={() => {}}
+            />
+          </View>
+        </Block>
+
+        <Block title="Native controls">
+          <View style={s.toggleRow}>
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>Email reminders (on)</Text>
+            <Toggle value={notify} onValueChange={setNotify} />
+          </View>
+          <View style={s.toggleRow}>
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>Add a venue (off)</Text>
+            <Toggle value={venue} onValueChange={setVenue} />
+          </View>
+          <View style={s.toggleRow}>
+            <Text style={[t.bodyMd, { color: colors.textTertiary }]}>Wallet</Text>
+            <SoonTag label="Soon" />
+          </View>
+          <Btn
+            label="Open the filter sheet"
+            variant="secondary"
+            onPress={openSheet}
+          />
+        </Block>
+
         <Block title="Sample form">
           <View style={s.form}>
             <View>
@@ -360,6 +425,8 @@ const s = StyleSheet.create({
   },
 
   form: { gap: spacing.lg },
+  stateCard: { backgroundColor: colors.surface1, borderRadius: radius.card },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: TAP },
   iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   iconCell: { width: 72, alignItems: 'center', gap: 4 },
 });

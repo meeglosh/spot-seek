@@ -16,7 +16,8 @@ import { formatEventDateTime } from '../../../lib/dateFormat';
 import { colors, radius, spacing, TAP, elevation, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
 import { AppHeader } from '../../../components/AppHeader';
-import { Badge, SectionTitle, Btn, Chip, FieldLabel, Press, inputStyle, inputFocusedStyle } from '../../../components/ui';
+import * as Haptics from 'expo-haptics';
+import { Badge, SectionTitle, Btn, Chip, FieldLabel, Press, Skeleton, EmptyState, ErrorState, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { AuthGateSheet } from '../../../components/AuthGate';
 import { StarRating, StarInput } from '../../../components/Stars';
 
@@ -38,6 +39,7 @@ export default function EventDetailScreen() {
   const insets = useSafeAreaInsets();
   const auth = useAuth();
   const { t: tr } = useTranslation('discover');
+  const { t: trCommon } = useTranslation('common');
   const openDirectionsSheet = useOpenDirections();
   const { t: trSettings } = useTranslation('settings');
 
@@ -66,13 +68,16 @@ export default function EventDetailScreen() {
     router.replace('/(tabs)/discover' as never);
   }, [router]);
 
-  useEffect(() => {
+  const loadEvent = useCallback(() => {
     if (!id) return;
+    setError('');
     fetchEvent(id)
       .then(setEvent)
       .catch(() => setError(tr('detail.loadError')))
       .finally(() => setLoading(false));
   }, [id, tr]);
+
+  useEffect(() => { loadEvent(); }, [loadEvent]);
 
   // Load this user's existing RSVP so the button reflects reality on every
   // visit. Without this the screen always rendered "Join Party", so returning
@@ -161,6 +166,10 @@ export default function EventDetailScreen() {
       } else {
         const newRsvp = await rsvpToEvent(event.id);
         setRsvp(newRsvp);
+        // The one deliberate haptic in the app: a confirmed RSVP.
+        if (newRsvp.state === 'going') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        }
         // First time going: a natural moment to offer reminders (once per
         // install; the OS prompt only appears if they accept ours).
         if (newRsvp.state === 'going') {
@@ -197,23 +206,40 @@ export default function EventDetailScreen() {
 
   if (loading) {
     return (
-      <View style={[s.container, s.center]}>
-        <ActivityIndicator color={colors.action} />
+      <View style={s.container}>
+        <AppHeader back onBack={leaveDetail} />
+        <View style={s.skeleton} accessibilityLabel={trCommon('loading')}>
+          <Skeleton height={200} radius={radius.card} />
+          <Skeleton width="30%" height={20} radius={radius.pill} />
+          <Skeleton width="85%" height={30} />
+          <Skeleton width="60%" height={16} />
+          <Skeleton width="45%" height={16} />
+          <Skeleton height={96} radius={radius.card} />
+        </View>
       </View>
     );
   }
 
   if (error || !event) {
     return (
-      <View style={[s.container, s.center]}>
-        <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-          {error || tr('detail.notFound')}
-        </Text>
-        <Press onPress={leaveDetail} accessibilityRole="button" style={s.textLink}>
-          <Text style={[t.label, { color: colors.action }]}>
-            {tr('detail.goBack')}
-          </Text>
-        </Press>
+      <View style={s.container}>
+        <AppHeader back onBack={leaveDetail} />
+        {error ? (
+          <ErrorState
+            title={tr('detail.errorTitle')}
+            message={error}
+            retryLabel={trCommon('retry')}
+            onRetry={() => { setLoading(true); loadEvent(); }}
+          />
+        ) : (
+          <EmptyState
+            icon="calendar"
+            title={tr('detail.notFoundTitle')}
+            body={tr('detail.notFound')}
+            actionLabel={tr('detail.goBack')}
+            onAction={leaveDetail}
+          />
+        )}
       </View>
     );
   }
@@ -527,7 +553,7 @@ export default function EventDetailScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
-  center: { alignItems: 'center', justifyContent: 'center' },
+  skeleton: { padding: spacing.lg, gap: spacing.md },
 
   // Hero
   hero: {

@@ -15,12 +15,20 @@
     "filterAll": "Alle",
     "locating": "Standort wird ermittelt…",
     "loadingEvents": "Events werden geladen…",
-    "loadError": "Events konnten nicht geladen werden. Läuft der Server?",
+    "loadError": "Events konnten nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
     "noEventsFound": "Keine Events gefunden",
     "upcomingCount_one": "{{count}} bevorstehendes Event",
     "upcomingCount_other": "{{count}} bevorstehende Events",
     "emptySearch": "Keine Events passen zu deiner Suche.",
-    "emptyDefault": "Noch keine veröffentlichten Events."
+    "emptyDefault": "Noch keine veröffentlichten Events.",
+    "errorTitle": "Events konnten nicht geladen werden",
+    "emptySearchTitle": "Keine Treffer",
+    "clearSearch": "Suche löschen",
+    "emptyFilteredTitle": "Nichts passt zu diesen Filtern",
+    "emptyFiltered": "Kein veröffentlichtes Event passt zu deinen Filtern.",
+    "clearFilters": "Filter löschen",
+    "emptyDefaultTitle": "Noch keine Events",
+    "hostOne": "Party veranstalten"
   },
   "card": {
     "today": "Heute",
@@ -30,7 +38,11 @@
     "hostedBy": "Veranstaltet von {{name}}",
     "privateLocation": "{{venue}} — privat",
     "sponsorTag": "{{name}}",
-    "sponsorTagMore": "{{name}} +{{count}}"
+    "sponsorTagMore": "{{name}} +{{count}}",
+    "menu": {
+      "share": "Teilen",
+      "directions": "Route berechnen"
+    }
   },
   "map": {
     "liveNow": "Jetzt live",
@@ -110,6 +122,8 @@
         "update": "Bewertung aktualisieren"
       }
     },
-    "presentedBy": "Präsentiert von"
+    "presentedBy": "Präsentiert von",
+    "errorTitle": "Event konnte nicht geladen werden",
+    "notFoundTitle": "Event nicht gefunden"
   }
 }

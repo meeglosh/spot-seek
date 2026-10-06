@@ -58,7 +58,9 @@
       "date": "Date",
       "capacity": "Capacity",
       "yourBid": "Your bid · {{amount}} · {{status}}",
-      "review": "Review for Sponsorship"
+      "review": "Review for Sponsorship",
+      "emptyTitle": "No events here",
+      "showAll": "Show all events"
     }
   },
   "bid": {
@@ -134,6 +136,18 @@
       "signIn": "Sign in to place a bid.",
       "failed": "Bid failed. Try again.",
       "cancelFailed": "Could not cancel the bid. Try again."
-    }
+    },
+    "errorTitle": "Couldn't load this event",
+    "notFoundTitle": "Event not found",
+    "backToMarketplace": "Back to sponsorships"
+  },
+  "findSponsors": {
+    "errorTitle": "Couldn't load sponsors",
+    "loadError": "Could not load sponsors.",
+    "emptyTitle": "No sponsors yet",
+    "empty": "No sponsors have registered yet. Check back later.",
+    "noMatchTitle": "No matches",
+    "noMatch": "No sponsors match your search or category.",
+    "clearSearch": "Clear search"
   }
 }

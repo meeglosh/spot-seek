@@ -2,7 +2,7 @@
  * Settings — account, notification prefs, favourites, and about.
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, TextInput, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
+import { View, TextInput, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
 import { Text } from '../components/Text';
 import Slider from '@react-native-community/slider';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -18,7 +18,7 @@ import {
 import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { Icon } from '../components/icons';
 import { AppHeader } from '../components/AppHeader';
-import { Btn, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../components/ui';
+import { Btn, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle, Press, Toggle, SoonTag } from '../components/ui';
 import { GuestGate } from '../components/AuthGate';
 import { SUPPORTED_LOCALES, setAppLocale } from '../lib/i18n';
 import { enablePush, disablePush } from '../lib/push';
@@ -370,21 +370,13 @@ export default function SettingsScreen() {
           <SettingsRow
             label={tr('notifications.email')}
             right={
-              <Switch
-                value={!!prefs?.emailEnabled}
-                onValueChange={handleEmailToggle}
-                trackColor={{ false: colors.surface3, true: colors.action }}
-              />
+              <Toggle value={!!prefs?.emailEnabled} onValueChange={handleEmailToggle} />
             }
           />
           <SettingsRow
             label={tr('notifications.push')}
             right={
-              <Switch
-                value={!!prefs?.pushEnabled}
-                onValueChange={handlePushToggle}
-                trackColor={{ false: colors.surface3, true: colors.action }}
-              />
+              <Toggle value={!!prefs?.pushEnabled} onValueChange={handlePushToggle} />
             }
           />
 
@@ -474,27 +466,18 @@ export default function SettingsScreen() {
         {/* ABOUT */}
         <View style={s.section}>
           <SectionTitle>{tr('about.title')}</SectionTitle>
-          <Press
-            style={s.linkRow}
-            onPress={() => Alert.alert(tr('about.terms'), tr('about.comingSoonAlert'))}
-          >
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.terms')}</Text>
-            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Press>
-          <Press
-            style={s.linkRow}
-            onPress={() => Alert.alert(tr('about.privacy'), tr('about.comingSoonAlert'))}
-          >
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.privacy')}</Text>
-            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Press>
-          <Press
-            style={s.linkRow}
-            onPress={() => Alert.alert(tr('about.contactSupport'), tr('about.comingSoonAlert'))}
-          >
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.contactSupport')}</Text>
-            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Press>
+          <View style={[s.linkRow, s.linkRowSoon]} accessibilityState={{ disabled: true }}>
+            <Text style={[t.bodyMd, { color: colors.textTertiary }]}>{tr('about.terms')}</Text>
+            <SoonTag label={trCommon('soon')} />
+          </View>
+          <View style={[s.linkRow, s.linkRowSoon]} accessibilityState={{ disabled: true }}>
+            <Text style={[t.bodyMd, { color: colors.textTertiary }]}>{tr('about.privacy')}</Text>
+            <SoonTag label={trCommon('soon')} />
+          </View>
+          <View style={[s.linkRow, s.linkRowSoon]} accessibilityState={{ disabled: true }}>
+            <Text style={[t.bodyMd, { color: colors.textTertiary }]}>{tr('about.contactSupport')}</Text>
+            <SoonTag label={trCommon('soon')} />
+          </View>
 
           <Text style={[t.labelSm, s.versionText]}>
             {build ? tr('about.versionLabelWithBuild', { version: version ?? '—', build }) : tr('about.versionLabel', { version: version ?? '—' })}
@@ -528,5 +511,6 @@ const s = StyleSheet.create({
     minHeight: TAP, paddingVertical: spacing.sm,
     borderBottomWidth: 1, borderBottomColor: colors.borderSubtle,
   },
+  linkRowSoon: { opacity: 0.7 },
   versionText: { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.lg },
 });

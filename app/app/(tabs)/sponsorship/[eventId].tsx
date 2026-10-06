@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useStripe } from '@stripe/stripe-react-native';
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, radius, spacing, type as t } from '../../../lib/theme';
-import { Btn, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
+import { Btn, Badge, FieldLabel, SectionTitle, Skeleton, RowSkeleton, EmptyState, ErrorState, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
@@ -227,7 +227,12 @@ export default function SponsorshipDetailsScreen() {
     return (
       <View style={s.container}>
         <AppHeader back />
-        <View style={s.center}><ActivityIndicator color={colors.action} /></View>
+        <View style={s.skeletons} accessibilityLabel={trCommon('loading')}>
+          <Skeleton height={190} radius={radius.card} />
+          <Skeleton width="70%" height={28} />
+          <RowSkeleton lines={3} />
+          <RowSkeleton />
+        </View>
       </View>
     );
   }
@@ -236,12 +241,22 @@ export default function SponsorshipDetailsScreen() {
     return (
       <View style={s.container}>
         <AppHeader back />
-        <View style={s.center}>
-          <Text style={[t.bodyMd, { color: colors.textSecondary }]}>
-            {loadError || tr('bid.eventNotFound')}
-          </Text>
-          <Btn label={trCommon('retry')} variant="secondary" small onPress={() => { setLoading(true); load(); }} />
-        </View>
+        {loadError ? (
+          <ErrorState
+            title={tr('bid.errorTitle')}
+            message={loadError}
+            retryLabel={trCommon('retry')}
+            onRetry={() => { setLoading(true); load(); }}
+          />
+        ) : (
+          <EmptyState
+            icon="sponsorship"
+            title={tr('bid.notFoundTitle')}
+            body={tr('bid.eventNotFound')}
+            actionLabel={tr('bid.backToMarketplace')}
+            onAction={() => router.replace('/(tabs)/sponsorship' as never)}
+          />
+        )}
       </View>
     );
   }
@@ -463,7 +478,7 @@ export default function SponsorshipDetailsScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.lg },
+  skeletons: { padding: spacing.lg, gap: spacing.md },
 
   coverWrap: {
     height: 190,

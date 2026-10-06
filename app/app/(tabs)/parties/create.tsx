@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, TextInput, StyleSheet, ScrollView, Switch, Platform, KeyboardAvoidingView, Image, ActivityIndicator, Share, type TextInputProps } from 'react-native';
+import { View, TextInput, StyleSheet, ScrollView, Platform, KeyboardAvoidingView, Image, Share, type TextInputProps } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,7 @@ import { createEvent, fetchEvent, type ApiEvent } from '../../../lib/api';
 import { eventShareUrl } from '../../../lib/shareLinks';
 import { API_BASE, apiFetch, uploadEventCover, deleteEvent } from '../../../lib/api';
 import { AppHeader } from '../../../components/AppHeader';
-import { Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../../components/ui';
+import { Btn, FieldLabel, inputStyle, inputFocusedStyle, Press, Toggle, Skeleton } from '../../../components/ui';
 import { GuestGate, goToAuth } from '../../../components/AuthGate';
 import { BroadcastSubjectInput } from '../../../components/BroadcastSubjectInput';
 import { AddressAutocompleteInput } from '../../../components/AddressAutocompleteInput';
@@ -259,8 +259,14 @@ export default function CreateEventScreen() {
 
   if (initialising) {
     return (
-      <View style={[s.container, s.centerFill]}>
-        <ActivityIndicator color={colors.action} />
+      <View style={s.container}>
+        <View style={s.initSkeleton} accessibilityLabel={tr('create.loading')}>
+          <Skeleton width="55%" height={32} />
+          <Skeleton height={52} />
+          <Skeleton height={52} />
+          <Skeleton height={110} />
+          <Skeleton height={52} />
+        </View>
       </View>
     );
   }
@@ -460,12 +466,7 @@ export default function CreateEventScreen() {
                 {tr('create.timePlace.addVenueSub')}
               </Text>
             </View>
-            <Switch
-              value={hasVenue}
-              onValueChange={setHasVenue}
-              trackColor={{ false: colors.surface3, true: colors.action }}
-              thumbColor={colors.canvas}
-            />
+            <Toggle value={hasVenue} onValueChange={setHasVenue} />
           </View>
 
           {hasVenue && (
@@ -614,6 +615,7 @@ export default function CreateEventScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
+  initSkeleton: { padding: spacing.xl, gap: spacing.lg, paddingTop: spacing['3xl'] },
   centerFill: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
 
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg },

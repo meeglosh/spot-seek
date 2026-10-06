@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Pressable, StyleSheet, Modal, Animated, Dimensions, Alert,
+  View, Pressable, StyleSheet, Modal, Animated, Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -8,13 +8,13 @@ import { useTranslation } from 'react-i18next';
 import { Text } from './Text';
 import { Icon, type IconName } from './icons';
 import { colors, radius, spacing, TAP, elevation, type as t } from '../lib/theme';
-import { Press } from './ui';
+import { Press, SoonTag } from './ui';
 import { useAuth } from '../lib/auth';
 import { fetchNotifications } from '../lib/api';
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
 
-type MenuItem = { icon: IconName; label: string; onPress: () => void };
+type MenuItem = { icon: IconName; label: string; onPress?: () => void; soon?: boolean };
 
 function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const insets = useSafeAreaInsets();
@@ -46,7 +46,7 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
     {
       icon: 'wallet',
       label: tr('shell.menu.wallet'),
-      onPress: () => { onClose(); Alert.alert(tr('shell.menu.wallet'), tr('shell.menu.walletComingSoon')); },
+      soon: true,
     },
     { icon: 'settings', label: tr('shell.menu.settings'), onPress: () => go('/settings') },
   ];
@@ -77,7 +77,17 @@ function DrawerMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
 
         <View style={s.drawerDivider} />
 
-        {items.map((item) => (
+        {items.map((item) => item.soon ? (
+          <View
+            key={item.label}
+            accessibilityState={{ disabled: true }}
+            style={[s.drawerItem, s.drawerItemSoon]}
+          >
+            <Icon name={item.icon} size={22} color={colors.textTertiary} />
+            <Text style={[t.bodyMdStrong, { color: colors.textTertiary, flex: 1 }]}>{item.label}</Text>
+            <SoonTag label={tr('soon')} />
+          </View>
+        ) : (
           <Press
             key={item.label}
             accessibilityRole="button"
@@ -277,6 +287,7 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   drawerDivider: { height: 1, backgroundColor: colors.borderSubtle, marginVertical: spacing.md },
+  drawerItemSoon: { opacity: 0.8 },
   drawerItem: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.lg,
     minHeight: TAP + 4, paddingHorizontal: spacing.sm,

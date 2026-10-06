@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, Image } from 'react-native';
+import { View, ScrollView, StyleSheet, RefreshControl, Image } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
-import { Btn, SegmentBar, LiveDot, Press } from '../../../components/ui';
+import { Btn, SegmentBar, LiveDot, Press, Skeleton, RowSkeleton, EmptyState, ErrorState } from '../../../components/ui';
 import { Icon } from '../../../components/icons';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
@@ -143,16 +143,22 @@ export default function CommandCenterScreen() {
       <AppHeader back />
 
       {loading && !refreshing ? (
-        <View style={s.center}>
-          <ActivityIndicator color={colors.action} />
-          <Text style={[t.label, { color: colors.textTertiary }]}>{tr('dashboard.loading')}</Text>
+        <View style={s.scroll} accessibilityLabel={tr('dashboard.loading')}>
+          <Skeleton width="60%" height={34} />
+          <View style={s.statTiles}>
+            <Skeleton height={84} radius={radius.card} style={{ flex: 1 }} />
+            <Skeleton height={84} radius={radius.card} style={{ flex: 1 }} />
+          </View>
+          <RowSkeleton lines={3} />
+          <RowSkeleton />
         </View>
       ) : error && events.length === 0 ? (
-        <View style={s.center}>
-          <Text style={[t.headlineMd, s.stateTitle]}>{tr('dashboard.signalLost')}</Text>
-          <Text style={[t.bodyMd, s.stateBody]}>{error}</Text>
-          <Btn label={trCommon('retry')} variant="secondary" onPress={() => load()} />
-        </View>
+        <ErrorState
+          title={tr('dashboard.signalLost')}
+          message={error}
+          retryLabel={trCommon('retry')}
+          onRetry={() => load()}
+        />
       ) : (
         <ScrollView
           contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing['4xl'] + spacing['2xl'] }]}
@@ -193,7 +199,14 @@ export default function CommandCenterScreen() {
           </View>
 
           {activeParties.length === 0 ? (
-            <Text style={[t.bodyMd, s.emptyLine]}>{tr('dashboard.emptyActive')}</Text>
+            <EmptyState
+              icon="parties"
+              title={tr('dashboard.emptyActiveTitle')}
+              body={tr('dashboard.emptyActive')}
+              actionLabel={tr('dashboard.emptyActiveCta')}
+              onAction={() => router.push({ pathname: '/(tabs)/parties/create', params: { from: 'dashboard' } } as never)}
+              style={s.emptyActive}
+            />
           ) : (
             activeParties.map((e) => {
               const stats = analytics[e.id];
@@ -356,6 +369,7 @@ const s = StyleSheet.create({
   },
   dimSectionTitle: { color: colors.textSecondary, marginTop: spacing.xl },
   emptyLine: { color: colors.textTertiary },
+  emptyActive: { backgroundColor: colors.surface1, borderRadius: radius.card },
 
   activeCard: {
     backgroundColor: colors.surface1,
@@ -405,14 +419,4 @@ const s = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: colors.borderSubtle,
   },
   footerBtn: { width: '100%' },
-
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing['2xl'],
-    gap: spacing.lg,
-  },
-  stateTitle: { color: colors.textPrimary, textAlign: 'center' },
-  stateBody: { color: colors.textSecondary, textAlign: 'center', maxWidth: 280 },
 });

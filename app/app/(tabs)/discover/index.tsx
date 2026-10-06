@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, TextInput, ActivityIndicator } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, TextInput } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -8,11 +8,11 @@ import { useTranslation } from 'react-i18next';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
 import { AppHeader } from '../../../components/AppHeader';
-import { Btn, Chip, SegmentedControl, Press } from '../../../components/ui';
+import { Chip, SegmentedControl, Press, Skeleton, EventCardSkeleton, EmptyState, ErrorState } from '../../../components/ui';
 import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
 import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
-import { useDiscoverFilters, activeFilterCount } from '../../../lib/discover-filters';
+import { useDiscoverFilters, activeFilterCount, clearFiltersGlobal } from '../../../lib/discover-filters';
 
 // 'This week' first — it's the default; 'All' last since it's the least-used option.
 const FILTERS = ['This week', 'Today', 'Near me', 'All'] as const;
@@ -259,9 +259,7 @@ export default function DiscoverScreen() {
       {/* Map view */}
       {viewMode === 'map' && (
         loading ? (
-          <View style={s.center}>
-            <ActivityIndicator color={colors.action} />
-          </View>
+          <View style={s.mapSkeleton}><Skeleton height="100%" radius={0} /></View>
         ) : (
           <EventMapView
             events={displayed}
@@ -273,17 +271,17 @@ export default function DiscoverScreen() {
       {/* List view */}
       {viewMode === 'list' && (
         loading && !refreshing ? (
-          <View style={s.center}>
-            <ActivityIndicator color={colors.action} />
-            <Text style={[t.bodySm, { color: colors.textTertiary }]}>
-              {tr('feed.loadingEvents')}
-            </Text>
+          <View style={[s.list, { gap: spacing.lg }]} accessibilityLabel={tr('feed.loadingEvents')}>
+            <EventCardSkeleton />
+            <EventCardSkeleton />
           </View>
         ) : error ? (
-          <View style={s.center}>
-            <Text style={[t.bodySm, s.stateText]}>{error}</Text>
-            <Btn label={trCommon('retry')} variant="ghost" small onPress={() => loadFeed()} />
-          </View>
+          <ErrorState
+            title={tr('feed.errorTitle')}
+            message={error}
+            retryLabel={trCommon('retry')}
+            onRetry={() => { setLoading(true); loadFeed(); }}
+          />
         ) : (
           <FlatList
             data={displayed}
@@ -301,11 +299,31 @@ export default function DiscoverScreen() {
               </Text>
             }
             ListEmptyComponent={
-              <View style={s.center}>
-                <Text style={[t.bodySm, { color: colors.textTertiary, textAlign: 'center' }]}>
-                  {search ? tr('feed.emptySearch') : tr('feed.emptyDefault')}
-                </Text>
-              </View>
+              search ? (
+                <EmptyState
+                  icon="search"
+                  title={tr('feed.emptySearchTitle')}
+                  body={tr('feed.emptySearch')}
+                  actionLabel={tr('feed.clearSearch')}
+                  onAction={() => setSearch('')}
+                />
+              ) : filterCount > 0 ? (
+                <EmptyState
+                  icon="filter"
+                  title={tr('feed.emptyFilteredTitle')}
+                  body={tr('feed.emptyFiltered')}
+                  actionLabel={tr('feed.clearFilters')}
+                  onAction={clearFiltersGlobal}
+                />
+              ) : (
+                <EmptyState
+                  icon="calendar"
+                  title={tr('feed.emptyDefaultTitle')}
+                  body={tr('feed.emptyDefault')}
+                  actionLabel={tr('feed.hostOne')}
+                  onAction={() => router.push('/(tabs)/parties/create' as never)}
+                />
+              )
             }
             renderItem={({ item }) => <EventCard event={item} />}
             showsVerticalScrollIndicator={false}
@@ -379,6 +397,5 @@ const s = StyleSheet.create({
   sectionLabel: { color: colors.textSecondary, marginBottom: spacing.md },
 
   // States
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing['2xl'], gap: spacing.lg },
-  stateText: { color: colors.textSecondary, textAlign: 'center' },
+  mapSkeleton: { flex: 1 },
 });

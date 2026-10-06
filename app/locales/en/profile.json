@@ -26,16 +26,20 @@
   },
   "saved": {
     "sectionTitle": "Saved Parties",
-    "empty": "No upcoming parties — browse events",
+    "empty": "RSVP to a party and it shows up here.",
     "waitlist": "Waitlist",
     "unknownEvent": "Unknown event",
-    "dateTbc": "DATE TBC"
+    "dateTbc": "DATE TBC",
+    "emptyTitle": "Nothing saved yet",
+    "emptyCta": "Browse events"
   },
   "hosting": {
     "sectionTitle": "Hosting History",
     "empty": "Nothing hosted yet. Your past events will show up here.",
     "attendee_one": "Completed · {{count}} attendee",
-    "attendee_other": "Completed · {{count}} attendees"
+    "attendee_other": "Completed · {{count}} attendees",
+    "emptyTitle": "No hosting history",
+    "emptyCta": "Host a party"
   },
   "reviews": {
     "sectionTitle": "Reviews",

@@ -29,7 +29,6 @@
       "switchToHosting": "Cambiar a modo anfitrión",
       "sponsorships": "Patrocinios",
       "wallet": "Cartera",
-      "walletComingSoon": "Próximamente.",
       "settings": "Ajustes",
       "signOut": "Cerrar sesión",
       "signIn": "Iniciar sesión"
@@ -44,5 +43,12 @@
       "closeMenu": "Cerrar menú",
       "clear": "Borrar"
     }
+  },
+  "soon": "Pronto",
+  "datePicker": {
+    "clear": "Borrar",
+    "done": "Listo",
+    "title": "Fecha y hora",
+    "placeholder": "Elegir fecha y hora"
   }
 }

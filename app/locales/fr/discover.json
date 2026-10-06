@@ -15,12 +15,20 @@
     "filterAll": "Tout",
     "locating": "Localisation…",
     "loadingEvents": "Chargement des événements…",
-    "loadError": "Impossible de charger les événements. Le serveur est-il actif ?",
+    "loadError": "Impossible de charger les événements. Vérifiez votre connexion et réessayez.",
     "noEventsFound": "Aucun événement trouvé",
     "upcomingCount_one": "{{count}} événement à venir",
     "upcomingCount_other": "{{count}} événements à venir",
     "emptySearch": "Aucun événement ne correspond à votre recherche.",
-    "emptyDefault": "Aucun événement publié pour le moment."
+    "emptyDefault": "Aucun événement publié pour le moment.",
+    "errorTitle": "Impossible de charger les événements",
+    "emptySearchTitle": "Aucun résultat",
+    "clearSearch": "Effacer la recherche",
+    "emptyFilteredTitle": "Rien ne correspond à ces filtres",
+    "emptyFiltered": "Aucun événement publié ne correspond à vos filtres.",
+    "clearFilters": "Effacer les filtres",
+    "emptyDefaultTitle": "Pas encore d’événements",
+    "hostOne": "Organiser une soirée"
   },
   "card": {
     "today": "Aujourd'hui",
@@ -30,7 +38,11 @@
     "hostedBy": "Organisé par {{name}}",
     "privateLocation": "{{venue}} — privé",
     "sponsorTag": "{{name}}",
-    "sponsorTagMore": "{{name}} +{{count}}"
+    "sponsorTagMore": "{{name}} +{{count}}",
+    "menu": {
+      "share": "Partager",
+      "directions": "Itinéraire"
+    }
   },
   "map": {
     "liveNow": "En direct",
@@ -110,6 +122,8 @@
         "update": "Modifier l'avis"
       }
     },
-    "presentedBy": "Présenté par"
+    "presentedBy": "Présenté par",
+    "errorTitle": "Impossible de charger cet événement",
+    "notFoundTitle": "Événement introuvable"
   }
 }

@@ -56,7 +56,6 @@
     "terms": "Nutzungsbedingungen",
     "privacy": "Datenschutzrichtlinie",
     "contactSupport": "Support kontaktieren",
-    "comingSoonAlert": "Demnächst verfügbar.",
     "versionLabel": "Version {{version}}",
     "versionLabelWithBuild": "Version {{version}} ({{build}})"
   }

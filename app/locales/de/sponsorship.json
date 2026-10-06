@@ -58,7 +58,9 @@
       "date": "Datum",
       "capacity": "Kapazität",
       "yourBid": "Dein Gebot · {{amount}} · {{status}}",
-      "review": "Für Sponsoring prüfen"
+      "review": "Für Sponsoring prüfen",
+      "emptyTitle": "Keine Events hier",
+      "showAll": "Alle Events anzeigen"
     }
   },
   "bid": {
@@ -134,6 +136,18 @@
       "signIn": "Melde dich an, um ein Gebot abzugeben.",
       "failed": "Gebot fehlgeschlagen. Versuch es erneut.",
       "cancelFailed": "Gebot konnte nicht storniert werden. Versuch es erneut."
-    }
+    },
+    "errorTitle": "Event konnte nicht geladen werden",
+    "notFoundTitle": "Event nicht gefunden",
+    "backToMarketplace": "Zurück zu Sponsorings"
+  },
+  "findSponsors": {
+    "errorTitle": "Sponsoren konnten nicht geladen werden",
+    "loadError": "Sponsoren konnten nicht geladen werden.",
+    "emptyTitle": "Noch keine Sponsoren",
+    "empty": "Noch hat sich kein Sponsor registriert. Schau später wieder vorbei.",
+    "noMatchTitle": "Keine Treffer",
+    "noMatch": "Kein Sponsor passt zu deiner Suche oder Kategorie.",
+    "clearSearch": "Suche löschen"
   }
 }

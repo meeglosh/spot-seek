@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, ScrollView, StyleSheet, Image, TextInput, ActivityIndicator, RefreshControl,
+  View, ScrollView, StyleSheet, Image, TextInput, RefreshControl,
 } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, radius, spacing, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
-import { Btn, Chip, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
+import { Btn, Chip, Badge, FieldLabel, SectionTitle, EmptyState, RowSkeleton, EventCardSkeleton, inputStyle, inputFocusedStyle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
@@ -82,6 +82,7 @@ export default function SponsorshipHubScreen() {
   const insets = useSafeAreaInsets();
   const auth = useAuth();
   const { t: tr } = useTranslation('sponsorship');
+  const { t: trCommon } = useTranslation('common');
 
   const [sponsor, setSponsor] = useState<ApiSponsorProfile | null>(null);
   const [analytics, setAnalytics] = useState<ApiSponsorAnalytics | null>(null);
@@ -198,7 +199,10 @@ export default function SponsorshipHubScreen() {
         <Text style={[t.bodyMd, s.subtitle]}>{tr('browse.subtitle')}</Text>
 
         {loading ? (
-          <ActivityIndicator color={colors.action} style={{ marginVertical: spacing['2xl'] }} />
+          <View style={{ gap: spacing.lg, marginTop: spacing.lg }} accessibilityLabel={trCommon('loading')}>
+            <RowSkeleton lines={3} />
+            <EventCardSkeleton />
+          </View>
         ) : (
           <>
             {/* ── Sponsor identity / registration ─────────────────────────── */}
@@ -363,9 +367,14 @@ export default function SponsorshipHubScreen() {
             </View>
 
             {shown.length === 0 ? (
-              <Text style={[t.bodySm, { color: colors.textTertiary }]}>
-                {tr('browse.marketplace.empty')}
-              </Text>
+              <EmptyState
+                icon="sponsorship"
+                title={tr('browse.marketplace.emptyTitle')}
+                body={tr('browse.marketplace.empty')}
+                actionLabel={filter !== 'all' ? tr('browse.marketplace.showAll') : undefined}
+                onAction={filter !== 'all' ? () => setFilter('all') : undefined}
+                style={s.emptyCard}
+              />
             ) : (
               shown.map((ev) => {
                 const myBid = latestBidByEvent.get(ev.id);
@@ -473,6 +482,7 @@ const s = StyleSheet.create({
 
   filterRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
 
+  emptyCard: { backgroundColor: colors.surface1, borderRadius: radius.card, marginBottom: spacing.xl },
   eventCard: {
     backgroundColor: colors.surface1,
     marginBottom: spacing.xl,

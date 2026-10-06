@@ -4,13 +4,26 @@ import React from 'react';
 const TestRenderer = require('react-test-renderer');
 const { act } = TestRenderer;
 import { StyleSheet } from 'react-native';
-import { Chip, Btn, Badge, SegmentedControl, SegmentBar, SectionTitle, FieldLabel, inputStyle } from '../components/ui';
+import {
+  Chip, Btn, Badge, SegmentedControl, SegmentBar, SectionTitle, FieldLabel, inputStyle,
+  LiveDot, Skeleton, EmptyState, ErrorState, Toggle, SoonTag,
+} from '../components/ui';
 import { colors, radius } from '../lib/theme';
 
+// Every mounted tree is unmounted after each test. LiveDot and Skeleton run an
+// Animated.loop; leaving them mounted keeps timers alive and `jest` would not
+// exit on its own (the loops are stopped in the components' effect cleanups).
+type Mounted = { toJSON: () => unknown; unmount: () => void };
+const mounted: Mounted[] = [];
+afterEach(async () => {
+  await act(async () => { mounted.splice(0).forEach((r) => r.unmount()); });
+});
+
 async function mount(el: React.ReactElement) {
-  let root: { toJSON: () => unknown } | undefined;
+  let root: Mounted | undefined;
   await act(async () => { root = TestRenderer.create(el); });
-  return root as { toJSON: () => unknown };
+  mounted.push(root as Mounted);
+  return root as Mounted;
 }
 
 // Count rendered text nodes whose string content equals `label`.
@@ -124,5 +137,55 @@ describe('Btn / Badge / SegmentedControl', () => {
     for (const el of [<SegmentBar key="1" value={3} max={10} />, <SectionTitle key="2">Title</SectionTitle>, <FieldLabel key="3">Label</FieldLabel>]) {
       expect((await mount(el)).toJSON()).not.toBeNull();
     }
+  });
+});
+
+describe('state components', () => {
+  it('Skeleton and LiveDot mount and unmount cleanly (loops torn down)', async () => {
+    const root = await mount(<><Skeleton height={20} /><LiveDot /></>);
+    expect(root.toJSON()).not.toBeNull();
+    await act(async () => { root.unmount(); });
+    mounted.length = 0;
+  });
+
+  it('Skeleton sits on an opaque surface and is hidden from accessibility', async () => {
+    const root = await mount(<Skeleton height={20} />);
+    const styles = flatStyles(root.toJSON());
+    expect(styles.some((st) => st.backgroundColor === colors.surface2)).toBe(true);
+    for (const st of styles) expect(st.shadowOpacity ?? 0).toBe(0);
+  });
+
+  it('EmptyState shows title, body and a single primary action that fires', async () => {
+    const onAction = jest.fn();
+    const root = await mount(
+      <EmptyState icon="calendar" title="No events yet" body="Nothing is published." actionLabel="Host a party" onAction={onAction} />,
+    );
+    const json = root.toJSON();
+    expect(countLabel(json, 'No events yet')).toBe(1);
+    expect(countLabel(json, 'Nothing is published.')).toBe(1);
+    expect(countLabel(json, 'Host a party')).toBe(1);
+  });
+
+  it('EmptyState omits the action when none is given', async () => {
+    const root = await mount(<EmptyState icon="bell" title="All caught up" body="Nothing new." />);
+    expect(countLabel(root.toJSON(), 'All caught up')).toBe(1);
+    expect(flatStyles(root.toJSON()).some((st) => st.backgroundColor === colors.action)).toBe(false);
+  });
+
+  it('ErrorState shows what failed and a Retry action', async () => {
+    const root = await mount(<ErrorState title="Could not load" message="Check your connection." retryLabel="Retry" onRetry={() => {}} />);
+    const json = root.toJSON();
+    expect(countLabel(json, 'Could not load')).toBe(1);
+    expect(countLabel(json, 'Retry')).toBe(1);
+  });
+
+  it('Toggle is the native Switch themed from tokens', async () => {
+    const root = await mount(<Toggle value onValueChange={() => {}} />);
+    expect(root.toJSON()).not.toBeNull();
+  });
+
+  it('SoonTag renders its label once', async () => {
+    const root = await mount(<SoonTag label="Soon" />);
+    expect(countLabel(root.toJSON(), 'Soon')).toBe(1);
   });
 });

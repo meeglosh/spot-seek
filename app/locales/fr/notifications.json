@@ -20,5 +20,8 @@
     "months_other": "il y a {{count}} mois",
     "years_one": "il y a {{count}} an",
     "years_other": "il y a {{count}} ans"
-  }
+  },
+  "errorTitle": "Impossible de charger les notifications",
+  "emptyTitle": "Vous êtes à jour",
+  "emptyCta": "Trouver une soirée"
 }

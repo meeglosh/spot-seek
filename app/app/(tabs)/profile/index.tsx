@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, ScrollView, StyleSheet, RefreshControl } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +13,7 @@ import {
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, spacing, radius, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
-import { Btn, Chip, Badge, SegmentBar, SectionTitle, Press } from '../../../components/ui';
+import { Btn, Chip, Badge, SegmentBar, SectionTitle, Press, Skeleton, RowSkeleton, EmptyState } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { StarRating } from '../../../components/Stars';
 import { SPORTS } from '../../../lib/sports-data';
@@ -65,6 +65,7 @@ export default function ProfileScreen() {
   // Scoped to 'profile' — see settings.tsx / lib/i18n.ts for the key-naming
   // convention this follows.
   const { t: tr } = useTranslation('profile');
+  const { t: trCommon } = useTranslation('common');
 
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -137,7 +138,20 @@ export default function ProfileScreen() {
         <Text style={[t.headlineLg, s.pageTitle]}>{tr('title')}</Text>
 
         {loading ? (
-          <ActivityIndicator color={colors.action} style={{ marginVertical: spacing['2xl'] }} />
+          <View style={{ gap: spacing.lg }} accessibilityLabel={trCommon('loading')}>
+            <View style={s.heroCard}>
+              <View style={s.heroTop}>
+                <Skeleton width={72} height={72} radius={radius.round} />
+                <View style={{ flex: 1, gap: spacing.sm }}>
+                  <Skeleton width="60%" height={22} />
+                  <Skeleton width="80%" height={14} />
+                </View>
+              </View>
+              <Skeleton height={36} radius={radius.pill} />
+            </View>
+            <RowSkeleton />
+            <RowSkeleton />
+          </View>
         ) : (
           <>
             {/* ── Hero card: avatar / name / chips / milestone ─────────────── */}
@@ -240,11 +254,14 @@ export default function ProfileScreen() {
             {/* ── SAVED PARTIES ────────────────────────────────────────────── */}
             <SectionTitle>{tr('saved.sectionTitle')}</SectionTitle>
             {upcoming.length === 0 ? (
-              <Press style={s.emptyCard} onPress={() => router.push('/(tabs)/discover')} accessibilityRole="button">
-                <Text style={[t.label, { color: colors.textSecondary }]}>
-                  {tr('saved.empty')}
-                </Text>
-              </Press>
+              <EmptyState
+                icon="calendar"
+                title={tr('saved.emptyTitle')}
+                body={tr('saved.empty')}
+                actionLabel={tr('saved.emptyCta')}
+                onAction={() => router.push('/(tabs)/discover')}
+                style={s.emptyCard}
+              />
             ) : (
               <View style={s.list}>
                 {upcoming.map((r) => (
@@ -276,9 +293,14 @@ export default function ProfileScreen() {
             {/* ── HOSTING HISTORY ──────────────────────────────────────────── */}
             <SectionTitle>{tr('hosting.sectionTitle')}</SectionTitle>
             {hostedPast.length === 0 ? (
-              <Text style={[t.bodySm, { color: colors.textTertiary, marginBottom: spacing.xl }]}>
-                {tr('hosting.empty')}
-              </Text>
+              <EmptyState
+                icon="parties"
+                title={tr('hosting.emptyTitle')}
+                body={tr('hosting.empty')}
+                actionLabel={tr('hosting.emptyCta')}
+                onAction={() => router.push('/(tabs)/parties/create' as never)}
+                style={s.emptyCard}
+              />
             ) : (
               <View style={s.list}>
                 {hostedPast.map((e) => (
@@ -445,9 +467,7 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   emptyCard: {
-    backgroundColor: colors.surfaceSunken,
-    padding: spacing.xl,
-    alignItems: 'center',
+    backgroundColor: colors.surface1,
     marginBottom: spacing.xl,
     borderRadius: radius.card,
   },

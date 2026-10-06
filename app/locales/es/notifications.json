@@ -20,5 +20,8 @@
     "months_other": "hace {{count}} meses",
     "years_one": "hace {{count}} año",
     "years_other": "hace {{count}} años"
-  }
+  },
+  "errorTitle": "No se pudieron cargar las notificaciones",
+  "emptyTitle": "Todo al día",
+  "emptyCta": "Buscar una fiesta"
 }

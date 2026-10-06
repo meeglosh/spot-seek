@@ -26,16 +26,20 @@
   },
   "saved": {
     "sectionTitle": "Festas Guardadas",
-    "empty": "Sem festas próximas — explora eventos",
+    "empty": "Confirma presença numa festa e ela aparece aqui.",
     "waitlist": "Lista de Espera",
     "unknownEvent": "Evento desconhecido",
-    "dateTbc": "DATA A CONFIRMAR"
+    "dateTbc": "DATA A CONFIRMAR",
+    "emptyTitle": "Nada guardado ainda",
+    "emptyCta": "Explorar eventos"
   },
   "hosting": {
     "sectionTitle": "Histórico de Anfitrião",
     "empty": "Ainda não organizaste nada. Os teus eventos passados aparecem aqui.",
     "attendee_one": "Concluída · {{count}} participante",
-    "attendee_other": "Concluída · {{count}} participantes"
+    "attendee_other": "Concluída · {{count}} participantes",
+    "emptyTitle": "Sem histórico como anfitrião",
+    "emptyCta": "Organizar uma festa"
   },
   "reviews": {
     "sectionTitle": "Avaliações",

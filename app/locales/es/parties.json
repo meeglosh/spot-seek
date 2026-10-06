@@ -75,7 +75,9 @@
     "attendees_one": "{{count}} asistente",
     "attendees_other": "{{count}} asistentes",
     "createFooter": "+ Crear fiesta",
-    "sponsoredCount": "Patrocinada ×{{count}}"
+    "sponsoredCount": "Patrocinada ×{{count}}",
+    "emptyActiveTitle": "Ninguna fiesta activa",
+    "emptyActiveCta": "Crear una fiesta"
   },
   "create": {
     "guestGate": {
@@ -161,6 +163,7 @@
     "deleteError": "No se pudo eliminar la fiesta.",
     "share": {
       "whenWithTime": "{{date}} a las {{time}}"
-    }
+    },
+    "loading": "Cargando tu fiesta"
   }
 }

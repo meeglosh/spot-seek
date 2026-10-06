@@ -58,7 +58,9 @@
       "date": "Fecha",
       "capacity": "Aforo",
       "yourBid": "Tu puja · {{amount}} · {{status}}",
-      "review": "Revisar para patrocinio"
+      "review": "Revisar para patrocinio",
+      "emptyTitle": "No hay eventos aquí",
+      "showAll": "Mostrar todos los eventos"
     }
   },
   "bid": {
@@ -134,6 +136,18 @@
       "signIn": "Inicia sesión para hacer una puja.",
       "failed": "La puja falló. Inténtalo de nuevo.",
       "cancelFailed": "No se pudo cancelar la puja. Inténtalo de nuevo."
-    }
+    },
+    "errorTitle": "No se pudo cargar este evento",
+    "notFoundTitle": "Evento no encontrado",
+    "backToMarketplace": "Volver a patrocinios"
+  },
+  "findSponsors": {
+    "errorTitle": "No se pudieron cargar los patrocinadores",
+    "loadError": "No se pudieron cargar los patrocinadores.",
+    "emptyTitle": "Aún no hay patrocinadores",
+    "empty": "Todavía no se ha registrado ningún patrocinador. Vuelve más tarde.",
+    "noMatchTitle": "Sin coincidencias",
+    "noMatch": "Ningún patrocinador coincide con tu búsqueda o categoría.",
+    "clearSearch": "Borrar búsqueda"
   }
 }

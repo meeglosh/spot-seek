@@ -5,7 +5,7 @@
  * state for this pass so a user can still see what was new.
  */
 import React, { useState, useCallback, useRef } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text } from '../components/Text';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +16,7 @@ import {
   fetchNotifications, markNotificationsRead, type ApiNotification,
 } from '../lib/api';
 import { colors, radius, spacing, type as t } from '../lib/theme';
-import { Press } from '../components/ui';
+import { Press, RowSkeleton, EmptyState, ErrorState } from '../components/ui';
 import { routeFor } from '../lib/notificationRoutes';
 import { AppHeader } from '../components/AppHeader';
 import { GuestGate } from '../components/AuthGate';
@@ -53,6 +53,7 @@ export default function NotificationsScreen() {
   // Scoped to 'notifications' — see settings.tsx / lib/i18n.ts for the
   // key-naming convention this follows.
   const { t: tr } = useTranslation('notifications');
+  const { t: trCommon } = useTranslation('common');
 
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,13 +110,26 @@ export default function NotificationsScreen() {
         <Text style={[t.headlineLg, s.title]}>{tr('title')}</Text>
 
         {loading ? (
-          <ActivityIndicator color={colors.action} style={{ marginTop: spacing.xl }} />
+          <View style={s.list} accessibilityLabel={trCommon('loading')}>
+            <RowSkeleton />
+            <RowSkeleton />
+            <RowSkeleton />
+          </View>
         ) : error ? (
-          <Text style={[t.bodyMd, s.errorText]}>{error}</Text>
+          <ErrorState
+            title={tr('errorTitle')}
+            message={error}
+            retryLabel={trCommon('retry')}
+            onRetry={() => { setLoading(true); load(); }}
+          />
         ) : notifications.length === 0 ? (
-          <Text style={[t.bodyMd, s.emptyText]}>
-            {tr('empty')}
-          </Text>
+          <EmptyState
+            icon="bell"
+            title={tr('emptyTitle')}
+            body={tr('empty')}
+            actionLabel={tr('emptyCta')}
+            onAction={() => router.push('/(tabs)/discover' as never)}
+          />
         ) : (
           <View style={s.list}>
             {notifications.map((n) => {
@@ -143,8 +157,6 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, gap: spacing.lg },
   title: { color: colors.textPrimary },
-  emptyText: { color: colors.textSecondary, marginTop: spacing.xl, textAlign: 'center' },
-  errorText: { color: colors.danger, marginTop: spacing.xl, textAlign: 'center' },
   list: { gap: spacing.md },
   row: {
     backgroundColor: colors.surface1,

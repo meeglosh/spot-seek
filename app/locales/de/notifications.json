@@ -20,5 +20,8 @@
     "months_other": "vor {{count}} Monaten",
     "years_one": "vor {{count}} Jahr",
     "years_other": "vor {{count}} Jahren"
-  }
+  },
+  "errorTitle": "Benachrichtigungen konnten nicht geladen werden",
+  "emptyTitle": "Alles erledigt",
+  "emptyCta": "Party finden"
 }
