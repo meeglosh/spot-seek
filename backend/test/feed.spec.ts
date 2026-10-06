@@ -10,6 +10,17 @@ const EVENTS = 'https://example.com/api/events';
 const FEED = 'https://example.com/api/feed';
 
 const TS = Date.now();
+const SOON = () => new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+// The feed is capped (200) and ordered by startsAt; tests narrow it by a
+// unique title so each response is tiny and bounded, never the whole DB.
+async function feedQ(title: string, extra = '', init?: RequestInit) {
+  const res = await SELF.fetch(`${FEED}?q=${encodeURIComponent(title)}&limit=20${extra}`, init);
+  expect(res.status).toBe(200);
+  const { events } = (await res.json()) as { events: Array<Record<string, any>> };
+  expect(events.length).toBeLessThanOrEqual(20);
+  return { res, events };
+}
 const HOST = { email: `feed-host-${TS}@spotseek.test`, password: 'Feed_Pwd_1!', name: 'Feed Host' };
 
 let hostCookie = '';
@@ -48,30 +59,35 @@ beforeAll(async () => {
 describe('discovery feed', () => {
   it('returns only published events', async () => {
     const draft = await createEvent(hostCookie, {
-      title: 'Draft Event',
+      title: `Published Event ${TS} draft`,
       broadcastSubject: 'Draft',
+      startsAt: SOON(),
     });
     const pub = await createEvent(hostCookie, {
       title: `Published Event ${TS}`,
       broadcastSubject: 'Published',
+      startsAt: SOON(),
     });
     await publish(hostCookie, pub.id as string);
 
-    const res = await SELF.fetch(FEED);
-    expect(res.status).toBe(200);
-    const { events } = await res.json() as { events: Array<{ id: string; status: string }> };
+    const { res, events } = await feedQ(`Published Event ${TS}`);
+    // Anonymous response is cacheable.
+    expect(res.headers.get('cache-control')).toBe('public, max-age=60');
+    // Heavy detail-only columns are not shipped on feed items.
+    expect(events[0]).not.toHaveProperty('description');
+    expect(events[0]).not.toHaveProperty('recurrenceRule');
     expect(events.some((e) => e.id === pub.id)).toBe(true);
     expect(events.some((e) => e.id === draft.id)).toBe(false);
   });
 
   it('filters by time (after / before)', async () => {
     const future = await createEvent(hostCookie, {
-      title: 'Future Event',
+      title: `Future Event ${TS}`,
       broadcastSubject: 'Future',
       startsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     });
     const past = await createEvent(hostCookie, {
-      title: 'Past Event',
+      title: `Future Event ${TS} past`,
       broadcastSubject: 'Past',
       startsAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     });
@@ -81,15 +97,24 @@ describe('discovery feed', () => {
     ]);
 
     const now = new Date().toISOString();
-    const futureRes = await SELF.fetch(`${FEED}?after=${encodeURIComponent(now)}`);
-    const { events: futureEvents } = await futureRes.json() as { events: Array<{ id: string }> };
+    const { events: futureEvents } = await feedQ(`Future Event ${TS}`, `&after=${encodeURIComponent(now)}`);
     expect(futureEvents.some((e) => e.id === future.id)).toBe(true);
     expect(futureEvents.some((e) => e.id === past.id)).toBe(false);
+
+    // Even without `after`, events that ended long ago are excluded by default.
+    const { events: defaultEvents } = await feedQ(`Future Event ${TS}`);
+    expect(defaultEvents.some((e) => e.id === future.id)).toBe(true);
+    expect(defaultEvents.some((e) => e.id === past.id)).toBe(false);
+
+    // limit is honoured.
+    const { events: one } = await feedQ(`Future Event ${TS}`, '&limit=1');
+    expect(one.length).toBe(1);
   });
 
   it('masks private-location address for unauthenticated users', async () => {
     const privateEvent = await createEvent(hostCookie, {
-      title: 'Private Party',
+      title: `Private Party ${TS}`,
+      startsAt: SOON(),
       broadcastSubject: 'Secret Game',
       venueName: 'My House',
       venueAddress: '42 Secret St',
@@ -99,8 +124,7 @@ describe('discovery feed', () => {
     });
     await publish(hostCookie, privateEvent.id as string);
 
-    const res = await SELF.fetch(FEED);
-    const { events } = await res.json() as { events: Array<Record<string, unknown>> };
+    const { events } = await feedQ(`Private Party ${TS}`);
     const found = events.find((e) => e.id === privateEvent.id);
     expect(found).toBeDefined();
     // Venue name visible -helps discovery.
@@ -118,7 +142,8 @@ describe('discovery feed', () => {
     // This test just confirms the masking itself applies to the authenticated host
     // when they don't yet have an RSVP.
     const privateEvent = await createEvent(hostCookie, {
-      title: 'Another Private Party',
+      title: `Another Private Party ${TS}`,
+      startsAt: SOON(),
       broadcastSubject: 'Another Secret',
       venueAddress: '99 Private Rd',
       venueLat: 51.5,
@@ -128,8 +153,9 @@ describe('discovery feed', () => {
     await publish(hostCookie, privateEvent.id as string);
 
     // Host browsing the feed (no RSVP yet) -address still masked.
-    const res = await SELF.fetch(FEED, { headers: { Cookie: hostCookie } });
-    const { events } = await res.json() as { events: Array<Record<string, unknown>> };
+    const { res, events } = await feedQ(`Another Private Party ${TS}`, '', { headers: { Cookie: hostCookie } });
+    // Signed-in responses are never publicly cached.
+    expect(res.headers.get('cache-control')).toBe('private, no-store');
     const found = events.find((e) => e.id === privateEvent.id);
     expect(found?.venueAddress).toBeNull();
   });

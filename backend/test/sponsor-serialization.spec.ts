@@ -75,7 +75,7 @@ beforeAll(async () => {
 async function createPublishedEvent(title: string) {
   const res = await SELF.fetch(EVENTS, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: host.cookie },
-    body: JSON.stringify({ title, broadcastSubject: 'Match', status: 'published' }),
+    body: JSON.stringify({ title, broadcastSubject: 'Match', status: 'published', startsAt: new Date(Date.now() + 24 * 3600 * 1000).toISOString() }),
   });
   const { event } = await res.json() as { event: { id: string } };
   return event.id;
@@ -121,10 +121,12 @@ describe('feed sponsorCount / topSponsor', () => {
   it('items without sponsors get sponsorCount 0 and topSponsor null', async () => {
     const title = `Feed No Sponsor ${TS}`;
     const eventId = await createPublishedEvent(title);
-    const res = await SELF.fetch(FEED);
+    // Narrow by title so the (bounded) feed response stays tiny.
+    const res = await SELF.fetch(`${FEED}?q=${encodeURIComponent(title)}&limit=20`);
     const { events } = await res.json() as {
       events: Array<{ id: string; sponsorCount: number; topSponsor: string | null }>;
     };
+    expect(events.length).toBeLessThanOrEqual(20);
     const found = events.find((e) => e.id === eventId);
     expect(found).toBeDefined();
     expect(found?.sponsorCount).toBe(0);
@@ -132,16 +134,18 @@ describe('feed sponsorCount / topSponsor', () => {
   });
 
   it('reports correct sponsorCount and topSponsor for events with active sponsors', async () => {
-    const eventId = await createPublishedEvent(`Feed Two Sponsors ${TS}`);
+    const sponsoredTitle = `Feed Two Sponsors ${TS}`;
+    const eventId = await createPublishedEvent(sponsoredTitle);
     await bidAndResolve(sponsorA.cookie, host.cookie, eventId, 4000, 'active');
     await bidAndResolve(sponsorB.cookie, host.cookie, eventId, 12000, 'active');
     // Pending bid should not count.
     await bidAndResolve(sponsorA.cookie, host.cookie, eventId, 500, null);
 
-    const res = await SELF.fetch(FEED);
+    const res = await SELF.fetch(`${FEED}?q=${encodeURIComponent(sponsoredTitle)}&limit=20`);
     const { events } = await res.json() as {
       events: Array<{ id: string; sponsorCount: number; topSponsor: string | null }>;
     };
+    expect(events.length).toBeLessThanOrEqual(20);
     const found = events.find((e) => e.id === eventId);
     expect(found).toBeDefined();
     expect(found?.sponsorCount).toBe(2);

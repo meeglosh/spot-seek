@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, eq, gte, lte, isNull, or, sql, ilike, inArray } from 'drizzle-orm';
+import { and, eq, gte, lte, isNull, or, sql, ilike, inArray, asc } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 
@@ -31,10 +31,19 @@ function haversineKm(lat: number, lng: number) {
  *   lat=float        — center latitude for radius filter
  *   lng=float        — center longitude for radius filter
  *   radiusKm=float   — radius in km (default 50, requires lat+lng)
+ *   limit=int        — page size (default and max FEED_MAX_LIMIT)
+ *   offset=int       — rows to skip (for paging; ordered by startsAt, id)
+ *
+ * Egress guard: events that ended more than 6h ago are never returned, the
+ * result is capped, and only the columns the app's cards/map use are selected
+ * (description / recurrenceRule / createdAt etc. are detail-screen only).
  *
  * Returns published events. Private-location events include venue_name but
  * obscure venue_address/lat/lng for users who haven't RSVP'd going/waitlisted.
  */
+// Hard cap on rows per response (Neon egress protection).
+const FEED_MAX_LIMIT = 200;
+
 feedRouter.get('/', async (c) => {
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
 
@@ -48,9 +57,19 @@ feedRouter.get('/', async (c) => {
     // Unauthenticated browsing is allowed; private-location addresses stay masked.
   }
 
-  const { after, before, lat, lng, radiusKm, q, sport } = c.req.query();
+  const { after, before, lat, lng, radiusKm, q, sport, limit: limitParam, offset: offsetParam } = c.req.query();
+  const limit = Math.min(Math.max(parseInt(limitParam ?? '', 10) || FEED_MAX_LIMIT, 1), FEED_MAX_LIMIT);
+  const offset = Math.min(Math.max(parseInt(offsetParam ?? '', 10) || 0, 0), 100_000);
 
-  const conditions = [eq(schema.events.status, 'published')];
+  const conditions = [
+    eq(schema.events.status, 'published'),
+    // Drop events that ended more than 6h ago (undated events are kept; they
+    // sort last).
+    or(
+      sql`coalesce(${schema.events.endsAt}, ${schema.events.startsAt}) is null`,
+      sql`coalesce(${schema.events.endsAt}, ${schema.events.startsAt}) >= now() - interval '6 hours'`,
+    ) ?? eq(schema.events.status, 'published'),
+  ];
 
   if (after) conditions.push(gte(schema.events.startsAt, new Date(after)));
   if (before) conditions.push(lte(schema.events.startsAt, new Date(before)));
@@ -81,31 +100,64 @@ feedRouter.get('/', async (c) => {
   if (filterByLocation) {
     const latF = parseFloat(lat);
     const lngF = parseFloat(lng);
+    const dLat = radius / 111;
+    const dLng = radius / (111 * Math.max(Math.cos((latF * Math.PI) / 180), 0.01));
     conditions.push(
       or(
         // Events with no venue coords are included regardless of location filter.
         and(isNull(schema.events.venueLat), isNull(schema.events.venueLng)),
         // Events within the radius.
-        sql`${haversineKm(latF, lngF)} <= ${radius}`,
+        and(
+          // Cheap bounding box first, then the exact distance.
+          gte(schema.events.venueLat, latF - dLat),
+          lte(schema.events.venueLat, latF + dLat),
+          gte(schema.events.venueLng, lngF - dLng),
+          lte(schema.events.venueLng, lngF + dLng),
+          sql`${haversineKm(latF, lngF)} <= ${radius}`,
+        ),
       ) ?? eq(schema.events.status, 'published'),
     );
   }
 
-  const rows = await db.query.events.findMany({
-    where: and(...conditions),
-    orderBy: schema.events.startsAt,
-  });
+  const e = schema.events;
+  const rows = await db
+    .select({
+      id: e.id,
+      hostId: e.hostId,
+      title: e.title,
+      broadcastSubject: e.broadcastSubject,
+      startsAt: e.startsAt,
+      endsAt: e.endsAt,
+      capacity: e.capacity,
+      status: e.status,
+      coverImageUrl: e.coverImageUrl,
+      venueName: e.venueName,
+      venueAddress: e.venueAddress,
+      venueLat: e.venueLat,
+      venueLng: e.venueLng,
+      venueTimezone: e.venueTimezone,
+      isPrivateLocation: e.isPrivateLocation,
+    })
+    .from(e)
+    .where(and(...conditions))
+    .orderBy(asc(e.startsAt), asc(e.id))
+    .limit(limit)
+    .offset(offset);
 
   // For private-location events, mask address details unless the caller has an
   // active going/waitlisted RSVP. Venue name is always visible (helps discovery).
   let rsvpdEventIds = new Set<string>();
-  if (callerId) {
-    const rsvps = await db.query.rsvps.findMany({
-      where: and(
-        eq(schema.rsvps.userId, callerId),
-        or(eq(schema.rsvps.state, 'going'), eq(schema.rsvps.state, 'waitlisted')),
-      ),
-    });
+  if (callerId && rows.length > 0) {
+    const rsvps = await db
+      .select({ eventId: schema.rsvps.eventId })
+      .from(schema.rsvps)
+      .where(
+        and(
+          eq(schema.rsvps.userId, callerId),
+          or(eq(schema.rsvps.state, 'going'), eq(schema.rsvps.state, 'waitlisted')),
+          inArray(schema.rsvps.eventId, rows.map((r) => r.id)),
+        ),
+      );
     rsvpdEventIds = new Set(rsvps.map((r) => r.eventId));
   }
 
@@ -135,17 +187,22 @@ feedRouter.get('/', async (c) => {
     }
   }
 
-  const events = rows.map((e) => {
-    const masked = !e.isPrivateLocation || rsvpdEventIds.has(e.id)
-      ? e
+  const events = rows.map((ev) => {
+    const masked = !ev.isPrivateLocation || rsvpdEventIds.has(ev.id)
+      ? ev
       // Mask exact address and coordinates for private-location events.
-      : { ...e, venueAddress: null, venueLat: null, venueLng: null };
+      : { ...ev, venueAddress: null, venueLat: null, venueLng: null };
     return {
       ...masked,
-      sponsorCount: sponsorCountByEvent.get(e.id) ?? 0,
-      topSponsor: topSponsorByEvent.get(e.id)?.companyName ?? null,
+      sponsorCount: sponsorCountByEvent.get(ev.id) ?? 0,
+      topSponsor: topSponsorByEvent.get(ev.id)?.companyName ?? null,
     };
   });
+
+  // The anonymous response is identical for everyone, so it may be cached.
+  // Signed-in responses depend on the caller's RSVPs (address masking).
+  c.header('Vary', 'Cookie, Authorization');
+  c.header('Cache-Control', callerId ? 'private, no-store' : 'public, max-age=60');
 
   return c.json({ events });
 });

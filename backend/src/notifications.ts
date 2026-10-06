@@ -171,7 +171,13 @@ async function fireReminderWindow(
   type: 'reminder_24h' | 'reminder_1h',
 ): Promise<number> {
   const events = await db.query.events.findMany({
-    where: eq(schema.events.status, 'published'),
+    // Window filter in SQL: this runs on every 15-minute cron tick and used to
+    // load every published event just to filter in JS (Neon egress).
+    where: and(
+      eq(schema.events.status, 'published'),
+      gte(schema.events.startsAt, windowStart),
+      lt(schema.events.startsAt, windowEnd),
+    ),
   });
   const inWindow = events.filter((e) => e.startsAt && e.startsAt >= windowStart && e.startsAt < windowEnd);
   if (inWindow.length === 0) return 0;

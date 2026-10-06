@@ -139,7 +139,7 @@ describe('account deletion keeps payment history', () => {
     expect(page).not.toContain('Deleted host');
     expect(page).not.toContain('HOSTED BY');
     expect((await SELF.fetch(`${BASE}/api/profiles/${DELETED_HOST_ID}`)).status).toBe(404);
-    const feed = (await (await SELF.fetch(`${BASE}/api/feed`)).json()) as { events?: { id: string }[] };
+    const feed = (await (await SELF.fetch(`${BASE}/api/feed?q=${encodeURIComponent(`AcctRec ${TS}`)}&limit=20`)).json()) as { events?: { id: string }[] };
     expect((feed.events ?? []).some((x) => x.id === kept.id)).toBe(false);
   }, 60_000);
 
