@@ -18,7 +18,7 @@ import { reviewsRouter } from './reviews';
 import { allowRequest, tooManyRequests, AUTH_LIMIT_PER_MIN } from './ratelimit';
 import { EMAIL_LOGO_PNG_BASE64 } from './email-logo';
 import { accountRouter } from './account';
-import { passwordResetRouter } from './password-reset';
+import { passwordResetRouter, sendResetEmail } from './password-reset';
 import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -36,7 +36,21 @@ app.all('/api/auth/*', async (c) => {
       return tooManyRequests();
     }
   }
-  const auth = createAuth(neon(c.env.DATABASE_URL), { baseURL: c.env.BETTER_AUTH_URL });
+  const auth = createAuth(neon(c.env.DATABASE_URL), {
+    baseURL: c.env.BETTER_AUTH_URL,
+    // Send the reset email in the background so the response time is the same
+    // for known and unknown emails (no account enumeration via timing).
+    sendResetPassword: async ({ user, token }) => {
+      const send = sendResetEmail(c.env, user, token).catch((err) =>
+        console.error('[auth] reset email failed:', err),
+      );
+      try {
+        c.executionCtx.waitUntil(send);
+      } catch {
+        await send; // no execution context (should not happen on Workers)
+      }
+    },
+  });
   return auth.handler(c.req.raw);
 });
 

@@ -134,3 +134,44 @@ The agents write here instead of guessing. Read this each morning. Empty is good
      disables CSRF, and future versions need `disableCSRFCheck: true` for that.
      Web pages now exist (`/e/:id` and the onboarding pages), so the
      origin/CSRF stance should be re-evaluated.
+
+## Forgot password — auth config change, OWNER REVIEW REQUIRED (2026-10-05)
+
+Branch `task/account-deletion-reset`. The `backend/src/auth.ts` change is in its
+own commit so it can be reviewed (or reverted) in isolation. Revert that one
+commit and the reset routes go back to returning `RESET_PASSWORD_DISABLED`.
+
+`emailAndPassword` now additionally has:
+- `sendResetPassword: opts?.sendResetPassword` — enables Better Auth's
+  `POST /api/auth/request-password-reset` and `POST /api/auth/reset-password`.
+  The callback is only supplied by the `/api/auth/*` handler in `index.ts`
+  (it sends the branded Resend email via `waitUntil`); every other `createAuth`
+  call (session lookups) leaves it undefined, i.e. disabled.
+- `resetPasswordTokenExpiresIn: 3600` — 1 hour (same as Better Auth's default,
+  stated explicitly).
+- `revokeSessionsOnPasswordReset: true` — a completed reset signs out all
+  existing sessions of that user (not requested in the brief; added as the
+  safe default — drop it if unwanted).
+
+Not changed: cookies/session settings, `disableOriginCheck`, CORS, secrets,
+`baseURL`. Rate limiting: `request-password-reset` now shares the existing
+`AUTH_LIMITER` guard in `index.ts` (10/min/IP). Reset page is public at
+`GET /reset-password?token=...`; the link in the email is built from
+`BETTER_AUTH_URL`.
+
+## Account deletion — decisions (informational; satisfies the DATA_MODEL
+"deleting a user must be deliberate" invariant)
+
+`DELETE /api/account` (body `{confirm:"DELETE"}`): blocks with 409
+`has_upcoming_events` (published, not-yet-ended hosted events) or
+`money_in_flight` (any `paid` sponsorship where the user is sponsor or event
+host). Otherwise: cancels the user's `going` RSVPs and runs waitlist promotion,
+deletes their non-upcoming events (RSVPs cleared explicitly since
+`rsvps.event_id` has no cascade; comments/reviews/sponsorships/offers on those
+events cascade), deletes per-user rows, the app user and the Better Auth user.
+Better Auth's own `deleteUser` was NOT enabled (that would be an auth config
+change). Stripe connected accounts are never deleted (see PAYMENTS.md).
+Owner may want to decide: (a) whether a `requires_payment` (unpaid
+PaymentIntent) sponsorship should also block deletion — currently only `paid`
+does; (b) whether other users' released sponsorships / reviews on a deleted
+past event should be preserved (currently they cascade away with the event).

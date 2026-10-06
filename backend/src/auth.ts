@@ -7,7 +7,15 @@ import * as appSchema from './schema';
 import * as authSchema from './auth-schema';
 
 // Any change to cookie/session config beyond defaults -> BLOCKED.md.
-export function createAuth(sql: NeonQueryFunction<false, false>, opts?: { baseURL?: string }) {
+export function createAuth(
+  sql: NeonQueryFunction<false, false>,
+  opts?: {
+    baseURL?: string;
+    // Provided only by the /api/auth handler in index.ts. Absent everywhere else
+    // (session lookups etc.), which leaves password reset disabled there.
+    sendResetPassword?: (data: { user: { email: string }; token: string }) => Promise<void>;
+  },
+) {
   // Pass only table objects — spreading the full schema includes pgEnum objects
   // which confuse Better Auth's Drizzle adapter.
   const db = drizzle(sql, {
@@ -49,6 +57,12 @@ export function createAuth(sql: NeonQueryFunction<false, false>, opts?: { baseUR
     }),
     emailAndPassword: {
       enabled: true,
+      // Forgot-password (OWNER REVIEW, see BLOCKED.md). Enables Better Auth's
+      // POST /api/auth/request-password-reset + POST /api/auth/reset-password.
+      // Better Auth answers the request identically for known/unknown emails.
+      sendResetPassword: opts?.sendResetPassword,
+      resetPasswordTokenExpiresIn: 60 * 60, // 1 hour (also Better Auth's default)
+      revokeSessionsOnPasswordReset: true, // a reset signs out every existing session
     },
     // Owner-requested 2026-08-06 (see BLOCKED.md): sessions should last as
     // long as possible, expiring only at the max token lifespan rather than
