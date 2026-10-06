@@ -13,6 +13,8 @@ import { sponsorsRouter } from './sponsors';
 import { favouritesRouter } from './favourites';
 import { geocodeRouter } from './geocode';
 import { deeplinksRouter } from './deeplinks';
+import { webRsvpRouter } from './webrsvp';
+import { configurePublicBaseUrl } from './email';
 import { notificationsRouter, scheduled as notificationsScheduled } from './notifications';
 import { reviewsRouter } from './reviews';
 import { allowRequest, tooManyRequests, AUTH_LIMIT_PER_MIN } from './ratelimit';
@@ -22,6 +24,12 @@ import { passwordResetRouter, sendResetEmail } from './password-reset';
 import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Public base URL (PUBLIC_BASE_URL var) used by every outward-facing link.
+app.use('*', async (c, next) => {
+  configurePublicBaseUrl(c.env.PUBLIC_BASE_URL);
+  await next();
+});
 
 // Sign-up / sign-in / forgot-password requests are rate limited per client IP (10/min). This is a
 // guard in front of Better Auth's handler — Better Auth's own config is untouched.
@@ -71,6 +79,7 @@ app.route('/api/payments', paymentsRouter);
 app.route('/api/account', accountRouter);
 app.route('/payments', onboardPagesRouter);
 app.route('/', passwordResetRouter);
+app.route('/', webRsvpRouter);
 app.route('/', deeplinksRouter);
 
 // GET /api/images/:key — serve R2 images through the Worker.
@@ -95,6 +104,7 @@ app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 // Combines the notifications sweep (reminders/reviews) with the payments
 // sweep (release/refund) into a single cron handler.
 async function scheduled(controller: ScheduledController, env: Env): Promise<void> {
+  configurePublicBaseUrl(env.PUBLIC_BASE_URL);
   await notificationsScheduled(controller, env);
   await runPaymentSweeps(env);
 }

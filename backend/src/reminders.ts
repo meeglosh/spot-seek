@@ -23,8 +23,11 @@ export interface SendEmailOptions {
   type?: string;
   eventId?: string;
   baseUrl?: string;
-  ctaLabel?: string;
   ctaUrl?: string;
+  ctaLabel?: string;
+  linkUrl?: string;
+  linkLabel?: string;
+  guest?: boolean;
   footer?: string;
 }
 
@@ -40,10 +43,7 @@ export async function sendEmail(
   apiKey: string,
   opts: SendEmailOptions = {},
 ): Promise<void> {
-  const content = {
-    type: opts.type, title: subject, body: text, eventId: opts.eventId, baseUrl: opts.baseUrl,
-    ctaLabel: opts.ctaLabel, ctaUrl: opts.ctaUrl, footer: opts.footer,
-  };
+  const content = { type: opts.type, title: subject, body: text, eventId: opts.eventId, ...opts };
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',

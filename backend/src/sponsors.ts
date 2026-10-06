@@ -15,6 +15,7 @@ import { eq, and, desc, count, inArray } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { notify } from './notifications';
+import { guestGoingCounts } from './guests';
 import { getClient, sponsorRefundWindowClosed } from './payments';
 
 const PLATFORM_FEE_RATE = 0.15;
@@ -233,6 +234,7 @@ sponsorsRouter.get('/requests/mine', async (c) => {
     .where(and(eq(schema.rsvps.state, 'going'), inArray(schema.rsvps.eventId, eventIds)))
     .groupBy(schema.rsvps.eventId);
   const rsvpCountByEvent = new Map(rsvpRows.map((r) => [r.eventId, Number(r.total)]));
+  for (const [id, n] of await guestGoingCounts(db, eventIds)) rsvpCountByEvent.set(id, (rsvpCountByEvent.get(id) ?? 0) + n);
 
   const enriched = requests.map((r) => ({
     ...r,
@@ -447,6 +449,7 @@ sponsorsRouter.get('/analytics/host', async (c) => {
     .where(eq(schema.rsvps.state, 'going'))
     .groupBy(schema.rsvps.eventId);
   const rsvpMap = new Map(rsvpRows.map((r) => [r.eventId, Number(r.total)]));
+  for (const [id, n] of await guestGoingCounts(db, eventIds)) rsvpMap.set(id, (rsvpMap.get(id) ?? 0) + n);
 
   const result = events.map((e) => {
     const ebids = activeBids.filter((b) => b.eventId === e.id);
@@ -483,6 +486,7 @@ sponsorsRouter.get('/analytics/me', async (c) => {
       .from(schema.rsvps)
       .where(and(eq(schema.rsvps.state, 'going'), inArray(schema.rsvps.eventId, activeEventIds)));
     totalReach = Number(row?.total ?? 0);
+    for (const n of (await guestGoingCounts(db, activeEventIds)).values()) totalReach += n;
   }
 
   return c.json({

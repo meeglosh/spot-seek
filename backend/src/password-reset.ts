@@ -9,7 +9,7 @@
  * response time does not depend on it either.
  */
 import { Hono } from 'hono';
-import { escapeHtml, DEFAULT_PUBLIC_BASE_URL } from './email';
+import { escapeHtml, publicBaseUrl } from './email';
 import { sendEmail } from './reminders';
 
 type AppEnv = { Bindings: Env };
@@ -27,7 +27,7 @@ export function __setTestResendKey(key: string | null): void {
 }
 
 export function resetUrl(baseUrl: string | undefined, token: string): string {
-  const base = (baseUrl ?? DEFAULT_PUBLIC_BASE_URL).replace(/\/+$/, '');
+  const base = (baseUrl ?? publicBaseUrl()).replace(/\/+$/, '');
   return `${base}/reset-password?token=${encodeURIComponent(token)}`;
 }
 
@@ -49,9 +49,9 @@ export async function sendResetEmail(
     apiKey,
     {
       type: 'password_reset',
-      baseUrl: env.BETTER_AUTH_URL,
+      baseUrl: publicBaseUrl(env),
       ctaLabel: 'RESET PASSWORD',
-      ctaUrl: resetUrl(env.BETTER_AUTH_URL, token),
+      ctaUrl: resetUrl(publicBaseUrl(env), token),
       footer: "If you didn't ask for this, you can safely ignore this email — your password won't change.",
     },
   );

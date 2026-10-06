@@ -9,6 +9,8 @@
  */
 export const AUTH_LIMIT_PER_MIN = 10;
 export const RSVP_LIMIT_PER_MIN = 30;
+/** Guest (no-account) web RSVPs, per client IP (GUEST_LIMITER binding). */
+export const GUEST_RSVP_LIMIT_PER_MIN = 5;
 
 const WINDOW_MS = 60_000;
 const memory = new Map<string, { windowStart: number; count: number }>();

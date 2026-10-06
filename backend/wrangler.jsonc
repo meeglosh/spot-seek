@@ -8,7 +8,12 @@
 	},
 	"vars": {
 		// Dev/preview deployment URL — anchors Better Auth's baseURL.
-		"BETTER_AUTH_URL": "https://spot-seek-api.dry-base-037d.workers.dev"
+		"BETTER_AUTH_URL": "https://spot-seek-api.dry-base-037d.workers.dev",
+		// OWNER REVIEW: public origin used for share links, og:url, canonical,
+		// sitemap and email CTAs. Switch to https://spotseek.app when the custom
+		// domain is live (see HANDOFF.md / report for the exact steps).
+		// Optional: "APP_STORE_URL" (leave unset until the listing exists).
+		"PUBLIC_BASE_URL": "https://spot-seek-api.dry-base-037d.workers.dev"
 	},
 	"durable_objects": {
 		"bindings": [
@@ -32,7 +37,9 @@
 	"unsafe": {
 		"bindings": [
 			{ "name": "AUTH_LIMITER", "type": "ratelimit", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
-			{ "name": "RSVP_LIMITER", "type": "ratelimit", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } }
+			{ "name": "RSVP_LIMITER", "type": "ratelimit", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } },
+			// Guest web RSVPs: 5/min per client IP. OWNER REVIEW (new namespace id).
+			{ "name": "GUEST_LIMITER", "type": "ratelimit", "namespace_id": "1003", "simple": { "limit": 5, "period": 60 } }
 		]
 	},
 	"triggers": {

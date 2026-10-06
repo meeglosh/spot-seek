@@ -186,6 +186,63 @@ describe('DELETE /api/account — attendee', () => {
   });
 });
 
+describe('DELETE /api/account — guest RSVPs', () => {
+  const guest = (eventId: string, email: string, state: schema.GuestRsvpState, extra: Partial<schema.GuestRsvp> = {}) =>
+    db.insert(schema.guestRsvps).values({
+      eventId, name: 'Guest', email, state, token: `${TS}-${Math.random().toString(16).slice(2)}-${state}`, ...extra,
+    }).returning().then((r) => r[0]);
+  const guestRows = (eventId: string) =>
+    db.select().from(schema.guestRsvps).where(eq(schema.guestRsvps.eventId, eventId));
+
+  it('promotes a waitlisted GUEST when the going member is deleted (merged waitlist)', async () => {
+    const host = await signUp('gw-host');
+    const going = await signUp('gw-going');
+    const ev = await createEvent(host, { capacity: 1, startsAt: iso(48 * HOUR) });
+    expect((await rsvp(going, ev.id)).state).toBe('going');
+    const g = await guest(ev.id, `gw-wait-${TS}@spotseek.test`, 'waitlisted');
+
+    expect((await del(going)).status).toBe(200);
+    const rows = await guestRows(ev.id);
+    expect(rows.find((r) => r.id === g.id)?.state).toBe('going');
+  }, 60_000);
+
+  it('deletes unclaimed/pending guest RSVPs with the deleted user email (any case) and frees their spot', async () => {
+    const host = await signUp('gd-host');
+    const u = await signUp('gd');
+    const waiter = await signUp('gd-waiter');
+    const ev = await createEvent(host, { capacity: 1, startsAt: iso(48 * HOUR) });
+    const ev2 = await createEvent(host, { startsAt: iso(72 * HOUR) });
+    // The guest row for u's email holds the only spot on ev; waiter is waitlisted.
+    const mine = await guest(ev.id, u.email.toLowerCase(), 'going');
+    expect((await rsvp(waiter, ev.id)).state).toBe('waitlisted');
+    const pending = await guest(ev2.id, u.email.toLowerCase(), 'pending');
+    const bystander = await guest(ev2.id, `gd-other-${TS}@spotseek.test`, 'pending');
+
+    expect((await del(u)).status).toBe(200);
+
+    expect((await guestRows(ev.id)).find((r) => r.id === mine.id)).toBeUndefined();
+    expect((await guestRows(ev2.id)).find((r) => r.id === pending.id)).toBeUndefined();
+    expect((await guestRows(ev2.id)).find((r) => r.id === bystander.id)).toBeDefined();
+    const wr = await db.select().from(schema.rsvps).where(and(eq(schema.rsvps.eventId, ev.id), eq(schema.rsvps.userId, waiter.id)));
+    expect(wr[0].state).toBe('going'); // freed guest spot was promoted
+  }, 60_000);
+
+  it('deletes guest rows claimed by the user (no phantom unclaimed row) and cascades on their own past events', async () => {
+    const host = await signUp('gc-host');
+    const u = await signUp('gc');
+    const ev = await createEvent(host, { startsAt: iso(48 * HOUR) });
+    const claimed = await guest(ev.id, `someone-else-${TS}@spotseek.test`, 'going', { claimedUserId: u.id });
+    const past = await createEvent(u, { startsAt: iso(-26 * HOUR), endsAt: iso(-24 * HOUR), status: 'completed' });
+    const onPast = await guest(past.id, `gc-past-${TS}@spotseek.test`, 'going');
+
+    expect((await del(u)).status).toBe(200);
+
+    expect((await guestRows(ev.id)).find((r) => r.id === claimed.id)).toBeUndefined();
+    expect((await guestRows(past.id)).find((r) => r.id === onPast.id)).toBeUndefined();
+    expect(await userRowsExist(u)).toEqual({ app: 0, auth: 0 });
+  }, 60_000);
+});
+
 describe('DELETE /api/account — host', () => {
   it('409 has_upcoming_events lists the events and deletes nothing; allowed once cancelled', async () => {
     const host = await signUp('up-host');

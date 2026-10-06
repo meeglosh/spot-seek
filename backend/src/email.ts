@@ -5,6 +5,20 @@
  */
 
 export const DEFAULT_PUBLIC_BASE_URL = 'https://spot-seek-api.dry-base-037d.workers.dev';
+
+// Public base URL for every outward-facing link. Configured from the
+// PUBLIC_BASE_URL var (wrangler.jsonc) by the fetch/scheduled entry points via
+// configurePublicBaseUrl(). The value is constant per deployment, so a module
+// level setting is safe and spares threading `env` through every notify() caller.
+let configuredBaseUrl: string | undefined;
+export function configurePublicBaseUrl(value?: string): void {
+  configuredBaseUrl = value && value.trim() ? value.trim().replace(/\/+$/, '') : undefined;
+}
+/** Resolve the public base URL: explicit env var, else the configured value, else the default. */
+export function publicBaseUrl(env?: { PUBLIC_BASE_URL?: string }): string {
+  const v = env?.PUBLIC_BASE_URL?.trim();
+  return (v ? v : configuredBaseUrl ?? DEFAULT_PUBLIC_BASE_URL).replace(/\/+$/, '');
+}
 export const REPLY_TO = 'hello@spotseek.app';
 
 const BG = '#0F0F12';
@@ -26,6 +40,7 @@ export function escapeHtml(s: string): string {
 const HEADLINES: Record<string, string> = {
   rsvp: 'NEW RSVP',
   waitlist_promoted: "YOU'RE IN!",
+  guest_confirm: 'CONFIRM YOUR SPOT',
   reminder_24h: 'GAME DAY IS TOMORROW',
   reminder_1h: 'GAME TIME SOON',
   review_request: 'HOW WAS IT?',
@@ -56,14 +71,19 @@ export interface EmailContent {
   body: string;
   eventId?: string;
   baseUrl?: string;
-  /** Generic call-to-action button (used instead of VIEW EVENT when set). */
-  ctaLabel?: string;
+  /** Overrides the default VIEW EVENT button (url must be absolute). */
   ctaUrl?: string;
+  ctaLabel?: string;
+  /** Optional secondary text link under the button (e.g. cancel). */
+  linkUrl?: string;
+  linkLabel?: string;
+  /** Footer for recipients without an account (guest RSVPs). */
+  guest?: boolean;
   /** Replaces the default "you have an account" footer. Escaped. */
   footer?: string;
 }
 
-export function eventUrl(eventId: string, baseUrl = DEFAULT_PUBLIC_BASE_URL): string {
+export function eventUrl(eventId: string, baseUrl = publicBaseUrl()): string {
   return `${baseUrl.replace(/\/+$/, '')}/e/${encodeURIComponent(eventId)}`;
 }
 
@@ -75,7 +95,7 @@ function ctaButton(href: string, label: string): string {
 }
 
 export function renderEmailHtml(c: EmailContent): string {
-  const base = (c.baseUrl ?? DEFAULT_PUBLIC_BASE_URL).replace(/\/+$/, '');
+  const base = (c.baseUrl ?? publicBaseUrl()).replace(/\/+$/, '');
   const headline = escapeHtml(headlineFor(c.type));
   const title = escapeHtml(c.title);
   const paragraphs = c.body
@@ -88,10 +108,11 @@ export function renderEmailHtml(c: EmailContent): string {
     )
     .join('');
 
-  const cta = c.ctaUrl && c.ctaLabel
-    ? ctaButton(c.ctaUrl, c.ctaLabel)
-    : c.eventId
-    ? ctaButton(eventUrl(c.eventId, base), 'VIEW EVENT')
+  const ctaHref = c.ctaUrl ?? (c.eventId ? eventUrl(c.eventId, base) : undefined);
+  const secondary = c.linkUrl
+    ? `<p style="margin:12px 0 0 0;font-family:${BODY_FONT};font-size:14px;line-height:20px;"><a href="${escapeHtml(c.linkUrl)}" style="color:#8a8a96;text-decoration:underline;">${escapeHtml(c.linkLabel ?? 'Cancel my RSVP')}</a></p>`
+    : '';
+  const cta = ctaHref ? ctaButton(ctaHref, c.ctaLabel ?? 'VIEW EVENT') + secondary
     : '';
 
   const font = 'https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo+Narrow&amp;display=swap';
@@ -124,8 +145,11 @@ ${paragraphs}
 ${cta}
 </td></tr>
 <tr><td style="padding:20px 8px 0 8px;font-family:${BODY_FONT};font-size:13px;line-height:19px;color:#8a8a96;">
-${c.footer ? escapeHtml(c.footer) : `You're getting this because you have a SpotSeek account and this activity involves you.<br>
-You can manage email notifications in Settings in the SpotSeek app.`}
+${c.footer
+  ? escapeHtml(c.footer)
+  : c.guest
+  ? "You're getting this because someone used this email address to RSVP on SpotSeek.<br>If that wasn't you, ignore this email and nothing will happen."
+  : "You're getting this because you have a SpotSeek account and this activity involves you.<br>You can manage email notifications in Settings in the SpotSeek app."}
 </td></tr>
 </table>
 </td></tr></table>
@@ -135,6 +159,9 @@ You can manage email notifications in Settings in the SpotSeek app.`}
 
 /** Plain-text fallback, with the event link appended when present. */
 export function renderEmailText(c: EmailContent): string {
-  if (c.ctaUrl && c.ctaLabel) return `${c.body}\n\n${c.ctaLabel}: ${c.ctaUrl}`;
-  return c.eventId ? `${c.body}\n\nView event: ${eventUrl(c.eventId, c.baseUrl)}` : c.body;
+  const href = c.ctaUrl ?? (c.eventId ? eventUrl(c.eventId, c.baseUrl) : undefined);
+  const lines = [c.body];
+  if (href) lines.push(`${c.ctaLabel ? c.ctaLabel : 'View event'}: ${href}`);
+  if (c.linkUrl) lines.push(`${c.linkLabel ?? 'Cancel my RSVP'}: ${c.linkUrl}`);
+  return lines.join('\n\n');
 }

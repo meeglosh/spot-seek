@@ -2,9 +2,9 @@
  * Forgot-password: reset page + email rendering (no Better Auth config needed).
  */
 import { SELF } from 'cloudflare:test';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderEmailHtml, renderEmailText } from '../src/email';
-import { resetUrl, SIGN_IN_DEEP_LINK } from '../src/password-reset';
+import { resetUrl, sendResetEmail, SIGN_IN_DEEP_LINK } from '../src/password-reset';
 
 const BASE = 'https://example.com';
 
@@ -55,6 +55,23 @@ describe('GET /reset-password', () => {
 
 describe('password reset email layout', () => {
   const url = resetUrl('https://api.example.test/', 'tok en/1');
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('sendResetEmail links to PUBLIC_BASE_URL, not BETTER_AUTH_URL', async () => {
+    let body: { html: string; text: string } | undefined;
+    vi.stubGlobal('fetch', async (_u: unknown, init?: RequestInit) => {
+      body = JSON.parse(String(init?.body));
+      return new Response('{}', { status: 200 });
+    });
+    const env = {
+      RESEND_API_KEY: 're_test', PUBLIC_BASE_URL: 'https://public.example.test',
+      BETTER_AUTH_URL: 'https://auth.example.test',
+    } as unknown as Env;
+    await sendResetEmail(env, { email: 'a@b.co' }, 'tok1');
+    expect(body!.text).toContain('https://public.example.test/reset-password?token=tok1');
+    expect(body!.html).not.toContain('auth.example.test');
+  });
 
   it('builds the link from the base URL with an encoded token', () => {
     expect(url).toBe('https://api.example.test/reset-password?token=tok%20en%2F1');
