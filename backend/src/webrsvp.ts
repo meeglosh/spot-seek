@@ -50,11 +50,11 @@ function wantsJson(c: Ctx): boolean {
 
 function messagePage(c: Ctx, status: 400 | 404 | 409 | 410 | 200, headline: string, text: string, eventId?: string) {
   const back = eventId
-    ? `<a class="btn btn-ghost" href="${escapeHtml(publicBaseUrl(c.env))}/e/${escapeHtml(eventId)}">BACK TO THE EVENT</a>`
+    ? `<a class="btn btn-ghost" href="${escapeHtml(publicBaseUrl(c.env))}/e/${escapeHtml(eventId)}">Back to the party</a>`
     : '';
   return c.html(
     renderPage({
-      title: `${headline} — SpotSeek`,
+      title: `${headline} · SpotSeek`,
       noindex: true,
       body: `<div class="content"><h1>${escapeHtml(headline)}</h1><p class="meta">${escapeHtml(text)}</p>${back}</div>`,
     }),
@@ -64,7 +64,7 @@ function messagePage(c: Ctx, status: 400 | 404 | 409 | 410 | 200, headline: stri
 
 function fail(c: Ctx, status: 400 | 404 | 409 | 410, error: string, eventId?: string) {
   if (wantsJson(c)) return c.json({ error }, status);
-  return messagePage(c, status, status === 404 ? 'NOT FOUND' : 'HOLD ON', error, eventId);
+  return messagePage(c, status, status === 404 ? 'Not found' : 'Hold on', error, eventId);
 }
 
 function formatWhen(event: schema.Event): string {
@@ -150,11 +150,11 @@ webRsvpRouter.post('/rsvp/:eventId', async (c) => {
   if (wantsJson(c)) return c.json({ ok: true, status: 'pending_confirmation' }, 202);
   return c.html(
     renderPage({
-      title: 'Check your email — SpotSeek',
+      title: 'Check your email · SpotSeek',
       noindex: true,
       body: `<div class="content">
-  <div class="label">ONE MORE STEP</div>
-  <h1>CHECK YOUR EMAIL</h1>
+  <div class="label">One more step</div>
+  <h1>Check your email</h1>
   <p class="meta">We sent a confirmation link to <strong>${escapeHtml(normalized)}</strong>. Tap it to lock in your spot for <strong>${escapeHtml(event.title)}</strong>. Your spot isn't saved until you confirm.</p>
   <p class="fine">Nothing there? Check spam, or submit the form again to resend it.</p>
   ${installCtas(c.env.APP_STORE_URL, event.id)}
@@ -182,7 +182,7 @@ async function sendConfirmationEmail(c: Ctx, event: schema.Event, guest: schema.
     eventId: event.id,
     baseUrl: base,
     ctaUrl: confirmUrl,
-    ctaLabel: 'CONFIRM MY SPOT',
+    ctaLabel: 'Confirm my spot',
     linkUrl: manageUrl,
     linkLabel: 'Manage or cancel my RSVP',
     guest: true,
@@ -279,35 +279,35 @@ function statusPage(c: Ctx, event: schema.Event, guest: schema.GuestRsvp) {
   const base = publicBaseUrl(c.env);
   const manage = `${base}/rsvp/${event.id}/${guest.token}`;
   const view = {
-    going: { cls: 'status-going', big: "YOU'RE GOING", sub: `Your spot at ${event.title} is locked in.` },
+    going: { cls: 'status-going', big: "You're going", sub: `Your spot at ${event.title} is locked in.` },
     waitlisted: {
       cls: 'status-wait',
-      big: "YOU'RE ON THE WAITLIST",
+      big: "You're on the waitlist",
       sub: "The event is full right now. If a spot opens up we'll email you automatically.",
     },
-    pending: { cls: 'status-wait', big: 'ALMOST THERE', sub: 'Confirm your email to lock in your spot.' },
-    cancelled: { cls: 'status-off', big: 'RSVP CANCELLED', sub: "You've been removed from this event." },
+    pending: { cls: 'status-wait', big: 'Almost there', sub: 'Confirm your email to lock in your spot.' },
+    cancelled: { cls: 'status-off', big: 'RSVP cancelled', sub: "You've been removed from this event." },
   }[guest.state];
   const when = formatWhen(event);
   const active = guest.state !== 'cancelled';
   const calendar =
     event.startsAt && active && guest.state !== 'pending'
-      ? `<a class="btn" href="${escapeHtml(base)}/rsvp/${escapeHtml(event.id)}/event.ics">ADD TO CALENDAR</a>`
+      ? `<a class="btn" href="${escapeHtml(base)}/rsvp/${escapeHtml(event.id)}/event.ics">Add to calendar</a>`
       : '';
   const confirmBtn =
     guest.state === 'pending'
-      ? `<a class="btn" href="${escapeHtml(manage)}/confirm">CONFIRM MY SPOT</a>`
+      ? `<a class="btn" href="${escapeHtml(manage)}/confirm">Confirm my spot</a>`
       : '';
   const cancel = active
     ? `<form method="post" action="${escapeHtml(manage)}/cancel" style="margin-top:20px"><button class="link-btn" type="submit">Cancel my RSVP</button></form>`
     : '';
   const again =
     guest.state === 'cancelled'
-      ? `<a class="btn btn-ghost" href="${escapeHtml(base)}/e/${escapeHtml(event.id)}">RSVP AGAIN</a>`
+      ? `<a class="btn btn-ghost" href="${escapeHtml(base)}/e/${escapeHtml(event.id)}">RSVP again</a>`
       : '';
   return c.html(
     renderPage({
-      title: `${view.big} — SpotSeek`,
+      title: `${view.big} · SpotSeek`,
       noindex: true,
       body: `<div class="content">
   <div class="label">${escapeHtml(event.title)}</div>
@@ -325,12 +325,12 @@ function statusPage(c: Ctx, event: schema.Event, guest: schema.GuestRsvp) {
 
 webRsvpRouter.get('/rsvp/:eventId/:token/confirm', async (c) => {
   const found = await loadGuest(c);
-  if (!found) return messagePage(c, 404, 'LINK NOT FOUND', 'This confirmation link is invalid or has expired.');
+  if (!found) return messagePage(c, 404, 'Link not found', 'This confirmation link is invalid or has expired.');
   const { db, event } = found;
   let { guest } = found;
   if (guest.state === 'pending') {
     if (!eventIsOpen(event)) {
-      return messagePage(c, 410, 'TOO LATE', 'RSVPs are closed for this event.', event.id);
+      return messagePage(c, 410, 'Too late', 'RSVPs are closed for this event.', event.id);
     }
     const state = await confirmGuest(db, c.env.RESEND_API_KEY, event, guest);
     guest = { ...guest, state };
@@ -340,13 +340,13 @@ webRsvpRouter.get('/rsvp/:eventId/:token/confirm', async (c) => {
 
 webRsvpRouter.get('/rsvp/:eventId/:token', async (c) => {
   const found = await loadGuest(c);
-  if (!found) return messagePage(c, 404, 'LINK NOT FOUND', 'This link is invalid or has expired.');
+  if (!found) return messagePage(c, 404, 'Link not found', 'This link is invalid or has expired.');
   return statusPage(c, found.event, found.guest);
 });
 
 webRsvpRouter.post('/rsvp/:eventId/:token/cancel', async (c) => {
   const found = await loadGuest(c);
-  if (!found) return messagePage(c, 404, 'LINK NOT FOUND', 'This link is invalid or has expired.');
+  if (!found) return messagePage(c, 404, 'Link not found', 'This link is invalid or has expired.');
   const { db, event } = found;
   let { guest } = found;
   if (guest.state !== 'cancelled') {

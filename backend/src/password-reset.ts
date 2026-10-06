@@ -50,9 +50,9 @@ export async function sendResetEmail(
     {
       type: 'password_reset',
       baseUrl: publicBaseUrl(env),
-      ctaLabel: 'RESET PASSWORD',
+      ctaLabel: 'Reset password',
       ctaUrl: resetUrl(publicBaseUrl(env), token),
-      footer: "If you didn't ask for this, you can safely ignore this email — your password won't change.",
+      footer: "If you didn't ask for this, you can safely ignore this email. Your password won't change.",
     },
   );
 }

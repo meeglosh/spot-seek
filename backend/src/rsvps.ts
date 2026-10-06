@@ -124,7 +124,7 @@ rsvpsRouter.post('/', async (c) => {
         userId: event.hostId,
         type: 'rsvp',
         title: `New RSVP on "${event.title}"`,
-        body: `Someone joined "${event.title}" — ${goingCount} going.`,
+        body: `Someone joined "${event.title}". ${goingCount} going.`,
         eventId: event.id,
       });
     })().catch((err) => console.error('[rsvps] rsvp notify failed:', err));

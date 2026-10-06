@@ -120,7 +120,7 @@ async function notifyHostOfGuest(db: Db, resendApiKey: string | undefined, event
     userId: event.hostId,
     type: 'rsvp',
     title: `New RSVP on "${event.title}"`,
-    body: `Someone joined "${event.title}" from the web — ${going} going.`,
+    body: `Someone joined "${event.title}" from the web. ${going} going.`,
     eventId: event.id,
   });
 }

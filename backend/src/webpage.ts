@@ -85,12 +85,12 @@ ${o.body}
 /** App install CTAs. `appStoreUrl` null/undefined -> "Coming soon" (as before). */
 export function installCtas(appStoreUrl: string | null | undefined, eventId: string): string {
   const store = appStoreUrl
-    ? `<a class="btn" href="${escapeHtml(appStoreUrl)}">GET THE SPOTSEEK APP</a>`
-    : '<span class="btn btn-disabled">APP STORE &mdash; COMING SOON</span>';
+    ? `<a class="btn" href="${escapeHtml(appStoreUrl)}">Get the SpotSeek app</a>`
+    : '<span class="btn btn-disabled">App Store coming soon</span>';
   return `<div class="panel panel-cyan">
   <div class="label">Get the full experience</div>
-  <h2>FIND PARTIES. CHAT. RSVP IN ONE TAP.</h2>
+  <h2>Find parties. Chat. RSVP in one tap.</h2>
   ${store}
-  <a class="btn btn-ghost" href="spotseek://e/${escapeHtml(encodeURIComponent(eventId))}">ALREADY HAVE IT? OPEN IN APP</a>
+  <a class="btn btn-ghost" href="spotseek://e/${escapeHtml(encodeURIComponent(eventId))}">Already have it? Open in app</a>
 </div>`;
 }

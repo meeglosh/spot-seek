@@ -82,23 +82,23 @@ describe('password reset email layout', () => {
     expect(url).toBe('https://api.example.test/reset-password?token=tok%20en%2F1');
   });
 
-  it('renders the RESET YOUR PASSWORD headline and CTA, not VIEW EVENT', () => {
+  it('renders the Reset your password headline and CTA, not View party', () => {
     const html = renderEmailHtml({
-      type: 'password_reset', title: 'Reset your password', body: 'Body', ctaLabel: 'RESET PASSWORD', ctaUrl: url,
+      type: 'password_reset', title: 'Reset your password', body: 'Body', ctaLabel: 'Reset password', ctaUrl: url,
       footer: "If you didn't ask for this, ignore it.",
     });
-    expect(html).toContain('RESET YOUR PASSWORD');
-    expect(html).toContain('RESET PASSWORD');
+    expect(html).toContain('Reset your password');
+    expect(html).toContain('Reset password');
     expect(html).toContain('href="https://api.example.test/reset-password?token=tok%20en%2F1"');
-    expect(html).not.toContain('VIEW EVENT');
+    expect(html).not.toContain('View party');
     expect(html).toContain('ignore it.');
     expect(html).not.toContain('manage email notifications');
-    expect(renderEmailText({ title: 't', body: 'Body', ctaLabel: 'RESET PASSWORD', ctaUrl: url })).toContain(`RESET PASSWORD: ${url}`);
+    expect(renderEmailText({ title: 't', body: 'Body', ctaLabel: 'Reset password', ctaUrl: url })).toContain(`Reset password: ${url}`);
   });
 
   it('leaves existing event emails unchanged', () => {
     const html = renderEmailHtml({ type: 'rsvp', title: 't', body: 'b', eventId: 'e1' });
-    expect(html).toContain('VIEW EVENT');
+    expect(html).toContain('View party');
     expect(html).toContain('manage email notifications');
   });
 });

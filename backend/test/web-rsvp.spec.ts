@@ -104,20 +104,20 @@ beforeAll(async () => {
 }, 60_000);
 
 describe('guest RSVP flow', () => {
-  it('creates a PENDING record and emails a CONFIRM YOUR SPOT link', async () => {
+  it('creates a PENDING record and emails a Confirm your spot link', async () => {
     const ev = await createEvent(host);
     const email = `g-pending-${TS}@spotseek.test`;
     const res = await guestPost(ev.id, { name: 'Pat Pending', email });
     expect(res.status).toBe(202);
     expect(sent).toHaveLength(1);
     expect(sent[0].to).toBe(email);
-    expect(sent[0].html).toContain('CONFIRM YOUR SPOT');
+    expect(sent[0].html).toContain('Confirm your spot');
     expect(sent[0].html).toContain(`/rsvp/${ev.id}/`);
     const token = tokenFrom(sent[0], ev.id);
 
     // Pending: manage page says so, and the host count does NOT include it.
     const manage = await (await app(`/rsvp/${ev.id}/${token}`)).text();
-    expect(manage).toContain('ALMOST THERE');
+    expect(manage).toContain('Almost there');
     const row = await countsFor(host, ev.id);
     expect(row.rsvpCounts.going).toBe(0);
     expect(row.guestAttendees).toHaveLength(0);
@@ -127,9 +127,9 @@ describe('guest RSVP flow', () => {
     const ev = await createEvent(host);
     const email = `g-going-${TS}@spotseek.test`;
     const { page } = await guestJoin(ev.id, 'Gale Going', email);
-    expect(page).toContain('YOU&#39;RE GOING');
+    expect(page).toContain('You&#39;re going');
     expect(page).toContain(`/rsvp/${ev.id}/event.ics`);
-    expect(page).toContain('COMING SOON'); // App Store placeholder, unchanged
+    expect(page).toContain('App Store coming soon'); // App Store placeholder, unchanged
     expect(page).not.toContain(email);
 
     const res = await app('/api/dashboard', { headers: { Cookie: host } });
@@ -142,7 +142,7 @@ describe('guest RSVP flow', () => {
 
     // Public page shows the social proof count.
     const pub = await (await app(`/e/${ev.id}`)).text();
-    expect(pub).toContain('1 GOING');
+    expect(pub).toContain('1 going');
   });
 
   it('respects capacity (guests count) and waitlists a guest when full', async () => {
@@ -152,7 +152,7 @@ describe('guest RSVP flow', () => {
     expect(((await rs.json()) as { rsvp: { state: string } }).rsvp.state).toBe('going');
     // ...so a confirmed guest is waitlisted.
     const { page } = await guestJoin(ev.id, 'Wanda Wait', `g-wait-${TS}@spotseek.test`);
-    expect(page).toContain('WAITLIST');
+    expect(page).toContain('on the waitlist');
     const row = await countsFor(host, ev.id);
     expect(row.rsvpCounts.going).toBe(1);
     expect(row.rsvpCounts.waitlisted).toBe(1);
@@ -160,7 +160,7 @@ describe('guest RSVP flow', () => {
     // Reverse: a guest holds the only spot, so an account RSVP is waitlisted.
     const ev2 = await createEvent(host, { capacity: 1 });
     const g = await guestJoin(ev2.id, 'Gus First', `g-first-${TS}@spotseek.test`);
-    expect(g.page).toContain('YOU&#39;RE GOING');
+    expect(g.page).toContain('You&#39;re going');
     const user2 = await signUp('userb');
     const rs2 = await app('/api/rsvps', { method: 'POST', headers: { ...json, Cookie: user2.cookie }, body: JSON.stringify({ eventId: ev2.id }) });
     expect(((await rs2.json()) as { rsvp: { state: string } }).rsvp.state).toBe('waitlisted');
@@ -173,7 +173,7 @@ describe('guest RSVP flow', () => {
     const rsvpId = ((await rs.json()) as { rsvp: { id: string } }).rsvp.id;
     const guestEmail = `g-promo-${TS}@spotseek.test`;
     const { token, page } = await guestJoin(ev.id, 'Paula Promo', guestEmail);
-    expect(page).toContain('WAITLIST');
+    expect(page).toContain('on the waitlist');
     sent = [];
 
     const patch = await app(`/api/rsvps/${rsvpId}`, { method: 'PATCH', headers: { ...json, Cookie: user.cookie }, body: JSON.stringify({ state: 'cancelled' }) });
@@ -181,25 +181,25 @@ describe('guest RSVP flow', () => {
     const mail = sent.find((m) => m.to === guestEmail);
     expect(mail).toBeDefined();
     expect(mail!.subject).toContain("You're in!");
-    expect(mail!.html).toContain('YOU&#39;RE IN!');
-    expect((await (await app(`/rsvp/${ev.id}/${token}`)).text())).toContain('YOU&#39;RE GOING');
+    expect(mail!.html).toContain('You&#39;re in');
+    expect((await (await app(`/rsvp/${ev.id}/${token}`)).text())).toContain('You&#39;re going');
     expect((await countsFor(host, ev.id)).rsvpCounts.going).toBe(1);
   }, 60_000);
 
   it('guest cancel link frees the spot and promotes the next waitlisted guest', async () => {
     const ev = await createEvent(host, { capacity: 1 });
     const a = await guestJoin(ev.id, 'Ann First', `g-a-${TS}@spotseek.test`);
-    expect(a.page).toContain('YOU&#39;RE GOING');
+    expect(a.page).toContain('You&#39;re going');
     const bEmail = `g-b-${TS}@spotseek.test`;
     const b = await guestJoin(ev.id, 'Ben Second', bEmail);
-    expect(b.page).toContain('WAITLIST');
+    expect(b.page).toContain('on the waitlist');
     sent = [];
 
     const cancel = await app(`/rsvp/${ev.id}/${a.token}/cancel`, { method: 'POST' });
     expect(cancel.status).toBe(200);
-    expect(await cancel.text()).toContain('RSVP CANCELLED');
+    expect(await cancel.text()).toContain('RSVP cancelled');
     expect(sent.some((m) => m.to === bEmail && m.subject.includes("You're in!"))).toBe(true);
-    expect((await (await app(`/rsvp/${ev.id}/${b.token}`)).text())).toContain('YOU&#39;RE GOING');
+    expect((await (await app(`/rsvp/${ev.id}/${b.token}`)).text())).toContain('You&#39;re going');
     const row = await countsFor(host, ev.id);
     expect(row.rsvpCounts.going).toBe(1);
     expect(row.rsvpCounts.cancelled).toBe(1);
@@ -274,11 +274,11 @@ describe('public event page', () => {
     const html = await (await app(`/e/${ev.id}`)).text();
     expect(html).toContain(`<link rel="canonical" href="https://spotseek.app/e/${ev.id}">`);
     expect(html).toContain('property="og:url"');
-    expect(html).toContain('0 GOING');
-    expect(html).toContain('HOSTED BY');
-    expect(html).toContain("I'M GOING");
+    expect(html).toContain('0 going');
+    expect(html).toContain('Hosted by');
+    expect(html).toContain("I'm going");
     expect(html).toContain('name="website"'); // honeypot field
-    expect(html).toContain('COMING SOON');
+    expect(html).toContain('App Store coming soon');
 
     const m = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
     expect(m).not.toBeNull();

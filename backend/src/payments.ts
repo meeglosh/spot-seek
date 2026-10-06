@@ -271,7 +271,7 @@ async function handlePaymentIntentSucceeded(
       userId: event.hostId,
       type: 'payment_received',
       title: `Sponsorship paid for "${event.title}"`,
-      body: `The ${amount} sponsorship for "${event.title}" has been paid and is held until after the event.`,
+      body: `The ${amount} sponsorship for "${event.title}" is paid. We hold it until the party is over.`,
       eventId: event.id,
     }).catch((err) => console.error('[payments] payment_received (host) notify failed:', err)),
   ]);
@@ -485,7 +485,7 @@ onboardPagesRouter.get('/onboard/return', (c) => {
   return c.html(
     onboardPage({
       title: 'Payouts connected',
-      body: "You're all set — head back to SpotSeek. If anything is still needed, the app will tell you.",
+      body: "You're all set. Head back to SpotSeek. If anything is still needed, the app will tell you.",
       ctaHref: SETTINGS_DEEP_LINK,
       ctaLabel: 'Open SpotSeek',
       redirect: true,

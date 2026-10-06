@@ -124,8 +124,8 @@ export async function fanoutFavoriteNearby(
   });
   const prefsByUser = new Map(prefsRows.map((p) => [p.userId, p]));
 
-  const title = `New ${event.broadcastSubject} party near you`;
-  const body = `"${event.title}" was just posted${event.venueName ? ` at ${event.venueName}` : ''} — check it out.`;
+  const title = `Near you: ${event.broadcastSubject}`;
+  const body = `"${event.title}" just went up${event.venueName ? ` at ${event.venueName}` : ''}. Grab a spot.`;
 
   await Promise.all(
     users
@@ -283,7 +283,7 @@ export async function runReviewSweep(
     jobs.push({ event, userId: rsvp.userId });
   }
 
-  const body = 'Rate the host and venue to help the next crowd.';
+  const body = 'Rate the host and the room. It helps the next crowd.';
   for (let i = 0; i < jobs.length; i += REVIEW_NOTIFY_CONCURRENCY) {
     await Promise.all(
       jobs.slice(i, i + REVIEW_NOTIFY_CONCURRENCY).map(({ event, userId }) =>

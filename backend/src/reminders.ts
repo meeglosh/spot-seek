@@ -111,7 +111,7 @@ export async function sendSponsorshipRequestEmail(
   resendApiKey: string | undefined,
 ): Promise<void> {
   const amount = (amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-  const subject = `New sponsorship request: "${eventTitle}"`;
+  const subject = `Sponsor request for "${eventTitle}"`;
   const text =
     `A host has requested you sponsor "${eventTitle}" for ${amount}.\n\n` +
     (note ? `Note from the host: ${note}\n\n` : '') +
@@ -131,9 +131,9 @@ async function sendReminder(
   userEmail: string | null,
   resendApiKey: string | undefined,
 ): Promise<void> {
-  const subject = `Reminder: "${event.title}" starts soon`;
+  const subject = `"${event.title}" starts soon`;
   const text =
-    `Hi! "${event.title}" (${event.broadcastSubject}) starts in about 1 hour.\n\n` +
+    `"${event.title}" (${event.broadcastSubject}) starts in about an hour.\n\n` +
     (event.venueName ? `Venue: ${event.venueName}\n` : '') +
     (event.venueAddress && !event.isPrivateLocation ? `Address: ${event.venueAddress}\n` : '');
 

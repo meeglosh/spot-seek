@@ -115,7 +115,7 @@ export async function promoteFromWaitlist(
                 userId: p.ref,
                 type: 'waitlist_promoted',
                 title: `You're in! "${event.title}"`,
-                body: `A spot opened up — you're now going to "${event.title}".`,
+                body: `A spot opened up and it's yours.`,
                 eventId: event.id,
               })
             : notifyGuestPromoted(db, resendApiKey, event, p.id)
@@ -138,7 +138,7 @@ async function notifyGuestPromoted(
   const guest = await db.query.guestRsvps.findFirst({ where: eq(schema.guestRsvps.id, guestId) });
   if (!guest) return;
   const title = `You're in! "${event.title}"`;
-  const body = `A spot opened up — you're now going to "${event.title}".`;
+  const body = `A spot opened up and it's yours.`;
   if (!resendApiKey) {
     console.log(`[DEV GUEST NOTIFICATION] to=${guest.email} type=waitlist_promoted title="${title}"`);
     return;
@@ -148,7 +148,7 @@ async function notifyGuestPromoted(
     type: 'waitlist_promoted',
     eventId: event.id,
     ctaUrl: manage,
-    ctaLabel: 'VIEW MY SPOT',
+    ctaLabel: 'View my spot',
     linkUrl: manage,
     linkLabel: 'Manage or cancel my RSVP',
     guest: true,

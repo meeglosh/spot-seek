@@ -11,16 +11,16 @@ afterEach(() => vi.restoreAllMocks());
 describe('renderEmailHtml', () => {
   it('renders brand layout, headline, and CTA when eventId is given', () => {
     const html = renderEmailHtml({ type: 'rsvp', title: 'Alex is going', body: 'Hello', eventId: EVENT_ID });
-    expect(html).toContain('NEW RSVP');
+    expect(html).toContain('New RSVP');
     expect(html).toContain('#0F0F12');
-    expect(html).toContain('VIEW EVENT');
+    expect(html).toContain('View party');
     expect(html).toContain(`${DEFAULT_PUBLIC_BASE_URL}/e/${EVENT_ID}`);
     expect(html).toContain('/static/email-logo.png');
     expect(html).toContain('manage email notifications in Settings');
   });
 
   it('omits the CTA without an eventId', () => {
-    expect(renderEmailHtml({ title: 't', body: 'b' })).not.toContain('VIEW EVENT');
+    expect(renderEmailHtml({ title: 't', body: 'b' })).not.toContain('View party');
   });
 
   it('escapes HTML in titles and bodies', () => {
@@ -46,7 +46,7 @@ describe('sendEmail', () => {
     expect(url).toBe('https://api.resend.com/emails');
     const payload = JSON.parse(init.body);
     expect(payload.reply_to).toBe('hello@spotseek.app');
-    expect(payload.html).toContain('VIEW EVENT');
+    expect(payload.html).toContain('View party');
     expect(payload.text).toContain('Body text');
     expect(payload.text).toContain(`/e/${EVENT_ID}`);
   });

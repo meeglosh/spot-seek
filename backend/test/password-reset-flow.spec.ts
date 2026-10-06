@@ -92,8 +92,8 @@ describe('forgot password', () => {
     expect(msg).toBeDefined();
     expect(msg.subject).toBe('Reset your password');
     expect(msg.reply_to).toBe('hello@spotseek.app');
-    expect(msg.html).toContain('RESET YOUR PASSWORD');
-    expect(msg.html).toContain('RESET PASSWORD');
+    expect(msg.html).toContain('Reset your password');
+    expect(msg.html).toContain('Reset password');
     expect(msg.html).toMatch(/href="https?:\/\/[^"]+\/reset-password\?token=[^"]+"/);
     expect(msg.text).toContain('/reset-password?token=');
     expect(msg.text).toContain('60 minutes');

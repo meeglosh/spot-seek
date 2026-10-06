@@ -37,29 +37,29 @@ export function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
-const HEADLINES: Record<string, string> = {
-  rsvp: 'NEW RSVP',
-  waitlist_promoted: "YOU'RE IN!",
-  guest_confirm: 'CONFIRM YOUR SPOT',
-  reminder_24h: 'GAME DAY IS TOMORROW',
-  reminder_1h: 'GAME TIME SOON',
-  review_request: 'HOW WAS IT?',
-  event_cancelled: 'EVENT CANCELLED',
-  venue_changed: 'VENUE CHANGED',
-  favorite_nearby: 'NEW PARTY NEARBY',
-  sponsor_bid: 'NEW SPONSOR BID',
-  sponsorship_request: 'SPONSOR REQUEST',
-  sponsorship_accepted: 'SPONSORSHIP ACCEPTED',
-  sponsorship_rejected: 'SPONSORSHIP UPDATE',
-  payment_due: 'PAYMENT DUE',
-  payment_received: 'PAYMENT RECEIVED',
-  payout_sent: 'PAYOUT SENT',
-  password_reset: 'RESET YOUR PASSWORD',
-  payment_refunded: 'PAYMENT REFUNDED',
+export const HEADLINES: Record<string, string> = {
+  rsvp: 'New RSVP',
+  waitlist_promoted: "You're in",
+  guest_confirm: 'Confirm your spot',
+  reminder_24h: "It's tomorrow",
+  reminder_1h: 'Starting soon',
+  review_request: 'How was it?',
+  event_cancelled: 'Party cancelled',
+  venue_changed: 'New venue',
+  favorite_nearby: 'New party nearby',
+  sponsor_bid: 'New sponsor bid',
+  sponsorship_request: 'Sponsor request',
+  sponsorship_accepted: 'Bid accepted',
+  sponsorship_rejected: 'Bid update',
+  payment_due: 'Payment due',
+  payment_received: 'Payment received',
+  payout_sent: 'Payout sent',
+  password_reset: 'Reset your password',
+  payment_refunded: 'Payment refunded',
 };
 
 export function headlineFor(type?: string): string {
-  return (type && HEADLINES[type]) || 'SPOT SEEK UPDATE';
+  return (type && HEADLINES[type]) || 'SpotSeek update';
 }
 
 export interface EmailContent {
@@ -71,7 +71,7 @@ export interface EmailContent {
   body: string;
   eventId?: string;
   baseUrl?: string;
-  /** Overrides the default VIEW EVENT button (url must be absolute). */
+  /** Overrides the default View party button (url must be absolute). */
   ctaUrl?: string;
   ctaLabel?: string;
   /** Optional secondary text link under the button (e.g. cancel). */
@@ -90,7 +90,7 @@ export function eventUrl(eventId: string, baseUrl = publicBaseUrl()): string {
 function ctaButton(href: string, label: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 8px 0;">
 <tr><td bgcolor="${CYAN}" style="background-color:${CYAN};border-right:5px solid ${ORANGE};border-bottom:5px solid ${ORANGE};border-radius:0;">
-<a href="${escapeHtml(href)}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:${HEAD_FONT};font-size:20px;line-height:24px;letter-spacing:1px;color:${BG};text-decoration:none;text-transform:uppercase;">${escapeHtml(label)}</a>
+<a href="${escapeHtml(href)}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:${HEAD_FONT};font-size:20px;line-height:24px;letter-spacing:1px;color:${BG};text-decoration:none;">${escapeHtml(label)}</a>
 </td></tr></table>`;
 }
 
@@ -112,7 +112,7 @@ export function renderEmailHtml(c: EmailContent): string {
   const secondary = c.linkUrl
     ? `<p style="margin:12px 0 0 0;font-family:${BODY_FONT};font-size:14px;line-height:20px;"><a href="${escapeHtml(c.linkUrl)}" style="color:#8a8a96;text-decoration:underline;">${escapeHtml(c.linkLabel ?? 'Cancel my RSVP')}</a></p>`
     : '';
-  const cta = ctaHref ? ctaButton(ctaHref, c.ctaLabel ?? 'VIEW EVENT') + secondary
+  const cta = ctaHref ? ctaButton(ctaHref, c.ctaLabel ?? 'View party') + secondary
     : '';
 
   const font = 'https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo+Narrow&amp;display=swap';
@@ -139,7 +139,7 @@ export function renderEmailHtml(c: EmailContent): string {
 </tr></table>
 </td></tr>
 <tr><td bgcolor="${CARD}" style="background-color:${CARD};padding:32px 28px;border-left:1px solid #2a2a33;border-right:1px solid #2a2a33;border-bottom:1px solid #2a2a33;">
-<div style="font-family:${HEAD_FONT};font-size:36px;line-height:40px;letter-spacing:1px;color:${CYAN};text-transform:uppercase;margin:0 0 10px 0;">${headline}</div>
+<div style="font-family:${HEAD_FONT};font-size:36px;line-height:40px;letter-spacing:1px;color:${CYAN};margin:0 0 10px 0;">${headline}</div>
 <div style="font-family:${BODY_FONT};font-size:20px;line-height:26px;font-weight:bold;color:#ffffff;margin:0 0 20px 0;">${title}</div>
 ${paragraphs}
 ${cta}
@@ -161,7 +161,7 @@ ${c.footer
 export function renderEmailText(c: EmailContent): string {
   const href = c.ctaUrl ?? (c.eventId ? eventUrl(c.eventId, c.baseUrl) : undefined);
   const lines = [c.body];
-  if (href) lines.push(`${c.ctaLabel ? c.ctaLabel : 'View event'}: ${href}`);
+  if (href) lines.push(`${c.ctaLabel ? c.ctaLabel : 'View party'}: ${href}`);
   if (c.linkUrl) lines.push(`${c.linkLabel ?? 'Cancel my RSVP'}: ${c.linkUrl}`);
   return lines.join('\n\n');
 }

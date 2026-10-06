@@ -142,9 +142,9 @@ deeplinksRouter.get('/e/:id', async (c) => {
   if (!event) {
     return c.html(
       renderPage({
-        title: 'Event not found — SpotSeek',
+        title: 'Party not found · SpotSeek',
         noindex: true,
-        body: '<div class="content"><h1>EVENT NOT FOUND</h1><p class="meta">This link may be wrong or the event was removed.</p></div>',
+        body: '<div class="content"><h1>Party not found</h1><p class="meta">This link may be wrong, or the host took the party down.</p></div>',
       }),
       404,
     );
@@ -181,7 +181,7 @@ deeplinksRouter.get('/e/:id', async (c) => {
   // bots, so a private-location event must not leak its venue name or address
   // here — only exact-location visitors (RSVP'd users) see it, in the app.
   const publicVenueName = event.isPrivateLocation ? null : event.venueName;
-  const descriptionText = [when, publicVenueName].filter(Boolean).join(' — ') || 'Join this watch party on SpotSeek.';
+  const descriptionText = [when, publicVenueName].filter(Boolean).join(' · ') || 'Join this watch party on SpotSeek.';
   const description = escapeHtml(descriptionText);
   const imageUrl = absoluteImageUrl(base, event.coverImageUrl);
 
@@ -207,36 +207,36 @@ deeplinksRouter.get('/e/:id', async (c) => {
 
   const spotsLeft = event.capacity != null ? Math.max(0, event.capacity - goingCount) : null;
   const chips = [
-    `<span class="chip chip-volt">${goingCount} GOING</span>`,
+    `<span class="chip chip-volt">${goingCount} going</span>`,
     spotsLeft != null
-      ? `<span class="chip ${spotsLeft === 0 ? 'chip-hot' : 'chip-cyan'}">${spotsLeft === 0 ? 'FULL — JOIN WAITLIST' : `${spotsLeft} SPOTS LEFT`}</span>`
+      ? `<span class="chip ${spotsLeft === 0 ? 'chip-hot' : 'chip-cyan'}">${spotsLeft === 0 ? 'Full. Join the waitlist' : `${spotsLeft} spots left`}</span>`
       : '',
-    event.status === 'cancelled' ? '<span class="chip chip-hot">CANCELLED</span>' : '',
+    event.status === 'cancelled' ? '<span class="chip chip-hot">Cancelled</span>' : '',
   ].filter(Boolean).join('');
 
   const sponsors = sponsorRows.length
-    ? `<div class="chips"><span class="label" style="align-self:center">PRESENTED BY</span>${sponsorRows
+    ? `<div class="chips"><span class="label" style="align-self:center">Presented by</span>${sponsorRows
         .map((s) => `<span class="chip chip-cyan">${escapeHtml(s.companyName)}</span>`)
         .join('')}</div>`
     : '';
 
   const rsvpPanel = open
     ? `<form class="panel" method="post" action="/rsvp/${escapeHtml(event.id)}">
-  <h2>${spotsLeft === 0 ? 'JOIN THE WAITLIST' : "YOU'RE INVITED"}</h2>
+  <h2>${spotsLeft === 0 ? 'Join the waitlist' : "You're invited"}</h2>
   <p class="meta">No account needed. We'll email you a link to confirm your spot.</p>
   <label class="label" for="name">Your name</label>
   <input id="name" name="name" type="text" required maxlength="80" autocomplete="name" placeholder="Alex Rivera">
   <label class="label" for="email">Email</label>
   <input id="email" name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email" placeholder="you@example.com">
   <div class="hp" aria-hidden="true"><label>Leave this empty<input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>
-  <button class="btn" type="submit">I'M GOING</button>
+  <button class="btn" type="submit">I'm going</button>
   <p class="fine">We only use your email for this event's RSVP.</p>
 </form>`
-    : `<div class="panel"><h2>${event.status === 'cancelled' ? 'THIS EVENT WAS CANCELLED' : 'RSVPS ARE CLOSED'}</h2></div>`;
+    : `<div class="panel"><h2>${event.status === 'cancelled' ? 'This party was cancelled' : 'RSVPs are closed'}</h2></div>`;
 
   const body = `${imageUrl ? `  <img class="cover" src="${escapeHtml(imageUrl)}" alt="">` : ''}
   <div class="content">
-    ${hostName ? `<div class="label">HOSTED BY ${escapeHtml(hostName)}</div>` : ''}
+    ${hostName ? `<div class="label">Hosted by ${escapeHtml(hostName)}</div>` : ''}
     <h1>${title}</h1>
     <p class="meta" id="when">${description}</p>
     <div class="chips">${chips}</div>
@@ -255,11 +255,11 @@ deeplinksRouter.get('/e/:id', async (c) => {
         weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
       });
       var venue = ${safeJson(publicVenueName ?? null)};
-      document.getElementById('when').textContent = venue ? (when + ' — ' + venue) : when;
+      document.getElementById('when').textContent = venue ? (when + ' · ' + venue) : when;
     })();
   </script>` : ''}`;
 
   return c.html(
-    renderPage({ title: `${event.title} — SpotSeek`, head, body, noindex: !published }),
+    renderPage({ title: `${event.title} · SpotSeek`, head, body, noindex: !published }),
   );
 });

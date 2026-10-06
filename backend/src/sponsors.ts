@@ -157,8 +157,8 @@ sponsorsRouter.post('/bids', async (c) => {
   await notify(db, c.env.RESEND_API_KEY, {
     userId: event.hostId,
     type: 'sponsor_bid',
-    title: `New sponsorship bid on "${event.title}"`,
-    body: `A sponsor bid ${amount} on "${event.title}". Review it in your Command Center.`,
+    title: `New bid on "${event.title}"`,
+    body: `A sponsor bid ${amount}. Review it in your Host dashboard.`,
     eventId: event.id,
   }).catch((err) => console.error('[sponsors] sponsor_bid notify failed:', err));
 
@@ -204,7 +204,7 @@ sponsorsRouter.post('/requests', async (c) => {
   await notify(db, c.env.RESEND_API_KEY, {
     userId: sponsorId,
     type: 'sponsorship_request',
-    title: `New sponsorship request: "${event.title}"`,
+    title: `Sponsor request for "${event.title}"`,
     body: requestBody,
     eventId: event.id,
   }).catch((err) => console.error('[sponsors] sponsorship_request notify failed:', err));
@@ -298,7 +298,7 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
   if (isReviewer && !['active', 'rejected'].includes(status))
     return c.json({ error: `${reviewer === 'host' ? 'Host' : 'Sponsor'} may set status to active or rejected` }, 400);
   if (isInitiator && status !== 'cancelled')
-    return c.json({ error: 'Only the reviewer may accept or reject — you may only cancel' }, 400);
+    return c.json({ error: 'Only the reviewer may accept or reject. You may only cancel' }, 400);
 
   // Refund policy (PAYMENTS.md). A sponsor stepping out of a sponsorship they
   // have money in (cancel as initiator, or reject as reviewer):
@@ -358,7 +358,7 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
       userId: bid.sponsorId,
       type: 'payment_due',
       title: `Payment due for "${event.title}"`,
-      body: `Your ${amount} sponsorship for "${event.title}" was accepted. Complete payment in the app to confirm your slot.`,
+      body: `Your ${amount} sponsorship for "${event.title}" was accepted. Pay in the app to lock in your slot.`,
       eventId: event.id,
     }).catch((err) => console.error('[sponsors] payment_due notify failed:', err));
   }
