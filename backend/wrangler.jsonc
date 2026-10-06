@@ -9,6 +9,11 @@
 	"vars": {
 		// Dev/preview deployment URL — anchors Better Auth's baseURL.
 		"BETTER_AUTH_URL": "https://spot-seek-api.dry-base-037d.workers.dev",
+		// APNs push (OWNER REVIEW). The .p8 key itself is the secret APNS_KEY_P8
+		// (`wrangler secret put APNS_KEY_P8`); push is a no-op until it is set.
+		"APNS_KEY_ID": "K7H32D38GD",
+		"APNS_TEAM_ID": "XM2SC5YZ8C",
+		"APNS_TOPIC": "com.spotseek.app",
 		// OWNER REVIEW: public origin used for share links, og:url, canonical,
 		// sitemap and email CTAs. Switch to https://spotseek.app when the custom
 		// domain is live (see HANDOFF.md / report for the exact steps).

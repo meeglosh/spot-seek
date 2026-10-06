@@ -25,7 +25,15 @@
     "push": "Push-Benachrichtigungen",
     "radiusLabel": "Radius für Benachrichtigungen in der Nähe",
     "radiusValue": "{{miles}} mi / {{km}} km",
-    "radiusError": "Radius konnte nicht gespeichert werden — bitte erneut versuchen."
+    "radiusError": "Radius konnte nicht gespeichert werden — bitte erneut versuchen.",
+    "pushError": "Push-Benachrichtigungen konnten nicht aktualisiert werden — versuche es erneut.",
+    "pushDeniedTitle": "Benachrichtigungen sind aus",
+    "pushDeniedBody": "Erlaube Mitteilungen für SpotSeek in den iPhone-Einstellungen, um Event-Hinweise zu erhalten.",
+    "openSettings": "Einstellungen öffnen",
+    "pushPromptTitle": "Event-Erinnerungen erhalten?",
+    "pushPromptBody": "Aktiviere Mitteilungen, damit wir dich erinnern, bevor deine Watch Party beginnt.",
+    "pushPromptLater": "Nicht jetzt",
+    "pushPromptEnable": "Aktivieren"
   },
   "language": {
     "title": "Sprache",

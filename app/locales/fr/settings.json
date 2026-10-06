@@ -25,7 +25,15 @@
     "push": "Notifications push",
     "radiusLabel": "Rayon d'alerte à proximité",
     "radiusValue": "{{miles}} mi / {{km}} km",
-    "radiusError": "Impossible d'enregistrer le rayon — réessayez."
+    "radiusError": "Impossible d'enregistrer le rayon — réessayez.",
+    "pushError": "Impossible de mettre à jour les notifications push — réessayez.",
+    "pushDeniedTitle": "Les notifications sont désactivées",
+    "pushDeniedBody": "Autorisez les notifications pour SpotSeek dans les Réglages de votre iPhone pour recevoir les alertes d'événements.",
+    "openSettings": "Ouvrir les Réglages",
+    "pushPromptTitle": "Recevoir des rappels d'événements ?",
+    "pushPromptBody": "Activez les notifications pour qu'on vous rappelle avant le début de votre soirée match.",
+    "pushPromptLater": "Plus tard",
+    "pushPromptEnable": "Activer"
   },
   "language": {
     "title": "Langue",

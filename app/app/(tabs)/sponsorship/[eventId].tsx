@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image, TextInput,
   ActivityIndicator, KeyboardAvoidingView, Platform,
@@ -6,6 +6,7 @@ import {
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { useStripe } from '@stripe/stripe-react-native';
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, palette, spacing, fonts, type as t } from '../../../lib/theme';
 import { Btn, Badge, FieldLabel, SectionTitle, inputStyle, inputFocusedStyle } from '../../../components/ui';
@@ -16,6 +17,12 @@ import {
   type ApiEvent, type ApiSponsorBid, type SponsorshipStatus,
 } from '../../../lib/api';
 import { formatEventDateTime } from '../../../lib/dateFormat';
+import { STRIPE_MERCHANT_NAME } from '../../../lib/stripe';
+
+// After PaymentSheet succeeds the webhook flips paymentStatus to 'paid' — poll
+// for it (2s x 15 = ~30s) before telling the sponsor it is still processing.
+const PAID_POLL_INTERVAL_MS = 2000;
+const PAID_POLL_ATTEMPTS = 15;
 
 const PLATFORM_FEE_RATE = 0.15;
 
@@ -68,6 +75,13 @@ export default function SponsorshipDetailsScreen() {
   // more than one open bid can be paid independently without shared state.
   const [payingBidId, setPayingBidId] = useState<string | null>(null);
   const [paymentNotice, setPaymentNotice] = useState<Record<string, string>>({});
+  const [processingBidId, setProcessingBidId] = useState<string | null>(null);
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const load = useCallback(async () => {
     if (!eventId) return;
@@ -123,24 +137,62 @@ export default function SponsorshipDetailsScreen() {
     }
   }
 
+  // Polls the sponsor's bids until the webhook has marked this one paid.
+  async function waitForPaid(bidId: string): Promise<boolean> {
+    for (let i = 0; i < PAID_POLL_ATTEMPTS; i++) {
+      if (!mountedRef.current) return false;
+      try {
+        const myBids = await fetchMyBids();
+        const mine = myBids.find((b) => b.id === bidId);
+        if (mine && mine.paymentStatus === 'paid') {
+          if (mountedRef.current) await load();
+          return true;
+        }
+      } catch {
+        // transient — keep polling
+      }
+      await new Promise((resolve) => setTimeout(resolve, PAID_POLL_INTERVAL_MS));
+    }
+    return false;
+  }
+
   async function handlePayNow(bidId: string) {
     setPayingBidId(bidId);
     setPaymentNotice((prev) => ({ ...prev, [bidId]: '' }));
+    const notice = (msg: string) => setPaymentNotice((prev) => ({ ...prev, [bidId]: msg }));
     try {
+      // Idempotent server-side: re-tapping after a cancel reuses the same intent.
       const result = await paySponsorship(bidId);
       if (!result) {
-        setPaymentNotice((prev) => ({ ...prev, [bidId]: tr('bid.payment.notLiveYet') }));
+        notice(tr('bid.payment.notLiveYet'));
         return;
       }
-      // No PaymentSheet in this pass (see PAYMENTS.md Phase 2) — a successful
-      // call just confirms the PaymentIntent exists server-side. Refresh so
-      // the card's paymentStatus reflects requires_payment → whatever the
-      // backend moved it to.
-      await load();
-    } catch {
-      setPaymentNotice((prev) => ({ ...prev, [bidId]: tr('bid.payment.payError') }));
-    } finally {
+      const init = await initPaymentSheet({
+        merchantDisplayName: STRIPE_MERCHANT_NAME,
+        paymentIntentClientSecret: result.clientSecret,
+      });
+      if (init.error) {
+        notice(tr('bid.payment.payError'));
+        return;
+      }
+      const presented = await presentPaymentSheet();
+      if (presented.error) {
+        // 'Canceled' is the user closing the sheet — not an error.
+        notice(presented.error.code === 'Canceled' ? tr('bid.payment.cancelled') : tr('bid.payment.payFailed'));
+        return;
+      }
+      // Paid on Stripe's side; our record flips when the webhook lands.
       setPayingBidId(null);
+      setProcessingBidId(bidId);
+      const paid = await waitForPaid(bidId);
+      if (mountedRef.current && !paid) notice(tr('bid.payment.stillProcessing'));
+    } catch (err) {
+      notice(err instanceof Error && err.message === 'unauthorized' ? tr('bid.errors.signIn') : tr('bid.payment.payError'));
+    } finally {
+      if (mountedRef.current) {
+        setPayingBidId(null);
+        setProcessingBidId(null);
+      }
     }
   }
 
@@ -306,7 +358,12 @@ export default function SponsorshipDetailsScreen() {
                 )}
                 {bid.status === 'active' && (
                   <View style={s.paymentBlock}>
-                    {bid.paymentStatus === 'paid' ? (
+                    {processingBidId === bid.id ? (
+                      <View style={s.processingRow}>
+                        <ActivityIndicator color={colors.accent} />
+                        <Text style={[t.bodySm, { color: colors.textSecondary }]}>{tr('bid.payment.processing')}</Text>
+                      </View>
+                    ) : bid.paymentStatus === 'paid' ? (
                       <Text style={[t.bodySm, { color: colors.volt }]}>{tr('bid.payment.paid')}</Text>
                     ) : bid.paymentStatus === 'released' ? (
                       <Text style={[t.bodySm, { color: colors.volt }]}>{tr('bid.payment.released')}</Text>
@@ -459,6 +516,7 @@ const s = StyleSheet.create({
   statusHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   paymentBlock: { gap: spacing.sm },
+  processingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   noteInput: { minHeight: 80, textAlignVertical: 'top' },
   testNote: { color: colors.textTertiary },
 });

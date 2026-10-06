@@ -110,7 +110,11 @@
       "payError": "Could not start payment — try again.",
       "paid": "Paid · awaiting event",
       "released": "Paid out to host",
-      "refunded": "Refunded"
+      "refunded": "Refunded",
+      "processing": "Payment received — confirming…",
+      "cancelled": "Payment cancelled. You can pay any time.",
+      "payFailed": "Payment did not go through — try another card.",
+      "stillProcessing": "Your payment is still processing. This will update to paid shortly."
     },
     "testNoteAccepted": "Payment is processed only after the host accepts — payments are in test mode, no real charges.",
     "sponsorProfileNeeded": {

@@ -110,7 +110,11 @@
       "payError": "No se pudo iniciar el pago — inténtalo de nuevo.",
       "paid": "Pagado · a la espera del evento",
       "released": "Pagado al anfitrión",
-      "refunded": "Reembolsado"
+      "refunded": "Reembolsado",
+      "processing": "Pago recibido — confirmando…",
+      "cancelled": "Pago cancelado. Puedes pagar cuando quieras.",
+      "payFailed": "El pago no se completó — prueba con otra tarjeta.",
+      "stillProcessing": "Tu pago aún se está procesando. Pronto aparecerá como pagado."
     },
     "testNoteAccepted": "El pago se procesa solo después de que el anfitrión acepte — los pagos están en modo de prueba, sin cargos reales.",
     "sponsorProfileNeeded": {

@@ -25,7 +25,15 @@
     "push": "Push notifications",
     "radiusLabel": "Nearby alert radius",
     "radiusValue": "{{miles}} mi / {{km}} km",
-    "radiusError": "Could not save radius — try again."
+    "radiusError": "Could not save radius — try again.",
+    "pushError": "Could not update push notifications — try again.",
+    "pushDeniedTitle": "Notifications are off",
+    "pushDeniedBody": "Allow notifications for SpotSeek in your iPhone Settings to get event alerts.",
+    "openSettings": "Open Settings",
+    "pushPromptTitle": "Get event reminders?",
+    "pushPromptBody": "Turn on notifications so we can remind you before your watch party starts.",
+    "pushPromptLater": "Not now",
+    "pushPromptEnable": "Turn on"
   },
   "language": {
     "title": "Language",

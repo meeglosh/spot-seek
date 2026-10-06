@@ -13,6 +13,9 @@ import { SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts
 import { AuthProvider } from '../lib/auth';
 import { colors } from '../lib/theme';
 import LaunchSplash from '../components/LaunchSplash';
+import PushBootstrap from '../components/PushBootstrap';
+import { StripeProvider } from '@stripe/stripe-react-native';
+import { STRIPE_PUBLISHABLE_KEY } from '../lib/stripe';
 // Side-effect import: initializes i18next synchronously (device-language
 // guess) before this component's first render — required by react-i18next's
 // convention of the i18n instance existing before any useTranslation() call
@@ -56,7 +59,9 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
+    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
     <AuthProvider>
+      <PushBootstrap />
       {/* Dark-only design system — light status bar text everywhere */}
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
@@ -76,5 +81,6 @@ export default function RootLayout() {
         <LaunchSplash dismiss={dismissSplash} onDone={() => setShowSplash(false)} />
       )}
     </AuthProvider>
+    </StripeProvider>
   );
 }

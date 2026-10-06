@@ -7,6 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../lib/auth';
+import { enablePush, shouldPromptForPush } from '../../../lib/push';
 import {
   fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, fetchProfile, fetchEventReviews, submitReview,
   API_BASE, EVENT_SHARE_BASE, type ApiEvent, type ApiRsvp, type ApiProfile, type ApiEventReviews,
@@ -39,6 +40,7 @@ export default function EventDetailScreen() {
   const auth = useAuth();
   const { t: tr } = useTranslation('discover');
   const { t: trCommon } = useTranslation('common');
+  const { t: trSettings } = useTranslation('settings');
 
   const [event, setEvent] = useState<ApiEvent | null>(null);
   const [loading, setLoading] = useState(true); // true = show spinner on initial load
@@ -160,6 +162,17 @@ export default function EventDetailScreen() {
       } else {
         const newRsvp = await rsvpToEvent(event.id);
         setRsvp(newRsvp);
+        // First time going: a natural moment to offer reminders (once per
+        // install; the OS prompt only appears if they accept ours).
+        if (newRsvp.state === 'going') {
+          shouldPromptForPush().then((ask) => {
+            if (!ask) return;
+            Alert.alert(trSettings('notifications.pushPromptTitle'), trSettings('notifications.pushPromptBody'), [
+              { text: trSettings('notifications.pushPromptLater'), style: 'cancel' },
+              { text: trSettings('notifications.pushPromptEnable'), onPress: () => { enablePush(); } },
+            ]);
+          });
+        }
       }
     } catch (err) {
       const msg = (err as Error).message;

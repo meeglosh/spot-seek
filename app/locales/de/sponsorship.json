@@ -110,7 +110,11 @@
       "payError": "Zahlung konnte nicht gestartet werden — bitte erneut versuchen.",
       "paid": "Bezahlt · wartet auf Event",
       "released": "An Gastgeber ausgezahlt",
-      "refunded": "Erstattet"
+      "refunded": "Erstattet",
+      "processing": "Zahlung eingegangen — wird bestätigt…",
+      "cancelled": "Zahlung abgebrochen. Du kannst jederzeit bezahlen.",
+      "payFailed": "Die Zahlung ist fehlgeschlagen — versuche eine andere Karte.",
+      "stillProcessing": "Deine Zahlung wird noch verarbeitet. Sie erscheint in Kürze als bezahlt."
     },
     "testNoteAccepted": "Die Zahlung wird erst verarbeitet, nachdem der Gastgeber zustimmt — Zahlungen laufen im Testmodus, keine echten Belastungen.",
     "sponsorProfileNeeded": {

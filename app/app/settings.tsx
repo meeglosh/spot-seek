@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Switch, Alert, Linking } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
@@ -16,9 +16,10 @@ import {
 } from '../lib/api';
 import { colors, palette, spacing, type as t } from '../lib/theme';
 import { AppHeader } from '../components/AppHeader';
-import { Btn, Badge, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle } from '../components/ui';
+import { Btn, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle } from '../components/ui';
 import { GuestGate } from '../components/AuthGate';
 import { SUPPORTED_LOCALES, setAppLocale } from '../lib/i18n';
+import { enablePush, disablePush } from '../lib/push';
 
 // Typed (case-sensitive) to re-confirm account deletion; sent to the server too.
 const DELETE_WORD = 'DELETE';
@@ -119,7 +120,9 @@ export default function SettingsScreen() {
     }
   }, [auth.status]);
 
-  useEffect(() => { loadConnectStatus(); }, [loadConnectStatus]);
+  // Also refreshes when the screen regains focus — Stripe onboarding returns
+  // via the spotseek://settings deep link.
+  useFocusEffect(useCallback(() => { loadConnectStatus(); }, [loadConnectStatus]));
 
   async function handleSetupPayouts() {
     setOnboarding(true);
@@ -180,6 +183,32 @@ export default function SettingsScreen() {
     } catch {
       if (prevPrefs) setPrefs(prevPrefs);
       setPrefsError(tr('notifications.emailError'));
+    }
+  }
+
+  async function handlePushToggle(value: boolean) {
+    const prevPrefs = prefs;
+    setPrefsError('');
+    if (!value) {
+      if (prevPrefs) setPrefs({ ...prevPrefs, pushEnabled: false });
+      try {
+        await disablePush();
+      } catch {
+        if (prevPrefs) setPrefs(prevPrefs);
+        setPrefsError(tr('notifications.pushError'));
+      }
+      return;
+    }
+    const result = await enablePush();
+    if (result === 'enabled') {
+      if (prevPrefs) setPrefs({ ...prevPrefs, pushEnabled: true });
+    } else if (result === 'denied') {
+      Alert.alert(tr('notifications.pushDeniedTitle'), tr('notifications.pushDeniedBody'), [
+        { text: trCommon('cancel'), style: 'cancel' },
+        { text: tr('notifications.openSettings'), onPress: () => { Linking.openSettings().catch(() => {}); } },
+      ]);
+    } else {
+      setPrefsError(tr('notifications.pushError'));
     }
   }
 
@@ -349,10 +378,11 @@ export default function SettingsScreen() {
           <SettingsRow
             label={tr('notifications.push')}
             right={
-              <View style={s.disabledRow}>
-                <Switch value={!!prefs?.pushEnabled} disabled trackColor={{ false: palette.surfaceHigh, true: colors.accent }} />
-                <Badge label={trCommon('comingSoon')} tone="neutral" dot={false} />
-              </View>
+              <Switch
+                value={!!prefs?.pushEnabled}
+                onValueChange={handlePushToggle}
+                trackColor={{ false: palette.surfaceHigh, true: colors.accent }}
+              />
             }
           />
 
@@ -482,7 +512,6 @@ const s = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   rowLabels: { flex: 1, gap: 2 },
-  disabledRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   fullBtn: { alignSelf: 'stretch' },
   confirmBox: {
     borderWidth: 1, borderColor: colors.danger, backgroundColor: palette.surfaceMid,

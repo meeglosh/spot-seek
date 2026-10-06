@@ -16,6 +16,12 @@ interface Env {
   ADMIN_SECRET?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  // Direct APNs push (src/apns.ts). APNS_KEY_P8 is a secret (PEM PKCS8 .p8
+  // contents); the other three are plain vars in wrangler.jsonc.
+  APNS_KEY_P8?: string;
+  APNS_KEY_ID?: string;
+  APNS_TEAM_ID?: string;
+  APNS_TOPIC?: string;
   // Cloudflare Rate Limiting bindings (wrangler.jsonc `ratelimits`). Optional so
   // the code degrades to a per-isolate in-memory limiter if a binding is absent.
   AUTH_LIMITER?: RateLimit;

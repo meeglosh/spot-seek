@@ -16,6 +16,7 @@ import { createAuth } from './auth';
 import { sendEmail } from './reminders';
 import { formatEventDateTime } from './timezone';
 import { requireAdmin } from './admin';
+import { pushToUser, schedulePush } from './apns';
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -62,6 +63,12 @@ export async function notify(
     where: eq(schema.notificationPrefs.userId, args.userId),
   });
   const emailEnabled = prefs?.emailEnabled ?? DEFAULT_PREFS.emailEnabled;
+
+  // Push runs in parallel with the email send and never blocks (waitUntil when
+  // the request has an execution context). Prefs default pushEnabled=false.
+  if (prefs?.pushEnabled ?? DEFAULT_PREFS.pushEnabled) {
+    schedulePush(pushToUser(db, args.userId, { title: args.title, body: args.body, eventId: args.eventId, type: args.type }));
+  }
 
   if (emailEnabled && user?.email) {
     if (resendApiKey) {

@@ -16,6 +16,8 @@ import { deeplinksRouter } from './deeplinks';
 import { webRsvpRouter } from './webrsvp';
 import { configurePublicBaseUrl } from './email';
 import { configureEmailGuard } from './email-guard';
+import { configureApns } from './apns';
+import { pushRouter } from './push';
 import { notificationsRouter, scheduled as notificationsScheduled } from './notifications';
 import { reviewsRouter } from './reviews';
 import { allowRequest, tooManyRequests, AUTH_LIMIT_PER_MIN } from './ratelimit';
@@ -30,6 +32,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use('*', async (c, next) => {
   configurePublicBaseUrl(c.env.PUBLIC_BASE_URL);
   configureEmailGuard(c.env);
+  try { configureApns(c.env, c.executionCtx); } catch { configureApns(c.env); }
   await next();
 });
 
@@ -79,6 +82,7 @@ app.route('/api/notifications', notificationsRouter);
 app.route('/api/reviews', reviewsRouter);
 app.route('/api/payments', paymentsRouter);
 app.route('/api/account', accountRouter);
+app.route('/api/push', pushRouter);
 app.route('/payments', onboardPagesRouter);
 app.route('/', passwordResetRouter);
 app.route('/', webRsvpRouter);
@@ -105,9 +109,10 @@ app.get('/', (c) => c.json({ status: 'ok', name: 'spot-seek-api' }));
 
 // Combines the notifications sweep (reminders/reviews) with the payments
 // sweep (release/refund) into a single cron handler.
-async function scheduled(controller: ScheduledController, env: Env): Promise<void> {
+async function scheduled(controller: ScheduledController, env: Env, ctx?: ExecutionContext): Promise<void> {
   configurePublicBaseUrl(env.PUBLIC_BASE_URL);
   configureEmailGuard(env);
+  configureApns(env, ctx);
   await notificationsScheduled(controller, env);
   await runPaymentSweeps(env);
 }

@@ -110,7 +110,11 @@
       "payError": "Impossible de démarrer le paiement — réessayez.",
       "paid": "Payé · en attente de l'événement",
       "released": "Versé à l'hôte",
-      "refunded": "Remboursé"
+      "refunded": "Remboursé",
+      "processing": "Paiement reçu — confirmation en cours…",
+      "cancelled": "Paiement annulé. Vous pouvez payer à tout moment.",
+      "payFailed": "Le paiement n'a pas abouti — essayez une autre carte.",
+      "stillProcessing": "Votre paiement est en cours de traitement. Il passera bientôt à payé."
     },
     "testNoteAccepted": "Le paiement n'est traité qu'après acceptation par l'hôte — les paiements sont en mode test, aucun débit réel.",
     "sponsorProfileNeeded": {

@@ -370,6 +370,28 @@ export const guestRsvps = pgTable(
 
 export type GuestRsvp = typeof guestRsvps.$inferSelect;
 
+// ─── push_tokens ──────────────────────────────────────────────────────────────
+// Native APNs device tokens (hex) registered by the app; sent to directly from
+// the Worker (src/apns.ts). One row per token; re-registering moves it to the
+// current user. environment follows the build: TestFlight/App Store =
+// 'production', Xcode device builds = 'sandbox'.
+
+export type PushEnvironment = 'production' | 'sandbox';
+
+export const pushTokens = pgTable('push_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  platform: text('platform').notNull().default('ios'),
+  environment: text('environment').$type<PushEnvironment>().notNull().default('production'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type PushToken = typeof pushTokens.$inferSelect;
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Event = typeof events.$inferSelect;

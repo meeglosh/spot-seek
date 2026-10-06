@@ -804,6 +804,22 @@ export async function updateNotificationPrefs(
   return prefs;
 }
 
+// ─── Push tokens (native APNs; see backend/src/apns.ts) ───────────────────────
+
+export async function registerPushToken(token: string, environment: 'production' | 'sandbox'): Promise<void> {
+  const res = await apiFetch('/api/push/tokens', {
+    method: 'POST',
+    body: JSON.stringify({ token, environment }),
+  });
+  if (!res.ok) throw new Error(`Push token registration failed: ${res.status}`);
+}
+
+export async function deletePushToken(token: string): Promise<void> {
+  const res = await apiFetch(`/api/push/tokens/${encodeURIComponent(token)}`, { method: 'DELETE' });
+  if (res.status === 401) return;
+  if (!res.ok) throw new Error(`Push token delete failed: ${res.status}`);
+}
+
 // ─── Account ──────────────────────────────────────────────────────────────────
 
 export type DeleteBlocker =

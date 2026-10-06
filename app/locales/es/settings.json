@@ -25,7 +25,15 @@
     "push": "Notificaciones push",
     "radiusLabel": "Radio de alertas cercanas",
     "radiusValue": "{{miles}} mi / {{km}} km",
-    "radiusError": "No se pudo guardar el radio — inténtalo de nuevo."
+    "radiusError": "No se pudo guardar el radio — inténtalo de nuevo.",
+    "pushError": "No se pudieron actualizar las notificaciones push — inténtalo de nuevo.",
+    "pushDeniedTitle": "Las notificaciones están desactivadas",
+    "pushDeniedBody": "Permite las notificaciones de SpotSeek en los Ajustes de tu iPhone para recibir alertas de eventos.",
+    "openSettings": "Abrir Ajustes",
+    "pushPromptTitle": "¿Recibir recordatorios de eventos?",
+    "pushPromptBody": "Activa las notificaciones para que te avisemos antes de que empiece tu watch party.",
+    "pushPromptLater": "Ahora no",
+    "pushPromptEnable": "Activar"
   },
   "language": {
     "title": "Idioma",
