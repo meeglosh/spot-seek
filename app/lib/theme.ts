@@ -29,10 +29,11 @@
 //  BORDERS   Mostly gone. Surface contrast separates things. `borderSubtle` is
 //            a low-contrast 1px hairline, used only where two same-level
 //            surfaces meet; `borderStrong` is a 1px focus/selected edge.
-//  TYPE      Anton shrinks (hero 48, XL 34, L 28, M 21, S 17) and goes mixed
-//            case except hero/XL. Buttons and labels are sentence case Space
-//            Grotesk Medium (`button`, `label`, `labelSm`). ALL CAPS is
-//            reserved for the tiny tracked `tag` role (LIVE, TONIGHT).
+//  TYPE      Anton shrinks (hero 48, XL 34, L 28, M 21, S 17) but every Anton
+//            role stays ALL CAPS (textTransform: uppercase; source strings
+//            remain sentence case). Buttons, labels and body are sentence case
+//            (Space Grotesk Medium / Archivo Narrow). The tiny tracked `tag`
+//            role (LIVE, TONIGHT) is also caps.
 //  COLOUR    Warmer, slightly desaturated greys; `actionMuted` is a softer cyan
 //            for secondary emphasis. Every text pair is contrast-tested >= 4.5
 //            in __tests__/App.test.tsx.
@@ -208,12 +209,13 @@ const tnum = ['tabular-nums' as const];
 // clips glyph tops on iOS). Body gets extra line height and a touch of
 // tracking to compensate for light-on-dark halation.
 export const type = {
-  // Display (Anton). Only hero and XL keep caps.
+  // Display (Anton). Every Anton role is ALL CAPS via textTransform; strings
+  // stay sentence case in the source.
   displayHero: { fontFamily: fonts.display, fontSize: 48, lineHeight: 60, textTransform: 'uppercase' as const },
   displayXl:   { fontFamily: fonts.display, fontSize: 34, lineHeight: 44, letterSpacing: -0.3, textTransform: 'uppercase' as const },
-  headlineLg:  { fontFamily: fonts.display, fontSize: 28, lineHeight: 36, letterSpacing: 0.2 },
-  headlineMd:  { fontFamily: fonts.display, fontSize: 21, lineHeight: 28, letterSpacing: 0.3 },
-  headlineSm:  { fontFamily: fonts.display, fontSize: 17, lineHeight: 24, letterSpacing: 0.3 },
+  headlineLg:  { fontFamily: fonts.display, fontSize: 28, lineHeight: 36, letterSpacing: 0.2, textTransform: 'uppercase' as const },
+  headlineMd:  { fontFamily: fonts.display, fontSize: 21, lineHeight: 28, letterSpacing: 0.3, textTransform: 'uppercase' as const },
+  headlineSm:  { fontFamily: fonts.display, fontSize: 17, lineHeight: 24, letterSpacing: 0.3, textTransform: 'uppercase' as const },
   // Body (Archivo Narrow)
   bodyLg:       { fontFamily: fonts.sansMedium,  fontSize: 18, lineHeight: 27, letterSpacing: 0.1 },
   bodyMd:       { fontFamily: fonts.sansRegular, fontSize: 16, lineHeight: 25, letterSpacing: 0.15 },

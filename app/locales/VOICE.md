@@ -28,8 +28,10 @@ startup pitching. Talk about the room, the people, the screen and the night.
 7. Destructive confirmations name the object and the consequence: "Delete this
    party? Its RSVPs go with it, and this can't be undone."
 8. Sentence case everywhere ("Host a party", not "Host a Party"). Caps come
-   only from the theme: `tag` style (LIVE, TONIGHT, GOING) and the hero/XL
-   display styles. Never write uppercase into a string, and never call
+   only from the theme: every Anton title/display style (screen, section,
+   event and sheet titles, "You're in.") applies `textTransform: uppercase`,
+   and so does the `tag` style (LIVE, TONIGHT, GOING). Buttons, labels and body
+   stay sentence case. Never write uppercase into a string, and never call
    `.toUpperCase()` on display text (dates, broadcast subjects, venue names).
 9. No em dashes. Use a full stop, a comma or a middle dot.
 10. No invented numbers. Only state a figure (the 15% fee) when the product

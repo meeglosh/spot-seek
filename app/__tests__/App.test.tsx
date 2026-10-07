@@ -201,12 +201,17 @@ describe('type roles', () => {
     expect(type.tag.fontSize).toBeGreaterThanOrEqual(11);
   });
 
-  it('reserves ALL CAPS for the tiny tracked tag role (and hero/XL display)', () => {
+  it('uses ALL CAPS for every Anton role and the tag role, nothing else', () => {
     const caps = Object.entries(type)
       .filter(([, r]) => 'textTransform' in r && r.textTransform === 'uppercase')
       .map(([n]) => n)
       .sort();
-    expect(caps).toEqual(['displayHero', 'displayXl', 'tag']);
+    expect(caps).toEqual(
+      ['displayHero', 'displayXl', 'headlineLg', 'headlineMd', 'headlineSm', 'tag'].sort(),
+    );
+    for (const [, r] of Object.entries(type)) {
+      if (r.fontFamily === fonts.display) expect('textTransform' in r && r.textTransform).toBe('uppercase');
+    }
     expect(type.tag.letterSpacing).toBeGreaterThanOrEqual(1);
     for (const k of ['button', 'buttonSm', 'label', 'labelSm', 'labelMd'] as const) {
       expect('textTransform' in type[k]).toBe(false);
