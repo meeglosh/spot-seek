@@ -244,7 +244,7 @@ const SX_CSS = `
 .sx-st .evt__venue span{animation:sx-v .4s both}
 @keyframes sx-v{from{opacity:0;transform:translateY(6px)}}
 .sx-st .host__cap{visibility:visible;opacity:0;transition:opacity .6s .3s}
-.sx-st .host__visual:has([value=roof]:checked) .host__cap{opacity:1}
+.sx-cap .host__cap{opacity:1}
 @media (min-width:900px){
 .sx-io .host{position:relative;min-height:190vh;align-items:start}
 .sx-io .host__copy{padding-top:6vh}
@@ -273,7 +273,7 @@ const SX_CSS = `
 // Inline script (the only non-JSON-LD script; test/index.spec.ts enforces < 4 KB).
 const SX_JS = `(()=>{
 var d=document,de=d.documentElement,h=d.querySelector('.host__visual'),f=h&&h.querySelector('form'),R=f?[].slice.call(f.querySelectorAll('input')):[],O=['none','bar','home','roof'];
-function set(n){R.forEach(r=>r.checked=r.value==O[n])}
+function set(n){R.forEach(r=>r.checked=r.value==O[n]);if(n>2)de.classList.add('sx-cap')}
 if(window.IntersectionObserver){
 if(matchMedia('(prefers-reduced-motion:reduce)').matches){if(f){de.classList.add('sx-st');set(3)}}
 else{
@@ -283,7 +283,7 @@ de.classList.add('sx-io');
 if(f){
 var mq=matchMedia('(min-width:900px)'),u=0,t,n=0,runs=0,p=[0,0,0];
 de.classList.add('sx-st');
-['click','change'].forEach(v=>f.addEventListener(v,()=>{u=1;clearTimeout(t)}));
+['click','change'].forEach(v=>f.addEventListener(v,()=>{u=1;clearTimeout(t);de.classList.add('sx-cap')}));
 var so=new IntersectionObserver(l=>{if(u||!mq.matches)return;l.forEach(e=>{p[e.target.dataset.s-1]=e.isIntersecting||e.boundingClientRect.top<e.rootBounds.top?1:0});var s=0;p.forEach((v,i)=>{if(v)s=i+1});set(s)},{rootMargin:'-40% 0px -40% 0px'});
 [].forEach.call(d.querySelectorAll('.host__s'),e=>so.observe(e));
 function tick(w){t=setTimeout(()=>{set(++n);if(n<3)tick(1100)},w)}
