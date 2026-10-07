@@ -2,7 +2,7 @@
 // without owner sign-off. Images live in backend/public/site/ (Workers Static Assets) with
 // content-hashed filenames; see HANDOFF.md ("Landing page") for how to update them.
 import { safeJson } from './webpage';
-import { buildCalendar, nextEventDateTitle, type CalRow } from './landing-calendar';
+import { buildCalendar, type CalRow } from './landing-calendar';
 
 const HOME_CSS = `
 :root{
@@ -117,7 +117,8 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
 .evt__title{font:400 clamp(30px,8vw,40px)/1.05 var(--display);margin:12px 0 14px;letter-spacing:.01em}
 .evt__rows div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-top:1px solid var(--line)}
 .evt dt{font:700 12px/1.6 var(--label);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
-.evt dd{text-align:right;font-weight:700}
+.evt dd{text-align:right;font-weight:700;text-wrap:balance}
+.evt dt{white-space:nowrap}
 .evt__venue span{display:none}
 .evt input:focus-visible+span{outline:2px solid var(--lime);outline-offset:2px}
 .evt:has([value=bar]:checked) [data-v=bar],.evt:has([value=home]:checked) [data-v=home],.evt:has([value=roof]:checked) [data-v=roof],.evt:has([value=none]:checked) [data-v=none]{display:inline}
@@ -248,7 +249,7 @@ const SX_CSS = `
 @media (min-width:900px){
 .sx-io .host{position:relative;min-height:190vh;align-items:start}
 .sx-io .host__copy{padding-top:6vh}
-.sx-io .host__visual{position:sticky;top:max(16px,calc(50vh - 310px))}
+.sx-io .host__visual{position:sticky;top:max(16px,calc(50vh - 400px))}
 .sx-io .host__s{display:block}
 .host__s[data-s="1"]{top:16%}
 .host__s[data-s="2"]{top:40%}
@@ -330,7 +331,6 @@ export function renderHomePage(o: HomeOpts): string {
   const base = o.baseUrl.replace(/\/+$/, '');
   const now = o.now ?? new Date();
   const rows = buildCalendar(now);
-  const oscarsDate = nextEventDateTitle('oscars-', now) ?? 'Date to be announced';
   const jsonLd = [
     {
       '@context': 'https://schema.org',
@@ -484,10 +484,11 @@ ${calendarHtml(rows)}
     </div>
   <form class="evt" onsubmit="return false" aria-label="Example party: choose a venue">
     <p class="evt__tag">EXAMPLE PARTY</p>
-    <p class="evt__title">OSCARS NIGHT</p>
+    <p class="evt__title">YOUR BIG NIGHT</p>
     <dl class="evt__rows">
       <div><dt>Host</dt><dd>You</dd></div>
-      <div><dt>Date</dt><dd>${oscarsDate}</dd></div>
+      <div><dt>What's on</dt><dd>The game, the finale, the big one</dd></div>
+      <div><dt>Date</dt><dd>You pick</dd></div>
       <div><dt>Venue</dt><dd class="evt__venue"><span data-v="bar">A bar near you</span><span data-v="home">Your living room</span><span data-v="roof">A rooftop</span><span data-v="none">To be decided</span></dd></div>
     </dl>
     <fieldset>

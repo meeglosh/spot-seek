@@ -122,18 +122,6 @@ export function buildCalendar(
   return [...first.map(recRow), ...datedRows, ...last.map(recRow)];
 }
 
-/** Next upcoming entry whose id starts with `prefix` (used for the Oscars example card), as "Mar 14, 2027". */
-export function nextEventDateTitle(prefix: string, now: Date, events: readonly LandingEvent[] = LANDING_EVENTS): string | null {
-  const today = easternToday(now);
-  const e = upcomingEvents(today, events).find((x) => x.id.startsWith(prefix));
-  if (!e) return null;
-  const sp = span(e);
-  const month = mon(sp.start);
-  const title = month[0] + month.slice(1).toLowerCase();
-  if (e.tentative) return `${title} ${e.start.slice(0, 4)}`;
-  return `${title} ${day(e.start)}, ${e.start.slice(0, 4)}`;
-}
-
 export interface LandingHealth {
   /** Dated entries still to come (or running) in the next 12 months. */
   upcomingIn12Months: number;

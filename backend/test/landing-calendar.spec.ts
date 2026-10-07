@@ -130,19 +130,20 @@ describe('landing calendar', () => {
     expect(rows.map((r) => r.id)).not.toContain('nfl-sundays');
   });
 
-  it('the rendered page uses the injectable clock for calendar, ticker, NEXT UP and the Oscars card', () => {
+  it('the rendered page uses the injectable clock for calendar, ticker, and NEXT UP', () => {
     const html = renderHomePage({ baseUrl: 'https://spotseek.app', now: at('2027-03-20') });
     expect(html).not.toContain('NBA SEASON STARTS');
     expect(html).toContain('MARCH MADNESS');
     expect(html).toContain('<span class="fx__tag">ON NOW</span>');
     expect(html).toContain('MARCH MADNESS ON NOW');
-    expect(html).toContain('<dd>Mar 5, 2028</dd>');
     expect((html.match(/<li class="fx/g) ?? []).length).toBe(LANDING_N);
     const ticker = html.slice(html.indexOf('ticker__track'), html.indexOf('</ul>', html.indexOf('ticker__track')));
     expect((ticker.match(/<li>/g) ?? []).length).toBe(LANDING_N);
     expect((ticker.match(/<li aria-hidden/g) ?? []).length).toBe(LANDING_N);
     const early = renderHomePage({ baseUrl: 'https://spotseek.app', now: at('2026-10-06') });
-    expect(early).toContain('<dd>Mar 14, 2027</dd>');
+    expect(early).toContain('YOUR BIG NIGHT');
+    expect(early).toContain('<dd>You pick</dd>');
+    expect(early).not.toMatch(/oscars night/i);
     expect(early).toContain('<span class="fx__tag">NEXT UP</span>');
     expect(early).toContain('NFL SUNDAYS');
   });
