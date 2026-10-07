@@ -141,7 +141,7 @@ describe('landing calendar', () => {
     expect((ticker.match(/<li>/g) ?? []).length).toBe(LANDING_N);
     expect((ticker.match(/<li aria-hidden/g) ?? []).length).toBe(LANDING_N);
     const early = renderHomePage({ baseUrl: 'https://spotseek.app', now: at('2026-10-06') });
-    expect(early).toContain('YOUR BIG NIGHT');
+    expect(early).toContain('YOUR WATCH PARTY');
     expect(early).toContain('<dd>You pick</dd>');
     expect(early).not.toMatch(/oscars night/i);
     expect(early).toContain('<span class="fx__tag">NEXT UP</span>');

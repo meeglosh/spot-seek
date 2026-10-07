@@ -102,7 +102,7 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
 .fx:hover .fx__date{color:var(--cyan)}
 
 /* host */
-.host{padding-block:72px;display:grid;gap:36px}
+.host__in{padding-block:72px;display:grid;gap:36px}
 .host__copy p{margin:18px 0 26px;max-width:42ch;font-size:19px;color:var(--mute)}
 .host .btn--primary{display:inline-flex;min-width:240px}
 .host__visual{display:grid;align-self:start}
@@ -110,7 +110,7 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
 .hp{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 45%;opacity:0;z-index:1;transform:scale(1.04);transition:opacity 0s .7s}
 .hp--roof{opacity:1;transform:none}
 .host__cap{margin:22px 0 0 20px;font:700 14px/1.2 var(--label);letter-spacing:.12em;text-transform:uppercase;color:var(--lime);visibility:hidden}
-.host__s{display:none;position:absolute;left:0;width:1px;height:2px;pointer-events:none}
+.host__rn{display:none}
 .host__visual .evt{margin:-44px 0 0 20px;position:relative;margin-right:8px}
 .evt{border:2px solid var(--white);background:var(--ink2);padding:20px;box-shadow:8px 8px 0 var(--orange);align-self:start}
 .evt__tag{display:inline-block;background:var(--orange);color:var(--ink);font:700 11px/1 var(--label);letter-spacing:.12em;padding:6px 8px}
@@ -175,7 +175,7 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
   .vs__grid{grid-template-columns:1fr 1fr;gap:36px}
   .fx{grid-template-columns:260px 1fr auto;align-items:baseline;gap:24px;padding:20px 16px}
   .fx__note{text-align:right}
-  .host{grid-template-columns:1.1fr 1fr;gap:64px;align-items:center}
+  .host__in{grid-template-columns:1.1fr 1fr;gap:64px;align-items:center}
   .close__in{align-items:flex-start}
   .close__pin{width:72px}
 }
@@ -225,20 +225,14 @@ const SX_CSS = `
 .sx-io .fx__tag{opacity:0;transform:scale(.6);transition:opacity .2s calc(.5s + var(--i,0)*.07s),transform .3s cubic-bezier(.3,1.7,.5,1) calc(.5s + var(--i,0)*.07s)}
 .sx-io .fx.in .fx__tag{opacity:1;transform:none}
 
-/* 4. Host: the frame and the example party slide in and lock. Then the venue story: chips (radios) drive
-   the venue text AND the photo through :has(), so the scroll story, the timer and a tap all share one path */
-.sx-io .host{overflow-x:clip}
-/* entrance: card and frame start stacked at the midpoint of their resting offset (frame height = 75cqw, card overlaps it by 44px), then split vertically */
-.sx-io .host__visual{container-type:inline-size}
-.sx-io .host__frame,.sx-io .host__visual .evt{opacity:0;transition:opacity .4s,transform .8s cubic-bezier(.22,1.2,.4,1)}
-.sx-io .host__frame{transform:translateY(calc(37.5cqw - 22px))}
-.sx-io .host__visual .evt{transform:translateY(calc(22px - 37.5cqw))}
-.sx-io .host__visual.in .host__frame,.sx-io .host__visual.in .evt{opacity:1;transform:none}
-.sx-io .evt label{opacity:0;transform:translateY(10px) scale(.9);transition:opacity .3s,transform .45s cubic-bezier(.3,1.6,.5,1)}
-.sx-io .host__visual.in .evt label{opacity:1;transform:none;transition-delay:calc(.7s + var(--c,0)*.14s)}
-.evt label:nth-of-type(2){--c:1}
-.evt label:nth-of-type(3){--c:2}
-.evt label:nth-of-type(4){--c:3}
+/* 4. Host: one pinned stage scrubbed by scroll. The script writes --p (0..1) on .host; CSS maps it to the
+   vertical split (p 0 to .3). The same script steps the venue chips at .4/.6/.8 (chips are radios; :has() drives
+   the venue text and the photo crossfade, so scroll and a tap share one path) and reveals the caption at .9. */
+.sx-pin .host__visual{container-type:inline-size}
+.sx-pin .host__in{--s:min(1,max(0,calc(var(--p,1) / .3)));--e:calc(1 - (1 - var(--s)) * (1 - var(--s)))}
+.sx-pin .host__frame{transform:translateY(calc((1 - var(--e)) * (37.5cqw - 22px)))}
+.sx-pin .host__visual .evt{transform:translateY(calc((1 - var(--e)) * (22px - 37.5cqw)))}
+.sx-pin .host__rn{display:block;height:230vh;height:230svh}
 .host__visual:has([value=bar]:checked) .hp--roof,.host__visual:has([value=home]:checked) .hp--roof{opacity:0}
 .host__visual:has([value=bar]:checked) .hp--bar,.host__visual:has([value=home]:checked) .hp--home,.host__visual:has([value=roof]:checked) .hp--roof,.sx-st .host__visual:has([value=none]:checked) .hp--roof{opacity:1;z-index:2;transform:none;transition:opacity .7s,transform 1.3s cubic-bezier(.23,1,.32,1)}
 .sx-st .host__visual:has([value=none]:checked) .hp--roof{opacity:.3}
@@ -247,13 +241,14 @@ const SX_CSS = `
 .sx-st .host__cap{visibility:visible;opacity:0;transition:opacity .6s .3s}
 .sx-cap .host__cap{opacity:1}
 @media (min-width:900px){
-.sx-io .host{position:relative;min-height:190vh;align-items:start}
-.sx-io .host__copy{padding-top:6vh}
-.sx-io .host__visual{position:sticky;top:max(16px,calc(50vh - 400px))}
-.sx-io .host__s{display:block}
-.host__s[data-s="1"]{top:16%}
-.host__s[data-s="2"]{top:40%}
-.host__s[data-s="3"]{top:64%}
+.sx-pin .host__stage{position:sticky;top:0;height:100vh;height:100svh;display:flex;align-items:center;overflow-x:clip}
+.sx-pin .host__in{width:100%;padding-block:0}
+}
+@media (max-width:899.98px){
+/* phone: text + visual cannot share one viewport legibly, so the text scrolls first and only the visual pins */
+.sx-pin .host__stage,.sx-pin .host__in{display:contents}
+.sx-pin .host{padding:72px var(--gut)}
+.sx-pin .host__visual{position:sticky;top:max(8px,calc(50vh - 380px));top:max(8px,calc(50svh - 380px));margin:36px auto 0;max-width:520px}
 }
 
 /* 5. Brands line underlines itself */
@@ -274,22 +269,23 @@ const SX_CSS = `
 // Inline script (the only non-JSON-LD script; test/index.spec.ts enforces < 4 KB).
 const SX_JS = `(()=>{
 var d=document,de=d.documentElement,h=d.querySelector('.host__visual'),f=h&&h.querySelector('form'),R=f?[].slice.call(f.querySelectorAll('input')):[],O=['none','bar','home','roof'];
-function set(n){R.forEach(r=>r.checked=r.value==O[n]);if(n>2)de.classList.add('sx-cap')}
+function set(n){R.forEach(r=>r.checked=r.value==O[n])}
 if(window.IntersectionObserver){
-if(matchMedia('(prefers-reduced-motion:reduce)').matches){if(f){de.classList.add('sx-st');set(3)}}
+if(matchMedia('(prefers-reduced-motion:reduce)').matches){if(f){de.classList.add('sx-st','sx-cap');set(3)}}
 else{
 var io=new IntersectionObserver(l=>{var i=0;l.forEach(e=>{if(e.isIntersecting||e.boundingClientRect.top<0){var t=e.target;t.style.setProperty('--i',i++);t.classList.add('in');io.unobserve(t)}})},{rootMargin:'0px 0px -14% 0px'});
 de.classList.add('sx-io');
-[].forEach.call(d.querySelectorAll('.steps li,.vs__card--old li,.vs__card--new,.fx,.host__visual,.brands__h,.close__in'),e=>io.observe(e));
-if(f){
-var mq=matchMedia('(min-width:900px)'),u=0,t,n=0,runs=0,p=[0,0,0];
-de.classList.add('sx-st');
-['click','change'].forEach(v=>f.addEventListener(v,()=>{u=1;clearTimeout(t);de.classList.add('sx-cap')}));
-var so=new IntersectionObserver(l=>{if(u||!mq.matches)return;l.forEach(e=>{p[e.target.dataset.s-1]=e.isIntersecting||e.boundingClientRect.top<e.rootBounds.top?1:0});var s=0;p.forEach((v,i)=>{if(v)s=i+1});set(s)},{rootMargin:'-40% 0px -40% 0px'});
-[].forEach.call(d.querySelectorAll('.host__s'),e=>so.observe(e));
-function tick(w){t=setTimeout(()=>{set(++n);if(n<3)tick(1100)},w)}
-new IntersectionObserver(l=>{l.forEach(e=>{if(u||mq.matches)return;clearTimeout(t);if(e.isIntersecting&&runs<2){runs++;set(n=0);tick(1500)}})},{threshold:.6}).observe(f);
-new IntersectionObserver((l,o)=>{if(l[0].isIntersecting){[].forEach.call(d.querySelectorAll('.hp'),i=>i.loading='eager');o.disconnect()}},{rootMargin:'100% 0px'}).observe(h)
+[].forEach.call(d.querySelectorAll('.steps li,.vs__card--old li,.vs__card--new,.fx,.brands__h,.close__in'),e=>io.observe(e));
+var hs=d.querySelector('.host'),rn=d.querySelector('.host__rn'),st=d.querySelector('.host__stage');
+if(f&&hs&&rn&&st){
+var mq=matchMedia('(min-width:900px)'),u=0,n=0,q=0;
+de.classList.add('sx-st','sx-pin');
+['click','change'].forEach(v=>f.addEventListener(v,()=>{u=1;de.classList.add('sx-cap')}));
+function upd(){q=0;var e=mq.matches?st:h,p=((parseFloat(getComputedStyle(e).top)||0)+e.offsetHeight-rn.getBoundingClientRect().top)/rn.offsetHeight;p=p<0?0:p>1?1:p;hs.style.setProperty('--p',p);if(!u){var s=p<.4?0:p<.6?1:p<.8?2:3;if(s!=n)set(n=s)}if(p>.9)de.classList.add('sx-cap')}
+function rq(){q||(q=requestAnimationFrame(upd))}
+new IntersectionObserver(l=>{upd();l[0].isIntersecting?addEventListener('scroll',rq,{passive:true}):removeEventListener('scroll',rq)},{rootMargin:'50% 0px'}).observe(hs);
+addEventListener('resize',rq);
+new IntersectionObserver((l,o)=>{if(l[0].isIntersecting){[].forEach.call(d.querySelectorAll('.hp'),i=>i.loading='eager');o.disconnect()}},{rootMargin:'100% 0px'}).observe(hs)
 }
 }
 }
@@ -466,7 +462,8 @@ ${calendarHtml(rows)}
   </div>
 </section>
 
-<section class="host wrap" id="host" aria-labelledby="host-h">
+<section class="host" id="host" aria-labelledby="host-h">
+<div class="host__stage"><div class="host__in wrap">
   <div class="host__copy">
     <h2 id="host-h" class="h2">YOU HOST.<br>THE ROOM IS OPTIONAL.</h2>
     <p>A party belongs to its host, not to a venue. Start with the show and the people. Add a bar, your living room or a rooftop when you know where, and change it with one edit.</p>
@@ -484,7 +481,7 @@ ${calendarHtml(rows)}
     </div>
   <form class="evt" onsubmit="return false" aria-label="Example party: choose a venue">
     <p class="evt__tag">EXAMPLE PARTY</p>
-    <p class="evt__title">YOUR BIG NIGHT</p>
+    <p class="evt__title">YOUR WATCH PARTY</p>
     <dl class="evt__rows">
       <div><dt>Host</dt><dd>You</dd></div>
       <div><dt>What's on</dt><dd>The game, the finale, the big one</dd></div>
@@ -501,7 +498,8 @@ ${calendarHtml(rows)}
   </form>
     <p class="host__cap">Same party. Any room.</p>
   </div>
-  <i class="host__s" data-s="1" aria-hidden="true"></i><i class="host__s" data-s="2" aria-hidden="true"></i><i class="host__s" data-s="3" aria-hidden="true"></i>
+</div></div>
+  <i class="host__rn" aria-hidden="true"></i>
 </section>
 
 <section class="brands wrap" aria-labelledby="brands-h">

@@ -395,14 +395,16 @@ it enters; CSS transitions do the rest. CSS `animation-timeline: view()` was
 removed (engines differed). With JS off or reduced motion the page is its static
 design. transform, opacity and clip-path only; no scroll handlers.
 
-Venue story (host section): one shared 4:3 `.host__frame` with three stacked photos (bar, living
-room, rooftop; `bar-*` assets from Slide_02). The venue chips (radios) are the only state: `:has()` drives
-the venue text, the photo (opacity crossfade) and the "Same party. Any room." caption, so a scroll step, the
-mobile timer and a tap share one path. Desktop (>=900px, motion allowed): the card+frame column is
-`position: sticky` in a ~190vh section; three `.host__s` sentinels + IntersectionObserver set the state (None
-yet, Bar, Living room, Rooftop). Mobile: no sticky; a 1.1s timer cycles once when the card is >=60% visible,
-re-runs at most once more. Any click/change on a chip stops the story. Reduced motion: static Rooftop, chips
-work instantly. No JS: static rooftop + "None yet".
+Venue story (host section): the whole section is pinned and scrubbed by scroll. `.host` is a runway
+(`.host__stage` sticky at 100svh + a `.host__rn` spacer of 230svh). One passive scroll listener (attached only
+while an IntersectionObserver says the section is near; rAF-throttled) writes `--p` (0..1) on `.host`. CSS maps
+p 0 to .3 onto the vertical split of frame and card (`--s`/`--e`, transform only). The same tick steps the venue
+chips (radios) None yet, Bar, Living room, Rooftop at p .4/.6/.8 and reveals the "Same party. Any room." caption
+at .9 (never hidden again). `:has()` on the checked chip drives venue text and photo crossfade, so a tap shares
+the path; a chip click stops following scroll for the venue (the split keeps scrubbing). Phone (<900px): text
+plus visual do not fit one viewport legibly, so only `.host__visual` is sticky and the text scrolls above first
+(p is measured from the runway spacer). Reduced motion: no pin, no scrub, static Rooftop + caption. No JS: static
+final layout, caption hidden. Same JS path in Chromium and WebKit (no CSS scroll timelines).
 
 Evergreen calendar and ticker: `src/landing-events.ts` (curated, sourced dates,
 tentative = month-level) + `src/landing-calendar.ts` (filter in America/New_York,

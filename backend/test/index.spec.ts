@@ -74,8 +74,10 @@ describe('Home page', () => {
       expect(new Set(urls).size, name).toBe(2);
       for (const u of new Set(urls)) expect((await env.ASSETS.fetch(`https://spotseek.app${u}`)).status, u).toBe(200);
     }
-    // three sentinels drive the desktop story; the chips are the single source of state
-    expect(html.match(/class="host__s"/g)).toHaveLength(3);
+    // one pinned stage plus a scroll runway; the chips are the single source of state
+    expect(html).toContain('class="host__stage"');
+    expect(html.match(/class="host__rn"/g)).toHaveLength(1);
+    expect(html).not.toContain('class="host__s"');
     expect(html).toContain('A bar near you');
     expect(html).toContain('Same party. Any room.');
   });
