@@ -230,8 +230,9 @@ const SX_CSS = `
    the venue text and the photo crossfade, so scroll and a tap share one path) and reveals the caption at .9. */
 .sx-pin .host__visual{container-type:inline-size}
 .sx-pin .host__in{--s:min(1,max(0,calc(var(--p,1) / .3)));--e:calc(1 - (1 - var(--s)) * (1 - var(--s)))}
-.sx-pin .host__frame{transform:translateY(calc((1 - var(--e)) * (37.5cqw - 22px)))}
-.sx-pin .host__visual .evt{transform:translateY(calc((1 - var(--e)) * (22px - 37.5cqw)))}
+.sx-pin .host__frame,.sx-pin .host__visual .evt{--fh:75cqw}
+.sx-pin .host__frame{height:var(--fh);aspect-ratio:auto;transform:translateY(calc((1 - var(--e)) * (var(--fh) / 2 - 22px)))}
+.sx-pin .host__visual .evt{transform:translateY(calc((1 - var(--e)) * (22px - var(--fh) / 2)))}
 .sx-pin .host__rn{display:block;height:230vh;height:230svh}
 .host__visual:has([value=bar]:checked) .hp--roof,.host__visual:has([value=home]:checked) .hp--roof{opacity:0}
 .host__visual:has([value=bar]:checked) .hp--bar,.host__visual:has([value=home]:checked) .hp--home,.host__visual:has([value=roof]:checked) .hp--roof,.sx-st .host__visual:has([value=none]:checked) .hp--roof{opacity:1;z-index:2;transform:none;transition:opacity .7s,transform 1.3s cubic-bezier(.23,1,.32,1)}
@@ -249,6 +250,25 @@ const SX_CSS = `
 .sx-pin .host__stage,.sx-pin .host__in{display:contents}
 .sx-pin .host{padding:72px var(--gut)}
 .sx-pin .host__visual{position:sticky;top:max(8px,calc(50vh - 380px));top:max(8px,calc(50svh - 380px));margin:36px auto 0;max-width:520px}
+}
+@media (max-width:899.98px) and (max-height:759px){
+/* short phones (iPhone SE/mini, Safari toolbar showing): compact layout so the pinned visual always fits 100svh */
+.sx-pin .host__frame,.sx-pin .host__visual .evt{--fh:min(75cqw,40svh)}
+.sx-pin .host__visual{top:8px}
+.sx-pin .host__visual .evt{padding:14px 16px}
+.sx-pin .evt__title{margin:8px 0 6px;font-size:clamp(26px,7vw,32px)}
+.sx-pin .evt__rows div{padding:5px 0}
+.sx-pin .evt dt{font-size:11px;line-height:1.4}
+.sx-pin .evt dd{font-size:14px;line-height:1.25}
+.sx-pin .evt fieldset{margin-top:8px}
+.sx-pin .evt legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0}
+.sx-pin .evt label span{min-height:40px;padding:8px 11px}
+.sx-pin .host__cap{margin-top:12px}
+}
+@media (max-width:899.98px) and (max-height:520px){
+/* landscape phone: nothing can pin, so show the static final layout */
+.sx-pin .host__rn{display:none}
+.sx-pin .host__visual{position:static}
 }
 
 /* 5. Brands line underlines itself */
@@ -281,7 +301,7 @@ if(f&&hs&&rn&&st){
 var mq=matchMedia('(min-width:900px)'),u=0,n=0,q=0;
 de.classList.add('sx-st','sx-pin');
 ['click','change'].forEach(v=>f.addEventListener(v,()=>{u=1;de.classList.add('sx-cap')}));
-function upd(){q=0;var e=mq.matches?st:h,p=((parseFloat(getComputedStyle(e).top)||0)+e.offsetHeight-rn.getBoundingClientRect().top)/rn.offsetHeight;p=p<0?0:p>1?1:p;hs.style.setProperty('--p',p);if(!u){var s=p<.4?0:p<.6?1:p<.8?2:3;if(s!=n)set(n=s)}if(p>.9)de.classList.add('sx-cap')}
+function upd(){q=0;var e=mq.matches?st:h,p=rn.offsetHeight?((parseFloat(getComputedStyle(e).top)||0)+e.offsetHeight-rn.getBoundingClientRect().top)/rn.offsetHeight:1;p=p<0?0:p>1?1:p;hs.style.setProperty('--p',p);if(!u){var s=p<.4?0:p<.6?1:p<.8?2:3;if(s!=n)set(n=s)}if(p>.9)de.classList.add('sx-cap')}
 function rq(){q||(q=requestAnimationFrame(upd))}
 new IntersectionObserver(l=>{upd();l[0].isIntersecting?addEventListener('scroll',rq,{passive:true}):removeEventListener('scroll',rq)},{rootMargin:'50% 0px'}).observe(hs);
 addEventListener('resize',rq);
