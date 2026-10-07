@@ -109,7 +109,7 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
 .host__frame{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;isolation:isolate;background:var(--ink2);border:2px solid var(--white);box-shadow:8px 8px 0 var(--lime)}
 .hp{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 45%;opacity:0;z-index:1;transform:scale(1.04);transition:opacity 0s .7s}
 .hp--roof{opacity:1;transform:none}
-.host__cap{margin:22px 0 0 20px;font:700 14px/1.2 var(--label);letter-spacing:.12em;text-transform:uppercase;color:var(--lime)}
+.host__cap{margin:22px 0 0 20px;font:700 14px/1.2 var(--label);letter-spacing:.12em;text-transform:uppercase;color:var(--lime);visibility:hidden}
 .host__s{display:none;position:absolute;left:0;width:1px;height:2px;pointer-events:none}
 .host__visual .evt{margin:-44px 0 0 20px;position:relative;margin-right:8px}
 .evt{border:2px solid var(--white);background:var(--ink2);padding:20px;box-shadow:8px 8px 0 var(--orange);align-self:start}
@@ -227,12 +227,14 @@ const SX_CSS = `
 /* 4. Host: the frame and the example party slide in and lock. Then the venue story: chips (radios) drive
    the venue text AND the photo through :has(), so the scroll story, the timer and a tap all share one path */
 .sx-io .host{overflow-x:clip}
-.sx-io .host__frame,.sx-io .host__visual .evt{opacity:0;transition:opacity .5s,transform .9s cubic-bezier(.22,1.2,.4,1)}
-.sx-io .host__frame{transform:translateX(-12vw)}
-.sx-io .host__visual .evt{transform:translateX(12vw);transition-delay:.1s}
+/* entrance: card and frame start stacked at the midpoint of their resting offset (frame height = 75cqw, card overlaps it by 44px), then split vertically */
+.sx-io .host__visual{container-type:inline-size}
+.sx-io .host__frame,.sx-io .host__visual .evt{opacity:0;transition:opacity .4s,transform .8s cubic-bezier(.22,1.2,.4,1)}
+.sx-io .host__frame{transform:translateY(calc(37.5cqw - 22px))}
+.sx-io .host__visual .evt{transform:translateY(calc(22px - 37.5cqw))}
 .sx-io .host__visual.in .host__frame,.sx-io .host__visual.in .evt{opacity:1;transform:none}
 .sx-io .evt label{opacity:0;transform:translateY(10px) scale(.9);transition:opacity .3s,transform .45s cubic-bezier(.3,1.6,.5,1)}
-.sx-io .host__visual.in .evt label{opacity:1;transform:none;transition-delay:calc(.9s + var(--c,0)*.14s)}
+.sx-io .host__visual.in .evt label{opacity:1;transform:none;transition-delay:calc(.7s + var(--c,0)*.14s)}
 .evt label:nth-of-type(2){--c:1}
 .evt label:nth-of-type(3){--c:2}
 .evt label:nth-of-type(4){--c:3}
@@ -241,7 +243,7 @@ const SX_CSS = `
 .sx-st .host__visual:has([value=none]:checked) .hp--roof{opacity:.3}
 .sx-st .evt__venue span{animation:sx-v .4s both}
 @keyframes sx-v{from{opacity:0;transform:translateY(6px)}}
-.sx-st .host__cap{opacity:0;transition:opacity .6s .3s}
+.sx-st .host__cap{visibility:visible;opacity:0;transition:opacity .6s .3s}
 .sx-st .host__visual:has([value=roof]:checked) .host__cap{opacity:1}
 @media (min-width:900px){
 .sx-io .host{position:relative;min-height:190vh;align-items:start}
