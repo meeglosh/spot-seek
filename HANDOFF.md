@@ -395,6 +395,15 @@ it enters; CSS transitions do the rest. CSS `animation-timeline: view()` was
 removed (engines differed). With JS off or reduced motion the page is its static
 design. transform, opacity and clip-path only; no scroll handlers.
 
+Venue story (host section): one shared 4:3 `.host__frame` with three stacked photos (bar, living
+room, rooftop; `bar-*` assets from Slide_02). The venue chips (radios) are the only state: `:has()` drives
+the venue text, the photo (opacity crossfade) and the "Same party. Any room." caption, so a scroll step, the
+mobile timer and a tap share one path. Desktop (>=900px, motion allowed): the card+frame column is
+`position: sticky` in a ~190vh section; three `.host__s` sentinels + IntersectionObserver set the state (None
+yet, Bar, Living room, Rooftop). Mobile: no sticky; a 1.1s timer cycles once when the card is >=60% visible,
+re-runs at most once more. Any click/change on a chip stops the story. Reduced motion: static Rooftop, chips
+work instantly. No JS: static rooftop + "None yet".
+
 Evergreen calendar and ticker: `src/landing-events.ts` (curated, sourced dates,
 tentative = month-level) + `src/landing-calendar.ts` (filter in America/New_York,
 sort, exactly N=9 rows, recurring rows pinned: NFL Sundays first in season only,

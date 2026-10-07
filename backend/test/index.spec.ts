@@ -65,6 +65,21 @@ describe('Home page', () => {
     }
   });
 
+  it('the venue story references bar, living room and rooftop photos (1536w + 800w) and each resolves via ASSETS', async () => {
+    const html = await (await req('https://spotseek.app/')).text();
+    const frame = html.match(/<div class="host__frame">([\s\S]*?)<\/div>/)![1]!;
+    for (const k of ['bar', 'home', 'roof']) expect(frame, k).toContain(`hp hp--${k}`);
+    for (const name of ['bar', 'living-room', 'rooftop']) {
+      const urls = [...frame.matchAll(new RegExp(`/site/${name}-(1536|800)\\.[0-9a-f]{8}\\.webp`, 'g'))].map((m) => m[0]);
+      expect(new Set(urls).size, name).toBe(2);
+      for (const u of new Set(urls)) expect((await env.ASSETS.fetch(`https://spotseek.app${u}`)).status, u).toBe(200);
+    }
+    // three sentinels drive the desktop story; the chips are the single source of state
+    expect(html.match(/class="host__s"/g)).toHaveLength(3);
+    expect(html).toContain('A bar near you');
+    expect(html).toContain('Same party. Any room.');
+  });
+
   it('Worker-owned paths are unaffected by the assets binding', async () => {
     const logo = await req('https://spotseek.app/static/email-logo.png');
     expect(logo.status).toBe(200);

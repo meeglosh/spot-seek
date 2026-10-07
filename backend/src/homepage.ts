@@ -106,7 +106,11 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
 .host__copy p{margin:18px 0 26px;max-width:42ch;font-size:19px;color:var(--mute)}
 .host .btn--primary{display:inline-flex;min-width:240px}
 .host__visual{display:grid;align-self:start}
-.host__photo{width:100%;height:auto;align-self:start;aspect-ratio:4/3;object-fit:cover;object-position:50% 45%;border:2px solid var(--white);box-shadow:8px 8px 0 var(--lime)}
+.host__frame{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;isolation:isolate;background:var(--ink2);border:2px solid var(--white);box-shadow:8px 8px 0 var(--lime)}
+.hp{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 45%;opacity:0;z-index:1;transform:scale(1.04);transition:opacity 0s .7s}
+.hp--roof{opacity:1;transform:none}
+.host__cap{margin:22px 0 0 20px;font:700 14px/1.2 var(--label);letter-spacing:.12em;text-transform:uppercase;color:var(--lime)}
+.host__s{display:none;position:absolute;left:0;width:1px;height:2px;pointer-events:none}
 .host__visual .evt{margin:-44px 0 0 20px;position:relative;margin-right:8px}
 .evt{border:2px solid var(--white);background:var(--ink2);padding:20px;box-shadow:8px 8px 0 var(--orange);align-self:start}
 .evt__tag{display:inline-block;background:var(--orange);color:var(--ink);font:700 11px/1 var(--label);letter-spacing:.12em;padding:6px 8px}
@@ -115,6 +119,7 @@ h3{font:400 28px/1 var(--display);letter-spacing:.03em}
 .evt dt{font:700 12px/1.6 var(--label);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
 .evt dd{text-align:right;font-weight:700}
 .evt__venue span{display:none}
+.evt input:focus-visible+span{outline:2px solid var(--lime);outline-offset:2px}
 .evt:has([value=bar]:checked) [data-v=bar],.evt:has([value=home]:checked) [data-v=home],.evt:has([value=roof]:checked) [data-v=roof],.evt:has([value=none]:checked) [data-v=none]{display:inline}
 .evt fieldset{border:0;padding:0;margin:14px 0 0;display:flex;flex-wrap:wrap;gap:8px}
 .evt legend{font:700 12px/1 var(--label);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:10px;padding:0}
@@ -219,19 +224,34 @@ const SX_CSS = `
 .sx-io .fx__tag{opacity:0;transform:scale(.6);transition:opacity .2s calc(.5s + var(--i,0)*.07s),transform .3s cubic-bezier(.3,1.7,.5,1) calc(.5s + var(--i,0)*.07s)}
 .sx-io .fx.in .fx__tag{opacity:1;transform:none}
 
-/* 4. Host: the photo frame and the example party slide in from opposite sides and lock; venue chips pop in */
+/* 4. Host: the frame and the example party slide in and lock. Then the venue story: chips (radios) drive
+   the venue text AND the photo through :has(), so the scroll story, the timer and a tap all share one path */
 .sx-io .host{overflow-x:clip}
-.sx-io .host__photo,.sx-io .host__visual .evt{opacity:0;transition:opacity .5s,transform .9s cubic-bezier(.22,1.2,.4,1)}
-.sx-io .host__photo{transform:translateX(-12vw)}
+.sx-io .host__frame,.sx-io .host__visual .evt{opacity:0;transition:opacity .5s,transform .9s cubic-bezier(.22,1.2,.4,1)}
+.sx-io .host__frame{transform:translateX(-12vw)}
 .sx-io .host__visual .evt{transform:translateX(12vw);transition-delay:.1s}
-.sx-io .host__visual.in .host__photo,.sx-io .host__visual.in .evt{opacity:1;transform:none}
+.sx-io .host__visual.in .host__frame,.sx-io .host__visual.in .evt{opacity:1;transform:none}
 .sx-io .evt label{opacity:0;transform:translateY(10px) scale(.9);transition:opacity .3s,transform .45s cubic-bezier(.3,1.6,.5,1)}
 .sx-io .host__visual.in .evt label{opacity:1;transform:none;transition-delay:calc(.9s + var(--c,0)*.14s)}
 .evt label:nth-of-type(2){--c:1}
 .evt label:nth-of-type(3){--c:2}
 .evt label:nth-of-type(4){--c:3}
-.sx-io .host__visual.in .evt label:last-of-type span{animation:sx-lit .6s 1.65s both}
-@keyframes sx-lit{40%{transform:scale(1.12)}}
+.host__visual:has([value=bar]:checked) .hp--roof,.host__visual:has([value=home]:checked) .hp--roof{opacity:0}
+.host__visual:has([value=bar]:checked) .hp--bar,.host__visual:has([value=home]:checked) .hp--home,.host__visual:has([value=roof]:checked) .hp--roof,.sx-st .host__visual:has([value=none]:checked) .hp--roof{opacity:1;z-index:2;transform:none;transition:opacity .7s,transform 1.3s cubic-bezier(.23,1,.32,1)}
+.sx-st .host__visual:has([value=none]:checked) .hp--roof{opacity:.3}
+.sx-st .evt__venue span{animation:sx-v .4s both}
+@keyframes sx-v{from{opacity:0;transform:translateY(6px)}}
+.sx-st .host__cap{opacity:0;transition:opacity .6s .3s}
+.sx-st .host__visual:has([value=roof]:checked) .host__cap{opacity:1}
+@media (min-width:900px){
+.sx-io .host{position:relative;min-height:190vh;align-items:start}
+.sx-io .host__copy{padding-top:6vh}
+.sx-io .host__visual{position:sticky;top:max(16px,calc(50vh - 310px))}
+.sx-io .host__s{display:block}
+.host__s[data-s="1"]{top:16%}
+.host__s[data-s="2"]{top:40%}
+.host__s[data-s="3"]{top:64%}
+}
 
 /* 5. Brands line underlines itself */
 .sx-io .brands__h span::after{transform:scaleX(0);transition:transform .8s cubic-bezier(.23,1,.32,1) .15s}
@@ -250,11 +270,25 @@ const SX_CSS = `
 
 // Inline script (the only non-JSON-LD script; test/index.spec.ts enforces < 4 KB).
 const SX_JS = `(()=>{
-var d=document;
-if(!matchMedia('(prefers-reduced-motion:reduce)').matches&&window.IntersectionObserver){
+var d=document,de=d.documentElement,h=d.querySelector('.host__visual'),f=h&&h.querySelector('form'),R=f?[].slice.call(f.querySelectorAll('input')):[],O=['none','bar','home','roof'];
+function set(n){R.forEach(r=>r.checked=r.value==O[n])}
+if(window.IntersectionObserver){
+if(matchMedia('(prefers-reduced-motion:reduce)').matches){if(f){de.classList.add('sx-st');set(3)}}
+else{
 var io=new IntersectionObserver(l=>{var i=0;l.forEach(e=>{if(e.isIntersecting||e.boundingClientRect.top<0){var t=e.target;t.style.setProperty('--i',i++);t.classList.add('in');io.unobserve(t)}})},{rootMargin:'0px 0px -14% 0px'});
-d.documentElement.classList.add('sx-io');
-[].forEach.call(d.querySelectorAll('.steps li,.vs__card--old li,.vs__card--new,.fx,.host__visual,.brands__h,.close__in'),e=>io.observe(e))
+de.classList.add('sx-io');
+[].forEach.call(d.querySelectorAll('.steps li,.vs__card--old li,.vs__card--new,.fx,.host__visual,.brands__h,.close__in'),e=>io.observe(e));
+if(f){
+var mq=matchMedia('(min-width:900px)'),u=0,t,n=0,runs=0,p=[0,0,0];
+de.classList.add('sx-st');
+['click','change'].forEach(v=>f.addEventListener(v,()=>{u=1;clearTimeout(t)}));
+var so=new IntersectionObserver(l=>{if(u||!mq.matches)return;l.forEach(e=>{p[e.target.dataset.s-1]=e.isIntersecting||e.boundingClientRect.top<e.rootBounds.top?1:0});var s=0;p.forEach((v,i)=>{if(v)s=i+1});set(s)},{rootMargin:'-40% 0px -40% 0px'});
+[].forEach.call(d.querySelectorAll('.host__s'),e=>so.observe(e));
+function tick(w){t=setTimeout(()=>{set(++n);if(n<3)tick(1100)},w)}
+new IntersectionObserver(l=>{l.forEach(e=>{if(u||mq.matches)return;clearTimeout(t);if(e.isIntersecting&&runs<2){runs++;set(n=0);tick(1500)}})},{threshold:.6}).observe(f);
+new IntersectionObserver((l,o)=>{if(l[0].isIntersecting){[].forEach.call(d.querySelectorAll('.hp'),i=>i.loading='eager');o.disconnect()}},{rootMargin:'100% 0px'}).observe(h)
+}
+}
 }
 })()`;
 
@@ -441,14 +475,18 @@ ${calendarHtml(rows)}
   </div>
 
   <div class="host__visual">
-    <img class="host__photo" src="/site/rooftop-1536.e43efa47.webp" srcset="/site/rooftop-800.1bec80b8.webp 800w, /site/rooftop-1536.e43efa47.webp 1536w" sizes="(min-width:760px) 45vw, 100vw" width="1536" height="1024" alt="Friends on a rooftop couch cheering with raised arms as a man in a tuxedo accepts a gold statuette on a big outdoor screen, under string lights at dusk with a city skyline behind" loading="lazy">
+    <div class="host__frame">
+      <img class="hp hp--bar" src="/site/bar-1536.d684602b.webp" srcset="/site/bar-800.cc7fb890.webp 800w, /site/bar-1536.d684602b.webp 1536w" sizes="(min-width:900px) 45vw, 100vw" width="1536" height="1152" alt="" loading="lazy" decoding="async">
+      <img class="hp hp--home" src="/site/living-room-1536.8aa17217.webp" srcset="/site/living-room-800.cfea0bf0.webp 800w, /site/living-room-1536.8aa17217.webp 1536w" sizes="(min-width:900px) 45vw, 100vw" width="1536" height="1024" alt="" loading="lazy" decoding="async">
+      <img class="hp hp--roof" src="/site/rooftop-1536.e43efa47.webp" srcset="/site/rooftop-800.1bec80b8.webp 800w, /site/rooftop-1536.e43efa47.webp 1536w" sizes="(min-width:900px) 45vw, 100vw" width="1536" height="1024" alt="Friends on a rooftop couch cheering with raised arms as a man in a tuxedo accepts a gold statuette on a big outdoor screen, under string lights at dusk with a city skyline behind" loading="lazy" decoding="async">
+    </div>
   <form class="evt" onsubmit="return false" aria-label="Example party: choose a venue">
     <p class="evt__tag">EXAMPLE PARTY</p>
     <p class="evt__title">OSCARS NIGHT</p>
     <dl class="evt__rows">
       <div><dt>Host</dt><dd>You</dd></div>
       <div><dt>Date</dt><dd>${oscarsDate}</dd></div>
-      <div><dt>Venue</dt><dd class="evt__venue"><span data-v="bar">A bar downtown</span><span data-v="home">Your living room</span><span data-v="roof">A rooftop</span><span data-v="none">To be decided</span></dd></div>
+      <div><dt>Venue</dt><dd class="evt__venue"><span data-v="bar">A bar near you</span><span data-v="home">Your living room</span><span data-v="roof">A rooftop</span><span data-v="none">To be decided</span></dd></div>
     </dl>
     <fieldset>
       <legend>Pick a venue</legend>
@@ -458,7 +496,9 @@ ${calendarHtml(rows)}
       <label><input type="radio" name="v" value="none" checked><span>None yet</span></label>
     </fieldset>
   </form>
+    <p class="host__cap">Same party. Any room.</p>
   </div>
+  <i class="host__s" data-s="1" aria-hidden="true"></i><i class="host__s" data-s="2" aria-hidden="true"></i><i class="host__s" data-s="3" aria-hidden="true"></i>
 </section>
 
 <section class="brands wrap" aria-labelledby="brands-h">
