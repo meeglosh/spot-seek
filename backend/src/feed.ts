@@ -40,8 +40,8 @@ function haversineKm(lat: number, lng: number) {
  *
  * Ended parties are hidden by default (see eventTime.ts: endsAt < now, or no
  * endsAt and startsAt < now - 4h). In-progress parties stay; undated ones are
- * excluded. Egress guard: the result is capped, and only the columns the app's cards/map use are selected
- * (description / recurrenceRule / createdAt etc. are detail-screen only).
+ * excluded. Egress guard: the result is capped, and only the columns the app's
+ * cards/map use are selected (description / recurrenceRule / createdAt etc. are detail-screen only).
  *
  * Returns published events. Private-location events include venue_name but
  * obscure venue_address/lat/lng for users who haven't RSVP'd going/waitlisted.
