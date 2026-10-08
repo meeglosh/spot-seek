@@ -139,7 +139,11 @@
     },
     "errorTitle": "Impossible de charger cette soirée",
     "notFoundTitle": "Soirée introuvable",
-    "backToMarketplace": "Retour aux parrainages"
+    "backToMarketplace": "Retour aux parrainages",
+    "ended": {
+      "title": "Cette soirée est terminée",
+      "body": "Les offres sont closes. Vos offres passées restent dans votre liste."
+    }
   },
   "findSponsors": {
     "title": "Trouver des sponsors",

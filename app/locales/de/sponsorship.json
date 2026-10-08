@@ -139,7 +139,11 @@
     },
     "errorTitle": "Party nicht geladen",
     "notFoundTitle": "Party nicht gefunden",
-    "backToMarketplace": "Zurück zum Sponsoring"
+    "backToMarketplace": "Zurück zum Sponsoring",
+    "ended": {
+      "title": "Diese Party ist vorbei",
+      "body": "Gebote sind geschlossen. Vergangene Gebote bleiben in deiner Liste."
+    }
   },
   "findSponsors": {
     "title": "Sponsoren finden",

@@ -6,6 +6,7 @@ import * as schema from './schema';
 import { isPlaceholderUserId } from './deleted-users';
 import { publicBaseUrl } from './email';
 import { countGoing, eventIsOpen } from './guests';
+import { eventPhase } from './eventTime';
 import { canViewEvent, discoverableEventSql, optionalViewerId } from './moderation/visibility';
 import { escapeHtml, installCtas, renderPage, safeJson } from './webpage';
 
@@ -190,6 +191,7 @@ deeplinksRouter.get('/e/:id', async (c) => {
   const imageUrl = absoluteImageUrl(base, event.coverImageUrl);
 
   const open = eventIsOpen(event);
+  const ended = eventPhase(event) === 'ended';
   const published = event.status === 'published' && event.moderationStatus !== 'hidden' && event.moderationStatus !== 'removed';
   const jsonLd = published ? buildEventJsonLd(event, { url: canonical, hostName, imageUrl }) : null;
 
@@ -216,6 +218,7 @@ deeplinksRouter.get('/e/:id', async (c) => {
       ? `<span class="chip ${spotsLeft === 0 ? 'chip-hot' : 'chip-cyan'}">${spotsLeft === 0 ? 'Full. Join the waitlist' : `${spotsLeft} spots left`}</span>`
       : '',
     event.status === 'cancelled' ? '<span class="chip chip-hot">Cancelled</span>' : '',
+    ended && event.status !== 'cancelled' ? '<span class="chip">Ended</span>' : '',
   ].filter(Boolean).join('');
 
   const sponsors = sponsorRows.length
@@ -236,7 +239,7 @@ deeplinksRouter.get('/e/:id', async (c) => {
   <button class="btn" type="submit">I'm going</button>
   <p class="fine">We only use your email for this event's RSVP.</p>
 </form>`
-    : `<div class="panel"><h2>${event.status === 'cancelled' ? 'This party was cancelled' : 'RSVPs are closed'}</h2></div>`;
+    : `<div class="panel"><h2>${event.status === 'cancelled' ? 'This party was cancelled' : ended ? 'This party has ended' : 'RSVPs are closed'}</h2></div>`;
 
   const body = `${imageUrl ? `  <img class="cover" src="${escapeHtml(imageUrl)}" alt="">` : ''}
   <div class="content">

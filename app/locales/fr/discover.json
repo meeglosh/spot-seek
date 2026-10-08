@@ -28,7 +28,8 @@
     "emptyFiltered": "Assouplissez les filtres ou effacez-les pour tout voir.",
     "clearFilters": "Effacer les filtres",
     "emptyDefaultTitle": "Rien à l'affiche",
-    "hostOne": "Organiser une soirée"
+    "hostOne": "Organiser une soirée",
+    "nothingUpcoming": "Rien à venir"
   },
   "card": {
     "today": "Aujourd'hui",
@@ -73,7 +74,10 @@
     "venue": "Lieu",
     "venuePlaceholder": "ex. Le Café du Coin",
     "showResults": "Voir les résultats · {{count}}",
-    "showAllEvents": "Tout afficher"
+    "showAllEvents": "Tout afficher",
+    "showPast": "Afficher les soirées passées",
+    "showPastSub": "Ajoute les soirées des 30 derniers jours, après celles à venir.",
+    "pastChip": "Soirées passées"
   },
   "detail": {
     "loadError": "Vérifiez votre connexion et réessayez.",
@@ -125,7 +129,13 @@
     },
     "errorTitle": "Impossible de charger cette soirée",
     "notFoundTitle": "Soirée introuvable",
-    "rsvpForbidden": "Vous ne pouvez pas réserver à cette soirée."
+    "rsvpForbidden": "Vous ne pouvez pas réserver à cette soirée.",
+    "ended": {
+      "title": "Cette soirée est terminée",
+      "date": "Elle avait lieu le {{date}}.",
+      "review": "Laisser un avis",
+      "editReview": "Modifier votre avis"
+    }
   },
   "youreIn": {
     "going": "T'es dedans.",

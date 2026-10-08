@@ -39,7 +39,15 @@
       "body": "Elige qué ver, pon hora y abre la puerta.",
       "cta": "Organizar una fiesta"
     },
-    "createFooter": "+ Organizar una fiesta"
+    "createFooter": "+ Organizar una fiesta",
+    "segments": {
+      "upcoming": "Próximas",
+      "past": "Pasadas"
+    },
+    "emptyPast": {
+      "title": "Ninguna fiesta pasada",
+      "body": "Las fiestas a las que fuiste o que organizaste aparecen aquí cuando terminan."
+    }
   },
   "dashboard": {
     "guestGate": {

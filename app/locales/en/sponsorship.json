@@ -139,7 +139,11 @@
     },
     "errorTitle": "Couldn't load this party",
     "notFoundTitle": "Party not found",
-    "backToMarketplace": "Back to sponsorships"
+    "backToMarketplace": "Back to sponsorships",
+    "ended": {
+      "title": "This party has ended",
+      "body": "Bidding is closed. Past bids stay in your list."
+    }
   },
   "findSponsors": {
     "title": "Find sponsors",

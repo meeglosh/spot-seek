@@ -60,5 +60,9 @@
     "done": "Listo",
     "title": "Fecha y hora",
     "placeholder": "Elegir fecha y hora"
+  },
+  "phase": {
+    "ended": "Terminada",
+    "onNow": "En curso"
   }
 }

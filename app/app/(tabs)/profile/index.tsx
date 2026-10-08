@@ -18,6 +18,7 @@ import { GuestGate } from '../../../components/AuthGate';
 import { StarRating } from '../../../components/Stars';
 import { SPORTS } from '../../../lib/sports-data';
 import { formatEventDateTime } from '../../../lib/dateFormat';
+import { hasEnded, newestFirst } from '../../../lib/eventTime';
 
 type ProfileData = {
   profile: ApiProfile | null;
@@ -110,19 +111,19 @@ export default function ProfileScreen() {
 
   const rsvps = data?.rsvps ?? [];
   const attended = rsvps.filter(
-    (r) => r.state === 'going' && r.event?.startsAt && new Date(r.event.startsAt) < now,
+    (r) => r.state === 'going' && r.event && hasEnded(r.event, now),
   ).length;
   const milestone = Math.floor(attended / 10) * 10 + 10; // next multiple of 10
 
   const upcoming = rsvps
     .filter((r) =>
       (r.state === 'going' || r.state === 'waitlisted') &&
-      (!r.event?.startsAt || new Date(r.event.startsAt) >= now))
+      !(r.event && hasEnded(r.event, now)))
     .sort((a, b) => (a.event?.startsAt ?? '9999').localeCompare(b.event?.startsAt ?? '9999'));
 
   const hostedPast = (data?.hosted ?? [])
-    .filter((e) => e.startsAt && new Date(e.startsAt) < now)
-    .sort((a, b) => (b.startsAt ?? '').localeCompare(a.startsAt ?? ''));
+    .filter((e) => e.status !== 'draft' && hasEnded(e, now))
+    .sort(newestFirst);
 
   const teamFavs = (data?.favourites ?? []).filter((f) => f.type === 'team');
   const sportFavs = (data?.favourites ?? []).filter((f) => f.type === 'sport');
@@ -309,13 +310,14 @@ export default function ProfileScreen() {
                       <Icon name="grid" size={20} color={colors.textSecondary} />
                     </View>
                     <View style={s.rowBody}>
-                      <Text style={[t.label, s.rowTitle]} numberOfLines={1}>
+                      <Text style={[t.label, s.rowTitle, { color: colors.textSecondary }]} numberOfLines={1}>
                         {e.title}
                       </Text>
                       <Text style={[t.labelSm, { color: colors.textSecondary }]}>
                         {tr('hosting.attendee', { count: e.rsvpCounts.going })}
                       </Text>
                     </View>
+                    <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} />
                   </View>
                 ))}
               </View>
@@ -457,7 +459,6 @@ const s = StyleSheet.create({
     gap: spacing.lg,
     backgroundColor: colors.surface1,
     padding: spacing.lg,
-    opacity: 0.85,
     borderRadius: radius.card,
   },
   historyIcon: {

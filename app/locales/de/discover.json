@@ -28,7 +28,8 @@
     "emptyFiltered": "Lockere die Filter oder setz sie zurück, um alles zu sehen, was läuft.",
     "clearFilters": "Filter löschen",
     "emptyDefaultTitle": "Noch nichts los",
-    "hostOne": "Party planen"
+    "hostOne": "Party planen",
+    "nothingUpcoming": "Nichts in Sicht"
   },
   "card": {
     "today": "Heute",
@@ -73,7 +74,10 @@
     "venue": "Ort",
     "venuePlaceholder": "z. B. Zum Roten Löwen",
     "showResults": "Ergebnisse anzeigen · {{count}}",
-    "showAllEvents": "Alles anzeigen"
+    "showAllEvents": "Alles anzeigen",
+    "showPast": "Vergangene Partys zeigen",
+    "showPastSub": "Fügt Partys der letzten 30 Tage hinter den kommenden ein.",
+    "pastChip": "Vergangene Partys"
   },
   "detail": {
     "loadError": "Prüf deine Verbindung und versuch es nochmal.",
@@ -125,7 +129,13 @@
     },
     "errorTitle": "Party nicht geladen",
     "notFoundTitle": "Party nicht gefunden",
-    "rsvpForbidden": "Du kannst für diese Party nicht zusagen."
+    "rsvpForbidden": "Du kannst für diese Party nicht zusagen.",
+    "ended": {
+      "title": "Diese Party ist vorbei",
+      "date": "Sie fand am {{date}} statt.",
+      "review": "Bewertung abgeben",
+      "editReview": "Bewertung bearbeiten"
+    }
   },
   "youreIn": {
     "going": "Du bist dabei.",

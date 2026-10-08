@@ -60,5 +60,9 @@
     "done": "Done",
     "title": "Date and time",
     "placeholder": "Set date and time"
+  },
+  "phase": {
+    "ended": "Ended",
+    "onNow": "On now"
   }
 }

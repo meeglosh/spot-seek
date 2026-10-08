@@ -17,6 +17,7 @@ import {
   type ApiEvent, type ApiSponsorBid, type SponsorshipStatus,
 } from '../../../lib/api';
 import { formatEventDateTime } from '../../../lib/dateFormat';
+import { hasEnded } from '../../../lib/eventTime';
 import { STRIPE_MERCHANT_NAME } from '../../../lib/stripe';
 
 // After PaymentSheet succeeds the webhook flips paymentStatus to 'paid' — poll
@@ -261,6 +262,9 @@ export default function SponsorshipDetailsScreen() {
     );
   }
 
+  // An ended party takes no new bids. Bids already placed (and paid) still show.
+  const ended = hasEnded(event);
+
   return (
     <KeyboardAvoidingView
       style={s.container}
@@ -286,7 +290,8 @@ export default function SponsorshipDetailsScreen() {
         </View>
 
         <View style={s.body}>
-          <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{event.title}</Text>
+          {ended && <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} style={s.endedTag} />}
+          <Text style={[t.headlineLg, { color: ended ? colors.textSecondary : colors.textPrimary }]}>{event.title}</Text>
           {event.description != null && event.description !== '' && (
             <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{event.description}</Text>
           )}
@@ -406,6 +411,17 @@ export default function SponsorshipDetailsScreen() {
                 </Text>
               </View>
             ))
+          ) : ended ? (
+            <View style={s.statusCard}>
+              <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{tr('bid.ended.title')}</Text>
+              <Text style={[t.bodySm, { color: colors.textSecondary }]}>{tr('bid.ended.body')}</Text>
+              {lastClosedBid && (
+                <Badge
+                  label={tr('bid.lastBid', { amount: fmtUsd(lastClosedBid.amountCents), status: tr(`statusLabels.${lastClosedBid.status}`) })}
+                  tone={BID_TONE[lastClosedBid.status]}
+                />
+              )}
+            </View>
           ) : notSponsor ? (
             <View style={s.statusCard}>
               <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{tr('bid.sponsorProfileNeeded.title')}</Text>
@@ -477,6 +493,7 @@ export default function SponsorshipDetailsScreen() {
 }
 
 const s = StyleSheet.create({
+  endedTag: { alignSelf: 'flex-start' },
   container: { flex: 1, backgroundColor: colors.canvas },
   skeletons: { padding: spacing.lg, gap: spacing.md },
 

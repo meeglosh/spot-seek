@@ -111,6 +111,71 @@ describe('discovery feed', () => {
     expect(one.length).toBe(1);
   });
 
+  it('hides ended parties by default, keeps in-progress ones, excludes undated ones', async () => {
+    const H = 60 * 60 * 1000;
+    const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
+    const ahead = (ms: number) => new Date(Date.now() + ms).toISOString();
+    const T = `Phase Party ${TS}`;
+    const mk = async (suffix: string, fields: Record<string, unknown>) => {
+      const ev = await createEvent(hostCookie, { title: `${T} ${suffix}`, broadcastSubject: 'Phase', ...fields });
+      await publish(hostCookie, ev.id as string);
+      return ev.id as string;
+    };
+    const [upcoming, liveWithEnd, liveNoEnd, endedWithEnd, endedNoEnd, undated] = await Promise.all([
+      mk('upcoming', { startsAt: ahead(2 * H) }),
+      // started 1h ago, ends in 2h
+      mk('live end', { startsAt: ago(H), endsAt: ahead(2 * H) }),
+      // no endsAt, started 3h ago: inside the 4h default length, still on
+      mk('live noend', { startsAt: ago(3 * H) }),
+      // ended 1h ago (inside the old 6h grace window, now hidden)
+      mk('ended end', { startsAt: ago(3 * H), endsAt: ago(H) }),
+      // no endsAt, started 5h ago: past the 4h default length
+      mk('ended noend', { startsAt: ago(5 * H) }),
+      mk('undated', {}),
+    ]);
+
+    const { events } = await feedQ(T);
+    const ids = events.map((e) => e.id);
+    expect(ids).toContain(upcoming);
+    expect(ids).toContain(liveWithEnd);
+    expect(ids).toContain(liveNoEnd);
+    expect(ids).not.toContain(endedWithEnd);
+    expect(ids).not.toContain(endedNoEnd);
+    expect(ids).not.toContain(undated);
+  });
+
+  it('include=past adds the last 30 days of ended parties after the upcoming ones', async () => {
+    const D = 24 * 60 * 60 * 1000;
+    const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
+    const T = `Past Window ${TS}`;
+    const mk = async (suffix: string, fields: Record<string, unknown>) => {
+      const ev = await createEvent(hostCookie, { title: `${T} ${suffix}`, broadcastSubject: 'Past', ...fields });
+      await publish(hostCookie, ev.id as string);
+      return ev.id as string;
+    };
+    const soon = await mk('soon', { startsAt: new Date(Date.now() + 3 * D).toISOString() });
+    const liveNow = await mk('live', { startsAt: ago(60 * 60 * 1000) });
+    const recentOld = await mk('2d', { startsAt: ago(2 * D), endsAt: new Date(Date.now() - 2 * D + 3 * 3600_000).toISOString() });
+    const olderOld = await mk('20d', { startsAt: ago(20 * D) });
+    const tooOld = await mk('40d', { startsAt: ago(40 * D) });
+    const undated = await mk('undated', {});
+
+    // Default: no past at all.
+    const { events: def } = await feedQ(T);
+    expect(def.map((e) => e.id).sort()).toEqual([soon, liveNow].sort());
+
+    const { events: withPast } = await feedQ(T, '&include=past');
+    // Upcoming/live first by start time, then ended parties, most recent first.
+    expect(withPast.map((e) => e.id)).toEqual([liveNow, soon, recentOld, olderOld]);
+    expect(withPast.map((e) => e.id)).not.toContain(tooOld);
+    expect(withPast.map((e) => e.id)).not.toContain(undated);
+
+    // Still capped by limit; upcoming parties win the slots.
+    const res = await SELF.fetch(`${FEED}?q=${encodeURIComponent(T)}&include=past&limit=2`);
+    const { events: capped } = (await res.json()) as { events: Array<{ id: string }> };
+    expect(capped.map((e) => e.id)).toEqual([liveNow, soon]);
+  });
+
   it('masks private-location address for unauthenticated users', async () => {
     const privateEvent = await createEvent(hostCookie, {
       title: `Private Party ${TS}`,

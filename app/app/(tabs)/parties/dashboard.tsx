@@ -5,7 +5,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { AppHeader } from '../../../components/AppHeader';
-import { Btn, SegmentBar, LiveDot, Press, Skeleton, RowSkeleton, EmptyState, ErrorState } from '../../../components/ui';
+import { Btn, Badge, SegmentBar, LiveDot, Press, Skeleton, RowSkeleton, EmptyState, ErrorState } from '../../../components/ui';
 import { Icon } from '../../../components/icons';
 import { GuestGate } from '../../../components/AuthGate';
 import { ModerationBanner } from '../../../components/ModerationBanner';
@@ -17,12 +17,13 @@ import {
 } from '../../../lib/api';
 import { colors, radius, spacing, type as t } from '../../../lib/theme';
 import { formatEventDateTime } from '../../../lib/dateFormat';
+import { hasEnded } from '../../../lib/eventTime';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Shared rule (lib/eventTime.ts): endsAt < now, or no endsAt and started over 4h ago.
 function isPast(e: ApiDashboardEvent): boolean {
-  const ref = e.endsAt ?? e.startsAt;
-  return ref != null && new Date(ref).getTime() < Date.now();
+  return hasEnded(e);
 }
 
 function isToday(iso: string) {
@@ -299,7 +300,7 @@ export default function CommandCenterScreen() {
                   style={({ pressed }) => [s.rowCard, s.completedCard, pressed && s.rowPressed]}
                 >
                   <View style={s.rowText}>
-                    <Text style={[t.bodyLg, s.rowTitle, s.struck]} numberOfLines={1}>{e.title}</Text>
+                    <Text style={[t.bodyLg, s.rowTitle, s.rowTitleMuted]} numberOfLines={1}>{e.title}</Text>
                     <Text style={[t.monoData, { color: colors.textSecondary }]}>
                       {e.status === 'cancelled'
                         ? tr('dashboard.cancelled')
@@ -307,6 +308,7 @@ export default function CommandCenterScreen() {
                     </Text>
                   </View>
                   <View style={s.rowRight}>
+                    {e.status !== 'cancelled' && <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} />}
                     {sponsored && <Text style={[t.labelSm, { color: colors.confirmed }]}>{sponsoredLabel(sponsorCount, tr)}</Text>}
                     <Text style={[t.monoData, { color: colors.textSecondary }]}>
                       {tr('dashboard.attendees', { count: attendees })}
@@ -414,8 +416,9 @@ const s = StyleSheet.create({
   rowText: { flex: 1, gap: 2 },
   rowTitle: { color: colors.textPrimary },
   rowRight: { alignItems: 'flex-end', gap: 2 },
-  completedCard: { opacity: 0.7 },
-  struck: { textDecorationLine: 'line-through' },
+  // Ended parties are muted with colour, not opacity, so text keeps its contrast.
+  completedCard: {},
+  rowTitleMuted: { color: colors.textSecondary },
 
   footerBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,

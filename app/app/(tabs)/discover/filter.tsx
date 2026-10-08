@@ -48,6 +48,7 @@ export default function FilterScreen() {
   const [before, setBefore] = useState<Date | null>(filters.before ? new Date(filters.before) : null);
   const [venueSearch, setVenueSearch] = useState(filters.venue ?? '');
   const [useFavourites, setUseFavourites] = useState(filters.useFavourites ?? false);
+  const [showPast, setShowPast] = useState(filters.showPast ?? false);
   const [favourites, setFavourites] = useState<ApiFavourite[]>([]);
 
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function FilterScreen() {
     setBefore(null);
     setVenueSearch('');
     setUseFavourites(false);
+    setShowPast(false);
   }
 
   const activeCount =
@@ -78,7 +80,8 @@ export default function FilterScreen() {
     (after ? 1 : 0) +
     (before ? 1 : 0) +
     (venueSearch ? 1 : 0) +
-    (useFavourites ? 1 : 0);
+    (useFavourites ? 1 : 0) +
+    (showPast ? 1 : 0);
 
   function apply() {
     setFilters({
@@ -88,6 +91,7 @@ export default function FilterScreen() {
       before: before?.toISOString(),
       venue: venueSearch || undefined,
       useFavourites,
+      showPast,
     });
     closeFilter();
   }
@@ -237,6 +241,17 @@ export default function FilterScreen() {
                 <Icon name="close" size={16} color={colors.textTertiary} />
               </Press>
             )}
+          </View>
+        </View>
+
+        {/* Past parties: opt-in, off by default, never persisted */}
+        <View style={s.section}>
+          <View style={s.favouriteRow}>
+            <View style={s.favouriteLabels}>
+              <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('filters.showPast')}</Text>
+              <Text style={[t.bodySm, { color: colors.textSecondary }]}>{tr('filters.showPastSub')}</Text>
+            </View>
+            <Toggle value={showPast} onValueChange={setShowPast} accessibilityLabel={tr('filters.showPast')} />
           </View>
         </View>
 

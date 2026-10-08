@@ -231,6 +231,8 @@ export async function fetchFeed(params?: {
   radiusKm?: number;
   q?: string;
   sport?: string;
+  /** 'past' also returns parties that ended in the last 30 days (after the upcoming ones). */
+  include?: 'past';
 }): Promise<ApiEvent[]> {
   const q = new URLSearchParams();
   if (params?.after) q.set('after', params.after);
@@ -240,6 +242,7 @@ export async function fetchFeed(params?: {
   if (params?.radiusKm != null) q.set('radiusKm', String(params.radiusKm));
   if (params?.q) q.set('q', params.q);
   if (params?.sport) q.set('sport', params.sport);
+  if (params?.include) q.set('include', params.include);
 
   const qs = q.toString();
   const res = await apiFetch(`/api/feed${qs ? `?${qs}` : ''}`);

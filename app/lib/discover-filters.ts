@@ -12,6 +12,8 @@ export type DiscoverFilters = {
   before?: string;
   venue?: string;
   useFavourites?: boolean;
+  /** Opt-in: also list parties that ended in the last 30 days. Session only, never persisted. */
+  showPast?: boolean;
 };
 
 let _filters: DiscoverFilters = {};
@@ -58,6 +60,7 @@ export function activeFilterCount(f: DiscoverFilters) {
     (f.after ? 1 : 0) +
     (f.before ? 1 : 0) +
     (f.venue ? 1 : 0) +
-    (f.useFavourites ? 1 : 0)
+    (f.useFavourites ? 1 : 0) +
+    (f.showPast ? 1 : 0)
   );
 }

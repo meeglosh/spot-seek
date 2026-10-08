@@ -5,6 +5,7 @@ import { and, eq, gte, lte, isNull, or, sql, ilike, inArray, asc } from 'drizzle
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { discoverableEventSql, notBlockedWithHostSql } from './moderation/visibility';
+import { effectiveEndSql, upcomingOrLiveSql, recentlyEndedSql } from './eventTime';
 
 type AppEnv = { Bindings: Env };
 
@@ -34,9 +35,12 @@ function haversineKm(lat: number, lng: number) {
  *   radiusKm=float   — radius in km (default 50, requires lat+lng)
  *   limit=int        — page size (default and max FEED_MAX_LIMIT)
  *   offset=int       — rows to skip (for paging; ordered by startsAt, id)
+ *   include=past     - also return parties that ended in the last 30 days,
+ *                      after the upcoming ones, most recent first
  *
- * Egress guard: events that ended more than 6h ago are never returned, the
- * result is capped, and only the columns the app's cards/map use are selected
+ * Ended parties are hidden by default (see eventTime.ts: endsAt < now, or no
+ * endsAt and startsAt < now - 4h). In-progress parties stay; undated ones are
+ * excluded. Egress guard: the result is capped, and only the columns the app's cards/map use are selected
  * (description / recurrenceRule / createdAt etc. are detail-screen only).
  *
  * Returns published events. Private-location events include venue_name but
@@ -58,19 +62,17 @@ feedRouter.get('/', async (c) => {
     // Unauthenticated browsing is allowed; private-location addresses stay masked.
   }
 
-  const { after, before, lat, lng, radiusKm, q, sport, limit: limitParam, offset: offsetParam } = c.req.query();
+  const { after, before, lat, lng, radiusKm, q, sport, include, limit: limitParam, offset: offsetParam } = c.req.query();
+  const includePast = include === 'past';
   const limit = Math.min(Math.max(parseInt(limitParam ?? '', 10) || FEED_MAX_LIMIT, 1), FEED_MAX_LIMIT);
   const offset = Math.min(Math.max(parseInt(offsetParam ?? '', 10) || 0, 0), 100_000);
 
   const conditions = [
     // Published and not hidden/removed by moderation (drafts/cancelled never listed).
     discoverableEventSql(),
-    // Drop events that ended more than 6h ago (undated events are kept; they
-    // sort last).
-    or(
-      sql`coalesce(${schema.events.endsAt}, ${schema.events.startsAt}) is null`,
-      sql`coalesce(${schema.events.endsAt}, ${schema.events.startsAt}) >= now() - interval '6 hours'`,
-    ) ?? eq(schema.events.status, 'published'),
+    // Upcoming and in-progress only (undated parties are excluded), plus the
+    // last 30 days of ended ones when the caller opts in with include=past.
+    includePast ? sql`(${upcomingOrLiveSql()} or ${recentlyEndedSql()})` : upcomingOrLiveSql(),
   ];
 
   // Blocks apply in both directions (feed and search alike).
@@ -145,7 +147,14 @@ feedRouter.get('/', async (c) => {
     })
     .from(e)
     .where(and(...conditions))
-    .orderBy(asc(e.startsAt), asc(e.id))
+    // Upcoming/live first by start time, then (include=past) ended parties,
+    // most recent first. Deterministic, so offset paging stays stable.
+    .orderBy(
+      sql`case when ${effectiveEndSql()} < now() then 1 else 0 end`,
+      sql`case when ${effectiveEndSql()} < now() then null else ${e.startsAt} end asc`,
+      sql`case when ${effectiveEndSql()} < now() then ${e.startsAt} end desc`,
+      asc(e.id),
+    )
     .limit(limit)
     .offset(offset);
 

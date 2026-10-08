@@ -16,6 +16,7 @@ import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '..
 import { useAuth } from '../../../lib/auth';
 import { useAuthGate } from '../../../components/AuthGate';
 import { getGuestInterests } from '../../../lib/guestState';
+import { eventPhase } from '../../../lib/eventTime';
 import { useDiscoverFilters, activeFilterCount, clearFiltersGlobal } from '../../../lib/discover-filters';
 
 // 'This week' first — it's the default; 'All' last since it's the least-used option.
@@ -29,6 +30,7 @@ function apiEventToItem(e: ApiEvent): EventItem {
     title: e.title,
     broadcastSubject: e.broadcastSubject,
     startsAt: e.startsAt,
+    endsAt: e.endsAt,
     venueName: e.venueName,
     venueAddress: e.venueAddress,
     isPrivateLocation: e.isPrivateLocation,
@@ -52,10 +54,15 @@ function filterByTime(events: EventItem[], filter: Filter): EventItem[] {
   endOfWeek.setDate(now.getDate() + 7);
 
   return events.filter((e) => {
+    // Ended parties only arrive when "Show past parties" is on; the time
+    // windows are about what is coming, so they never hide them.
+    if (eventPhase(e, now) === 'ended') return true;
     if (!e.startsAt) return true;
     const d = new Date(e.startsAt);
-    if (filter === 'Today') return d >= now && d <= endOfToday;
-    if (filter === 'This week') return d >= now && d <= endOfWeek;
+    // A party that is on right now (started, not over) still counts for
+    // Today and This week.
+    if (filter === 'Today') return d <= endOfToday;
+    if (filter === 'This week') return d <= endOfWeek;
     return true;
   });
 }
@@ -121,6 +128,7 @@ export default function DiscoverScreen() {
       if (f.sport) params.sport = f.sport;
       if (f.after) params.after = f.after;
       if (f.before) params.before = f.before;
+      if (f.showPast) params.include = 'past';
       const events = await fetchFeed(params);
       setAllEvents(events.map(apiEventToItem));
     } catch (err) {
@@ -206,6 +214,10 @@ export default function DiscoverScreen() {
     return true;
   });
 
+  // Past parties (only present with the toggle on) follow the upcoming ones;
+  // the headline counts what is still to come.
+  const comingUpCount = displayed.filter((e) => eventPhase(e) !== 'ended').length;
+
   const openFilters = () => router.push('/(tabs)/discover/filter');
 
   return (
@@ -278,6 +290,7 @@ export default function DiscoverScreen() {
             )}
             {filters.venue && <Chip label={filters.venue} active onPress={openFilters} />}
             {filters.useFavourites && <Chip label={tr('feed.yourTeams')} active tone="confirmed" onPress={openFilters} />}
+            {filters.showPast && <Chip label={tr('filters.pastChip')} active onPress={openFilters} />}
           </View>
         )}
 
@@ -333,7 +346,9 @@ export default function DiscoverScreen() {
               <Text style={[t.label, s.sectionLabel]}>
                 {displayed.length === 0
                   ? tr('feed.noEventsFound')
-                  : tr('feed.upcomingCount', { count: displayed.length })}
+                  : comingUpCount === 0
+                    ? tr('feed.nothingUpcoming')
+                    : tr('feed.upcomingCount', { count: comingUpCount })}
               </Text>
             }
             ListEmptyComponent={

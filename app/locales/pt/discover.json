@@ -28,7 +28,8 @@
     "emptyFiltered": "Alivia os filtros ou limpa-os para ver tudo o que há.",
     "clearFilters": "Limpar filtros",
     "emptyDefaultTitle": "Ainda não há nada",
-    "hostOne": "Organizar festa"
+    "hostOne": "Organizar festa",
+    "nothingUpcoming": "Nada a caminho"
   },
   "card": {
     "today": "Hoje",
@@ -73,7 +74,10 @@
     "venue": "Local",
     "venuePlaceholder": "ex.: O Bar do Zé",
     "showResults": "Ver resultados · {{count}}",
-    "showAllEvents": "Mostrar tudo"
+    "showAllEvents": "Mostrar tudo",
+    "showPast": "Mostrar festas passadas",
+    "showPastSub": "Junta as festas dos últimos 30 dias, depois das próximas.",
+    "pastChip": "Festas passadas"
   },
   "detail": {
     "loadError": "Verifica a ligação e tenta de novo.",
@@ -125,7 +129,13 @@
     },
     "errorTitle": "Não deu para carregar esta festa",
     "notFoundTitle": "Festa não encontrada",
-    "rsvpForbidden": "Não podes confirmar presença nesta festa."
+    "rsvpForbidden": "Não podes confirmar presença nesta festa.",
+    "ended": {
+      "title": "Esta festa terminou",
+      "date": "Foi a {{date}}.",
+      "review": "Deixar uma avaliação",
+      "editReview": "Editar a tua avaliação"
+    }
   },
   "youreIn": {
     "going": "Estás dentro.",

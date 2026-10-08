@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ScrollView, TextInput, StyleSheet, ActionSheetIOS, Alert, Platform } from 'react-native';
+import { View, ScrollView, TextInput, StyleSheet, ActionSheetIOS, Alert, Platform, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../components/Text';
 import { AppHeader } from '../components/AppHeader';
 import { EventCard, type EventItem } from '../components/EventCard';
+import { EventRsvpArea } from '../components/EventRsvpArea';
 import { Icon, ICON_NAMES } from '../components/icons';
 import { YoureIn } from '../components/YoureIn';
 import { ReportForm, ReportSheet } from '../components/ReportSheet';
@@ -81,6 +82,26 @@ const SAMPLE_QUIET: EventItem = {
   startsAt: new Date(Date.now() + 3 * 86400_000).toISOString(),
   topSponsor: null,
   sponsorCount: 0,
+};
+
+// Phase variants (visual QA for the ended / on-now / upcoming states). The
+// cover is a bundled asset so the dimmed "ended" cover can be judged.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const GALLERY_COVER = Image.resolveAssetSource(require('../assets/onboarding/onboarding-host.jpg')).uri;
+const HOUR = 3600_000;
+const SAMPLE_UPCOMING: EventItem = {
+  ...SAMPLE_EVENT, id: 'gallery-up', title: 'Upcoming: Champions League night',
+  startsAt: new Date(Date.now() + 2 * 86400_000).toISOString(), coverImageUrl: GALLERY_COVER,
+};
+const SAMPLE_LIVE: EventItem = {
+  ...SAMPLE_EVENT, id: 'gallery-live', title: 'On now: Arsenal v Spurs',
+  startsAt: new Date(Date.now() - HOUR).toISOString(),
+  endsAt: new Date(Date.now() + 2 * HOUR).toISOString(), coverImageUrl: GALLERY_COVER,
+};
+const SAMPLE_PAST: EventItem = {
+  ...SAMPLE_EVENT, id: 'gallery-past', title: 'Ended: Cup final watch party',
+  startsAt: new Date(Date.now() - 3 * 86400_000).toISOString(),
+  endsAt: new Date(Date.now() - 3 * 86400_000 + 3 * HOUR).toISOString(), coverImageUrl: GALLERY_COVER,
 };
 
 const SWATCHES: ReadonlyArray<[string, string]> = [
@@ -331,6 +352,36 @@ export default function Gallery() {
           <EventCard event={SAMPLE_QUIET} compact />
         </Block>
 
+        <Block title="Event card: upcoming, on now, ended">
+          <EventCard event={SAMPLE_UPCOMING} />
+          <EventCard event={SAMPLE_LIVE} />
+          <EventCard event={SAMPLE_PAST} />
+          <EventCard event={{ ...SAMPLE_PAST, id: 'gallery-past-c', coverImageUrl: null }} compact />
+        </Block>
+
+        <Block title="Detail RSVP area: upcoming, on now, ended">
+          <Cell label="upcoming">
+            <View style={s.rsvpFrame}>
+              <EventRsvpArea phase="upcoming" rsvpLabel="RSVP" rsvpColor={colors.action} style={s.rsvpStatic} />
+            </View>
+          </Cell>
+          <Cell label="on now (RSVP stays available)">
+            <View style={s.rsvpFrame}>
+              <EventRsvpArea phase="live" rsvpLabel="Going" rsvpColor={colors.confirmed} isActive style={s.rsvpStatic} />
+            </View>
+          </Cell>
+          <Cell label="ended, viewer was going">
+            <View style={s.rsvpFrame}>
+              <EventRsvpArea phase="ended" rsvpLabel="" rsvpColor={colors.action} dateLabel="Sat, Oct 4" canReview style={s.rsvpStatic} />
+            </View>
+          </Cell>
+          <Cell label="ended, viewer was not going">
+            <View style={s.rsvpFrame}>
+              <EventRsvpArea phase="ended" rsvpLabel="" rsvpColor={colors.action} dateLabel="Sat, Oct 4" style={s.rsvpStatic} />
+            </View>
+          </Cell>
+        </Block>
+
         <Block title="Moderation: report sheet">
           <Btn label={trMod('menu.report')} variant="secondary" onPress={() => setReportOpen(true)} />
           <Cell label="form, reason picked (inline preview of the page sheet)">
@@ -504,6 +555,8 @@ const s = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   block: { gap: spacing.md, marginBottom: spacing.sm },
   cell: { gap: spacing.xs + 2 },
+  rsvpFrame: { backgroundColor: colors.canvas, borderRadius: radius.card, overflow: 'hidden' },
+  rsvpStatic: { position: 'relative', paddingBottom: spacing.lg },
   stateRow: { gap: spacing.md },
   inline: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
 

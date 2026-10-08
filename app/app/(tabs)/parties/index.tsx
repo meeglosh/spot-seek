@@ -17,8 +17,10 @@ import {
 import { colors, radius, spacing, elevation, type as t } from '../../../lib/theme';
 import { useOpenDirections, hasDirectionsTarget } from '../../../lib/directions';
 import { formatEventDateTime } from '../../../lib/dateFormat';
+import { eventPhase, newestFirst, soonestFirst, type EventPhase } from '../../../lib/eventTime';
 
 type TabKey = 'attending' | 'hosting';
+type WhenKey = 'upcoming' | 'past';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -36,35 +38,53 @@ function dateLabel(iso: string, venueTimezone: string | null = null) {
 
 // ─── Cards ───────────────────────────────────────────────────────────────────
 
+function PhaseBadge({
+  phase, tonight, tr, trCommon,
+}: {
+  phase: EventPhase;
+  tonight: boolean;
+  tr: (key: string) => string;
+  trCommon: (key: string) => string;
+}) {
+  if (phase === 'ended') return <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} />;
+  if (phase === 'live') return <Badge label={trCommon('phase.onNow')} tone="live" />;
+  return (
+    <Badge
+      label={tonight ? tr('myParties.tonight') : tr('myParties.upcoming')}
+      tone={tonight ? 'live' : 'neutral'}
+      dot={tonight}
+    />
+  );
+}
+
 function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
   const { t: tr } = useTranslation('parties');
+  const { t: trCommon } = useTranslation('common');
   const e = rsvp.event as ApiEvent;
-  const tonight = !!e.startsAt && isToday(e.startsAt);
+  const phase = eventPhase(e);
+  const ended = phase === 'ended';
+  const tonight = phase === 'upcoming' && !!e.startsAt && isToday(e.startsAt);
   const waitlisted = rsvp.state === 'waitlisted';
   const openDirections = useOpenDirections();
-  const hasMaps = hasDirectionsTarget({ lat: e.venueLat, lng: e.venueLng, address: e.venueAddress });
+  const hasMaps = !ended && hasDirectionsTarget({ lat: e.venueLat, lng: e.venueLng, address: e.venueAddress });
   // Urgency (waitlisted / tonight) is carried by the live Badge, not a border.
 
   return (
     <View style={s.card}>
       <View style={s.cardClip}>
       {e.coverImageUrl && (
-        <Image source={{ uri: `${API_BASE}${e.coverImageUrl}` }} style={s.cardCover} resizeMode="cover" />
+        <Image source={{ uri: `${API_BASE}${e.coverImageUrl}` }} style={[s.cardCover, ended && s.coverMuted]} resizeMode="cover" />
       )}
       <View style={s.cardBody}>
         <View style={s.badgeRow}>
-          {waitlisted && <Badge label={tr('myParties.waitlisted')} tone="live" />}
-          <Badge
-            label={tonight ? tr('myParties.tonight') : tr('myParties.upcoming')}
-            tone={tonight ? 'live' : 'neutral'}
-            dot={tonight}
-          />
+          {waitlisted && !ended && <Badge label={tr('myParties.waitlisted')} tone="live" />}
+          <PhaseBadge phase={phase} tonight={tonight} tr={tr} trCommon={trCommon} />
         </View>
 
         <View style={s.titleRow}>
-          <Text style={[t.headlineMd, s.cardTitle]} numberOfLines={3}>{e.title}</Text>
+          <Text style={[t.headlineMd, s.cardTitle, ended && s.titleMuted]} numberOfLines={3}>{e.title}</Text>
           <View style={s.timeCol}>
-            <Text style={[t.monoData, { color: tonight ? colors.live : colors.textPrimary }]}>
+            <Text style={[t.monoData, { color: tonight ? colors.live : ended ? colors.textSecondary : colors.textPrimary }]}>
               {e.startsAt ? timeLabel(e.startsAt, e.venueTimezone) : tr('myParties.tbd')}
             </Text>
             {e.startsAt && (
@@ -94,7 +114,10 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
 
 function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: () => void }) {
   const { t: tr } = useTranslation('parties');
+  const { t: trCommon } = useTranslation('common');
   const { going, waitlisted, interested } = event.rsvpCounts;
+  const phase = event.status === 'draft' ? 'upcoming' : eventPhase(event);
+  const ended = phase === 'ended';
   return (
     <View style={s.card}>
       <View style={s.cardClip}>
@@ -105,12 +128,14 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
             tone={event.status === 'published' ? 'confirmed' : 'neutral'}
             dot={event.status === 'published'}
           />
+          {phase === 'live' && event.status === 'published' && <Badge label={trCommon('phase.onNow')} tone="live" />}
+          {ended && <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} />}
         </View>
 
         <View style={s.titleRow}>
-          <Text style={[t.headlineMd, s.cardTitle]} numberOfLines={3}>{event.title}</Text>
+          <Text style={[t.headlineMd, s.cardTitle, ended && s.titleMuted]} numberOfLines={3}>{event.title}</Text>
           <View style={s.timeCol}>
-            <Text style={[t.monoData, { color: colors.textPrimary }]}>
+            <Text style={[t.monoData, { color: ended ? colors.textSecondary : colors.textPrimary }]}>
               {event.startsAt ? timeLabel(event.startsAt, event.venueTimezone) : tr('myParties.tbd')}
             </Text>
             {event.startsAt && (
@@ -151,6 +176,7 @@ export default function MyPartiesScreen() {
   const { t: trCommon } = useTranslation('common');
 
   const [tab, setTab] = useState<TabKey>('attending');
+  const [when, setWhen] = useState<WhenKey>('upcoming');
   const [rsvps, setRsvps] = useState<ApiRsvp[] | null>(null);
   const [hosted, setHosted] = useState<ApiDashboardEvent[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -184,13 +210,16 @@ export default function MyPartiesScreen() {
     load(tab);
   }, [load, tab]);
 
-  const attendingItems = (rsvps ?? [])
-    .filter((r) => r.event && r.state !== 'cancelled')
-    .sort((a, b) => {
-      const ta = a.event?.startsAt ? new Date(a.event.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
-      const tb = b.event?.startsAt ? new Date(b.event.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
-      return ta - tb;
-    });
+  // Upcoming (default): soonest first, on-now included. Past: newest first.
+  const attendingAll = (rsvps ?? []).filter((r) => r.event && r.state !== 'cancelled');
+  const attendingItems = attendingAll
+    .filter((r) => (eventPhase(r.event!) === 'ended') === (when === 'past'))
+    .sort((a, b) => (when === 'past' ? newestFirst(a.event!, b.event!) : soonestFirst(a.event!, b.event!)));
+
+  // Hosting: drafts are never "past"; everything else is split by phase.
+  const hostedItems = (hosted ?? [])
+    .filter((e) => (e.status !== 'draft' && eventPhase(e) === 'ended') === (when === 'past'))
+    .sort((a, b) => (when === 'past' ? newestFirst(a, b) : 0));
 
   const activeData = tab === 'attending' ? rsvps : hosted;
   const showSpinner = !needsAuth && activeData === null && !error;
@@ -211,6 +240,14 @@ export default function MyPartiesScreen() {
           options={[
             { key: 'attending', label: tr('myParties.tabs.attending') },
             { key: 'hosting', label: tr('myParties.tabs.hosting') },
+          ]}
+        />
+        <SegmentedControl
+          value={when}
+          onChange={setWhen}
+          options={[
+            { key: 'upcoming', label: tr('myParties.segments.upcoming') },
+            { key: 'past', label: tr('myParties.segments.past') },
           ]}
         />
       </View>
@@ -241,20 +278,28 @@ export default function MyPartiesScreen() {
           ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />}
           ListEmptyComponent={
-            <EmptyState
-              icon="ball"
-              title={tr('myParties.emptyAttending.title')}
-              body={tr('myParties.emptyAttending.body')}
-              actionLabel={tr('myParties.emptyAttending.cta')}
-              onAction={() => router.push('/(tabs)/discover')}
-            />
+            when === 'past' ? (
+              <EmptyState
+                icon="calendar"
+                title={tr('myParties.emptyPast.title')}
+                body={tr('myParties.emptyPast.body')}
+              />
+            ) : (
+              <EmptyState
+                icon="ball"
+                title={tr('myParties.emptyAttending.title')}
+                body={tr('myParties.emptyAttending.body')}
+                actionLabel={tr('myParties.emptyAttending.cta')}
+                onAction={() => router.push('/(tabs)/discover')}
+              />
+            )
           }
           renderItem={({ item }) => <AttendingCard rsvp={item} />}
           showsVerticalScrollIndicator={false}
         />
       ) : (
         <FlatList
-          data={hosted ?? []}
+          data={hostedItems}
           keyExtractor={(e) => e.id}
           contentContainerStyle={[
             s.list,
@@ -269,13 +314,21 @@ export default function MyPartiesScreen() {
           ItemSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />}
           ListEmptyComponent={
-            <EmptyState
-              icon="parties"
-              title={tr('myParties.emptyHosting.title')}
-              body={tr('myParties.emptyHosting.body')}
-              actionLabel={tr('myParties.emptyHosting.cta')}
-              onAction={() => router.push('/(tabs)/parties/create' as never)}
-            />
+            when === 'past' ? (
+              <EmptyState
+                icon="calendar"
+                title={tr('myParties.emptyPast.title')}
+                body={tr('myParties.emptyPast.body')}
+              />
+            ) : (
+              <EmptyState
+                icon="parties"
+                title={tr('myParties.emptyHosting.title')}
+                body={tr('myParties.emptyHosting.body')}
+                actionLabel={tr('myParties.emptyHosting.cta')}
+                onAction={() => router.push('/(tabs)/parties/create' as never)}
+              />
+            )
           }
           renderItem={({ item }) => (
             <HostingCard event={item} onManage={() => router.push('/(tabs)/parties/dashboard' as never)} />
@@ -307,7 +360,7 @@ const s = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
-    gap: spacing.lg,
+    gap: spacing.md,
   },
 
   list: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, flexGrow: 1 },
@@ -317,6 +370,8 @@ const s = StyleSheet.create({
   card: { ...elevation(1), borderRadius: radius.card },
   cardClip: { overflow: 'hidden', borderRadius: radius.card, backgroundColor: colors.surface1 },
   cardCover: { width: '100%', height: 150 },
+  coverMuted: { opacity: 0.5 },
+  titleMuted: { color: colors.textSecondary },
   cardBody: { padding: spacing.lg, gap: spacing.md },
   badgeRow: { flexDirection: 'row', gap: spacing.sm },
   titleRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },

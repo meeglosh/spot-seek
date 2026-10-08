@@ -14,6 +14,7 @@ import { API_BASE } from '../lib/api';
 import { eventShareUrl } from '../lib/shareLinks';
 import { useOpenDirections, hasDirectionsTarget } from '../lib/directions';
 import { formatEventDateTime } from '../lib/dateFormat';
+import { eventPhase, presentationFor } from '../lib/eventTime';
 
 export type EventItem = {
   id: string;
@@ -21,6 +22,7 @@ export type EventItem = {
   title: string;
   broadcastSubject: string;
   startsAt?: string | null;
+  endsAt?: string | null;
   venueName?: string | null;
   venueAddress?: string | null;
   isPrivateLocation?: boolean;
@@ -50,6 +52,7 @@ function startsToday(startsAt?: string | null): boolean {
 export function EventCard({ event, compact = false }: { event: EventItem; compact?: boolean }) {
   const router = useRouter();
   const { t: tr } = useTranslation('discover');
+  const { t: trCommon } = useTranslation('common');
   const { t: trMod } = useTranslation('moderation');
   const auth = useAuth();
   const { requireAuth, gateSheet } = useAuthGate();
@@ -64,12 +67,18 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
     ? { uri: event.coverImageUrl.startsWith('/') ? `${API_BASE}${event.coverImageUrl}` : event.coverImageUrl }
     : null;
 
-  const today = startsToday(event.startsAt);
+  // Phase: ended parties are muted and offer no RSVP/directions; a party that
+  // is on right now says so instead of "Today".
+  const phase = eventPhase(event);
+  const pres = presentationFor(phase);
+  const ended = phase === 'ended';
+  const today = startsToday(event.startsAt) && phase === 'upcoming';
   const goTo = () => router.push({ pathname: '/(tabs)/discover/[id]', params: { id: event.id } });
   const openDirectionsSheet = useOpenDirections();
 
   // Long-press menu actions reuse the same logic as the detail screen.
   const canDirections =
+    pres.showDirections &&
     !event.isPrivateLocation &&
     hasDirectionsTarget({ lat: event.venueLat, lng: event.venueLng, address: event.venueAddress });
   const shareEvent = () => {
@@ -101,7 +110,10 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
 
   const badges = (
     <View style={s.badgeRow}>
+      {phase === 'live' && <Badge label={trCommon('phase.onNow')} tone="live" />}
       {today && <Badge label={tr('card.today')} tone="live" />}
+      {/* The Ended tag sits beside the date; compact cards and undated ones show no date line, so it goes here. */}
+      {ended && (compact || !(dateStr || timeStr)) && <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} />}
       <Badge label={event.broadcastSubject} tone="neutral" dot={false} />
       {sponsorTag && <Badge label={sponsorTag} tone="confirmed" icon="live" />}
     </View>
@@ -121,7 +133,7 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
       {/* Full-bleed cover, dimmed with the scrim token for legibility */}
       {coverSrc && !compact && (
         <View style={s.coverWrap}>
-          <Image source={coverSrc} style={s.cover} resizeMode="cover" />
+          <Image source={coverSrc} style={[s.cover, pres.muted && s.coverMuted]} resizeMode="cover" />
           <View style={[StyleSheet.absoluteFill, s.mediaDim]} />
           <View style={s.coverBadges}>{badges}</View>
         </View>
@@ -132,7 +144,7 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
 
         {/* Title */}
         <Text
-          style={[compact ? t.headlineSm : t.headlineMd, { color: colors.textPrimary }]}
+          style={[compact ? t.headlineSm : t.headlineMd, { color: pres.muted ? colors.textSecondary : colors.textPrimary }]}
           numberOfLines={2}
         >
           {event.title}
@@ -147,9 +159,12 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
               </Text>
             )}
             {(dateStr || timeStr) && (
-              <Text style={[t.monoData, { color: colors.textSecondary }]}>
-                {[dateStr, timeStr].filter(Boolean).join(' · ')}
-              </Text>
+              <View style={s.dateRow}>
+                <Text style={[t.monoData, { color: colors.textSecondary }]}>
+                  {[dateStr, timeStr].filter(Boolean).join(' · ')}
+                </Text>
+                {ended && <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} />}
+              </View>
             )}
           </View>
         )}
@@ -168,7 +183,12 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
               </Text>
             )}
           </View>
-          <Btn label={tr('card.join')} variant="secondary" small onPress={goTo} />
+          <Btn
+            label={pres.canRsvp ? tr('card.join') : tr('map.viewEvent')}
+            variant="secondary"
+            small
+            onPress={goTo}
+          />
         </View>
       </View>
       </View>
@@ -214,6 +234,7 @@ const s = StyleSheet.create({
   clip: { borderRadius: radius.card, overflow: 'hidden', backgroundColor: colors.surface1 },
   coverWrap: { width: '100%', height: 160 },
   cover: { width: '100%', height: '100%' },
+  coverMuted: { opacity: 0.5 },
   mediaDim: { backgroundColor: colors.mediaDim },
   coverBadges: { position: 'absolute', top: spacing.md, left: spacing.md },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
@@ -221,6 +242,7 @@ const s = StyleSheet.create({
   bodyCompact: { paddingTop: spacing.md },
   venueText: { color: colors.textPrimary },
   meta: { gap: 2 },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',

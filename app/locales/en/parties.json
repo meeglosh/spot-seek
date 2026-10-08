@@ -39,7 +39,15 @@
       "body": "Pick what's on, set a time and open the door.",
       "cta": "Host a party"
     },
-    "createFooter": "+ Host a party"
+    "createFooter": "+ Host a party",
+    "segments": {
+      "upcoming": "Upcoming",
+      "past": "Past"
+    },
+    "emptyPast": {
+      "title": "No past parties",
+      "body": "Parties you've been to or hosted land here once they're over."
+    }
   },
   "dashboard": {
     "guestGate": {

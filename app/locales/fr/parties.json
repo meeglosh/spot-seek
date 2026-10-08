@@ -39,7 +39,15 @@
       "body": "Choisissez le programme, l'heure, et ouvrez la porte.",
       "cta": "Organiser une soirée"
     },
-    "createFooter": "+ Organiser une soirée"
+    "createFooter": "+ Organiser une soirée",
+    "segments": {
+      "upcoming": "À venir",
+      "past": "Passées"
+    },
+    "emptyPast": {
+      "title": "Aucune soirée passée",
+      "body": "Les soirées où vous êtes allé ou que vous avez organisées arrivent ici une fois terminées."
+    }
   },
   "dashboard": {
     "guestGate": {

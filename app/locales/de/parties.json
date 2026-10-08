@@ -39,7 +39,15 @@
       "body": "Such aus, was läuft, leg eine Zeit fest und mach die Tür auf.",
       "cta": "Party planen"
     },
-    "createFooter": "+ Party planen"
+    "createFooter": "+ Party planen",
+    "segments": {
+      "upcoming": "Demnächst",
+      "past": "Vergangen"
+    },
+    "emptyPast": {
+      "title": "Noch keine vergangenen Partys",
+      "body": "Partys, bei denen du warst oder die du gehostet hast, landen hier, sobald sie vorbei sind."
+    }
   },
   "dashboard": {
     "guestGate": {

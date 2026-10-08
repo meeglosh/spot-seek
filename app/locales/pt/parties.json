@@ -39,7 +39,15 @@
       "body": "Escolhe o que dá, marca a hora e abre a porta.",
       "cta": "Organizar festa"
     },
-    "createFooter": "+ Organizar festa"
+    "createFooter": "+ Organizar festa",
+    "segments": {
+      "upcoming": "Próximas",
+      "past": "Passadas"
+    },
+    "emptyPast": {
+      "title": "Nenhuma festa passada",
+      "body": "As festas a que foste ou que organizaste aparecem aqui quando terminam."
+    }
   },
   "dashboard": {
     "guestGate": {

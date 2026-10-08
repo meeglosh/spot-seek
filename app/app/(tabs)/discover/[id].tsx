@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, Image, Platform, Share, Alert, TextInput, ActionSheetIOS } from 'react-native';
+import { View, ScrollView, StyleSheet, Image, Platform, Share, Alert, TextInput, ActionSheetIOS } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +13,9 @@ import {
 import { useOpenDirections } from '../../../lib/directions';
 import { eventShareUrl } from '../../../lib/shareLinks';
 import { formatEventDateTime } from '../../../lib/dateFormat';
-import { colors, radius, spacing, TAP, elevation, type as t } from '../../../lib/theme';
+import { eventPhase, presentationFor, canLeaveReview } from '../../../lib/eventTime';
+import { EventRsvpArea } from '../../../components/EventRsvpArea';
+import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
 import { AppHeader } from '../../../components/AppHeader';
 import * as Haptics from 'expo-haptics';
@@ -62,6 +64,8 @@ export default function EventDetailScreen() {
   // The "You're in." moment (phase 5), shown when an RSVP lands as going or waitlisted.
   const [moment, setMoment] = useState<'going' | 'waitlisted' | null>(null);
   const pushOfferPending = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const reviewY = useRef({ content: 0, section: 0 });
   const { requireAuth, gateSheet } = useAuthGate();
 
   const [hostProfile, setHostProfile] = useState<ApiProfile | null>(null);
@@ -177,6 +181,8 @@ export default function EventDetailScreen() {
       return;
     }
     if (!event) return;
+    // An ended party takes no RSVPs (the bar is replaced by the ended panel).
+    if (eventPhase(event) === 'ended') return;
 
     setRsvpLoading(true);
     setRsvpError('');
@@ -359,19 +365,14 @@ export default function EventDetailScreen() {
     ? { uri: event.coverImageUrl.startsWith('/') ? `${API_BASE}${event.coverImageUrl}` : event.coverImageUrl }
     : null;
 
-  const liveTonight = startsToday(event.startsAt);
+  // One shared rule for ended / on now / upcoming (lib/eventTime.ts).
+  const phase = eventPhase(event);
+  const pres = presentationFor(phase);
+  const ended = phase === 'ended';
+  const liveTonight = startsToday(event.startsAt) && phase === 'upcoming';
 
-  // Ended = endsAt in the past, or (no endsAt but startsAt already passed) —
-  // same rule the RSVP/status logic above implicitly assumes an event stops
-  // accepting new joins once it's over.
-  const now = new Date();
-  const hasEnded = event.endsAt
-    ? new Date(event.endsAt) < now
-    : event.startsAt
-      ? new Date(event.startsAt) < now
-      : false;
   const isHost = auth.status === 'authenticated' && auth.user.id === event.hostId;
-  const canReview = hasEnded && isGoing && !isHost;
+  const canReview = canLeaveReview(phase, isGoing, isHost);
 
   const hostRatingLabel = reviewsCtx.host
     ? tr('detail.reviews.ratingSummary', { avg: reviewsCtx.host.avg.toFixed(1), count: reviewsCtx.host.count })
@@ -383,7 +384,9 @@ export default function EventDetailScreen() {
   // STATUS tile — only real data: the viewer's own RSVP state, else capacity.
   const statusValue = isGoing
     ? tr('detail.going')
-    : isWaitlisted
+    : ended
+      ? trCommon('phase.ended')
+      : isWaitlisted
       ? tr('detail.waitlisted')
       : event.capacity != null
         ? tr('detail.capacity', { count: event.capacity })
@@ -393,14 +396,14 @@ export default function EventDetailScreen() {
   // Venue address masking — private locations never reveal the address here.
   const venueDetail = event.venueName
     ? event.isPrivateLocation
-      ? `${tr('detail.privateLocation')}${isActive ? '' : ` ${tr('detail.shownAfterRsvp')}`}`
+      ? `${tr('detail.privateLocation')}${isActive || ended ? '' : ` ${tr('detail.shownAfterRsvp')}`}`
       : event.venueAddress
     : null;
 
   const hasDirectionTarget =
     (event.venueLat != null && event.venueLng != null) || !!event.venueAddress;
   const canShowDirections =
-    hasDirectionTarget && (!event.isPrivateLocation || isActive);
+    pres.showDirections && hasDirectionTarget && (!event.isPrivateLocation || isActive);
 
   function openDirections() {
     if (!event) return;
@@ -432,11 +435,11 @@ export default function EventDetailScreen() {
     <View style={s.container}>
       <AppHeader back onBack={leaveDetail} />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 140 }}>
+      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + (ended ? 220 : 140) }}>
         {/* Hero — cover photo, dimmed with the media scrim for legibility */}
         <View style={s.hero}>
           {coverSrc && (
-            <Image source={coverSrc} style={StyleSheet.absoluteFill} resizeMode="cover" />
+            <Image source={coverSrc} style={[StyleSheet.absoluteFill, pres.muted && s.coverMuted]} resizeMode="cover" />
           )}
           <View style={[StyleSheet.absoluteFill, s.mediaDim]} />
           {!isHost && (
@@ -459,14 +462,15 @@ export default function EventDetailScreen() {
           </Press>
           <View style={s.heroContent}>
             <View style={s.heroBadges}>
+              {phase === 'live' && <Badge label={trCommon('phase.onNow')} tone="live" />}
               {liveTonight && <Badge label={tr('detail.liveTonight')} tone="live" />}
               <Badge label={event.broadcastSubject} tone="neutral" dot={false} />
             </View>
-            <Text style={[t.headlineLg, { color: colors.textOnMedia }]}>{event.title}</Text>
+            <Text style={[t.headlineLg, { color: pres.muted ? colors.textSecondary : colors.textOnMedia }]}>{event.title}</Text>
           </View>
         </View>
 
-        <View style={s.content}>
+        <View style={s.content} onLayout={(e) => { reviewY.current.content = e.nativeEvent.layout.y; }}>
           {isHost && hostBannerKind(event.moderationStatus) && (
             <ModerationBanner kind={hostBannerKind(event.moderationStatus)!} />
           )}
@@ -488,6 +492,7 @@ export default function EventDetailScreen() {
               <Text style={[t.monoData, s.tileValue]}>
                 {dateStr ? `${dateStr}${timeStr ? `\n${timeStr}` : ''}` : tr('detail.tba')}
               </Text>
+              {ended && <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} style={s.endedTag} />}
             </View>
             {statusValue && (
               <View style={s.tile}>
@@ -543,7 +548,7 @@ export default function EventDetailScreen() {
           )}
 
           {/* Auth nudge */}
-          {auth.status !== 'authenticated' && (
+          {auth.status !== 'authenticated' && !ended && (
             <Press style={s.authNudge} onPress={openGate}>
               <Text style={[t.bodySm, { color: colors.textSecondary }]}>
                 {tr('detail.authNudge')}
@@ -554,7 +559,7 @@ export default function EventDetailScreen() {
           {/* Rate this event — only once it's over, the caller actually went,
               and they aren't reviewing their own event. */}
           {canReview && (
-            <View style={s.section}>
+            <View style={s.section} onLayout={(e) => { reviewY.current.section = e.nativeEvent.layout.y; }}>
               <SectionTitle>{tr('detail.reviews.rateSection.title')}</SectionTitle>
               <View style={s.rateCard}>
                 <View style={s.rateField}>
@@ -629,30 +634,21 @@ export default function EventDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* RSVP bar */}
-      <View style={[s.rsvpBar, { paddingBottom: insets.bottom + spacing.md }]}>
-        {rsvpError ? (
-          <Text style={[t.bodySm, s.rsvpError]}>{rsvpError}</Text>
-        ) : null}
-        <Press
-          style={[s.rsvpBtn, { backgroundColor: rsvpBg }]}
-          restOpacity={rsvpLoading ? 0.6 : 1}
-          onPress={() => handleRsvp()}
-          disabled={rsvpLoading}
-          accessibilityRole="button"
-        >
-          {rsvpLoading ? (
-            <ActivityIndicator color={colors.textOnFill} />
-          ) : (
-            <Text style={[t.button, { color: colors.textOnFill }]}>{rsvpLabel}</Text>
-          )}
-        </Press>
-        {isActive && (
-          <Press onPress={() => handleRsvp()} disabled={rsvpLoading} style={s.textLink} accessibilityRole="button">
-            <Text style={[t.labelSm, s.cancelText]}>{tr('detail.cancelRsvp')}</Text>
-          </Press>
-        )}
-      </View>
+      {/* RSVP bar while the party is upcoming or on; a calm "ended" panel after */}
+      <EventRsvpArea
+        phase={phase}
+        rsvpLabel={rsvpLabel}
+        rsvpColor={rsvpBg}
+        rsvpLoading={rsvpLoading}
+        rsvpError={rsvpError}
+        isActive={isActive}
+        onRsvp={() => handleRsvp()}
+        dateLabel={dateStr}
+        canReview={canReview}
+        hasReview={!!reviewsCtx.myReview}
+        onReview={() => scrollRef.current?.scrollTo({ y: Math.max(0, reviewY.current.content + reviewY.current.section - spacing.lg), animated: true })}
+        bottomInset={insets.bottom}
+      />
 
       {moment && (
         <YoureIn
@@ -690,6 +686,8 @@ const s = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   mediaDim: { backgroundColor: colors.mediaDim },
+  coverMuted: { opacity: 0.5 },
+  endedTag: { alignSelf: 'flex-start', marginTop: spacing.xs },
   shareBtn: {
     position: 'absolute',
     top: spacing.lg,
@@ -702,7 +700,6 @@ const s = StyleSheet.create({
     borderRadius: radius.control,
   },
   moreBtn: { right: spacing.lg + TAP + spacing.sm },
-  textLink: { minHeight: TAP, alignItems: 'center', justifyContent: 'center' },
   heroContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: spacing['3xl'], gap: spacing.md },
   heroBadges: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
 
@@ -747,19 +744,7 @@ const s = StyleSheet.create({
     borderRadius: radius.card,
   },
 
-  // RSVP bar
-  rsvpBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: spacing.lg, paddingTop: spacing.md,
-    ...elevation(1),
-    borderTopLeftRadius: radius.sheet,
-    borderTopRightRadius: radius.sheet,
-    shadowOffset: { width: 0, height: -2 },
-    gap: spacing.sm,
-  },
-  rsvpBtn: { height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: radius.control },
   rsvpError: { color: colors.danger, textAlign: 'center' },
-  cancelText: { color: colors.textTertiary, textAlign: 'center' },
 
   // Host row
   hostRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },

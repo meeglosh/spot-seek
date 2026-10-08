@@ -139,7 +139,11 @@
     },
     "errorTitle": "Não deu para carregar esta festa",
     "notFoundTitle": "Festa não encontrada",
-    "backToMarketplace": "Voltar aos patrocínios"
+    "backToMarketplace": "Voltar aos patrocínios",
+    "ended": {
+      "title": "Esta festa terminou",
+      "body": "As ofertas estão fechadas. As tuas ofertas passadas ficam na tua lista."
+    }
   },
   "findSponsors": {
     "title": "Procurar patrocinadores",

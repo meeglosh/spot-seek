@@ -28,7 +28,8 @@
     "emptyFiltered": "Afloja los filtros o bórralos para ver todo lo que hay.",
     "clearFilters": "Borrar filtros",
     "emptyDefaultTitle": "Aún no hay nada",
-    "hostOne": "Organizar una fiesta"
+    "hostOne": "Organizar una fiesta",
+    "nothingUpcoming": "Nada próximo"
   },
   "card": {
     "today": "Hoy",
@@ -73,7 +74,10 @@
     "venue": "Lugar",
     "venuePlaceholder": "p. ej. El Rincón",
     "showResults": "Ver resultados · {{count}}",
-    "showAllEvents": "Ver todo"
+    "showAllEvents": "Ver todo",
+    "showPast": "Mostrar fiestas pasadas",
+    "showPastSub": "Añade las fiestas de los últimos 30 días, después de las próximas.",
+    "pastChip": "Fiestas pasadas"
   },
   "detail": {
     "loadError": "Revisa tu conexión e inténtalo de nuevo.",
@@ -125,7 +129,13 @@
     },
     "errorTitle": "No pudimos cargar esta fiesta",
     "notFoundTitle": "Fiesta no encontrada",
-    "rsvpForbidden": "No puedes apuntarte a esta fiesta."
+    "rsvpForbidden": "No puedes apuntarte a esta fiesta.",
+    "ended": {
+      "title": "Esta fiesta ha terminado",
+      "date": "Fue el {{date}}.",
+      "review": "Dejar una reseña",
+      "editReview": "Editar tu reseña"
+    }
   },
   "youreIn": {
     "going": "Estás dentro.",

@@ -12,6 +12,7 @@ import { Icon } from './icons';
 import { Badge, Btn, Press } from './ui';
 import type { EventItem } from './EventCard';
 import { formatEventDateTime } from '../lib/dateFormat';
+import { eventPhase } from '../lib/eventTime';
 
 // ─── Night map style ───────────────────────────────────────────────────────────
 // Built from `mapPalette` in lib/theme.ts (neutral near-black land, cool grey
@@ -43,9 +44,9 @@ const NEON_MAP_STYLE = [
 // 3 hours) — these pins burn neon orange instead of cyan.
 const LIVE_SOON_MS = 3 * 60 * 60 * 1000;
 
-function isLiveSoon(startsAt?: string | null): boolean {
-  if (!startsAt) return false;
-  const diff = new Date(startsAt).getTime() - Date.now();
+function isLiveSoon(event: Pick<EventItem, 'startsAt' | 'endsAt'>): boolean {
+  if (!event.startsAt || eventPhase(event) === 'ended') return false;
+  const diff = new Date(event.startsAt).getTime() - Date.now();
   return diff <= LIVE_SOON_MS && diff > -LIVE_SOON_MS;
 }
 
@@ -72,6 +73,7 @@ const DEFAULT_REGION = {
 export function EventMapView({ events, userLocation, initialRegion }: Props) {
   const router = useRouter();
   const { t: tr } = useTranslation('discover');
+  const { t: trCommon } = useTranslation('common');
 
   const [selected, setSelected] = useState<EventItem | null>(null);
   const [liveOnly, setLiveOnly] = useState(false);
@@ -139,7 +141,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
   // state update lands, so they can frame the map for it).
   function matchingEvents(liveOnlyVal: boolean, sportFilterVal: string | null) {
     return mappable.filter((e) => {
-      if (liveOnlyVal && !isLiveSoon(e.startsAt)) return false;
+      if (liveOnlyVal && !isLiveSoon(e)) return false;
       if (sportFilterVal && e.broadcastSubject !== sportFilterVal) return false;
       return true;
     });
@@ -217,8 +219,10 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
         onPress={() => selected && dismiss()}
       >
         {shown.map((event) => {
-          const live = isLiveSoon(event.startsAt);
-          const tone = live ? colors.live : colors.action;
+          const live = isLiveSoon(event);
+          // Ended parties (only present with "Show past parties" on) get a muted pin.
+          const pastPin = eventPhase(event) === 'ended';
+          const tone = pastPin ? colors.textTertiary : live ? colors.live : colors.action;
           const isSel = selected?.id === event.id;
           return (
             <Marker
@@ -231,7 +235,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
               tracksViewChanges={false}
             >
               {/* Pin — action by default, live orange when live-soon; selected = hard shadow */}
-              <View style={s.pinWrap}>
+              <View style={[s.pinWrap, pastPin && s.pinPast]}>
                 <View
                   style={[
                     s.pin,
@@ -319,7 +323,11 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
           {/* Subject tag */}
           <View style={s.cardSubjectRow}>
             <View style={s.cardBadges}>
-              {isLiveSoon(selected.startsAt) && <Badge label={tr('map.liveSoon')} tone="live" />}
+              {eventPhase(selected) === 'ended'
+                ? <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} />
+                : eventPhase(selected) === 'live'
+                  ? <Badge label={trCommon('phase.onNow')} tone="live" />
+                  : isLiveSoon(selected) && <Badge label={tr('map.liveSoon')} tone="live" />}
               <Badge label={selected.broadcastSubject} tone="neutral" dot={false} />
             </View>
             <Pressable onPress={dismiss} style={s.closeBtn} accessibilityRole="button">
@@ -397,6 +405,7 @@ const s = StyleSheet.create({
   // Pins are true circles (radius.round); the selected pin is the only one
   // that carries a soft shadow (its body is opaque, so no text/dot doubling).
   pinWrap: { alignItems: 'center' },
+  pinPast: { opacity: 0.6 },
   pin: {
     width: 22,
     height: 22,

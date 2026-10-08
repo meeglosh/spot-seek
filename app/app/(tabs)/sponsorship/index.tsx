@@ -19,6 +19,7 @@ import {
   type ApiSponsorRequest, type SponsorshipStatus, type PaymentStatus,
 } from '../../../lib/api';
 import { formatEventDateTime } from '../../../lib/dateFormat';
+import { hasEnded } from '../../../lib/eventTime';
 
 const FILTERS = [
   { key: 'all', label: 'All' },
@@ -65,15 +66,18 @@ function paymentStatusLabel(status: PaymentStatus | undefined, tr: (key: string)
 }
 
 function applyFilter(events: ApiEvent[], filter: FilterKey): ApiEvent[] {
-  if (filter === 'all') return events;
+  // The marketplace is for future sponsorship: ended parties never appear
+  // (the feed already drops them; this keeps the rule even for a stale list).
   const now = new Date();
+  events = events.filter((e) => !hasEnded(e, now));
+  if (filter === 'all') return events;
   const cutoff = new Date(now);
   if (filter === 'today') cutoff.setHours(23, 59, 59, 999);
   else cutoff.setDate(now.getDate() + 7);
   return events.filter((e) => {
     if (!e.startsAt) return false;
-    const d = new Date(e.startsAt);
-    return d >= now && d <= cutoff;
+    // A party that is on right now still counts for Today and This week.
+    return new Date(e.startsAt) <= cutoff;
   });
 }
 
@@ -317,10 +321,13 @@ export default function SponsorshipHubScreen() {
                       <Text style={[t.headlineSm, { color: colors.textPrimary }]} numberOfLines={1}>
                         {r.event?.title ?? tr('browse.requests.fallbackEventTitle')}
                       </Text>
-                      <Badge
-                        label={r.status === 'pending' ? tr('browse.requests.newRequest') : tr(`statusLabels.${r.status}`)}
-                        tone={r.status === 'pending' ? 'live' : r.status === 'active' ? 'confirmed' : 'neutral'}
-                      />
+                      <View style={s.requestBadges}>
+                        {r.event && hasEnded(r.event) && <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} />}
+                        <Badge
+                          label={r.status === 'pending' ? tr('browse.requests.newRequest') : tr(`statusLabels.${r.status}`)}
+                          tone={r.status === 'pending' ? 'live' : r.status === 'active' ? 'confirmed' : 'neutral'}
+                        />
+                      </View>
                     </View>
                     <Text style={[t.bodySm, { color: colors.textSecondary }]}>
                       {fmtEventDate(r.event?.startsAt ?? null, tr, r.event?.venueTimezone ?? null)} · {tr('browse.requests.goingCount', { count: r.goingCount })}
@@ -464,6 +471,7 @@ const s = StyleSheet.create({
     marginBottom: spacing.md,
     borderRadius: radius.card,
   },
+  requestBadges: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   requestHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
   requestActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
   requestBtn: { flex: 1 },

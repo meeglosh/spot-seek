@@ -60,5 +60,9 @@
     "done": "Fertig",
     "title": "Datum und Uhrzeit",
     "placeholder": "Datum und Uhrzeit wählen"
+  },
+  "phase": {
+    "ended": "Vorbei",
+    "onNow": "Läuft gerade"
   }
 }
