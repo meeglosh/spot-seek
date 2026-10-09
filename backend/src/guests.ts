@@ -7,6 +7,7 @@
  * row is replaced by a real rsvps row, so nobody is ever counted twice.
  * Pending guests (unconfirmed email) never count.
  */
+import { eventPhase } from './eventTime';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
@@ -63,12 +64,11 @@ export function newToken(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Same openness rule as waitlist promotion: published and not yet over. */
+/** RSVPs are open while the party is published and upcoming or live (shared eventPhase rule). */
 export function eventIsOpen(event: schema.Event, now = new Date()): boolean {
   if (event.status !== 'published') return false;
   if (event.moderationStatus === 'hidden' || event.moderationStatus === 'removed') return false;
-  const end = event.endsAt ?? event.startsAt;
-  return !end || end > now;
+  return eventPhase(event, now) !== 'ended';
 }
 
 /**

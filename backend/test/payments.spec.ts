@@ -13,7 +13,8 @@
  * crypto against the same fake webhook secret, so signature verification
  * itself is genuinely exercised, not mocked.
  */
-import { SELF, fetchMock } from 'cloudflare:test';
+import { SELF, fetchMock, env } from 'cloudflare:test';
+import { neon } from '@neondatabase/serverless';
 import { createHmac } from 'node:crypto';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { __setTestStripeConfig } from '../src/payments';
@@ -64,8 +65,26 @@ async function createEvent(cookie: string, overrides: Record<string, unknown> = 
   return event;
 }
 
+
+// Ended parties reject RSVPs / bids / acceptance (event_ended), so fixtures that
+// need an already-ended party do their setup while it is "open", then restore
+// the real times.
+async function whileOpen<T>(eventId: string, fn: () => Promise<T>): Promise<T> {
+  const sql = neon(env.DATABASE_URL);
+  const [orig] = await sql`SELECT starts_at, ends_at FROM events WHERE id = ${eventId}`;
+  await sql`UPDATE events SET starts_at = now() + interval '1 day', ends_at = now() + interval '2 days' WHERE id = ${eventId}`;
+  try {
+    return await fn();
+  } finally {
+    await sql`UPDATE events SET starts_at = ${orig.starts_at}, ends_at = ${orig.ends_at} WHERE id = ${eventId}`;
+  }
+}
+
 // Bids amountCents on eventId, host accepts it -> paymentStatus requires_payment.
-async function bidAndAccept(hostCookie: string, sponsorCookie: string, eventId: string, amountCents: number) {
+function bidAndAccept(hostCookie: string, sponsorCookie: string, eventId: string, amountCents: number) {
+  return whileOpen(eventId, () => bidAndAcceptNow(hostCookie, sponsorCookie, eventId, amountCents));
+}
+async function bidAndAcceptNow(hostCookie: string, sponsorCookie: string, eventId: string, amountCents: number) {
   const bidRes = await SELF.fetch(`${SPONSORS}/bids`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: sponsorCookie },
     body: JSON.stringify({ eventId, amountCents }),

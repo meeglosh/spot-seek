@@ -54,11 +54,26 @@ async function createEvent(
   return event;
 }
 
+
+// Ended parties reject RSVPs / bids / acceptance (event_ended), so fixtures that
+// need an already-ended party do their setup while it is "open", then restore
+// the real times.
+async function whileOpen<T>(eventId: string, fn: () => Promise<T>): Promise<T> {
+  const sql = neon(env.DATABASE_URL);
+  const [orig] = await sql`SELECT starts_at, ends_at FROM events WHERE id = ${eventId}`;
+  await sql`UPDATE events SET starts_at = now() + interval '1 day', ends_at = now() + interval '2 days' WHERE id = ${eventId}`;
+  try {
+    return await fn();
+  } finally {
+    await sql`UPDATE events SET starts_at = ${orig.starts_at}, ends_at = ${orig.ends_at} WHERE id = ${eventId}`;
+  }
+}
+
 async function rsvpGoing(cookie: string, eventId: string) {
-  const res = await SELF.fetch(RSVPS, {
+  const res = await whileOpen(eventId, () => SELF.fetch(RSVPS, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie },
     body: JSON.stringify({ eventId }),
-  });
+  }));
   expect(res.status).toBe(201);
 }
 

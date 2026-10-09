@@ -234,6 +234,26 @@ describe('guest RSVP flow', () => {
     expect((await guestPost('00000000-0000-4000-8000-000000000000', { name: 'X', email: 'a@b.co' })).status).toBe(404);
   });
 
+  it('keeps RSVPs open while live (no endsAt, started 2h ago) and closes after the 4h default', async () => {
+    const live = await createEvent(host, { startsAt: new Date(Date.now() - 2 * 3600_000).toISOString() });
+    expect((await guestPost(live.id, { name: 'Live', email: `g-live-${TS}@spotseek.test` })).status).toBe(202);
+    const over = await createEvent(host, { startsAt: new Date(Date.now() - 5 * 3600_000).toISOString() });
+    expect((await guestPost(over.id, { name: 'Late', email: `g-late-${TS}@spotseek.test` })).status).toBe(410);
+  });
+
+  it('app RSVP path applies the same ended rule', async () => {
+    const over = await createEvent(host, { startsAt: new Date(Date.now() - 5 * 3600_000).toISOString() });
+    const live = await createEvent(host, { startsAt: new Date(Date.now() - 2 * 3600_000).toISOString() });
+    const user = await signUp('appended');
+    const post = (eventId: string) => app('/api/rsvps', {
+      method: 'POST', headers: { ...json, Cookie: user.cookie }, body: JSON.stringify({ eventId }),
+    });
+    const res = await post(over.id);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: 'event_ended' });
+    expect((await post(live.id)).status).toBe(201);
+  });
+
   it('rate limits per IP', async () => {
     const ev = await createEvent(host);
     const ip = freshIp();

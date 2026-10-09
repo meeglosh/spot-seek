@@ -17,7 +17,7 @@ import {
 } from '../../../lib/api';
 import { colors, radius, spacing, type as t } from '../../../lib/theme';
 import { formatEventDateTime } from '../../../lib/dateFormat';
-import { hasEnded } from '../../../lib/eventTime';
+import { hasEnded, eventPhase } from '../../../lib/eventTime';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -228,6 +228,11 @@ export default function CommandCenterScreen() {
                   )}
                   {hostBannerKind(e.moderationStatus) && (
                     <ModerationBanner kind={hostBannerKind(e.moderationStatus)!} />
+                  )}
+                  {eventPhase(e) === 'live' && (
+                    <View style={{ flexDirection: 'row' }}>
+                      <Badge label={trCommon('phase.onNow')} tone="live" />
+                    </View>
                   )}
                   <Text style={[t.headlineMd, { color: colors.textPrimary }]} numberOfLines={2}>
                     {e.title}

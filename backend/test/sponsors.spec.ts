@@ -1,7 +1,8 @@
 /**
  * Phase 3: sponsor accounts, auction bidding, offers, analytics.
  */
-import { SELF } from 'cloudflare:test';
+import { SELF, env } from 'cloudflare:test';
+import { neon } from '@neondatabase/serverless';
 import { describe, it, expect, beforeAll } from 'vitest';
 
 const AUTH = 'https://example.com/api/auth';
@@ -237,5 +238,52 @@ describe('3.4 analytics', () => {
     const { summary } = await res.json() as { summary: { totalSpendCents: number; activeBids: number } };
     expect(summary.activeBids).toBeGreaterThanOrEqual(1);
     expect(summary.totalSpendCents).toBeGreaterThanOrEqual(10000);
+  });
+});
+
+describe('ended events reject sponsorship activity (event_ended)', () => {
+  const post = (path: string, cookie: string, body: unknown) =>
+    SELF.fetch(`${SPONSORS}${path}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: JSON.stringify(body),
+    });
+  const mkEvent = async (startsAt: string, endsAt?: string) => {
+    const r = await SELF.fetch(EVENTS, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: host.cookie },
+      body: JSON.stringify({ title: 'Ended', broadcastSubject: 'Game', status: 'published', startsAt, ...(endsAt ? { endsAt } : {}) }),
+    });
+    return ((await r.json()) as { event: { id: string } }).event.id;
+  };
+  const H = 3600_000;
+
+  it('rejects a bid and a host request on an ended event', async () => {
+    const id = await mkEvent(new Date(Date.now() - 6 * H).toISOString()); // no endsAt: 4h default passed
+    let res = await post('/bids', sponsor.cookie, { eventId: id, amountCents: 1000 });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: 'event_ended' });
+    res = await post('/requests', host.cookie, { eventId: id, sponsorId: sponsor.id, amountCents: 1000 });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: 'event_ended' });
+  });
+
+  it('still accepts a bid on a live event (started 2h ago, no endsAt)', async () => {
+    const id = await mkEvent(new Date(Date.now() - 2 * H).toISOString());
+    expect((await post('/bids', sponsor.cookie, { eventId: id, amountCents: 1000 })).status).toBe(201);
+  });
+
+  it('rejects accepting a bid once the event has ended, but allows rejecting it', async () => {
+    // Created while live, then the host moves the end into the past.
+    const id = await mkEvent(new Date(Date.now() - 2 * H).toISOString(), new Date(Date.now() + H).toISOString());
+    const bidRes = await post('/bids', sponsor.cookie, { eventId: id, amountCents: 1000 });
+    expect(bidRes.status).toBe(201);
+    const { bid } = (await bidRes.json()) as { bid: { id: string } };
+    // PATCH /events cannot move times, so end the party directly.
+    await neon(env.DATABASE_URL)`UPDATE events SET ends_at = now() - interval '1 hour' WHERE id = ${id}`;
+    const patch = (status: string) => SELF.fetch(`${SPONSORS}/bids/${bid.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json', Cookie: host.cookie }, body: JSON.stringify({ status }),
+    });
+    const acc = await patch('active');
+    expect(acc.status).toBe(409);
+    expect(await acc.json()).toEqual({ error: 'event_ended' });
+    expect((await patch('rejected')).status).toBe(200);
   });
 });

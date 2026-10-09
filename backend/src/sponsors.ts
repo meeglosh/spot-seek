@@ -8,6 +8,7 @@
  *   - Host reviews bids and accepts the best one; others remain pending.
  *   - Payment processing is stubbed — see BLOCKED.md for Stripe integration.
  */
+import { eventPhase } from './eventTime';
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
@@ -146,6 +147,7 @@ sponsorsRouter.post('/bids', async (c) => {
 
   const event = await db.query.events.findFirst({ where: eq(schema.events.id, eventId) });
   if (!event || event.status !== 'published') return c.json({ error: 'Event not found or not published' }, 404);
+  if (eventPhase(event) === 'ended') return c.json({ error: 'event_ended' }, 409);
 
   const platformFeeCents = Math.round(amountCents * PLATFORM_FEE_RATE);
   const [bid] = await db
@@ -184,6 +186,7 @@ sponsorsRouter.post('/requests', async (c) => {
   const event = await db.query.events.findFirst({ where: eq(schema.events.id, eventId) });
   if (!event || event.status !== 'published') return c.json({ error: 'Event not found or not published' }, 404);
   if (event.hostId !== hostId) return c.json({ error: 'Forbidden' }, 403);
+  if (eventPhase(event) === 'ended') return c.json({ error: 'event_ended' }, 409);
 
   const sponsor = await db.query.sponsorProfiles.findFirst({
     where: eq(schema.sponsorProfiles.id, sponsorId),
@@ -299,6 +302,11 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
     return c.json({ error: `${reviewer === 'host' ? 'Host' : 'Sponsor'} may set status to active or rejected` }, 400);
   if (isInitiator && status !== 'cancelled')
     return c.json({ error: 'Only the reviewer may accept or reject. You may only cancel' }, 400);
+
+  // Accepting a sponsorship for a party that is already over is not allowed
+  // (rejecting / cancelling stays possible so stale proposals can be cleared).
+  if (status === 'active' && event && eventPhase(event) === 'ended')
+    return c.json({ error: 'event_ended' }, 409);
 
   // Refund policy (PAYMENTS.md). A sponsor stepping out of a sponsorship they
   // have money in (cancel as initiator, or reject as reviewer):

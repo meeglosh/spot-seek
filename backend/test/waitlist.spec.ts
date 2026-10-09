@@ -1,7 +1,8 @@
 /**
  * Waitlist auto-promotion tests. Timestamp-unique fixtures (shared dev DB).
  */
-import { SELF } from 'cloudflare:test';
+import { SELF, env } from 'cloudflare:test';
+import { neon } from '@neondatabase/serverless';
 import { describe, it, expect, beforeAll } from 'vitest';
 
 const BASE = 'https://example.com';
@@ -157,9 +158,11 @@ describe('waitlist promotion', () => {
   });
 
   it('does not promote for a past event', async () => {
-    const event = await createEvent(host, 1, { startsAt: new Date(Date.now() - 86_400_000).toISOString() });
+    // RSVPs to an already-ended party are rejected, so the party ends after the RSVPs land.
+    const event = await createEvent(host, 1);
     const going = await rsvp(u[0], event.id);
     await rsvp(u[1], event.id);
+    await neon(env.DATABASE_URL)`UPDATE events SET starts_at = now() - interval '1 day' WHERE id = ${event.id}`;
     await setState(u[0], going.id, 'cancelled');
     expect((await mine(u[1]))[event.id]).toBe('waitlisted');
     expect(await promotedNotifs(u[1], event.id)).toHaveLength(0);

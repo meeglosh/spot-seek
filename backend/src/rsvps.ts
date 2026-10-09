@@ -1,3 +1,4 @@
+import { eventPhase } from './eventTime';
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
@@ -77,6 +78,8 @@ rsvpsRouter.post('/', async (c) => {
   if (!event || (isModerationHidden(event) && event.hostId !== userId)) {
     return c.json({ error: 'Event not found' }, 404);
   }
+  // RSVPs close once the party has ended (same rule as guest RSVPs).
+  if (eventPhase(event) === 'ended') return c.json({ error: 'event_ended' }, 409);
   // A host who blocked this user does not take their RSVPs.
   if (event.hostId !== userId && (await isBlockedByHost(db, event.hostId, userId))) {
     return c.json({ error: 'Forbidden' }, 403);
@@ -166,6 +169,7 @@ rsvpsRouter.patch('/:id', async (c) => {
   // UPDATE's WHERE clause; a no-op transition (already going) is always allowed.
   if (state === 'going' && rsvp.state !== 'going') {
     const event = await db.query.events.findFirst({ where: eq(schema.events.id, rsvp.eventId) });
+    if (event && eventPhase(event) === 'ended') return c.json({ error: 'event_ended' }, 409);
     const capacity = event?.capacity ?? null;
     const rows = await db.execute(sql`
       UPDATE rsvps SET state = 'going'::rsvp_state, updated_at = now()
