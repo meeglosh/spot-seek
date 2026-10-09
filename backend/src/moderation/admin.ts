@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as schema from '../schema';
 import { notify } from '../notifications';
 import { sendEmail } from '../reminders';
@@ -31,13 +31,26 @@ export type QueueItem = {
   lastAction: { action: string; reason: string | null; actor: string; at: Date } | null;
 };
 
-export async function loadQueue(db: Db): Promise<QueueItem[]> {
-  const events = await db
-    .select()
+/** Fixture-account domains: their events never reach the digest email. */
+const TEST_HOST_SQL = sql`EXISTS (
+  SELECT 1 FROM ${schema.users}
+  WHERE ${schema.users.id} = ${schema.events.hostId}
+    AND (${schema.users.email} LIKE '%@spotseek.test' OR ${schema.users.email} LIKE '%@spotseek-dev.test')
+)`;
+
+export async function loadQueue(db: Db, opts: { excludeTestHosts?: boolean } = {}): Promise<QueueItem[]> {
+  const rows = await db
+    .select({ event: schema.events })
     .from(schema.events)
-    .where(inArray(schema.events.moderationStatus, ['flagged', 'hidden']))
+    .where(
+      and(
+        inArray(schema.events.moderationStatus, ['flagged', 'hidden']),
+        opts.excludeTestHosts ? sql`NOT ${TEST_HOST_SQL}` : undefined,
+      ),
+    )
     .orderBy(desc(schema.events.updatedAt))
     .limit(200);
+  const events = rows.map((r) => r.event);
   if (events.length === 0) return [];
   const ids = events.map((e) => e.id);
   const [reports, logs, hosts] = await Promise.all([
@@ -137,7 +150,7 @@ export async function runModerationDigest(
   now = new Date(),
 ): Promise<'empty' | 'already_sent' | 'sent'> {
   const db = drizzle(neon(env.DATABASE_URL), { schema });
-  const queue = await loadQueue(db);
+  const queue = await loadQueue(db, { excludeTestHosts: true });
   if (queue.length === 0) return 'empty';
 
   const claimed = await db.execute(sql`

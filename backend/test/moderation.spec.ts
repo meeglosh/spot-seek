@@ -11,7 +11,9 @@ import worker from '../src/index';
 import { __setEmailGuardTestHooks } from '../src/email-guard';
 import { __setClassifierForTests, parseGuardOutput } from '../src/moderation/classifier';
 import { matchBlocklist } from '../src/moderation/blocklist';
-import { runModerationDigest } from '../src/moderation/admin';
+import { drizzle } from 'drizzle-orm/neon-http';
+import * as schema from '../src/schema';
+import { loadQueue, runModerationDigest } from '../src/moderation/admin';
 
 // Several tests sign up 3-4 users against the remote dev DB; give them room.
 vi.setConfig({ testTimeout: 30_000 });
@@ -486,25 +488,73 @@ describe('repeat-offender pause', () => {
 // ─── Daily digest ─────────────────────────────────────────────────────────────
 
 describe('moderation digest', () => {
+  // The digest skips events hosted by fixture-domain accounts, so a digest test that
+  // needs a non-empty queue re-homes its host onto a real-looking domain. Purged in finally.
+  async function rehome(host: User, email: string) {
+    await sql()`UPDATE users SET email = ${email} WHERE id = ${host.id}`;
+    await sql()`UPDATE "user" SET email = ${email} WHERE id = ${host.id}`;
+  }
+  async function purge(host: User) {
+    await sql()`DELETE FROM moderation_events WHERE event_id IN (SELECT id FROM events WHERE host_id = ${host.id})`;
+    await sql()`DELETE FROM events WHERE host_id = ${host.id}`;
+    await sql()`DELETE FROM users WHERE id = ${host.id}`;
+    await sql()`DELETE FROM "user" WHERE id = ${host.id}`;
+  }
+  const digestDb = () => drizzle(neon(env.DATABASE_URL), { schema });
+
   it('emails hello@spotseek.app at most once per UTC day, and only when the queue is non-empty', async () => {
     const host = await signIn('dig-host');
     const rep = await signIn('dig-rep');
+    try {
+      const ev = await mk(host);
+      await report(rep, ev.id, 'hate'); // guarantees a non-empty queue
+      await rehome(host, `dig-host-${TS}@digest-fixture.example.com`);
+
+      // A synthetic far-future day so this never collides with a real digest row.
+      const day = new Date(Date.UTC(2090, TS % 12, 1 + (TS % 27)));
+      await sql()`DELETE FROM moderation_digests WHERE day = ${day.toISOString().slice(0, 10)}`;
+      const e = { ...env, RESEND_API_KEY: 'test-resend-key' } as unknown as Env;
+      try {
+        expect(await runModerationDigest(e, day)).toBe('sent');
+        expect(await runModerationDigest(e, day)).toBe('already_sent');
+        expect(await runModerationDigest(e, new Date(day.getTime() + 3600_000))).toBe('already_sent');
+        const digests = resendSent.filter((m) => m.to === 'hello@spotseek.app');
+        expect(digests.length).toBe(1);
+        expect(digests[0].subject).toMatch(/^Moderation queue: \d+ to review$/);
+      } finally {
+        await sql()`DELETE FROM moderation_digests WHERE day = ${day.toISOString().slice(0, 10)}`;
+      }
+    } finally {
+      await purge(host);
+    }
+  });
+
+  it('skips events hosted by @spotseek.test / @spotseek-dev.test accounts (digest only, not the admin queue)', async () => {
+    const host = await signIn('dig-skip'); // @spotseek.test
+    const rep = await signIn('dig-skip-rep');
     const ev = await mk(host);
-    await report(rep, ev.id, 'hate'); // guarantees a non-empty queue
+    await report(rep, ev.id, 'hate');
+    expect(await modStatus(ev.id)).toBe('hidden');
 
-    // A synthetic far-future day so this never collides with a real digest row.
-    const day = new Date(Date.UTC(2090, TS % 12, 1 + (TS % 27)));
+    // Admin queue API still lists it.
+    const adminQueue = (await (await app('/api/admin/moderation/queue', { headers: ADMIN })).json()) as { events: { id: string }[] };
+    expect(adminQueue.events.map((q) => q.id)).toContain(ev.id);
+    expect((await loadQueue(digestDb())).map((q) => q.id)).toContain(ev.id);
+
+    // Digest query skips it, for both fixture domains.
+    expect((await loadQueue(digestDb(), { excludeTestHosts: true })).map((q) => q.id)).not.toContain(ev.id);
+    await sql()`UPDATE users SET email = ${`dig-skip-${TS}@spotseek-dev.test`} WHERE id = ${host.id}`;
+    expect((await loadQueue(digestDb(), { excludeTestHosts: true })).map((q) => q.id)).not.toContain(ev.id);
+
+    // And the digest email never mentions it (it may still send for real queue items).
+    const day = new Date(Date.UTC(2091, TS % 12, 1 + (TS % 27)));
     await sql()`DELETE FROM moderation_digests WHERE day = ${day.toISOString().slice(0, 10)}`;
-    const e = { ...env, RESEND_API_KEY: 'test-resend-key' } as unknown as Env;
-
-    expect(await runModerationDigest(e, day)).toBe('sent');
-    expect(await runModerationDigest(e, day)).toBe('already_sent');
-    expect(await runModerationDigest(e, new Date(day.getTime() + 3600_000))).toBe('already_sent');
-    const digests = resendSent.filter((m) => m.to === 'hello@spotseek.app');
-    expect(digests.length).toBe(1);
-    expect(digests[0].subject).toMatch(/^Moderation queue: \d+ to review$/);
-
-    await sql()`DELETE FROM moderation_digests WHERE day = ${day.toISOString().slice(0, 10)}`;
+    try {
+      await runModerationDigest({ ...env, RESEND_API_KEY: 'test-resend-key' } as unknown as Env, day);
+      for (const m of resendSent) expect(JSON.stringify(m)).not.toContain(ev.id);
+    } finally {
+      await sql()`DELETE FROM moderation_digests WHERE day = ${day.toISOString().slice(0, 10)}`;
+    }
   });
 });
 

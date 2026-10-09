@@ -2,6 +2,8 @@ import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
 
 export default defineWorkersConfig({
 	test: {
+		// Deletes this run's fixture users/events from the shared dev DB afterwards.
+		globalSetup: ["./test/global-teardown.ts"],
 		poolOptions: {
 			workers: {
 				wrangler: { configPath: "./wrangler.jsonc" },
