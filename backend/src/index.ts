@@ -9,6 +9,7 @@ import { remindersRouter } from './reminders';
 import { profilesRouter } from './profiles';
 import { chatRouter } from './chat';
 import { adminRouter } from './admin';
+import { adminPageRouter } from './moderation/admin-page';
 import { sponsorsRouter } from './sponsors';
 import { favouritesRouter } from './favourites';
 import { geocodeRouter } from './geocode';
@@ -121,6 +122,7 @@ app.route('/api/account', accountRouter);
 app.route('/api/push', pushRouter);
 app.route('/payments', onboardPagesRouter);
 app.route('/', passwordResetRouter);
+app.route('/admin', adminPageRouter);
 app.route('/', webRsvpRouter);
 app.route('/', deeplinksRouter);
 

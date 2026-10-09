@@ -9,10 +9,11 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as schema from '../schema';
 import { notify } from '../notifications';
 import { sendEmail } from '../reminders';
+import { publicBaseUrl } from '../email';
 import { utcDay } from '../email-guard';
 import { logModeration } from './screen';
 
-type Db = ReturnType<typeof drizzle<typeof schema>>;
+export type Db = ReturnType<typeof drizzle<typeof schema>>;
 
 export const DIGEST_TO = 'hello@spotseek.app';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -94,26 +95,28 @@ moderationAdminRouter.get('/queue', async (c) => {
   return c.json({ events: await loadQueue(db) });
 });
 
-moderationAdminRouter.post('/events/:id/restore', async (c) => {
-  const id = c.req.param('id');
-  if (!UUID_RE.test(id)) return c.json({ error: 'Not found' }, 404);
-  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+export type ModerationActionResult =
+  | { ok: true; event: typeof schema.events.$inferSelect }
+  | { ok: false };
+
+/** Puts an event back to moderation 'ok'. Shared by the API and the admin web page. */
+export async function restoreEvent(db: Db, id: string): Promise<ModerationActionResult> {
+  if (!UUID_RE.test(id)) return { ok: false };
   const [event] = await db
     .update(schema.events)
     .set({ moderationStatus: 'ok' })
     .where(eq(schema.events.id, id))
     .returning();
-  if (!event) return c.json({ error: 'Not found' }, 404);
+  if (!event) return { ok: false };
   await logModeration(db, { eventId: id, action: 'restored', actor: 'admin', detail: { hostId: event.hostId } });
-  return c.json({ event });
-});
+  return { ok: true, event };
+}
 
-moderationAdminRouter.post('/events/:id/remove', async (c) => {
-  const id = c.req.param('id');
-  if (!UUID_RE.test(id)) return c.json({ error: 'Not found' }, 404);
-  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+/** Takes an event down and tells the host. Shared by the API and the admin web page. */
+export async function removeEvent(env: Env, db: Db, id: string): Promise<ModerationActionResult> {
+  if (!UUID_RE.test(id)) return { ok: false };
   const existing = await db.query.events.findFirst({ where: eq(schema.events.id, id) });
-  if (!existing) return c.json({ error: 'Not found' }, 404);
+  if (!existing) return { ok: false };
   const [event] = await db
     .update(schema.events)
     .set({ moderationStatus: 'removed' })
@@ -127,7 +130,7 @@ moderationAdminRouter.post('/events/:id/remove', async (c) => {
     detail: { hostId: existing.hostId, title: existing.title.slice(0, 120) },
   });
   if (existing.moderationStatus !== 'removed') {
-    await notify(db, c.env.RESEND_API_KEY, {
+    await notify(db, env.RESEND_API_KEY, {
       userId: existing.hostId,
       type: 'event_removed',
       title: 'Your party was taken down.',
@@ -135,7 +138,21 @@ moderationAdminRouter.post('/events/:id/remove', async (c) => {
       eventId: id,
     }).catch((err) => console.error('[moderation] removal notify failed:', err));
   }
-  return c.json({ event });
+  return { ok: true, event };
+}
+
+moderationAdminRouter.post('/events/:id/restore', async (c) => {
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const r = await restoreEvent(db, c.req.param('id'));
+  if (!r.ok) return c.json({ error: 'Not found' }, 404);
+  return c.json({ event: r.event });
+});
+
+moderationAdminRouter.post('/events/:id/remove', async (c) => {
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const r = await removeEvent(c.env, db, c.req.param('id'));
+  if (!r.ok) return c.json({ error: 'Not found' }, 404);
+  return c.json({ event: r.event });
 });
 
 // ─── Daily digest ─────────────────────────────────────────────────────────────
@@ -171,7 +188,7 @@ export async function runModerationDigest(
   const body =
     `${hidden} hidden and ${flagged} flagged waiting for review.\n\n${lines}` +
     (queue.length > 20 ? `\n...and ${queue.length - 20} more.` : '') +
-    '\n\nReview: GET /api/admin/moderation/queue. Restore or remove: POST /api/admin/moderation/events/:id/restore|remove.';
+    `\n\nReview, restore or remove: ${publicBaseUrl(env)}/admin/moderation`;
   const subject = `Moderation queue: ${queue.length} to review`;
 
   if (!env.RESEND_API_KEY) {

@@ -58,6 +58,7 @@ deeplinksRouter.get('/robots.txt', (c) => {
       'Allow: /guidelines',
       'Allow: /privacy',
       'Allow: /terms',
+      'Disallow: /admin',
       'Disallow: /api/',
       'Disallow: /rsvp/',
       'Disallow: /payments/',

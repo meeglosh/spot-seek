@@ -231,3 +231,13 @@ RSVP uses GUEST_LIMITER.
   5. Email: Resend is already verified for spotseek.app; email CTAs follow
      `PUBLIC_BASE_URL` automatically. Stripe onboarding return URLs also follow it.
   6. Submit `https://spotseek.app/sitemap.xml` in Google Search Console.
+
+## Security review requested: admin moderation web page (task/admin-moderation-page)
+
+New admin-only cookie auth path for `GET /admin/moderation` (backend/src/moderation/admin-page.ts).
+It does not touch Better Auth config, sessions, CORS or app auth, but CLAUDE.md asks for human review of anything auth-like.
+- `POST /admin/login` verifies the secret with the existing SHA-256 + timing-safe compare, rate limited per IP via AUTH_LIMITER (10/min).
+- Cookie `ss_admin`: HttpOnly, Secure, SameSite=Strict, Path=/admin, 12h. Value is `expiry.nonce.HMAC-SHA256`, key derived from ADMIN_SECRET with a domain-separation prefix. The raw secret is never in the cookie. No server-side revocation: rotating ADMIN_SECRET invalidates all sessions; logout only clears the browser cookie.
+- State-changing POSTs need the session-bound CSRF token (HMAC of the cookie) plus an Origin that equals the request origin or PUBLIC_BASE_URL (missing Origin is rejected).
+- Pages send Cache-Control: no-store, noindex, X-Frame-Options: DENY. /admin is disallowed in robots.txt (sitemap only lists events and the home page).
+- Decide: is a 12h non-revocable session acceptable, and should login failures be logged/alerted?
