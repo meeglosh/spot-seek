@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
-import { createAuth } from './auth';
+import { createAuth, setAuthBaseURL } from './auth';
 import { eventsRouter } from './events';
 import { feedRouter } from './feed';
 import { rsvpsRouter } from './rsvps';
@@ -48,6 +48,7 @@ app.use('*', async (c, next) => {
 app.use('*', async (c, next) => {
   configurePublicBaseUrl(c.env.PUBLIC_BASE_URL);
   configureEmailGuard(c.env);
+  setAuthBaseURL(c.env.BETTER_AUTH_URL);
   try { configureApns(c.env, c.executionCtx); } catch { configureApns(c.env); }
   await next();
 });
@@ -57,6 +58,23 @@ app.use('*', async (c, next) => {
 // cf-connecting-ip is always set by Cloudflare at the edge (and overwritten if a
 // client sends it); when absent (local/test harness) there is no IP to key on.
 const AUTH_RATE_LIMITED = /^\/api\/auth\/(sign-up|sign-in|request-password-reset)(\/|$)/;
+
+// The native app authenticates with a bearer token, but iOS/Android HTTP stacks keep a
+// cookie jar and replay Better Auth's Set-Cookie on later requests. Better Auth's CSRF
+// check rejects any cookie-bearing request without a trusted Origin, which would 403
+// the app (e.g. sign-out). CSRF is a browser-only attack and browsers always send
+// Origin/Referer/Sec-Fetch-* on cross-site POSTs, so a request with none of them is
+// not a browser: drop its Cookie header and let the bearer token authenticate it.
+// Browser requests are untouched and still fully CSRF-checked.
+function stripCookiesFromNonBrowserRequest(req: Request): Request {
+  const h = req.headers;
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return req;
+  if (!h.has('cookie')) return req;
+  if (h.has('origin') || h.has('referer') || h.has('sec-fetch-site') || h.has('sec-fetch-mode') || h.has('sec-fetch-dest')) return req;
+  const headers = new Headers(h);
+  headers.delete('cookie');
+  return new Request(req, { headers });
+}
 
 app.all('/api/auth/*', async (c) => {
   if (c.req.method === 'POST' && AUTH_RATE_LIMITED.test(c.req.path)) {
@@ -80,7 +98,7 @@ app.all('/api/auth/*', async (c) => {
       }
     },
   });
-  return auth.handler(c.req.raw);
+  return auth.handler(stripCookiesFromNonBrowserRequest(c.req.raw));
 });
 
 app.route('/api/events', eventsRouter);

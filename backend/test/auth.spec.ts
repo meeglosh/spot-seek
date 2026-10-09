@@ -50,7 +50,7 @@ describe('auth flow', () => {
       method: 'POST',
       headers: {
         Cookie: sessionCookie,
-        Origin: 'https://example.com',
+        Origin: 'https://spotseek.app', // a trusted web origin (example.com is only the test host)
         'Content-Type': 'application/json',
       },
       body: '{}',

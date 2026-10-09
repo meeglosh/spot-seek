@@ -22,8 +22,9 @@
 		"enabled": true,
 	},
 	"vars": {
-		// Dev/preview deployment URL — anchors Better Auth's baseURL.
-		"BETTER_AUTH_URL": "https://spot-seek-api.dry-base-037d.workers.dev",
+		// Canonical public origin (custom domain) = Better Auth baseURL. workers.dev stays
+		// a trusted origin (src/auth.ts AUTH_TRUSTED_ORIGINS) for builds that hardcode it.
+		"BETTER_AUTH_URL": "https://spotseek.app",
 		// APNs push (OWNER REVIEW). The .p8 key itself is the secret APNS_KEY_P8
 		// (`wrangler secret put APNS_KEY_P8`); push is a no-op until it is set.
 		"APNS_KEY_ID": "K7H32D38GD",

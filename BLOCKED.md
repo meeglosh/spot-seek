@@ -134,6 +134,9 @@ The agents write here instead of guessing. Read this each morning. Empty is good
      disables CSRF, and future versions need `disableCSRFCheck: true` for that.
      Web pages now exist (`/e/:id` and the onboarding pages), so the
      origin/CSRF stance should be re-evaluated.
+- Status: fix proposed on task/auth-config-review, awaiting owner approval.
+  (Cause 1: 17 session-lookup createAuth() call sites passed no baseURL. Cause 2:
+  disableOriginCheck:true. Fix: explicit baseURL + trustedOrigins, origin/CSRF ON.)
 
 ## Forgot password — auth config change, OWNER REVIEW REQUIRED (2026-10-05)
 

@@ -6,6 +6,31 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import * as appSchema from './schema';
 import * as authSchema from './auth-schema';
 
+// Canonical public origin of the API/web pages. Used as the baseURL fallback so
+// that EVERY createAuth() call (17 session-lookup call sites do not pass opts)
+// has a baseURL; otherwise Better Auth logs "Base URL is not set" per instance.
+// Cloudflare Workers do not expose wrangler vars as process.env here (compat date
+// < 2025-04-01), so Better Auth cannot read BETTER_AUTH_URL itself.
+export const DEFAULT_AUTH_BASE_URL = 'https://spotseek.app';
+
+// BETTER_AUTH_URL (wrangler var), registered once per request by the index.ts
+// middleware. Vars are constant for an isolate's lifetime, so module state is safe,
+// and it keeps baseURL IDENTICAL across all createAuth() call sites. That matters:
+// baseURL's protocol decides the cookie name/Secure prefix, so call sites that
+// disagreed would fail to read each other's session cookies.
+let configuredBaseURL: string | undefined;
+export function setAuthBaseURL(url: string | undefined): void {
+  if (url) configuredBaseURL = url;
+}
+
+// Origins allowed to make cookie-based (browser) POSTs to /api/auth/*. Native
+// requests are not affected (no Origin, no Cookie; they use a bearer token).
+export const AUTH_TRUSTED_ORIGINS = [
+  'https://spotseek.app',
+  'https://www.spotseek.app',
+  'https://spot-seek-api.dry-base-037d.workers.dev',
+];
+
 // Any change to cookie/session config beyond defaults -> BLOCKED.md.
 export function createAuth(
   sql: NeonQueryFunction<false, false>,
@@ -33,18 +58,14 @@ export function createAuth(
   });
 
   return betterAuth({
-    // baseURL silences the "Base URL is not set" warning and anchors
-    // cookie domains. Set BETTER_AUTH_URL in .dev.vars (dev) or
-    // `wrangler secret put BETTER_AUTH_URL` (production).
-    ...(opts?.baseURL ? { baseURL: opts.baseURL } : {}),
+    // Always set explicitly (see DEFAULT_AUTH_BASE_URL); env override from index.ts.
+    baseURL: opts?.baseURL || configuredBaseURL || DEFAULT_AUTH_BASE_URL,
 
-    // Native mobile clients (React Native) do not send an Origin header —
-    // they are not browser contexts and cannot be CSRF-attacked via iframes.
-    // Disabling the origin check is the correct posture for mobile API traffic.
-    // Re-evaluate if a web front-end is added (add trustedOrigins instead).
-    advanced: {
-      disableOriginCheck: true,
-    },
+    // Origin/CSRF checks are ON (Better Auth default). For any request carrying a
+    // Cookie the Origin must match trustedOrigins; requests with neither a Cookie
+    // nor an Origin (native app, bearer token) pass. Do not re-add
+    // advanced.disableOriginCheck: it also disables CSRF protection.
+    trustedOrigins: AUTH_TRUSTED_ORIGINS,
 
     database: drizzleAdapter(db, {
       provider: 'pg',
