@@ -29,6 +29,8 @@ const BUNDLE_ID = 'com.spotseek.app';
 
 /** Max URLs in sitemap.xml (protocol limit is 50,000). */
 export const SITEMAP_MAX_URLS = 1000;
+/** Static public pages listed after the homepage in sitemap.xml. */
+const STATIC_PATHS = ['/guidelines', '/privacy', '/terms'];
 
 deeplinksRouter.get('/.well-known/apple-app-site-association', (c) => c.body(
   JSON.stringify({
@@ -53,6 +55,9 @@ deeplinksRouter.get('/robots.txt', (c) => {
       'User-agent: *',
       'Allow: /',
       'Allow: /e/',
+      'Allow: /guidelines',
+      'Allow: /privacy',
+      'Allow: /terms',
       'Disallow: /api/',
       'Disallow: /rsvp/',
       'Disallow: /payments/',
@@ -81,9 +86,10 @@ deeplinksRouter.get('/sitemap.xml', async (c) => {
     )
     .orderBy(asc(schema.events.startsAt))
     // One slot is the homepage entry, so the total never exceeds the cap.
-    .limit(SITEMAP_MAX_URLS - 1);
+    .limit(SITEMAP_MAX_URLS - STATIC_PATHS.length - 1);
   const urls = [
     `  <url><loc>${escapeHtml(`${base}/`)}</loc></url>`,
+    ...STATIC_PATHS.map((p) => `  <url><loc>${escapeHtml(`${base}${p}`)}</loc></url>`),
     ...rows.map(
       (r) =>
         `  <url><loc>${escapeHtml(`${base}/e/${r.id}`)}</loc><lastmod>${r.updatedAt.toISOString()}</lastmod></url>`,

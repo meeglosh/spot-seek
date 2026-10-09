@@ -8,7 +8,7 @@ import { useAuth } from '../../lib/auth';
 import { getOnboardingSeen } from '../../lib/api';
 import { colors, fonts, spacing, type as t } from '../../lib/theme';
 import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
-import { openGuidelines } from '../../lib/moderation';
+import { openGuidelines, openTerms, openPrivacy } from '../../lib/moderation';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -120,7 +120,11 @@ export default function SignUpScreen() {
           />
           <Text style={[t.bodySm, s.agreeText]}>
             {tr('signUp.agreeBefore')}
+            <Text style={s.agreeLink} onPress={openTerms} accessibilityRole="link">{tr('signUp.agreeTerms')}</Text>
+            {tr('signUp.agreeAnd')}
             <Text style={s.agreeLink} onPress={openGuidelines} accessibilityRole="link">{tr('signUp.agreeLink')}</Text>
+            {tr('signUp.agreeAnd2')}
+            <Text style={s.agreeLink} onPress={openPrivacy} accessibilityRole="link">{tr('signUp.agreePrivacy')}</Text>
             {tr('signUp.agreeAfter')}
           </Text>
           <Press

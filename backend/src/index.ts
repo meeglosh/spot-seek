@@ -29,6 +29,7 @@ import { passwordResetRouter, sendResetEmail } from './password-reset';
 import { reportRouter, blocksRouter } from './moderation/routes';
 import { runModerationDigest } from './moderation/admin';
 import { renderGuidelinesPage } from './guidelines';
+import { renderPrivacyPage, renderTermsPage } from './legal';
 import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -134,6 +135,20 @@ app.get('/', (c) =>
 // Community guidelines (Apple 1.2: published contact info + what is not allowed).
 app.get('/guidelines', (c) =>
   c.html(renderGuidelinesPage({ baseUrl: publicBaseUrl(c.env) }), 200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'public, max-age=3600',
+  }),
+);
+
+// Draft legal pages (owner review before launch). Needed for TestFlight external testing.
+app.get('/privacy', (c) =>
+  c.html(renderPrivacyPage({ baseUrl: publicBaseUrl(c.env) }), 200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'public, max-age=3600',
+  }),
+);
+app.get('/terms', (c) =>
+  c.html(renderTermsPage({ baseUrl: publicBaseUrl(c.env) }), 200, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'public, max-age=3600',
   }),

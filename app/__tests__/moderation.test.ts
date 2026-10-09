@@ -2,6 +2,8 @@ import { ApiError } from '../lib/api';
 import {
   REPORT_REASON_KEYS, reasonLabelKey, reportErrorKey, publishProblem, isRsvpForbidden, hostBannerKind,
   GUIDELINES_URL,
+  TERMS_URL,
+  PRIVACY_URL,
 } from '../lib/moderation';
 import { routeFor, iconFor } from '../lib/notificationRoutes';
 
@@ -103,6 +105,10 @@ describe('hostBannerKind', () => {
 describe('guidelines link', () => {
   it('points at the public page', () => {
     expect(GUIDELINES_URL).toBe('https://spotseek.app/guidelines');
+  });
+  it('points the terms and privacy links at the public pages', () => {
+    expect(TERMS_URL).toBe('https://spotseek.app/terms');
+    expect(PRIVACY_URL).toBe('https://spotseek.app/privacy');
   });
 });
 

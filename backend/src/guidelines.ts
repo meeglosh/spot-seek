@@ -4,6 +4,7 @@
  * Plain, short copy. No em dashes.
  */
 import { escapeHtml, renderPage } from './webpage';
+import { legalFooter, LEGAL_FOOT_CSS } from './legal';
 
 export const GUIDELINES_CONTACT = 'hello@spotseek.app';
 
@@ -39,10 +40,11 @@ export function renderGuidelinesPage(opts: { baseUrl: string }): string {
     </div>
 
     <p class="fine"><a href="${base}/">Back to SpotSeek</a></p>
-  </div>`;
+  </div>
+  ${legalFooter(opts.baseUrl)}`;
   return renderPage({
     title: 'Community guidelines · SpotSeek',
-    head: '<meta name="description" content="What is and is not allowed on SpotSeek, how reporting works, and how to contact us.">',
+    head: '<meta name="description" content="What is and is not allowed on SpotSeek, how reporting works, and how to contact us.">\n' + LEGAL_FOOT_CSS,
     body,
   });
 }

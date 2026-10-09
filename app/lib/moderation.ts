@@ -12,6 +12,18 @@ export function openGuidelines(): void {
   Linking.openURL(GUIDELINES_URL).catch(() => {});
 }
 
+// Draft legal pages (backend/src/legal.ts), opened the same way.
+export const TERMS_URL = 'https://spotseek.app/terms';
+export const PRIVACY_URL = 'https://spotseek.app/privacy';
+
+export function openTerms(): void {
+  Linking.openURL(TERMS_URL).catch(() => {});
+}
+
+export function openPrivacy(): void {
+  Linking.openURL(PRIVACY_URL).catch(() => {});
+}
+
 // ─── Report reasons ───────────────────────────────────────────────────────────
 // The six API reasons, in the order the sheet lists them. Each carries its own
 // plain label (moderation.json `report.reasons.<key>`); none are merged.

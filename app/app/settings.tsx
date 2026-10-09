@@ -22,7 +22,7 @@ import { Btn, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle, Press, To
 import { GuestGate } from '../components/AuthGate';
 import { SUPPORTED_LOCALES, setAppLocale } from '../lib/i18n';
 import { enablePush, disablePush } from '../lib/push';
-import { openGuidelines } from '../lib/moderation';
+import { openGuidelines, openTerms, openPrivacy } from '../lib/moderation';
 
 // Typed (case-sensitive) to re-confirm account deletion; sent to the server too.
 const DELETE_WORD = 'DELETE';
@@ -484,14 +484,14 @@ export default function SettingsScreen() {
             <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.guidelines')}</Text>
             <Icon name="chevronRight" size={18} color={colors.textTertiary} />
           </Press>
-          <View style={[s.linkRow, s.linkRowSoon]} accessibilityState={{ disabled: true }}>
-            <Text style={[t.bodyMd, { color: colors.textTertiary }]}>{tr('about.terms')}</Text>
-            <SoonTag label={trCommon('soon')} />
-          </View>
-          <View style={[s.linkRow, s.linkRowSoon]} accessibilityState={{ disabled: true }}>
-            <Text style={[t.bodyMd, { color: colors.textTertiary }]}>{tr('about.privacy')}</Text>
-            <SoonTag label={trCommon('soon')} />
-          </View>
+          <Press style={s.linkRow} onPress={openTerms} accessibilityRole="link">
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.terms')}</Text>
+            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
+          </Press>
+          <Press style={s.linkRow} onPress={openPrivacy} accessibilityRole="link">
+            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.privacy')}</Text>
+            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
+          </Press>
           <View style={[s.linkRow, s.linkRowSoon]} accessibilityState={{ disabled: true }}>
             <Text style={[t.bodyMd, { color: colors.textTertiary }]}>{tr('about.contactSupport')}</Text>
             <SoonTag label={trCommon('soon')} />

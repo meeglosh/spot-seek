@@ -545,6 +545,8 @@ ${calendarHtml(rows)}
   <span class="foot__brand">SPOTSEEK</span>
   <a href="mailto:hello@spotseek.app">hello@spotseek.app</a>
   <a href="/guidelines">Community guidelines</a>
+  <a href="/terms">Terms</a>
+  <a href="/privacy">Privacy</a>
   <span>Coming soon to the App Store</span>
 </footer>
 <script>${SX_JS}</script>
