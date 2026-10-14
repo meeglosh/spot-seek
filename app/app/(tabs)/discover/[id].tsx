@@ -1,3 +1,4 @@
+import { isSponsorshipEnabled } from '../../../lib/features';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, ScrollView, StyleSheet, Image, Platform, Share, Alert, TextInput, ActionSheetIOS } from 'react-native';
 import { Text } from '../../../components/Text';
@@ -526,7 +527,7 @@ export default function EventDetailScreen() {
           )}
 
           {/* Presented by — active sponsors, biggest bid first (array order) */}
-          {event.sponsors != null && event.sponsors.length > 0 && (
+          {isSponsorshipEnabled() && event.sponsors != null && event.sponsors.length > 0 && (
             <View style={s.section}>
               <SectionTitle>{tr('detail.presentedBy')}</SectionTitle>
               <View style={s.sponsorChips}>

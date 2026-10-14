@@ -1,3 +1,8 @@
+// Existing sponsor routing is the flag-ON behaviour; flag-off is covered in sponsorshipFlag.test.tsx.
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: { extra: { features: { sponsorship: true } } } },
+}));
 import { routeFor } from '../lib/notificationRoutes';
 
 describe('routeFor (shared by Notification Center and push taps)', () => {

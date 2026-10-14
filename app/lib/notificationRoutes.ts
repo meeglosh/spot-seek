@@ -1,5 +1,6 @@
 import type { ApiNotificationType } from './api';
 import type { IconName } from '../components/icons';
+import { isSponsorshipEnabled, isSponsorNotificationType, SPONSORSHIP_FALLBACK_ROUTE } from './features';
 
 /**
  * Icon shown beside a notification in the Notification Center. Only types that
@@ -17,6 +18,8 @@ export function iconFor(type: ApiNotificationType | string | undefined): IconNam
  * identically.
  */
 export function routeFor(type: ApiNotificationType | string | undefined, eventId: string | null | undefined): string | null {
+  // Beta: sponsor/payment notifications never open sponsorship screens.
+  if (!isSponsorshipEnabled() && isSponsorNotificationType(type)) return SPONSORSHIP_FALLBACK_ROUTE;
   if (!eventId) return null;
   // Host-facing: a bid landed, an RSVP came in, or a sponsor's payment/payout
   // cleared — all live in the Command Center.

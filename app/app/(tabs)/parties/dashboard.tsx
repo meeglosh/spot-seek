@@ -1,3 +1,4 @@
+import { isSponsorshipEnabled } from '../../../lib/features';
 import React, { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl, Image } from 'react-native';
 import { Text } from '../../../components/Text';
@@ -59,6 +60,7 @@ function fmtMoney(cents: number): string {
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function CommandCenterScreen() {
+  const sponsorshipOn = isSponsorshipEnabled();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
@@ -84,7 +86,7 @@ export default function CommandCenterScreen() {
       const [dash, hostAnalytics, connect] = await Promise.all([
         fetchDashboard(),
         fetchHostAnalytics().catch(() => [] as ApiHostAnalyticsEvent[]),
-        fetchConnectStatus().catch(() => null),
+        sponsorshipOn ? fetchConnectStatus().catch(() => null) : Promise.resolve(null),
       ]);
       setEvents(dash);
       setAnalytics(Object.fromEntries(hostAnalytics.map((e) => [e.id, e])));
@@ -92,7 +94,7 @@ export default function CommandCenterScreen() {
 
       // Pending-sponsor status: real bids only, fetched per active event.
       const active = dash.filter((e) => e.status === 'published' && !isPast(e));
-      const bids = await Promise.all(active.map((e) => fetchEventBids(e.id).catch(() => [])));
+      const bids = await Promise.all(active.map((e) => (sponsorshipOn ? fetchEventBids(e.id).catch(() => []) : Promise.resolve([]))));
       setPendingBidEvents(Object.fromEntries(
         active.map((e, i) => [e.id, bids[i].some((b) => b.status === 'pending')]),
       ));
@@ -102,7 +104,7 @@ export default function CommandCenterScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [auth.status, tr]);
+  }, [auth.status, tr, sponsorshipOn]);
 
   // Reload when the screen regains focus so edits/creations show up.
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -139,7 +141,7 @@ export default function CommandCenterScreen() {
   // Only worth surfacing once there's real sponsor revenue at stake — a host
   // with zero active sponsorships has nothing to be paid out for yet.
   const hasActiveSponsorship = Object.values(analytics).some((e) => e.activeSponsorships > 0);
-  const showPayoutBanner = hasActiveSponsorship && connectStatus?.configured === true && !connectStatus.payoutsEnabled;
+  const showPayoutBanner = sponsorshipOn && hasActiveSponsorship && connectStatus?.configured === true && !connectStatus.payoutsEnabled;
 
   return (
     <View style={s.container}>
@@ -186,12 +188,14 @@ export default function CommandCenterScreen() {
                   {totalRsvp.toLocaleString('en-US')}
                 </Text>
               </View>
-              <View style={s.statTile}>
-                <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('dashboard.sponsorRev')}</Text>
-                <Text style={[t.dataLg, { color: colors.confirmed }]}>
-                  {fmtMoney(sponsorRevCents)}
-                </Text>
-              </View>
+              {sponsorshipOn && (
+                <View style={s.statTile}>
+                  <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('dashboard.sponsorRev')}</Text>
+                  <Text style={[t.dataLg, { color: colors.confirmed }]}>
+                    {fmtMoney(sponsorRevCents)}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -250,7 +254,9 @@ export default function CommandCenterScreen() {
                   )}
 
                   <View style={s.activeFooter}>
-                    {sponsored ? (
+                    {!sponsorshipOn ? (
+                      <View />
+                    ) : sponsored ? (
                       <Text style={[t.label, { color: colors.confirmed }]}>{sponsoredLabel(sponsorCount, tr)}</Text>
                     ) : pending ? (
                       <Text style={[t.label, { color: colors.textSecondary }]}>{tr('dashboard.pendingSponsor')}</Text>
@@ -314,7 +320,7 @@ export default function CommandCenterScreen() {
                   </View>
                   <View style={s.rowRight}>
                     {e.status !== 'cancelled' && <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} />}
-                    {sponsored && <Text style={[t.labelSm, { color: colors.confirmed }]}>{sponsoredLabel(sponsorCount, tr)}</Text>}
+                    {sponsorshipOn && sponsored && <Text style={[t.labelSm, { color: colors.confirmed }]}>{sponsoredLabel(sponsorCount, tr)}</Text>}
                     <Text style={[t.monoData, { color: colors.textSecondary }]}>
                       {tr('dashboard.attendees', { count: attendees })}
                     </Text>

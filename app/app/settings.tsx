@@ -1,6 +1,7 @@
 /**
  * Settings — account, notification prefs, favourites, and about.
  */
+import { isSponsorshipEnabled } from '../lib/features';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, TextInput, ScrollView, StyleSheet, Alert, Linking } from 'react-native';
 import { Text } from '../components/Text';
@@ -115,7 +116,7 @@ export default function SettingsScreen() {
   const [payoutsError, setPayoutsError] = useState('');
 
   const loadConnectStatus = useCallback(async () => {
-    if (auth.status !== 'authenticated') return;
+    if (auth.status !== 'authenticated' || !isSponsorshipEnabled()) return;
     try {
       setConnectStatus(await fetchConnectStatus());
     } catch {
@@ -426,8 +427,8 @@ export default function SettingsScreen() {
           ))}
         </View>
 
-        {/* PAYOUTS */}
-        <View style={s.section}>
+        {/* PAYOUTS (hidden in the beta) */}
+        {isSponsorshipEnabled() && <View style={s.section}>
           <SectionTitle>{tr('payouts.title')}</SectionTitle>
           {connectStatus?.configured === false ? (
             <Text style={[t.bodySm, { color: colors.textSecondary }]}>
@@ -450,7 +451,7 @@ export default function SettingsScreen() {
               {payoutsError !== '' && <Text style={[t.bodySm, { color: colors.danger }]}>{payoutsError}</Text>}
             </>
           ) : null}
-        </View>
+        </View>}
 
         {/* FAVOURITES */}
         <View style={s.section}>

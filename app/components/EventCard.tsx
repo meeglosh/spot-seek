@@ -1,3 +1,4 @@
+import { isSponsorshipEnabled } from '../lib/features';
 import React, { useState } from 'react';
 import { View, StyleSheet, Image, Platform, Share } from 'react-native';
 import { Text } from './Text';
@@ -102,7 +103,7 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
     if (event.hostId) setTimeout(() => blockHost({ id: event.hostId!, name: event.hostName }), 400);
   };
 
-  const sponsorTag = event.topSponsor
+  const sponsorTag = isSponsorshipEnabled() && event.topSponsor
     ? (event.sponsorCount ?? 1) > 1
       ? tr('card.sponsorTagMore', { name: event.topSponsor, count: (event.sponsorCount ?? 1) - 1 })
       : tr('card.sponsorTag', { name: event.topSponsor })

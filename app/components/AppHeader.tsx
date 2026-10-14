@@ -1,3 +1,4 @@
+import { isSponsorshipEnabled } from '../lib/features';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Pressable, StyleSheet, Modal, Animated, Dimensions,
@@ -15,7 +16,16 @@ import { useAuthGate, type GateIntent } from './AuthGate';
 
 const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
 
-type MenuItem = { icon: IconName; label: string; onPress?: () => void; soon?: boolean };
+export type MenuItem = { icon: IconName; label: string; onPress?: () => void; soon?: boolean };
+
+/** Drawer entries for sponsorship; empty while the beta flag is off. */
+export function sponsorMenuItems(tr: (key: string) => string, go: (path: string) => void): MenuItem[] {
+  if (!isSponsorshipEnabled()) return [];
+  return [
+    { icon: 'sponsorship', label: tr('shell.menu.sponsorships'), onPress: () => go('/(tabs)/sponsorship') },
+    { icon: 'wallet', label: tr('shell.menu.wallet'), soon: true },
+  ];
+}
 
 function DrawerMenu({
   open, onClose, onGuestAction,
@@ -57,12 +67,7 @@ function DrawerMenu({
         go('/(tabs)/parties/dashboard');
       },
     },
-    { icon: 'sponsorship', label: tr('shell.menu.sponsorships'), onPress: () => go('/(tabs)/sponsorship') },
-    {
-      icon: 'wallet',
-      label: tr('shell.menu.wallet'),
-      soon: true,
-    },
+    ...sponsorMenuItems(tr, go),
     { icon: 'settings', label: tr('shell.menu.settings'), onPress: () => go('/settings') },
   ];
 

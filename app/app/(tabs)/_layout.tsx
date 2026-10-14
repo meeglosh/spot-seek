@@ -176,7 +176,8 @@ export default function TabsLayout() {
           tabBarLabel: ({ focused }) => <TabLabel label={tr('tabs.profile')} focused={focused} />,
         }}
       />
-      {/* Sponsorship screens live behind the drawer, not the tab bar */}
+      {/* Sponsorship screens live behind the drawer, never in the tab bar. With
+          the beta flag off the stack itself redirects to Discover. */}
       <Tabs.Screen name="sponsorship" options={{ href: null }} />
     </Tabs>
   );
