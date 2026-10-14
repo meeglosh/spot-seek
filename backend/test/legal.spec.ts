@@ -37,6 +37,37 @@ describe('legal pages', () => {
     expect(html).toContain('We do not sell your data');
   });
 
+  it('has no unfilled bracketed placeholders', async () => {
+    for (const path of ['/privacy', '/terms']) {
+      const html = await (await get(path)).text();
+      expect(html).not.toContain('class="ph"');
+      expect(html).not.toMatch(/>\s*\[[^\]]+\]\s*</);
+      expect(html).not.toMatch(/\[[^\]<>]*(owner|counsel|decision|confirm|address)[^\]<>]*\]/i);
+    }
+  });
+
+  it('privacy has a California section and the 16+ wording', async () => {
+    const html = await (await get('/privacy')).text();
+    expect(html).toContain('California residents');
+    expect(html).toContain('CCPA/CPRA');
+    expect(html).toContain('We do not sell personal information');
+    expect(html).toContain('within 30 days');
+    expect(html).toContain('aged 16 or older');
+    expect(html).toContain('under 16');
+    expect(html).toContain('132 S Rodeo Dr, Beverly Hills, CA 90212');
+    expect(html).toContain('Standard Contractual Clauses');
+  });
+
+  it('terms require age 16+, name California law and cap liability', async () => {
+    const html = await (await get('/terms')).text();
+    expect(html).toContain('at least 16 years old');
+    expect(html).toContain('16 or older to create an account');
+    expect(html).toContain('the State of California');
+    expect(html).toContain('Los Angeles County');
+    expect(html).toContain('the greater of US$100 or the fees you paid to SpotSeek in the 12 months before the claim');
+    expect(html).toContain('test mode');
+  });
+
   it('terms state the 15% fee and link the guidelines', async () => {
     const html = await (await get('/terms')).text();
     expect(html).toContain('15%');

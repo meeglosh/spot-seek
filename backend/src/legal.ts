@@ -1,14 +1,24 @@
 /**
  * GET /privacy and GET /terms: DRAFT legal pages for the owner's review.
  * Same shell as /guidelines. Every statement in the privacy policy is traced
- * to code (see docs/app-store-privacy.md for the data-flow map). Highlighted
- * bracketed text is a placeholder or a decision the owner must make before
- * launch. Plain, short copy. No em dashes. Never claims legal review.
+ * to code (see docs/app-store-privacy.md for the data-flow map). Owner
+ * decisions are filled in; no bracketed placeholders remain (a test asserts it).
+ * Plain, short copy. No em dashes. Never claims legal review (the draft banner
+ * stays until counsel has reviewed).
+ *
+ * Retention sources (checked 2026-10-14):
+ * - Cloudflare Workers Logs: 3 days on Workers Free, 7 days on Workers Paid.
+ *   https://developers.cloudflare.com/workers/observability/logs/workers-logs/
+ *   We say "up to 30 days" to stay conservative if the plan or defaults change.
+ * - Neon point-in-time history window: default 6 hours (Free), 1 day (Launch,
+ *   Scale); configurable up to 7 days (Launch) or 30 days (Scale).
+ *   https://neon.com/docs/postgres/backup-restore/history-window
+ *   We say deleted data can persist in backups "for up to 30 days".
  */
 import { escapeHtml, renderPage } from './webpage';
 
 /** Bump when either document changes. */
-export const LEGAL_LAST_UPDATED = '2026-10-09';
+export const LEGAL_LAST_UPDATED = '2026-10-14';
 export const LEGAL_COMPANY = 'GAPCO Limited Liability Company';
 const CONTACT = 'hello@spotseek.app';
 
@@ -27,9 +37,6 @@ const LEGAL_CSS = `<style>
 
 /** Compact copy of the footer styles, for pages that do not load LEGAL_CSS. */
 export const LEGAL_FOOT_CSS = `<style>.legal-foot{margin:28px 16px 0;padding-top:14px;border-top:2px solid var(--line);font-size:14px;color:var(--muted)}.legal-foot a{margin-right:14px}</style>`;
-
-/** Bracketed placeholder the owner must replace. Highlighted so it cannot be missed. */
-const ph = (text: string): string => `<span class="ph">[${escapeHtml(text)}]</span>`;
 
 export function draftBanner(): string {
   return `<div class="banner" role="note">Draft, last updated ${LEGAL_LAST_UPDATED}. Not yet reviewed by counsel.</div>`;
@@ -74,7 +81,7 @@ export function renderPrivacyPage(opts: { baseUrl: string }): string {
   const base = escapeHtml(opts.baseUrl);
   const mail = `<a href="mailto:${CONTACT}">${CONTACT}</a>`;
   const sections = [
-    panel('Who we are', `<p>SpotSeek is run by ${escapeHtml(LEGAL_COMPANY)} ("GAPCO", "we", "us"), ${ph('postal address to be added by the owner')}. We are the controller of the personal data described here. Contact: ${mail}.</p>
+    panel('Who we are', `<p>SpotSeek is run by ${escapeHtml(LEGAL_COMPANY)} ("GAPCO", "we", "us"), 132 S Rodeo Dr, Beverly Hills, CA 90212, USA. We are the controller of the personal data described here. Contact: ${mail}.</p>
       <p>This policy covers the SpotSeek app and the spotseek.app website. Plain version: we collect what we need to run watch parties, we do not sell it, and you can ask us to delete it.</p>`),
     panel('What we collect', `<ul>
       <li><b>Account.</b> Your email, display name and a password. We never see your password in plain text; Better Auth, our sign-in library, stores a hash. Sign-in sessions also record the device type and IP address they were opened from.</li>
@@ -114,14 +121,26 @@ export function renderPrivacyPage(opts: { baseUrl: string }): string {
       <li>Account data stays until you delete your account.</li>
       <li>Sign-in sessions expire on their own schedule, and password reset links expire quickly.</li>
       <li>Your saved notification location is overwritten when you update it and deleted with your account.</li>
-      <li>Server logs are kept by Cloudflare for its standard retention period. ${ph('owner: confirm log retention')}</li>
+      <li>Server logs are kept by Cloudflare for a short period, currently up to 30 days.</li>
       <li><b>When you delete your account</b> in the app, we delete your profile, sign-in records, RSVPs, reviews, follows, interests, notifications, preferences and chat messages, along with parties you hosted and their images. Two limits apply. We cannot delete while a sponsorship payment is in flight; you wait until it is released or refunded. And we keep records of payments that already happened: the party or sponsorship stays, but is re-assigned to an anonymous placeholder ("Deleted host" or "Deleted sponsor"), and your name, email, party description, cover photo and any private location are removed. Stripe keeps its own records of payouts and identity checks under its own policies. Guest RSVPs made with your email are deleted too.</li>
-      <li>Backups and logs may keep deleted data for a short time before they roll off. ${ph('owner: confirm backup window')}</li>
+      <li>Backups and logs may keep deleted data for up to 30 days before they roll off.</li>
     </ul>`),
-    panel('Your rights', `<p>Depending on where you live, you can ask to access, correct, delete or export your data, to object to or restrict some processing, and to withdraw consent. You can delete your account in the app. For anything else, email ${mail}. We aim to answer within 30 days. If you are in the EU, UK or a similar region, you can also complain to your local data protection authority.</p>`),
-    panel('Children', `<p>SpotSeek is not for children under ${ph('13 or 16: owner decision')}. We do not knowingly collect data from them. If you think a child has an account, email ${mail} and we will remove it.</p>`),
+    panel('Your rights', `<p>Depending on where you live, you can ask to access, correct, delete or export your data, to object to or restrict some processing, and to withdraw consent. You can delete your account in the app. For anything else, email ${mail}. We respond to privacy requests within 30 days. If you are in the EU, UK or a similar region, you can also complain to your local data protection authority.</p>`),
+    panel('Children', `<p>SpotSeek is for people aged 16 or older. We do not knowingly collect personal data from anyone under 16, and if we learn that we have, we delete it. If you think a child under 16 has an account, email ${mail} and we will remove it.</p>`),
+    panel('California residents', `<p>This section applies to California residents under the CCPA/CPRA. In the last 12 months we collected these categories of personal information, all described above:</p>
+      <ul>
+        <li><b>Identifiers:</b> email, display name, account and device identifiers (push token), IP address.</li>
+        <li><b>Customer records and commercial information:</b> your name and email, RSVPs, sponsorships and payment records (Stripe ids and amounts).</li>
+        <li><b>Geolocation:</b> precise location if you allow it, and your notification location rounded to about 1 km.</li>
+        <li><b>Internet and device activity:</b> sign-in session details (device type, IP address) and server request logs.</li>
+        <li><b>User content and inferences:</b> photos, party text, chat, reviews, and the teams and sports you pick as interests.</li>
+      </ul>
+      <p>We do not sell personal information, and we do not share it for cross-context behavioural advertising. We use it only for the purposes in this policy, and we disclose it only to the processors listed above.</p>
+      <p>You have the right to know what we collect and use, to delete it, to correct it, and to opt out of sale or sharing (which does not apply, because we do not sell or share). We will not discriminate against you for using these rights.</p>
+      <p>To make a request, email ${mail} from the email address on your account, so we can verify it is you. We respond within 30 days.</p>`),
+    panel('Visitors from the EU and UK', `<p>Our processors may be located in, or process data in, the United States and other countries outside the EU and UK. Where they do, each offers transfer safeguards in its data processing terms, such as the European Commission's Standard Contractual Clauses (SCCs) and the UK addendum. Email ${mail} if you want more detail.</p>`),
     panel('Changes', `<p>If we change this policy in a way that matters, we will update the date at the top and tell you in the app or by email.</p>`),
-    panel('Contact', `<p>${escapeHtml(LEGAL_COMPANY)}, ${ph('postal address')}. Email ${mail}. See also our <a href="${base}/terms">terms</a> and <a href="${base}/guidelines">community guidelines</a>.</p>`),
+    panel('Contact', `<p>${escapeHtml(LEGAL_COMPANY)}, 132 S Rodeo Dr, Beverly Hills, CA 90212, USA. Email ${mail}. See also our <a href="${base}/terms">terms</a> and <a href="${base}/guidelines">community guidelines</a>.</p>`),
   ].join('\n');
   return shell({
     baseUrl: opts.baseUrl,
@@ -139,9 +158,9 @@ export function renderTermsPage(opts: { baseUrl: string }): string {
   const mail = `<a href="mailto:${CONTACT}">${CONTACT}</a>`;
   const sections = [
     panel('The deal', `<p>These terms are between you and ${escapeHtml(LEGAL_COMPANY)} ("GAPCO", "we", "us") for the SpotSeek app and website. By creating an account or using SpotSeek you agree to them, to our <a href="${base}/guidelines">community guidelines</a> and to our <a href="${base}/privacy">privacy policy</a>. If you do not agree, do not use SpotSeek.</p>`),
-    panel('Who can use SpotSeek', `<p>You must be at least ${ph('13 or 16: owner decision')} years old, and old enough to form a binding contract where you live, or have a parent or guardian agree for you. Do not use SpotSeek if we have removed you before.</p>`),
+    panel('Who can use SpotSeek', `<p>You must be at least 16 years old, and old enough to form a binding contract where you live, or have a parent or guardian agree for you. Do not use SpotSeek if we have removed you before.</p>`),
     panel('Your account', `<ul>
-      <li>Give us true details and keep your password safe. You are responsible for what happens under your account.</li>
+      <li>You must be 16 or older to create an account. Give us true details and keep your password safe. You are responsible for what happens under your account.</li>
       <li>Tell us at ${mail} if you think someone else has got in.</li>
       <li>You can delete your account any time in the app. Some payment records are kept, as set out in the privacy policy.</li>
     </ul>`),
@@ -162,15 +181,15 @@ export function renderTermsPage(opts: { baseUrl: string }): string {
       <li><b>When money moves.</b> When a host accepts a bid the sponsor pays the full amount, which we hold. After the party has ended and a 24 hour dispute window has passed, we send the host's share to the host's Stripe account.</li>
       <li><b>Refunds.</b> Before the party starts, a sponsor can withdraw a paid sponsorship and gets a full refund. After the start time, a sponsor can no longer withdraw. If the host cancels the party before the money is released, the sponsor is refunded in full. After the money is released there are no refunds through SpotSeek. Sponsorships that are not yet paid can be cancelled at any time.</li>
       <li>You are responsible for your own taxes. Stripe handles tax reporting for payouts where it is required.</li>
-      <li>Sponsorship payments may not be available in every region, or yet. ${ph('owner: confirm live availability wording')}</li>
+      <li>Payments are currently in test mode and not available to the public, and sponsorships may be unavailable during the beta.</li>
     </ul>`),
     panel('Our stuff', `<p>SpotSeek's name, logo, design and software belong to GAPCO. We give you a limited, personal, revocable licence to use the app. Feedback you send us can be used without obligation to you.</p>`),
     panel('Disclaimers', `<p>SpotSeek is provided "as is" and "as available". We do not promise it will be uninterrupted or error free, or that listings, times, venues or users are accurate or safe. We are not responsible for what users post or do. Nothing here limits rights you have by law that cannot be waived.</p>`),
-    panel('Limit of liability', `<p>To the extent the law allows, GAPCO and its members, staff and suppliers are not liable for indirect, incidental, special or consequential losses, or lost profits or data, arising from your use of SpotSeek. Our total liability to you is limited to the greater of the fees you paid us in the 12 months before the claim and ${ph('amount: owner/counsel to set')}. You agree to cover claims arising from your content, your party or your breach of these terms, to the extent the law allows. ${ph('counsel to review this whole section')}</p>`),
+    panel('Limit of liability', `<p>To the extent the law allows, GAPCO and its members, staff and suppliers are not liable for indirect, incidental, special or consequential losses, or lost profits or data, arising from your use of SpotSeek. Our total liability to you is limited to the greater of US$100 or the fees you paid to SpotSeek in the 12 months before the claim. You agree to cover claims arising from your content, your party or your breach of these terms, to the extent the law allows.</p>`),
     panel('Ending things', `<p>You can stop using SpotSeek and delete your account at any time. We can suspend or end your access if you break these terms or the guidelines, or if we have to by law, and we will tell you why where we can. Parts that by nature should outlast the account (records we must keep, payments owed, disclaimers, liability, governing law) do.</p>`),
-    panel('Governing law', `<p>These terms are governed by the laws of ${ph('state or country: owner decision')}, and disputes go to the courts of ${ph('venue: owner decision')}, except where your local consumer law says otherwise.</p>`),
+    panel('Governing law', `<p>These terms are governed by the laws of the State of California, and disputes go to the state and federal courts located in Los Angeles County, California, except where your local consumer law says otherwise.</p>`),
     panel('Changes', `<p>We may update these terms. If a change matters we will update the date at the top and tell you in the app or by email. Using SpotSeek after a change means you accept it.</p>`),
-    panel('Contact', `<p>${escapeHtml(LEGAL_COMPANY)}, ${ph('postal address')}. Email ${mail}.</p>`),
+    panel('Contact', `<p>${escapeHtml(LEGAL_COMPANY)}, 132 S Rodeo Dr, Beverly Hills, CA 90212, USA. Email ${mail}.</p>`),
   ].join('\n');
   return shell({
     baseUrl: opts.baseUrl,

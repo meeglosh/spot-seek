@@ -19,17 +19,20 @@ marked.
 | Contact Info | Email address | Yes | Linked | App Functionality (sign-in, notifications) | `users.email`, `auth_user` |
 | Contact Info | Name | Yes | Linked | App Functionality | `users.display_name`; guest RSVP `guest_rsvps.name` |
 | Contact Info | Physical address | Yes (venue addresses typed by hosts) | Linked | App Functionality | `events.venue_address` (hidden from others when private) |
-| Location | Precise Location | Yes, only if the user grants it. Sent with Discover/map requests (not stored by them) | Not stored by those requests | App Functionality | `expo-location` in Discover, map |
+| Location | Precise Location | **Declare: Yes**, only if the user grants it. Sent with Discover/map requests (not stored by them) | Linked (declared conservatively) | App Functionality | `expo-location` in Discover, map |
 | Location | Coarse Location | Yes. Notification location stored rounded to 2 decimals (about 1 km) | Linked | App Functionality (nearby alerts) | `users.last_lat/last_lng`, `PUT /api/notifications/prefs` |
 | User Content | Photos or Videos | Yes (event cover images) | Linked | App Functionality | R2 via `POST /api/events/:id/cover` |
 | User Content | Other User Content | Yes (event text, chat, reviews, RSVPs, interests, reports, notes) | Linked | App Functionality | `events`, `comments`, `reviews`, `event_reports`, `user_favourites` |
 | Identifiers | User ID | Yes | Linked | App Functionality | `users.id` |
 | Identifiers | Device ID | Yes (APNs push token; not an advertising id) | Linked | App Functionality | `push_tokens.token` |
 | Purchases | Purchase History | Yes (sponsorship payments: amounts, status, Stripe ids) | Linked | App Functionality | `sponsorships.*` |
-| Financial Info | Payment Info | Collected by Stripe, not by us. We hold only Stripe ids, no card or bank numbers | Linked (ids) | App Functionality | `stripe_account_id`, `payment_intent_id`, `transfer_id` |
+| Financial Info | Payment Info | **Declare: Yes.** Collected by Stripe, not by us. We hold only Stripe ids, no card or bank numbers | Linked (ids) | App Functionality | `stripe_account_id`, `payment_intent_id`, `transfer_id` |
 | Usage Data | Product Interaction | Not collected | n/a | n/a | No analytics |
 | Diagnostics | Crash or Performance Data | Not collected by the app. Cloudflare keeps server request logs | n/a | n/a | `observability.enabled` in `wrangler.jsonc` |
 | Sensitive Info, Health, Browsing/Search History, Contacts, Surroundings, Body | Not collected | n/a | n/a | n/a | |
+
+Owner decisions (2026-10-14): declare **Precise Location** and **Payment Info**
+as collected. **Tracking: No.**
 
 Notes for the owner:
 
