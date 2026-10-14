@@ -62,7 +62,7 @@ async function adminCookie() {
 }
 
 async function csrfOf(cookie: string) {
-  const html = await (await app('/admin/moderation', { headers: { Cookie: cookie } })).text();
+  const html = await (await app('/admin/moderation?test=1', { headers: { Cookie: cookie } })).text();
   return /name="csrf" value="([0-9a-f]+)"/.exec(html)?.[1] ?? '';
 }
 
@@ -86,10 +86,10 @@ async function seedFlagged(tag: string) {
 const modStatus = async (id: string) =>
   ((await sql()`SELECT moderation_status AS s FROM events WHERE id = ${id}`) as { s: string }[])[0]?.s;
 
-const post = (path: string, cookie: string, fields: Record<string, string>, origin: string | null = BASE) =>
+const post = (path: string, cookie: string, fields: Record<string, string>, origin: string | null = BASE, extra: Record<string, string> = {}) =>
   app(path, {
     method: 'POST', redirect: 'manual',
-    headers: { ...form, Cookie: cookie, ...(origin ? { Origin: origin } : {}) },
+    headers: { ...form, Cookie: cookie, ...(origin ? { Origin: origin } : {}), ...extra },
     body: new URLSearchParams(fields).toString(),
   });
 
@@ -163,7 +163,7 @@ describe('admin moderation page', () => {
   it('lists flagged items with the event detail, noindex and no-store', async () => {
     const ev = await seedFlagged('list');
     const cookie = await adminCookie();
-    const res = await app('/admin/moderation', { headers: { Cookie: cookie } });
+    const res = await app('/admin/moderation?test=1', { headers: { Cookie: cookie } });
     expect(res.status).toBe(200);
     expect(res.headers.get('cache-control')).toBe('no-store');
     const html = await res.text();
@@ -205,6 +205,59 @@ describe('admin moderation page', () => {
     const otherCsrf = await csrfOf(`ss_admin=${other}`);
     expect((await post(path, cookie, { csrf: otherCsrf })).status).toBe(403);
     expect(await modStatus(ev.id)).toBe('flagged');
+  });
+});
+
+describe('admin origin and CSRF policy', () => {
+  let warn: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => { warn = vi.spyOn(console, 'warn').mockImplementation(() => {}); });
+  afterEach(() => warn.mockRestore());
+
+  it('sends Referrer-Policy same-origin', async () => {
+    const res = await app('/admin/login');
+    expect(res.headers.get('referrer-policy')).toBe('same-origin');
+  });
+
+  it('accepts Origin null with a valid token and Sec-Fetch-Site same-origin', async () => {
+    const ev = await seedFlagged('onull');
+    const cookie = await adminCookie();
+    const csrf = await csrfOf(cookie);
+    const res = await post(`/admin/moderation/events/${ev.id}/remove`, cookie, { csrf }, 'null', { 'Sec-Fetch-Site': 'same-origin' });
+    expect(res.status).toBe(303);
+    expect(await modStatus(ev.id)).toBe('removed');
+  });
+
+  it('accepts the production Origin', async () => {
+    const ev = await seedFlagged('oprod');
+    const cookie = await adminCookie();
+    const csrf = await csrfOf(cookie);
+    const res = await post(`/admin/moderation/events/${ev.id}/restore`, cookie, { csrf }, 'https://spotseek.app');
+    expect(res.status).toBe(303);
+    expect(await modStatus(ev.id)).toBe('ok');
+  });
+
+  it('rejects a foreign Origin, a missing token, and null Origin from cross-site', async () => {
+    const ev = await seedFlagged('oreject');
+    const cookie = await adminCookie();
+    const csrf = await csrfOf(cookie);
+    const path = `/admin/moderation/events/${ev.id}/remove`;
+    const bad = await post(path, cookie, { csrf }, 'https://evil.example');
+    expect(bad.status).toBe(403);
+    expect(await bad.text()).toContain("didn't go through");
+    expect((await post(path, cookie, {}, 'https://spotseek.app')).status).toBe(403);
+    expect((await post(path, cookie, { csrf }, 'null', { 'Sec-Fetch-Site': 'cross-site' })).status).toBe(403);
+    expect(await modStatus(ev.id)).toBe('flagged');
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it('hides test-host events by default and shows them with ?test=1', async () => {
+    const ev = await seedFlagged('testdata');
+    const cookie = await adminCookie();
+    const hidden = await (await app('/admin/moderation', { headers: { Cookie: cookie } })).text();
+    expect(hidden).not.toContain(ev.title);
+    expect(hidden).toContain('/admin/moderation?test=1');
+    const shown = await (await app('/admin/moderation?test=1', { headers: { Cookie: cookie } })).text();
+    expect(shown).toContain(ev.title);
   });
 });
 

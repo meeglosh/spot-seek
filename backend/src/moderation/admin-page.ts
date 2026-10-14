@@ -74,7 +74,7 @@ adminPageRouter.use('*', async (c, next) => {
   c.res.headers.set('Cache-Control', 'no-store');
   c.res.headers.set('X-Robots-Tag', 'noindex, nofollow');
   c.res.headers.set('X-Frame-Options', 'DENY');
-  c.res.headers.set('Referrer-Policy', 'no-referrer');
+  c.res.headers.set('Referrer-Policy', 'same-origin');
 });
 
 function page(c: Ctx, body: string, status: 200 | 401 | 403 | 404 | 503 = 200) {
@@ -96,13 +96,37 @@ function loginPage(c: Ctx, error?: string, status: 200 | 401 | 503 = 200) {
   );
 }
 
-/** Same-origin check: Origin must match this request's origin or PUBLIC_BASE_URL. */
-function originOk(c: Ctx): boolean {
+const ALLOWED_ORIGINS = [
+  'https://spotseek.app',
+  'https://www.spotseek.app',
+  'https://spot-seek-api.dry-base-037d.workers.dev',
+];
+
+/**
+ * Cross-site check, layered on top of the session-bound CSRF token. Returns null
+ * when OK, else a reason for the server log.
+ * Origin in the allow-list (or this request's own origin / PUBLIC_BASE_URL) passes.
+ * Origin missing or "null" (browsers send "null" for some same-origin form POSTs)
+ * falls back to Sec-Fetch-Site: same-origin or a same-origin Referer.
+ */
+function originProblem(c: Ctx): string | null {
   const origin = c.req.header('Origin');
-  if (!origin) return false;
-  const allowed = new Set([new URL(c.req.url).origin, new URL(publicBaseUrl(c.env)).origin]);
-  return allowed.has(origin);
+  const own = new URL(c.req.url).origin;
+  const allowed = new Set([own, new URL(publicBaseUrl(c.env)).origin, ...ALLOWED_ORIGINS]);
+  if (origin && origin !== 'null') return allowed.has(origin) ? null : `origin not allowed: ${origin}`;
+  if (c.req.header('Sec-Fetch-Site') === 'same-origin') return null;
+  const referer = c.req.header('Referer');
+  if (referer) {
+    try {
+      if (allowed.has(new URL(referer).origin)) return null;
+    } catch {
+      /* fall through */
+    }
+  }
+  return `origin ${origin ?? 'missing'}, sec-fetch-site=${c.req.header('Sec-Fetch-Site') ?? 'none'}, no same-origin referer`;
 }
+
+const REJECTED = '<h1>Rejected</h1><p class="meta">That action didn\'t go through. Go back and try again.</p><p><a class="btn" href="/admin/moderation">Back to the queue</a></p>';
 
 async function sessionToken(c: Ctx): Promise<string | null> {
   const secret = c.env.ADMIN_SECRET;
@@ -170,7 +194,8 @@ adminPageRouter.get('/moderation', async (c) => {
   if (!token) return c.redirect('/admin/login', 302);
   const csrf = await csrfFor(c.env.ADMIN_SECRET, token);
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
-  const queue = await loadQueue(db);
+  const showTest = c.req.query('test') === '1';
+  const queue = await loadQueue(db, { excludeTestHosts: !showTest });
   const done = c.req.query('done');
   const flash = done === 'restored' ? 'Restored.' : done === 'removed' ? 'Removed.' : '';
   return page(
@@ -179,6 +204,7 @@ adminPageRouter.get('/moderation', async (c) => {
     <h1>Moderation</h1>
     ${flash ? `<p class="meta status-going">${flash}</p>` : ''}
     ${queue.length === 0 ? '<div class="panel"><p class="meta">Nothing to review.</p></div>' : queue.map((q) => itemHtml(q, csrf)).join('')}
+    <p class="fine">${showTest ? '<a href="/admin/moderation">Hide test data</a>' : '<a href="/admin/moderation?test=1">Show test data</a>'}</p>
     <form method="post" action="/admin/logout"><button class="link-btn" type="submit">Sign out</button></form>`,
   );
 });
@@ -194,12 +220,17 @@ async function guardedAction(c: Ctx, run: (db: Db) => Promise<boolean>, done: st
   if (!c.env.ADMIN_SECRET) return loginPage(c, 'Admin is not configured.', 503);
   const token = await sessionToken(c);
   if (!token) return c.redirect('/admin/login', 302);
-  if (!originOk(c)) return page(c, '<h1>Rejected</h1><p class="meta">Bad origin.</p>', 403);
   const form = await c.req.parseBody().catch(() => ({}) as Record<string, unknown>);
   const supplied = typeof form.csrf === 'string' ? form.csrf : '';
   const expected = await csrfFor(c.env.ADMIN_SECRET, token);
   if (!timingSafeEqualHex(await sha256Hex(supplied), await sha256Hex(expected))) {
-    return page(c, '<h1>Rejected</h1><p class="meta">Invalid or missing security token. Go back, reload and try again.</p>', 403);
+    console.warn('[ADMIN] rejected action: invalid or missing csrf token');
+    return page(c, REJECTED, 403);
+  }
+  const problem = originProblem(c);
+  if (problem) {
+    console.warn(`[ADMIN] rejected action: ${problem}`);
+    return page(c, REJECTED, 403);
   }
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
   if (!(await run(db))) return page(c, '<h1>Not found</h1><p class="meta"><a href="/admin/moderation">Back to the queue</a></p>', 404);
