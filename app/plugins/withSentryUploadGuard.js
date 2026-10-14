@@ -1,17 +1,31 @@
 // Makes Sentry's Xcode build phases (source map upload + dSYM upload) skip
-// gracefully when no auth token is configured, instead of failing the build.
-// Upload runs only when SENTRY_AUTH_TOKEN is exported in the build environment
-// or app/.env.sentry-build-plugin exists (gitignored). Otherwise
-// SENTRY_DISABLE_AUTO_UPLOAD=true is set for the phase.
+// gracefully when upload is not fully configured, instead of failing the build.
+// Upload runs only when a token AND an org AND a project are all resolvable, from
+// the build environment, app/.env.sentry-build-plugin (gitignored) or
+// ios/sentry.properties. Otherwise SENTRY_DISABLE_AUTO_UPLOAD=true is set.
+//
+// A token alone is not enough: if SENTRY_AUTH_TOKEN is merely exported in the
+// shell (for other tooling) but no org/project is set, sentry-cli fails with
+// "An organization ID or slug is required", no source map is written, and the
+// bundle phase then dies in Sentry's collect-modules step ("Source map file does
+// not exist"). With upload disabled, sentry-xcode.sh still exports
+// SOURCEMAP_FILE, so the map is emitted and collect-modules succeeds.
+//
 // Register BEFORE "@sentry/react-native" in app.json: Expo runs mods in reverse
 // registration order, so this one then sees the phases that plugin adds. A
 // warning is printed if none are found.
 const { withXcodeProject } = require('expo/config-plugins');
 
 const MARKER = '# withSentryUploadGuard';
+// POSIX sh (Xcode phases run /bin/sh). ENVF is the optional dotenv file.
 const GUARD =
   `${MARKER}\n` +
-  'if [ -z "$SENTRY_AUTH_TOKEN" ] && [ ! -f "$PROJECT_DIR/../.env.sentry-build-plugin" ]; then export SENTRY_DISABLE_AUTO_UPLOAD=true; fi\n';
+  'ENVF="$PROJECT_DIR/../.env.sentry-build-plugin"\n' +
+  'SENTRY_OK=1\n' +
+  '{ [ -n "$SENTRY_AUTH_TOKEN" ] || { [ -f "$ENVF" ] && grep -q "^SENTRY_AUTH_TOKEN=." "$ENVF"; }; } || SENTRY_OK=\n' +
+  '{ [ -n "$SENTRY_ORG" ] || { [ -f "$ENVF" ] && grep -q "^SENTRY_ORG=." "$ENVF"; } || grep -qs "^defaults.org=." "$PROJECT_DIR/sentry.properties"; } || SENTRY_OK=\n' +
+  '{ [ -n "$SENTRY_PROJECT" ] || { [ -f "$ENVF" ] && grep -q "^SENTRY_PROJECT=." "$ENVF"; } || grep -qs "^defaults.project=." "$PROJECT_DIR/sentry.properties"; } || SENTRY_OK=\n' +
+  '[ -n "$SENTRY_OK" ] || export SENTRY_DISABLE_AUTO_UPLOAD=true\n';
 
 module.exports = function withSentryUploadGuard(config) {
   return withXcodeProject(config, (cfg) => {

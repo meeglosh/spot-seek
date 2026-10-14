@@ -422,8 +422,8 @@ default export in `backend/src/index.ts`, options in `backend/src/sentry.ts`, `S
 tests blank it in `vitest.config.mts`). DSNs are public and committed. Dev builds send nothing unless
 `EXPO_PUBLIC_SENTRY_DEV=1`; `/__gallery` has a "Send test event" button.
 
-Source map and dSYM upload is OFF until a token exists: `app/plugins/withSentryUploadGuard.js` sets
-`SENTRY_DISABLE_AUTO_UPLOAD=true` for the Xcode phases when neither `SENTRY_AUTH_TOKEN` nor
+Source map and dSYM upload is OFF until a token, org and project all exist: `app/plugins/withSentryUploadGuard.js` sets
+`SENTRY_DISABLE_AUTO_UPLOAD=true` for the Xcode phases unless token, org and project resolve (a bare exported `SENTRY_AUTH_TOKEN` is not enough; it used to break Release builds). Sources: env, `app/.env.sentry-build-plugin`, `ios/sentry.properties`. Previously: neither `SENTRY_AUTH_TOKEN` nor
 `app/.env.sentry-build-plugin` is present, so builds never fail for lack of a token. To enable (no token in chat):
 create the file `app/.env.sentry-build-plugin` (gitignored) containing one line `SENTRY_AUTH_TOKEN=<token>` plus
 `SENTRY_ORG=<org slug>` and `SENTRY_PROJECT=<app project slug>` lines, then run `npx expo prebuild --platform ios`
