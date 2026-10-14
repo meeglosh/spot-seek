@@ -81,7 +81,7 @@
       "./plugins/withPodsDeploymentTarget",
       ["expo-build-properties", { "ios": { "enableSceneSupport": true } }],
       "./plugins/withSentryUploadGuard",
-      "@sentry/react-native"
+      ["@sentry/react-native", { "organization": "gapco-llc", "project": "spot-seek", "url": "https://sentry.io/" }]
     ],
     "extra": {
       "features": {
