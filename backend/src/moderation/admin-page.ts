@@ -18,6 +18,7 @@ import { bufferToHex, timingSafeEqualHex } from '../stripe';
 import { publicBaseUrl } from '../email';
 import { allowRequest, tooManyRequests, AUTH_LIMIT_PER_MIN } from '../ratelimit';
 import { escapeHtml, renderPage } from '../webpage';
+import { recordAdminLoginFailure } from './admin-login-failures';
 import { loadQueue, restoreEvent, removeEvent, type Db, type QueueItem } from './admin';
 
 const COOKIE = 'ss_admin';
@@ -116,7 +117,10 @@ adminPageRouter.post('/login', async (c) => {
   if (!(await allowRequest(c.env.AUTH_LIMITER, `admin-login:${ip}`, AUTH_LIMIT_PER_MIN))) return tooManyRequests();
   const form = await c.req.parseBody().catch(() => ({}) as Record<string, unknown>);
   const supplied = typeof form.secret === 'string' ? form.secret : '';
-  if (!(await secretMatches(c.env.ADMIN_SECRET, supplied))) return loginPage(c, 'Wrong secret.', 401);
+  if (!(await secretMatches(c.env.ADMIN_SECRET, supplied))) {
+    await recordAdminLoginFailure(c.env, ip);
+    return loginPage(c, 'Wrong secret.', 401);
+  }
   setCookie(c, COOKIE, await signAdminSession(c.env.ADMIN_SECRET), {
     httpOnly: true,
     secure: true,

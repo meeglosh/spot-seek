@@ -25,8 +25,8 @@ let ipCounter = 0;
 const freshIp = () => `10.77.${(ipCounter >> 8) & 255}.${ipCounter++ & 255}`;
 let sentEmails: { to: string; subject: string }[] = [];
 
-function app(path: string, init: RequestInit = {}) {
-  return worker.fetch(new Request(`${BASE}${path}`, init), env as unknown as Env, createExecutionContext()) as Promise<Response>;
+function app(path: string, init: RequestInit = {}, e: object = env) {
+  return worker.fetch(new Request(`${BASE}${path}`, init), e as unknown as Env, createExecutionContext()) as Promise<Response>;
 }
 
 beforeEach(() => {
@@ -214,14 +214,83 @@ describe('robots and digest', () => {
   });
 
   it('the digest email links to the admin page', async () => {
-    await seedFlagged('digest');
+    const ev = await seedFlagged('digest');
+    // The digest skips fixture-domain hosts: re-home this host onto a real-looking domain, purge after.
+    const [{ host_id }] = (await sql()`SELECT host_id FROM events WHERE id = ${ev.id}`) as { host_id: string }[];
+    const email = `adm-digest-${TS}@digest-fixture.example.com`;
+    await sql()`UPDATE users SET email = ${email} WHERE id = ${host_id}`;
+    await sql()`UPDATE "user" SET email = ${email} WHERE id = ${host_id}`;
     const day = new Date(Date.UTC(2091, TS % 12, 1 + (TS % 27)));
-    await sql()`DELETE FROM moderation_digests WHERE day = ${day.toISOString().slice(0, 10)}`;
-    const e = { ...env, RESEND_API_KEY: 'test-resend-key', PUBLIC_BASE_URL: 'https://spotseek.app' } as unknown as Env;
-    expect(await runModerationDigest(e, day)).toBe('sent');
-    const mail = JSON.stringify(sentEmails.find((m) => m.to === 'hello@spotseek.app'));
-    expect(mail).toContain('https://spotseek.app/admin/moderation');
-    expect(mail).not.toContain('/api/admin/moderation/queue');
-    await sql()`DELETE FROM moderation_digests WHERE day = ${day.toISOString().slice(0, 10)}`;
+    const dayStr = day.toISOString().slice(0, 10);
+    try {
+      await sql()`DELETE FROM moderation_digests WHERE day = ${dayStr}`;
+      const e = { ...env, RESEND_API_KEY: 'test-resend-key', PUBLIC_BASE_URL: 'https://spotseek.app' } as unknown as Env;
+      expect(await runModerationDigest(e, day)).toBe('sent');
+      const mail = JSON.stringify(sentEmails.find((m) => m.to === 'hello@spotseek.app'));
+      expect(mail).toContain('https://spotseek.app/admin/moderation');
+      expect(mail).not.toContain('/api/admin/moderation/queue');
+    } finally {
+      await sql()`DELETE FROM moderation_digests WHERE day = ${dayStr}`;
+      await sql()`DELETE FROM moderation_events WHERE event_id IN (SELECT id FROM events WHERE host_id = ${host_id})`;
+      await sql()`DELETE FROM events WHERE host_id = ${host_id}`;
+      await sql()`DELETE FROM users WHERE id = ${host_id}`;
+      await sql()`DELETE FROM "user" WHERE id = ${host_id}`;
+    }
+  });
+});
+
+describe('failed admin login tracking and alert', () => {
+  const alertEnv = { ...env, RESEND_API_KEY: 'test-resend-key' };
+  const fail = (ip: string) =>
+    app('/admin/login', {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { ...form, 'cf-connecting-ip': ip },
+      body: new URLSearchParams({ secret: 'wrong-secret-value' }).toString(),
+    }, alertEnv);
+  const alerts = () => sentEmails.filter((m) => m.subject === 'Admin sign-in: 5 failed attempts in the last hour');
+  let warn: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(async () => {
+    // Dev DB only: the counts are global, so start from empty tables.
+    await sql()`DELETE FROM admin_login_failures`;
+    await sql()`DELETE FROM admin_login_alerts`;
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(async () => {
+    warn.mockRestore();
+    await sql()`DELETE FROM admin_login_failures`;
+    await sql()`DELETE FROM admin_login_alerts`;
+  });
+
+  it('logs a failure with ip and count, never the submitted secret', async () => {
+    const ip = freshIp();
+    expect((await fail(ip)).status).toBe(401);
+    const lines = warn.mock.calls.map((c) => String(c[0]));
+    expect(lines).toContain(`[ADMIN] failed login ip=${ip} count=1`);
+    expect(lines.join('\n')).not.toContain('wrong-secret-value');
+    expect(alerts()).toHaveLength(0);
+  });
+
+  it('the 5th failure in an hour sends exactly one alert; the 6th sends none', async () => {
+    for (let i = 0; i < 4; i++) await fail(freshIp());
+    expect(alerts()).toHaveLength(0);
+    await fail(freshIp());
+    expect(alerts()).toHaveLength(1);
+    expect(alerts()[0].to).toBe('hello@spotseek.app');
+    await fail(freshIp());
+    expect(alerts()).toHaveLength(1);
+  });
+
+  it('a successful login is not counted', async () => {
+    const res = await app('/admin/login', {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { ...form, 'cf-connecting-ip': freshIp() },
+      body: new URLSearchParams({ secret: SECRET }).toString(),
+    }, alertEnv);
+    expect(res.status).toBe(303);
+    const rows = await sql()`SELECT count(*)::int AS n FROM admin_login_failures`;
+    expect(rows[0].n).toBe(0);
   });
 });
