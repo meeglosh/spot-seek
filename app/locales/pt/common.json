@@ -64,5 +64,10 @@
   "phase": {
     "ended": "Terminada",
     "onNow": "A decorrer"
+  },
+  "crash": {
+    "title": "Algo deu problema",
+    "message": "Já ficou registado. Tenta de novo e, se continuar, reinicia a app.",
+    "retry": "Tentar de novo"
   }
 }

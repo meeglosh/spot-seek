@@ -1,4 +1,6 @@
 import { Hono } from 'hono';
+import { HTTPException } from 'hono/http-exception';
+import * as Sentry from '@sentry/cloudflare';
 import { neon } from '@neondatabase/serverless';
 import { createAuth, setAuthBaseURL } from './auth';
 import { eventsRouter } from './events';
@@ -32,8 +34,19 @@ import { runModerationDigest } from './moderation/admin';
 import { renderGuidelinesPage } from './guidelines';
 import { renderPrivacyPage, renderTermsPage } from './legal';
 import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
+import { sentryOptions } from './sentry';
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Same responses as Hono's built-in handler (HTTPException -> its own response,
+// anything else -> 500 "Internal Server Error"), plus a Sentry report for the
+// unhandled ones. Without this Hono swallows the error and Sentry never sees it.
+app.onError((err, c) => {
+  if (err instanceof HTTPException) return err.getResponse();
+  Sentry.captureException(err);
+  console.error(err);
+  return c.text('Internal Server Error', 500);
+});
 
 // www.spotseek.app -> apex (301, path + query preserved). Runs before everything
 // else. The AASA file is exempt so Apple's CDN never follows a redirect on either host.
@@ -185,12 +198,16 @@ async function scheduled(controller: ScheduledController, env: Env, ctx?: Execut
   const dailyTick = at.getUTCHours() === 13 && at.getUTCMinutes() < 15;
   if (dailyTick) warnIfLandingLow(at);
   // Moderation digest: one email to hello@ if the review queue is non-empty (guarded send, once per UTC day).
-  if (dailyTick) await runModerationDigest(env, at).catch((err) => console.error('[moderation] digest failed:', err));
+  if (dailyTick) await runModerationDigest(env, at).catch((err) => {
+    Sentry.captureException(err);
+    console.error('[moderation] digest failed:', err);
+  });
   await notificationsScheduled(controller, env);
   await runPaymentSweeps(env);
 }
 
-export default { fetch: app.fetch, scheduled };
+// withSentry instruments both `fetch` and `scheduled` (cron failures are reported too).
+export default Sentry.withSentry((env: Env) => sentryOptions(env), { fetch: app.fetch, scheduled } satisfies ExportedHandler<Env>);
 
 // Required by Wrangler for DO binding resolution (does not affect test isolation).
 export { ChatRoom } from './chat-room';

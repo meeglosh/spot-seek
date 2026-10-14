@@ -64,5 +64,10 @@
   "phase": {
     "ended": "Vorbei",
     "onNow": "Läuft gerade"
+  },
+  "crash": {
+    "title": "Da ist etwas kaputtgegangen",
+    "message": "Wir haben es protokolliert. Versuch es noch mal, und wenn es so bleibt, starte die App neu.",
+    "retry": "Nochmal versuchen"
   }
 }

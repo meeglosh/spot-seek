@@ -17,6 +17,7 @@ import {
   LiveDot, Press, Toggle, Skeleton, EventCardSkeleton, RowSkeleton, EmptyState, ErrorState, SoonTag,
   inputStyle, inputFocusedStyle,
 } from '../components/ui';
+import { Sentry, sentryEnabled } from '../lib/sentry';
 import {
   colors, radius, spacing, TAP, elevation, press, type as t,
 } from '../lib/theme';
@@ -403,6 +404,23 @@ export default function Gallery() {
               </View>
             </View>
           </Cell>
+        </Block>
+
+        <Block title="Sentry (dev only)">
+          <Text style={[t.bodyMd, { color: colors.textSecondary }]}>
+            {sentryEnabled
+              ? 'Sending is ON. Test events go to the app Sentry project.'
+              : 'Sending is OFF in dev. Start Metro with EXPO_PUBLIC_SENTRY_DEV=1 to send.'}
+          </Text>
+          <Btn
+            label="Send test event"
+            variant="secondary"
+            onPress={async () => {
+              Sentry.captureException(new Error('SpotSeek gallery test event'));
+              const ok = await Sentry.flush();
+              Alert.alert('Sentry', ok ? 'Flushed (check the dashboard).' : 'Flush timed out or sending is off.');
+            }}
+          />
         </Block>
 
         <Block title="Moderation: block host">

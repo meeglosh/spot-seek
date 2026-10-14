@@ -414,6 +414,22 @@ Keep 24 months of runway: the daily cron logs `[LANDING] calendar running low`
 and `GET /api/admin/landing-health` returns the count.
 
 
+### Sentry (crash and error reporting)
+
+App: `@sentry/react-native` (init in `app/lib/sentry.ts`, called from `app/app/_layout.tsx`, root wrapped with
+`Sentry.wrap` + an error boundary using `CrashFallback`). Backend: `@sentry/cloudflare` (`withSentry` around the
+default export in `backend/src/index.ts`, options in `backend/src/sentry.ts`, `SENTRY_DSN` var in `wrangler.jsonc`;
+tests blank it in `vitest.config.mts`). DSNs are public and committed. Dev builds send nothing unless
+`EXPO_PUBLIC_SENTRY_DEV=1`; `/__gallery` has a "Send test event" button.
+
+Source map and dSYM upload is OFF until a token exists: `app/plugins/withSentryUploadGuard.js` sets
+`SENTRY_DISABLE_AUTO_UPLOAD=true` for the Xcode phases when neither `SENTRY_AUTH_TOKEN` nor
+`app/.env.sentry-build-plugin` is present, so builds never fail for lack of a token. To enable (no token in chat):
+create the file `app/.env.sentry-build-plugin` (gitignored) containing one line `SENTRY_AUTH_TOKEN=<token>` plus
+`SENTRY_ORG=<org slug>` and `SENTRY_PROJECT=<app project slug>` lines, then run `npx expo prebuild --platform ios`
+and archive as usual. Token scopes: `project:releases` and `org:read`. Alternatively export `SENTRY_AUTH_TOKEN`,
+`SENTRY_ORG`, `SENTRY_PROJECT` in the shell that runs `xcodebuild`.
+
 ## 11. Next steps
 
 - **Payments Phase 2: in-app PaymentSheet** (`@stripe/stripe-react-native`,

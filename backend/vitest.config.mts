@@ -18,7 +18,8 @@ export default defineWorkersConfig({
 				miniflare: {
 					// MODERATION_AI=off: tests never call the real Workers AI binding
 					// (moderation specs inject a mock classifier instead).
-					bindings: { ADMIN_SECRET: "test-admin-secret", MODERATION_AI: "off" },
+					// SENTRY_DSN blank: Sentry is a no-op in tests (the wrangler var holds the real DSN).
+					bindings: { ADMIN_SECRET: "test-admin-secret", MODERATION_AI: "off", SENTRY_DSN: "" },
 				},
 			},
 		},

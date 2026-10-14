@@ -22,13 +22,19 @@ import { STRIPE_PUBLISHABLE_KEY } from '../lib/stripe';
 // mounts. The (async) persisted-locale-override check below layers on top
 // once SecureStore resolves; the splash screen covers that gap.
 import { applyStoredLocaleOverride } from '../lib/i18n';
+import { initSentry, Sentry } from '../lib/sentry';
+import SentryUser from '../components/SentryUser';
+import CrashFallback from '../components/CrashFallback';
+
+// Crash and error reporting. Runs at module load so startup crashes are caught.
+initSentry();
 
 // Hold the branded splash fully visible before starting the fade, then fade
 // over LaunchSplash's own ~350ms — total experience ≈1.5s. Chosen to mask
 // the auth-restore / root-redirect flicker in app/index.tsx underneath.
 const SPLASH_HOLD_MS = 1100;
 
-export default function RootLayout() {
+function RootLayout() {
   const [loaded] = useFonts({
     Anton_400Regular,
     ArchivoNarrow_400Regular,
@@ -59,9 +65,11 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
+    <Sentry.ErrorBoundary fallback={({ resetError }) => <CrashFallback onRetry={resetError} />}>
     <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
     <AuthProvider>
       <PushBootstrap />
+      <SentryUser />
       {/* Dark-only design system — light status bar text everywhere */}
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.canvas } }}>
@@ -84,5 +92,8 @@ export default function RootLayout() {
       )}
     </AuthProvider>
     </StripeProvider>
+    </Sentry.ErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);

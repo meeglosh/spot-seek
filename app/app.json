@@ -79,7 +79,9 @@
       ["expo-notifications", { "mode": "production" }],
       ["@stripe/stripe-react-native", { "enableGooglePay": false }],
       "./plugins/withPodsDeploymentTarget",
-      ["expo-build-properties", { "ios": { "enableSceneSupport": true } }]
+      ["expo-build-properties", { "ios": { "enableSceneSupport": true } }],
+      "./plugins/withSentryUploadGuard",
+      "@sentry/react-native"
     ],
     "extra": {
       "features": {

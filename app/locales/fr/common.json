@@ -64,5 +64,10 @@
   "phase": {
     "ended": "Terminée",
     "onNow": "En cours"
+  },
+  "crash": {
+    "title": "Ça a planté",
+    "message": "C'est noté de notre côté. Réessayez, et si ça continue, relancez l'app.",
+    "retry": "Réessayer"
   }
 }

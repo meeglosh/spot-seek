@@ -5,8 +5,10 @@ the code, not from the policy text. Re-check before each submission that adds a
 data flow. Privacy policy URL to enter: `https://spotseek.app/privacy`.
 
 **Tracking: No.** No advertising SDK, no data brokers, no cross-app/site
-tracking, no analytics or crash SDK in the app (verified: no analytics,
-Sentry, Firebase, Amplitude, Mixpanel or PostHog in `app/` or `backend/src/`).
+tracking, no analytics SDK in the app (verified: no Firebase, Amplitude, Mixpanel or
+PostHog in `app/` or `backend/src/`). The only diagnostics SDK is Sentry
+(`@sentry/react-native`, `@sentry/cloudflare`), used for crash and performance
+diagnostics only, with no PII, not linked to identity and not used for tracking.
 Because there is no tracking, no App Tracking Transparency prompt is needed.
 
 All purposes below are **App Functionality** unless noted. Nothing is used for
@@ -28,7 +30,9 @@ marked.
 | Purchases | Purchase History | Yes (sponsorship payments: amounts, status, Stripe ids) | Linked | App Functionality | `sponsorships.*` |
 | Financial Info | Payment Info | **Declare: Yes.** Collected by Stripe, not by us. We hold only Stripe ids, no card or bank numbers | Linked (ids) | App Functionality | `stripe_account_id`, `payment_intent_id`, `transfer_id` |
 | Usage Data | Product Interaction | Not collected | n/a | n/a | No analytics |
-| Diagnostics | Crash or Performance Data | Not collected by the app. Cloudflare keeps server request logs | n/a | n/a | `observability.enabled` in `wrangler.jsonc` |
+| Diagnostics | Crash Data | Yes (Sentry). Stack traces, app version and build, device model, iOS version, recent screen and network breadcrumbs without query strings. No email, name, IP, cookies or bodies | **Not linked to identity** (only an internal account id is attached; see the Sentry note below) | App Functionality (diagnosing and fixing crashes). Not Analytics, not advertising | `@sentry/react-native` in `app/lib/sentry.ts`; `@sentry/cloudflare` in `backend/src/sentry.ts` |
+| Diagnostics | Performance Data | Yes (Sentry tracing, sampled: 10% of app sessions, 5% of server requests). Launch and request timings | **Not linked to identity** | App Functionality | same |
+| Diagnostics | Other Diagnostic Data | Not collected beyond the above. Cloudflare keeps server request logs | n/a | n/a | `observability.enabled` in `wrangler.jsonc` |
 | Sensitive Info, Health, Browsing/Search History, Contacts, Surroundings, Body | Not collected | n/a | n/a | n/a | |
 
 Owner decisions (2026-10-14): declare **Precise Location** and **Payment Info**
@@ -50,5 +54,11 @@ Notes for the owner:
 - **Server logs:** Cloudflare may log IP addresses. Declare IP-derived Coarse
   Location / Device ID only if you decide logs count; sessions also store IP and
   user agent (`auth_session.ip_address`, `user_agent`) for sign-in security.
+- **Sentry (Diagnostics):** Functional Software, Inc. Both projects have
+  `sendDefaultPii` off (the backend, on SDK v11, uses the equivalent
+  `dataCollection` all-off), email and IP are stripped in `beforeSend`, and the
+  user context is the account id only. Because an account id is attached when
+  signed in, Apple may consider that a link to identity: the conservative
+  alternative is to answer Linked for Crash Data. Tracking stays No.
 - **Third-party processors:** Cloudflare, Neon, Resend, Stripe, Apple (APNs),
-  Photon. None use the data for their own advertising by our configuration.
+  Photon, Sentry. None use the data for their own advertising by our configuration.

@@ -14,6 +14,9 @@ interface Env {
   EMAIL_DAILY_CAP?: string;
   EMAIL_ALLOWLIST?: string;
   ADMIN_SECRET?: string;
+  // Sentry crash/error reporting (public DSN, wrangler var). Unset or empty = disabled (tests).
+  SENTRY_DSN?: string;
+  SENTRY_ENVIRONMENT?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   // Direct APNs push (src/apns.ts). APNS_KEY_P8 is a secret (PEM PKCS8 .p8

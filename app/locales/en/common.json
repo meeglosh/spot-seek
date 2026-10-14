@@ -64,5 +64,10 @@
   "phase": {
     "ended": "Ended",
     "onNow": "On now"
+  },
+  "crash": {
+    "title": "Something broke",
+    "message": "It's logged on our side. Try again, and if it keeps happening, restart the app.",
+    "retry": "Try again"
   }
 }

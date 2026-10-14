@@ -32,7 +32,7 @@ describe('legal pages', () => {
 
   it('privacy policy covers the processors and the payment-record exception', async () => {
     const html = await (await get('/privacy')).text();
-    for (const p of ['Cloudflare', 'Neon', 'Resend', 'Stripe', 'Apple', 'Photon']) expect(html).toContain(p);
+    for (const p of ['Cloudflare', 'Neon', 'Resend', 'Stripe', 'Apple', 'Photon', 'Sentry (Functional Software, Inc.)']) expect(html).toContain(p);
     expect(html).toContain('Deleted host');
     expect(html).toContain('We do not sell your data');
   });

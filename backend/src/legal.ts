@@ -95,12 +95,14 @@ export function renderPrivacyPage(opts: { baseUrl: string }): string {
       <li><b>Sponsorships and payments.</b> Sponsor profile details (company, website, categories, budget range), bids and notes. Card and bank details are entered with Stripe and held by Stripe, not by us. We store only Stripe identifiers (a connected account id and a payouts-ready flag for hosts; PaymentIntent and transfer ids for sponsorships), the amounts, the status and timestamps.</li>
       <li><b>Images.</b> Party cover photos you upload are stored in Cloudflare R2.</li>
       <li><b>Server logs.</b> Our hosting records technical request logs (time, path, status, errors), and we use your IP address for rate limiting and abuse prevention.</li>
+      <li><b>Crash and error reports.</b> If the app or our server hits a crash or an error, a report goes to Sentry: the error and where it happened in the code, the app version and build, device model and iOS version, and a short trail of recent screens and network calls with no query strings. It carries no email, name, IP address, cookies, passwords or request bodies. The only identifier attached is your internal account id, if you are signed in. We use it only to find and fix bugs.</li>
     </ul>`),
     panel('Who processes it for us', `<table><tr><th>Provider</th><th>What for</th></tr>
       <tr><td>Cloudflare</td><td>Hosting (Workers), image storage (R2), chat rooms (Durable Objects), request logs and rate limiting, and Workers AI, which screens party text for policy violations before it goes live.</td></tr>
       <tr><td>Neon</td><td>Our Postgres database.</td></tr>
       <tr><td>Resend</td><td>Sending email: password reset, RSVP confirmations, reminders and notifications.</td></tr>
       <tr><td>Stripe</td><td>Sponsorship payments, host payouts, and identity and bank checks for hosts who set up payouts.</td></tr>
+      <tr><td>Sentry (Functional Software, Inc.)</td><td>Crash and error diagnostics for the app and our server. Reports carry no personal data beyond an internal account id (see "Crash and error reports" above), and Sentry does not use them for advertising.</td></tr>
       <tr><td>Apple</td><td>Push notifications through the Apple Push Notification service (APNs).</td></tr>
       <tr><td>Photon (komoot.io, OpenStreetMap data)</td><td>Address search. When you type a venue address, the text, and your approximate position if the app has it, goes through our server to Photon to get suggestions.</td></tr>
       <tr><td>Google Fonts</td><td>Our public web pages load fonts from Google, which receives your IP address when a page loads.</td></tr></table>
@@ -108,7 +110,7 @@ export function renderPrivacyPage(opts: { baseUrl: string }): string {
     panel('What we do not do', `<ul>
       <li>We do not sell your data.</li>
       <li>We do not run advertising or cross-app tracking, and we do not share data with ad networks.</li>
-      <li>There is no analytics or crash-reporting SDK in the app today, and the website sets no cookies.</li>
+      <li>There is no analytics SDK in the app. The only diagnostics SDK is Sentry, for crash and error reports without personal data. The website sets no cookies.</li>
     </ul>`),
     panel('Why we use it, and our legal basis', `<ul>
       <li><b>To run the service you asked for</b> (accounts, parties, RSVPs, chat, reviews, sponsorships, payments, password reset emails). Basis: performing our contract with you.</li>

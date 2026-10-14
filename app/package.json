@@ -10,6 +10,7 @@
     "@expo-google-fonts/space-grotesk": "^0.4.1",
     "@react-native-community/datetimepicker": "9.1.0",
     "@react-native-community/slider": "5.2.0",
+    "@sentry/react-native": "~7.11.0",
     "@stripe/stripe-react-native": "0.64.0",
     "@testing-library/react-native": "^14.0.1",
     "expo": "~57.0.26",
