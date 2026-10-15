@@ -1,6 +1,6 @@
 # SpotSeek — Session Handoff
 
-_Last updated: 2026-10-05. Read this first when resuming in a new session._
+_Last updated: 2026-10-15. Read this first when resuming in a new session._
 
 This is a running snapshot of where the project stands so work can continue
 without re-deriving context. For the immutable operating rules see `CLAUDE.md`;
@@ -8,9 +8,9 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
 `BLOCKED.md`.
 
 **Working conventions (standing):**
-- Branch per task (per CLAUDE.md); the orchestrator verifies checks; the owner
-  runs merges into `main` and `npm run deploy`, because the agent permission
-  classifier blocks them in this environment.
+- Branch per task (per CLAUDE.md); the orchestrator verifies checks, then
+  fast-forward merges into `main` and runs `npm run deploy` (dev worker)
+  itself — the owner granted those permissions. Push to GitHub when asked.
 - The session owner acts as **orchestrator**: implementation is delegated to
   Sonnet subagents with precise specs; the orchestrator verifies (checks +
   on-simulator screenshots + live API probes) and commits. Trivial config
@@ -22,6 +22,67 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
   feasible, with honest notes on what couldn't be exercised (e.g. taps —
   simulator tap automation is unavailable; use deep links, `simctl launch`
   for cold-start flows, and temporary code edits reverted after screenshots).
+
+---
+
+## 0. RESUME HERE — status as of 2026-10-15
+
+**Build 42 is submitted for External TestFlight beta review** (state
+WAITING_FOR_REVIEW, submitted 2026-10-14 via the ASC API). External group
+"Friends beta" was created and holds build 42. All TestFlight Test Information
+(description, feedback email hello@spotseek.app, marketing + privacy URLs,
+review contact incl. phone, demo account, review notes, "What to test") is
+filled in via the API. Apple emails the result; once approved, add testers to
+"Friends beta" (email or public link). **Always ask the owner before
+submitting anything to Apple.**
+
+**Demo reviewer accounts** (credentials in the owner's possession, not in repo):
+- `demo@spotseek.app` hosts "Demo watch party: big game night"
+  (event 1f06897c-b781-4369-8b12-1e6495021113) and is going to
+  "Season finale night".
+- `demo-host@spotseek.app` ("Riley (demo host)", notifications off) hosts
+  "Season finale night" (event c2b1b0e9-8fda-4881-9d07-5fac9b63f035).
+- Event dates are ~2026-10-23/26 — re-date them if review slips past that.
+
+**Owner decisions 2026-10-14:** admin page approved (12h sign-in, failed-login
+alert after 5/hour); auth fix approved; legal: 16+, California law / LA County
+courts, GAPCO address 132 S Rodeo Dr, Beverly Hills CA 90212, 30-day privacy
+replies, liability cap greater of $100 or 12-month fees; sponsorship hidden
+for beta (`app.json extra.features.sponsorship=false`); stay on free Resend
+(guard caps 80/day); ship all 5 languages.
+
+**Live on the dev worker (https://spotseek.app):** auth fix (baseURL +
+trustedOrigins), /privacy + /terms, /admin/moderation (origin fix
+169ff11), backend Sentry, ended-event rules, test global teardown.
+
+**Sentry:** org `gapco-llc`, projects `spot-seek` (app) and
+`spot-seek-backend`. app.json now names org/project (217978d). Org token
+(`org:ci`) is in gitignored `app/.env.sentry-build-plugin`, verified working.
+Build 42 has NO symbol upload; **verify debug files appear in Sentry on build
+43**. A separate personal token (ends 7e85) is exported from `~/.zshenv`; it is
+not SpotSeek's — leave it (the upload guard tolerates it).
+
+**Neon:** project `muddy-hall-40509626` now lives in the GAPCO org;
+`NEON_API_KEY` in `backend/.dev.vars` is the GAPCO key and works. Transfer
+quota is tight until Nov 1 — minimise full test runs.
+
+**Build tooling:** iOS builds go through a scratch script (prebuild --clean →
+Release sim build → launch check → archive → upload) using ASC key UD4K88XVTT,
+issuer b24f8676-542c-4f39-93de-7f011745a5f0, team XM2SC5YZ8C. Scratchpad is
+wiped on reboot — recreate it from §10 if needed. Test-account cleanup script
+deletes `@spotseek.test` users (keeps `reviewer-e2e-%`, `msponsor-%`), dev
+host only.
+
+**Next up:**
+1. Owner runs the device checklist on build 42 while Apple reviews.
+2. Ephemeral Neon branch per test run (now unblocked by the API key).
+3. Cut build 43 when there's a reason to; confirm Sentry symbol upload.
+4. App Store privacy label: Crash Data = Linked.
+5. Follow-ups: waitlist.ts should use shared eventPhase rule; "my
+   sponsorships" list; add-to-calendar, public host page, analytics;
+   native-speaker translation review; counsel review of legal drafts.
+6. Before App Store release: production DB branch + live Stripe (owner
+   decision, BLOCKED.md).
 
 ---
 
