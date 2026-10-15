@@ -168,6 +168,27 @@ describe('waitlist promotion', () => {
     expect(await promotedNotifs(u[1], event.id)).toHaveLength(0);
   });
 
+  it('still promotes while the party is live (started, no end time, within the 4h default)', async () => {
+    // The old inline rule treated a started party with no ends_at as over; the
+    // shared eventPhase rule says it is live until starts_at + 4h.
+    const event = await createEvent(host, 1);
+    const going = await rsvp(u[0], event.id);
+    await rsvp(u[1], event.id);
+    await neon(env.DATABASE_URL)`UPDATE events SET starts_at = now() - interval '1 hour', ends_at = NULL WHERE id = ${event.id}`;
+    await setState(u[0], going.id, 'cancelled');
+    expect((await mine(u[1]))[event.id]).toBe('going');
+    expect(await promotedNotifs(u[1], event.id)).toHaveLength(1);
+  });
+
+  it('does not promote once a party with no end time is past the 4h default', async () => {
+    const event = await createEvent(host, 1);
+    const going = await rsvp(u[0], event.id);
+    await rsvp(u[1], event.id);
+    await neon(env.DATABASE_URL)`UPDATE events SET starts_at = now() - interval '5 hours', ends_at = NULL WHERE id = ${event.id}`;
+    await setState(u[0], going.id, 'cancelled');
+    expect((await mine(u[1]))[event.id]).toBe('waitlisted');
+  });
+
   it('does not promote for a cancelled event', async () => {
     const event = await createEvent(host, 1);
     const going = await rsvp(u[0], event.id);

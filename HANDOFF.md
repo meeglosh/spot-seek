@@ -78,7 +78,7 @@ host only.
 2. ~~Ephemeral Neon branch per test run~~ DONE 2026-10-15 (`npm test`).
 3. Cut build 43 when there's a reason to; confirm Sentry symbol upload.
 4. App Store privacy label: Crash Data = Linked.
-5. Follow-ups: waitlist.ts should use shared eventPhase rule; "my
+5. Follow-ups (waitlist.ts eventPhase rule DONE 2026-10-15): "my
    sponsorships" list; add-to-calendar, public host page, analytics;
    native-speaker translation review; counsel review of legal drafts.
 6. Before App Store release: production DB branch + live Stripe (owner

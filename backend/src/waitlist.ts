@@ -17,6 +17,10 @@
  * who cancelled and rejoined, or who moved interested -> waitlisted.
  * created_at / id break ties.
  *
+ * Eligibility: the event must be published, have a capacity, and not be over
+ * by the shared rule in eventTime.ts (ends_at, else starts_at + 4h). A party
+ * that has started but not ended still promotes.
+ *
  * Atomicity: the earliest candidate is picked, then a conditional UPDATE
  * (still 'waitlisted' AND going total < capacity) promotes it. neon-http has
  * no transactions, so concurrent writers that raced the count are caught by a
@@ -28,6 +32,7 @@ import type { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
 import { notify } from './notifications';
 import { goingTotalSql, countGoing } from './guests';
+import { notEndedSql } from './eventTime';
 import { sendEmail } from './reminders';
 import { publicBaseUrl } from './email';
 
@@ -48,18 +53,18 @@ export async function promoteFromWaitlist(
     const picked = await db.execute(sql`
       SELECT kind, id, ref, old_updated_at, capacity FROM (
         SELECT 'user' AS kind, r.id::text AS id, r.user_id AS ref, r.updated_at AS old_updated_at,
-               r.created_at AS created_at, e.capacity AS capacity
-        FROM rsvps r JOIN events e ON e.id = r.event_id
-        WHERE r.event_id = ${eventId} AND r.state = 'waitlisted' AND r.user_id <> e.host_id
-          AND e.status = 'published' AND e.capacity IS NOT NULL
-          AND (e.starts_at IS NULL OR COALESCE(e.ends_at, e.starts_at) > now())
+               r.created_at AS created_at, events.capacity AS capacity
+        FROM rsvps r JOIN events ON events.id = r.event_id
+        WHERE r.event_id = ${eventId} AND r.state = 'waitlisted' AND r.user_id <> events.host_id
+          AND events.status = 'published' AND events.capacity IS NOT NULL
+          AND ${notEndedSql()}
         UNION ALL
         SELECT 'guest' AS kind, g.id::text AS id, g.id::text AS ref, g.updated_at AS old_updated_at,
-               g.created_at AS created_at, e.capacity AS capacity
-        FROM guest_rsvps g JOIN events e ON e.id = g.event_id
+               g.created_at AS created_at, events.capacity AS capacity
+        FROM guest_rsvps g JOIN events ON events.id = g.event_id
         WHERE g.event_id = ${eventId} AND g.state = 'waitlisted' AND g.claimed_user_id IS NULL
-          AND e.status = 'published' AND e.capacity IS NOT NULL
-          AND (e.starts_at IS NULL OR COALESCE(e.ends_at, e.starts_at) > now())
+          AND events.status = 'published' AND events.capacity IS NOT NULL
+          AND ${notEndedSql()}
       ) c
       WHERE ${goingTotalSql(eventId)} < c.capacity
       ORDER BY old_updated_at ASC, created_at ASC, id ASC

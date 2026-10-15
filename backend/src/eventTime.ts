@@ -54,6 +54,11 @@ export function upcomingOrLiveSql(): SQL {
   return sql`(${schema.events.startsAt} is not null and ${effectiveEndSql()} >= now())`;
 }
 
+/** SQL: not ended (upcoming, live, or undated). Twin of `eventPhase(e) !== 'ended'`. */
+export function notEndedSql(): SQL {
+  return sql`(${schema.events.startsAt} is null or ${effectiveEndSql()} >= now())`;
+}
+
 /** SQL: ended, no more than PAST_WINDOW_DAYS ago. */
 export function recentlyEndedSql(): SQL {
   return sql`(${effectiveEndSql()} < now() and ${effectiveEndSql()} >= now() - make_interval(days => ${PAST_WINDOW_DAYS}))`;
