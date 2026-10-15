@@ -75,7 +75,7 @@ host only.
 
 **Next up:**
 1. Owner runs the device checklist on build 42 while Apple reviews.
-2. Ephemeral Neon branch per test run (now unblocked by the API key).
+2. ~~Ephemeral Neon branch per test run~~ DONE 2026-10-15 (`npm test`).
 3. Cut build 43 when there's a reason to; confirm Sentry symbol upload.
 4. App Store privacy label: Crash Data = Linked.
 5. Follow-ups: waitlist.ts should use shared eventPhase rule; "my
@@ -264,7 +264,11 @@ npx expo export --platform ios
 
 cd backend
 npx tsc --noEmit
-npm test                # 138 tests — run TWICE if fixtures changed
+npm test                # 399 tests on an ephemeral Neon branch (created from the
+                        # dev branch and deleted afterwards by scripts/test-branch.mjs;
+                        # needs NEON_API_KEY in .dev.vars). `npm test -- --run test/x.spec.ts`
+                        # for one file. `npm run test:shared` = old behaviour on the
+                        # shared dev DB with the global teardown cleaning up.
 npm run check:bundle
 npm run deploy          # dev/preview worker (allowed per CLAUDE.md)
 ```
@@ -305,8 +309,10 @@ npm run deploy          # dev/preview worker (allowed per CLAUDE.md)
   event screen. Guests get 401 (swallowed) on `/api/reviews/*` and
   `/api/favourites`; the feed, `/api/events/:id` and `/api/profiles/:id` are
   public. `assets/onboarding/*` is no longer referenced (removable).
-- vitest runs against the REAL shared dev DB — always timestamp-unique
-  fixtures.
+- `npm test` runs on a throwaway Neon branch; `npm run test:shared` hits the
+  REAL shared dev DB — keep fixtures timestamp-unique so both modes work.
+- The Workers vitest pool blanks the bare `process.env` global inside
+  globalSetup files; read env via `import process from 'node:process'`.
 
 ## 8. Hard stops (from CLAUDE.md — never do autonomously)
 

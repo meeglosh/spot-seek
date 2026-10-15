@@ -7,16 +7,21 @@
  * created_at is at or after the run start (read from the DB clock, so no skew).
  * Excludes reviewer-e2e-% and msponsor-% accounts.
  *
- * Interim fix until a per-run ephemeral Neon branch exists.
+ * Shared-DB mode only. `npm test` runs on an ephemeral Neon branch
+ * (scripts/test-branch.mjs sets SPOTSEEK_TEST_DB_BRANCH) and the branch is
+ * deleted whole, so this is a no-op there.
  */
 import { readFileSync } from 'node:fs';
 import { neon } from '@neondatabase/serverless';
+// The Workers pool blanks the bare `process.env` global here; the node:process
+// module still carries the real environment.
+import nodeProcess from 'node:process';
 
 const DEV_BRANCH_HOST = 'ep-withered-brook-at893dfx';
 const BATCH = 500;
 
 function databaseUrl(): string {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  if (nodeProcess.env.DATABASE_URL) return nodeProcess.env.DATABASE_URL;
   try {
     const text = readFileSync(new URL('../.dev.vars', import.meta.url), 'utf8');
     const m = text.match(/^DATABASE_URL=(.*)$/m);
@@ -28,6 +33,10 @@ function databaseUrl(): string {
 }
 
 export default async function setup() {
+  if (nodeProcess.env.SPOTSEEK_TEST_DB_BRANCH) {
+    console.log(`[test-teardown] ephemeral branch ${nodeProcess.env.SPOTSEEK_TEST_DB_BRANCH}: no fixture cleanup needed`);
+    return async () => {};
+  }
   const url = databaseUrl();
   let host = '';
   try {

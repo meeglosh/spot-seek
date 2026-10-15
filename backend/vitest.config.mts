@@ -1,8 +1,15 @@
 import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
 
+// `npm test` (scripts/test-branch.mjs) creates an ephemeral Neon branch and
+// exports its URL; it must win over the shared-dev-DB URL in .dev.vars.
+const dbOverride = process.env.SPOTSEEK_TEST_DB_BRANCH && process.env.DATABASE_URL
+	? { DATABASE_URL: process.env.DATABASE_URL, DATABASE_URL_UNPOOLED: process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL }
+	: {};
+
 export default defineWorkersConfig({
 	test: {
-		// Deletes this run's fixture users/events from the shared dev DB afterwards.
+		// Shared-DB runs only: deletes this run's fixture users/events afterwards.
+		// A no-op on an ephemeral branch (the whole branch is deleted instead).
 		globalSetup: ["./test/global-teardown.ts"],
 		poolOptions: {
 			workers: {
@@ -19,7 +26,7 @@ export default defineWorkersConfig({
 					// MODERATION_AI=off: tests never call the real Workers AI binding
 					// (moderation specs inject a mock classifier instead).
 					// SENTRY_DSN blank: Sentry is a no-op in tests (the wrangler var holds the real DSN).
-					bindings: { ADMIN_SECRET: "test-admin-secret", MODERATION_AI: "off", SENTRY_DSN: "" },
+					bindings: { ADMIN_SECRET: "test-admin-secret", MODERATION_AI: "off", SENTRY_DSN: "", ...dbOverride },
 				},
 			},
 		},
