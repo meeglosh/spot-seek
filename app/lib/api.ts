@@ -252,7 +252,7 @@ export async function fetchFeed(params?: {
 }
 
 export async function fetchEvent(id: string): Promise<ApiEvent> {
-  const res = await apiFetch(`/api/events/${id}`);
+  const res = await apiFetch(`/api/events/${encodeURIComponent(id)}`);
   if (!res.ok) throw new Error(`Event fetch failed: ${res.status}`);
   const { event } = await res.json() as { event: ApiEvent };
   return event;
@@ -274,7 +274,7 @@ export async function rsvpToEvent(eventId: string): Promise<ApiRsvp> {
 }
 
 export async function cancelRsvp(rsvpId: string): Promise<void> {
-  const res = await apiFetch(`/api/rsvps/${rsvpId}`, {
+  const res = await apiFetch(`/api/rsvps/${encodeURIComponent(rsvpId)}`, {
     method: 'PATCH',
     body: JSON.stringify({ state: 'cancelled' }),
   });
@@ -296,7 +296,7 @@ export async function createEvent(input: CreateEventInput): Promise<ApiEvent> {
 }
 
 export async function updateEvent(id: string, input: CreateEventInput): Promise<ApiEvent> {
-  const res = await apiFetch(`/api/events/${id}`, {
+  const res = await apiFetch(`/api/events/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: JSON.stringify(input),
   });
@@ -319,7 +319,7 @@ export async function reportEvent(
   note?: string,
 ): Promise<{ duplicate: boolean }> {
   const trimmed = note?.trim();
-  const res = await apiFetch(`/api/events/${eventId}/report`, {
+  const res = await apiFetch(`/api/events/${encodeURIComponent(eventId)}/report`, {
     method: 'POST',
     body: JSON.stringify(trimmed ? { reason, note: trimmed } : { reason }),
   });
@@ -336,12 +336,12 @@ export type ApiBlockedUser = {
 };
 
 export async function blockUser(userId: string): Promise<void> {
-  const res = await apiFetch(`/api/users/${userId}/block`, { method: 'POST' });
+  const res = await apiFetch(`/api/users/${encodeURIComponent(userId)}/block`, { method: 'POST' });
   if (!res.ok) throw await apiErrorFrom(res, `Block failed: ${res.status}`);
 }
 
 export async function unblockUser(userId: string): Promise<void> {
-  const res = await apiFetch(`/api/users/${userId}/block`, { method: 'DELETE' });
+  const res = await apiFetch(`/api/users/${encodeURIComponent(userId)}/block`, { method: 'DELETE' });
   if (!res.ok) throw await apiErrorFrom(res, `Unblock failed: ${res.status}`);
 }
 
@@ -369,14 +369,14 @@ export async function fetchMyRsvps(): Promise<ApiRsvp[]> {
 }
 
 export async function fetchProfile(id: string): Promise<ApiProfile> {
-  const res = await apiFetch(`/api/profiles/${id}`);
+  const res = await apiFetch(`/api/profiles/${encodeURIComponent(id)}`);
   if (!res.ok) throw new Error(`Profile fetch failed: ${res.status}`);
   const { user } = await res.json() as { user: ApiProfile };
   return user;
 }
 
 export async function deleteEvent(id: string): Promise<void> {
-  const res = await apiFetch(`/api/events/${id}`, { method: 'DELETE' });
+  const res = await apiFetch(`/api/events/${encodeURIComponent(id)}`, { method: 'DELETE' });
   if (res.status === 401) throw new Error('unauthorized');
   if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
 }
@@ -403,7 +403,7 @@ export function uploadEventCover(eventId: string, uri: string, mimeType: string)
 
   return new Promise<ApiEvent>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', `${API_BASE}/api/events/${eventId}/cover`);
+    xhr.open('POST', `${API_BASE}/api/events/${encodeURIComponent(eventId)}/cover`);
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     // Content-Type is intentionally unset: RN derives multipart/form-data
     // plus the boundary from the FormData body.
@@ -664,7 +664,7 @@ export async function fetchMyBids(): Promise<ApiSponsorBid[]> {
 
 // Host-only: bids on one of the host's own events.
 export async function fetchEventBids(eventId: string): Promise<ApiSponsorBid[]> {
-  const res = await apiFetch(`/api/sponsors/events/${eventId}/bids`);
+  const res = await apiFetch(`/api/sponsors/events/${encodeURIComponent(eventId)}/bids`);
   if (res.status === 401 || res.status === 403) return [];
   if (!res.ok) throw new Error(`Event bids fetch failed: ${res.status}`);
   const { bids } = await res.json() as { bids: ApiSponsorBid[] };
@@ -673,7 +673,7 @@ export async function fetchEventBids(eventId: string): Promise<ApiSponsorBid[]> 
 
 // Host sets 'active' | 'rejected'; sponsor may set 'cancelled'.
 export async function updateBidStatus(bidId: string, status: SponsorshipStatus): Promise<ApiSponsorBid> {
-  const res = await apiFetch(`/api/sponsors/bids/${bidId}`, {
+  const res = await apiFetch(`/api/sponsors/bids/${encodeURIComponent(bidId)}`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
   });
@@ -732,7 +732,7 @@ export async function startConnectOnboarding(): Promise<{ url: string } | null> 
 // This pass doesn't consume clientSecret (no PaymentSheet yet) — a successful
 // call just confirms the PaymentIntent was created server-side.
 export async function paySponsorship(sponsorshipId: string): Promise<{ clientSecret: string } | null> {
-  const res = await apiFetch(`/api/payments/sponsorships/${sponsorshipId}/pay`, { method: 'POST' });
+  const res = await apiFetch(`/api/payments/sponsorships/${encodeURIComponent(sponsorshipId)}/pay`, { method: 'POST' });
   if (res.status === 503) return null;
   if (res.status === 401) throw new Error('unauthorized');
   if (!res.ok) throw new Error(`Sponsorship payment failed: ${res.status}`);
@@ -741,8 +741,8 @@ export async function paySponsorship(sponsorshipId: string): Promise<{ clientSec
 
 export async function fetchFollowCounts(id: string): Promise<{ followers: number; following: number }> {
   const [frs, fing] = await Promise.all([
-    apiFetch(`/api/profiles/${id}/followers`).then((r) => r.json() as Promise<{ followers: unknown[] }>),
-    apiFetch(`/api/profiles/${id}/following`).then((r) => r.json() as Promise<{ following: unknown[] }>),
+    apiFetch(`/api/profiles/${encodeURIComponent(id)}/followers`).then((r) => r.json() as Promise<{ followers: unknown[] }>),
+    apiFetch(`/api/profiles/${encodeURIComponent(id)}/following`).then((r) => r.json() as Promise<{ following: unknown[] }>),
   ]);
   return { followers: frs.followers.length, following: fing.following.length };
 }
@@ -779,7 +779,7 @@ export type ApiHostReviews = {
 // non-fatal fallback keeps the rest of the screen rendering.
 export async function fetchEventReviews(eventId: string): Promise<ApiEventReviews> {
   const empty: ApiEventReviews = { myReview: null, host: null, venue: null, reviews: [] };
-  const res = await apiFetch(`/api/reviews/event/${eventId}`);
+  const res = await apiFetch(`/api/reviews/event/${encodeURIComponent(eventId)}`);
   if (res.status === 401) return empty;
   if (!res.ok) throw new Error(`Event reviews fetch failed: ${res.status}`);
   return await res.json() as ApiEventReviews;
@@ -806,7 +806,7 @@ export async function submitReview(input: {
 
 export async function fetchHostReviews(userId: string): Promise<ApiHostReviews> {
   const empty: ApiHostReviews = { avg: 0, count: 0, recent: [] };
-  const res = await apiFetch(`/api/reviews/host/${userId}`);
+  const res = await apiFetch(`/api/reviews/host/${encodeURIComponent(userId)}`);
   if (res.status === 401) return empty;
   if (!res.ok) throw new Error(`Host reviews fetch failed: ${res.status}`);
   return await res.json() as ApiHostReviews;
@@ -900,8 +900,11 @@ export async function registerPushToken(token: string, environment: 'production'
   if (!res.ok) throw new Error(`Push token registration failed: ${res.status}`);
 }
 
-export async function deletePushToken(token: string): Promise<void> {
-  const res = await apiFetch(`/api/push/tokens/${encodeURIComponent(token)}`, { method: 'DELETE' });
+/** `bearer` overrides the in-memory session token, for sign-out (which clears it). */
+export async function deletePushToken(token: string, bearer?: string | null): Promise<void> {
+  const res = await apiFetch(`/api/push/tokens/${encodeURIComponent(token)}`, bearer
+    ? { method: 'DELETE', headers: { Authorization: `Bearer ${bearer}` }, skipAuth: true }
+    : { method: 'DELETE' });
   if (res.status === 401) return;
   if (!res.ok) throw new Error(`Push token delete failed: ${res.status}`);
 }

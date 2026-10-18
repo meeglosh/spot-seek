@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
-  API_BASE, apiFetch, setBearerToken, clearBearerToken, restoreBearerToken,
+  API_BASE, apiFetch, setBearerToken, clearBearerToken, restoreBearerToken, getBearerToken,
   setStoredUser, clearStoredUser, getStoredUser,
 } from './api';
 import { syncGuestInterests } from './guestState';
+import { unregisterPushOnSignOut } from './push';
 
 export type AuthUser = {
   id: string;
@@ -172,6 +173,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   function signOut() {
+    // Best-effort: drop this device's APNs token from the account so pushes
+    // for the signed-out account stop reaching it. The bearer is captured now
+    // because it is cleared below; a failure never blocks sign-out.
+    unregisterPushOnSignOut(getBearerToken()).catch(() => {});
     apiFetch('/api/auth/sign-out', { method: 'POST' });
     clearBearerToken();
     clearStoredUser();

@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { SPORTS, searchTeams, type Sport } from '../../lib/sports-data';
 import { saveFavouritesBulk } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
+import { safeRedirect } from '../../lib/safeRedirect';
 import { setGuestInterests } from '../../lib/guestState';
 import { colors, radius, spacing, TAP, type as t } from '../../lib/theme';
 import { Icon } from '../../components/icons';
@@ -25,7 +26,7 @@ export default function InterestsScreen() {
   const insets = useSafeAreaInsets();
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
   // Land back on the screen that originally gated the user, or Discover.
-  const target = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/(tabs)/discover';
+  const target = safeRedirect(redirect, '/(tabs)/discover');
   // Scoped to the 'auth' namespace — tr()/t() calls below read
   // locales/<lang>/auth.json. Aliased to `tr` because this file already
   // uses `t` for theme.type tokens imported from ../../lib/theme. See
