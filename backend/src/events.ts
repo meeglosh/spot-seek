@@ -286,11 +286,17 @@ eventsRouter.patch('/:id', async (c) => {
   // never fails the event cancel; the row stays active/requires_payment, which the
   // webhook (auto-refund) and the sweep recover if the sponsor still pays.
   if (becameCancelled) {
+    // Sponsors whose row THIS update changed are told (guarded updates make a
+    // repeated PATCH a no-op, so no duplicates). In-flight / Stripe-error rows stay
+    // active and get nothing.
+    const closedSponsorIds: string[] = [];
     await (async () => {
-      await db
+      const cancelledBids = await db
         .update(schema.sponsorships)
         .set({ status: 'cancelled', updatedAt: new Date() })
-        .where(and(eq(schema.sponsorships.eventId, id), eq(schema.sponsorships.status, 'pending')));
+        .where(and(eq(schema.sponsorships.eventId, id), eq(schema.sponsorships.status, 'pending')))
+        .returning({ sponsorId: schema.sponsorships.sponsorId });
+      closedSponsorIds.push(...cancelledBids.map((r) => r.sponsorId));
       const open = await db.query.sponsorships.findMany({
         where: and(
           eq(schema.sponsorships.eventId, id),
@@ -302,7 +308,7 @@ eventsRouter.patch('/:id', async (c) => {
       for (const s of open) {
         try {
           if ((await cancelOpenPaymentIntent(stripe, s.paymentIntentId)) === 'in_flight') continue;
-          await db
+          const closed = await db
             .update(schema.sponsorships)
             .set({ status: 'cancelled', paymentStatus: 'unpaid', updatedAt: new Date() })
             .where(
@@ -311,12 +317,24 @@ eventsRouter.patch('/:id', async (c) => {
                 eq(schema.sponsorships.status, 'active'),
                 eq(schema.sponsorships.paymentStatus, 'requires_payment'),
               ),
-            );
+            )
+            .returning({ sponsorId: schema.sponsorships.sponsorId });
+          closedSponsorIds.push(...closed.map((r) => r.sponsorId));
         } catch (err) {
           console.error('[events] PaymentIntent cancel on event cancel failed for sponsorship', s.id, err);
         }
       }
     })().catch((err) => console.error('[events] cancel sponsorship cleanup failed:', err));
+    // One notice per closed sponsorship; a notify failure never fails the cancel.
+    for (const sponsorId of closedSponsorIds) {
+      await notify(db, c.env.RESEND_API_KEY, {
+        userId: sponsorId,
+        type: 'event_cancelled',
+        title: `"${updated.title}" was cancelled`,
+        body: "The host cancelled this party, so your sponsorship was cancelled. You weren't charged.",
+        eventId: updated.id,
+      }).catch((err) => console.error('[events] sponsor cancel notify failed:', err));
+    }
   }
 
   if (becameCancelled || venueChanged) {

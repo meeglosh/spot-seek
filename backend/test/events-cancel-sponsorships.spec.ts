@@ -11,6 +11,7 @@ import { neon } from '@neondatabase/serverless';
 import { createHmac } from 'node:crypto';
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { __setTestStripeConfig } from '../src/payments';
+import * as notifications from '../src/notifications';
 
 const AUTH = 'https://example.com/api/auth';
 const EVENTS = 'https://example.com/api/events';
@@ -222,5 +223,68 @@ describe('event cancel closes sponsorship payment links', () => {
     const res = await cancelEvent(f.host.cookie, f.eventId);
     expect(res.status).toBe(200);
     expect(await rowOf(f.bidId)).toEqual({ status: 'active', paymentStatus: 'paid' });
+  });
+});
+
+// Owner request 2026-10-18: sponsors are told when the host's cancel closes their
+// sponsorship. Reuses the generic event_cancelled type (notifications.type is plain
+// text; no schema change). Test-domain recipients are never emailed (email guard).
+describe('event cancel notifies the sponsor', () => {
+  type N = { type: string; title: string; body: string; eventId: string | null };
+  async function sponsorNotes(f: Fixture): Promise<N[]> {
+    const res = await SELF.fetch('https://example.com/api/notifications', { headers: { Cookie: f.sponsor.cookie } });
+    const { notifications } = await res.json() as { notifications: N[] };
+    return notifications.filter((n) => n.type === 'event_cancelled' && n.eventId === f.eventId);
+  }
+  const BODY = "The host cancelled this party, so your sponsorship was cancelled. You weren't charged.";
+
+  it('pending bid: exactly one notification with the right text; repeat PATCH adds none', async () => {
+    const f = await fixture('npe', 'pending');
+    expect((await cancelEvent(f.host.cookie, f.eventId)).status).toBe(200);
+    const notes = await sponsorNotes(f);
+    expect(notes).toHaveLength(1);
+    expect(notes[0].title).toBe('"Sponsorship States Event" was cancelled');
+    expect(notes[0].body).toBe(BODY);
+    expect((await cancelEvent(f.host.cookie, f.eventId)).status).toBe(200);
+    expect(await sponsorNotes(f)).toHaveLength(1);
+  });
+
+  it('requires_payment: one notification; repeat PATCH adds none', async () => {
+    const f = await fixture('nrp', 'accepted');
+    mockCancelPi(f.piId);
+    expect((await cancelEvent(f.host.cookie, f.eventId)).status).toBe(200);
+    const notes = await sponsorNotes(f);
+    expect(notes).toHaveLength(1);
+    expect(notes[0].body).toBe(BODY);
+    expect((await cancelEvent(f.host.cookie, f.eventId)).status).toBe(200);
+    expect(await sponsorNotes(f)).toHaveLength(1);
+  });
+
+  it('in-flight PaymentIntent: no notification', async () => {
+    const f = await fixture('nfl', 'accepted');
+    mockCancelPi(f.piId, 'succeeded');
+    expect((await cancelEvent(f.host.cookie, f.eventId)).status).toBe(200);
+    expect(await sponsorNotes(f)).toHaveLength(0);
+  });
+
+  it('Stripe error: no notification', async () => {
+    const f = await fixture('ner', 'accepted');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    fetchMock.get('https://api.stripe.com')
+      .intercept({ path: `/v1/payment_intents/${f.piId}/cancel`, method: 'POST' })
+      .reply(500, { error: { message: 'boom' } });
+    expect((await cancelEvent(f.host.cookie, f.eventId)).status).toBe(200);
+    expect(await sponsorNotes(f)).toHaveLength(0);
+  });
+
+  it('notify failure does not fail the cancel', async () => {
+    const f = await fixture('nfa', 'pending');
+    vi.spyOn(notifications, 'notify').mockRejectedValue(new Error('notify down'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await cancelEvent(f.host.cookie, f.eventId);
+    expect(res.status).toBe(200);
+    expect(await eventStatus(f.eventId)).toBe('cancelled');
+    expect(await rowOf(f.bidId)).toEqual({ status: 'cancelled', paymentStatus: 'unpaid' });
+    expect(await sponsorNotes(f)).toHaveLength(0); // proves the stub was hit
   });
 });
