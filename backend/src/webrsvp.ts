@@ -120,6 +120,7 @@ webRsvpRouter.post('/rsvp/:eventId', async (c) => {
   // Hidden/removed events 404. Drafts keep the pre-existing generic "closed" (410) answer,
   // which exposes no event content (web-rsvp.spec pins this).
   if (!event || isModerationHidden(event)) return fail(c, 404, 'Event not found');
+  if (event.status === 'cancelled') return fail(c, 410, 'This event has been cancelled.', eventId);
   if (!eventIsOpen(event)) return fail(c, 410, 'RSVPs are closed for this event.', eventId);
 
   // Idempotent per (event, email): one row, ever. A repeat submission resends
@@ -337,6 +338,9 @@ webRsvpRouter.get('/rsvp/:eventId/:token/confirm', async (c) => {
   const { db, event } = found;
   let { guest } = found;
   if (guest.state === 'pending') {
+    if (event.status === 'cancelled') {
+      return messagePage(c, 410, 'Event cancelled', 'This event has been cancelled.', event.id);
+    }
     if (!eventIsOpen(event)) {
       return messagePage(c, 410, 'Too late', 'RSVPs are closed for this event.', event.id);
     }

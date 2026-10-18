@@ -130,7 +130,7 @@ async function notifyHostOfGuest(db: Db, resendApiKey: string | undefined, event
 
 export type ClaimResult =
   | { ok: true; rsvp: { id: string; eventId: string; state: schema.Rsvp['state'] } }
-  | { ok: false; error: 'not_found' | 'already_claimed' | 'not_confirmed' | 'event_ended' | 'forbidden' | 'own_event' };
+  | { ok: false; error: 'not_found' | 'already_claimed' | 'not_confirmed' | 'event_ended' | 'event_cancelled' | 'forbidden' | 'own_event' };
 
 /**
  * Attach ONE guest RSVP to an account. The caller must already have proven
@@ -144,7 +144,7 @@ export type ClaimResult =
  * row this call inserted is removed again.
  *
  * A claim never creates an account RSVP that POST /api/rsvps would refuse:
- * hidden/removed, ended, or host-blocked events are refused and the guest row
+ * hidden/removed, cancelled, ended, or host-blocked events are refused and the guest row
  * is left untouched (unclaimed). A host cannot claim onto their own event.
  */
 export async function claimGuestRsvp(db: Db, userId: string, guest: schema.GuestRsvp): Promise<ClaimResult> {
@@ -164,6 +164,7 @@ export async function claimGuestRsvp(db: Db, userId: string, guest: schema.Guest
   const event = await db.query.events.findFirst({ where: eq(schema.events.id, guest.eventId) });
   if (!event || isModerationHidden(event)) return { ok: false, error: 'not_found' };
   if (event.hostId === userId) return { ok: false, error: 'own_event' };
+  if (event.status === 'cancelled') return { ok: false, error: 'event_cancelled' };
   if (eventPhase(event) === 'ended') return { ok: false, error: 'event_ended' };
   if (await isBlockedByHost(db, event.hostId, userId)) return { ok: false, error: 'forbidden' };
 

@@ -17,9 +17,11 @@
  * who cancelled and rejoined, or who moved interested -> waitlisted.
  * created_at / id break ties.
  *
- * Eligibility: the event must be published, have a capacity, and not be over
+ * Eligibility: the event must be published (a cancelled or draft event never promotes), have a capacity, and not be over
  * by the shared rule in eventTime.ts (ends_at, else starts_at + 4h). A party
- * that has started but not ended still promotes.
+ * that has started but not ended still promotes. A user the host has blocked
+ * since joining is skipped (row kept, still waitlisted); guests have no user
+ * id, so blocks don't apply to them.
  *
  * Atomicity: the earliest candidate is picked, then a conditional UPDATE
  * (still 'waitlisted' AND going total < capacity) promotes it. neon-http has
@@ -58,6 +60,7 @@ export async function promoteFromWaitlist(
         WHERE r.event_id = ${eventId} AND r.state = 'waitlisted' AND r.user_id <> events.host_id
           AND events.status = 'published' AND events.capacity IS NOT NULL
           AND ${notEndedSql()}
+          AND NOT EXISTS (SELECT 1 FROM user_blocks b WHERE b.blocker_id = events.host_id AND b.blocked_id = r.user_id)
         UNION ALL
         SELECT 'guest' AS kind, g.id::text AS id, g.id::text AS ref, g.updated_at AS old_updated_at,
                g.created_at AS created_at, events.capacity AS capacity

@@ -40,6 +40,7 @@ const CLAIM_STATUS = {
   already_claimed: 409,
   not_confirmed: 409,
   event_ended: 409,
+  event_cancelled: 409,
   own_event: 409,
   forbidden: 403,
 } as const;
@@ -110,6 +111,8 @@ rsvpsRouter.post('/', async (c) => {
   if (!event || (isModerationHidden(event) && event.hostId !== userId)) {
     return c.json({ error: 'Event not found' }, 404);
   }
+  // A cancelled party takes no RSVPs.
+  if (event.status === 'cancelled') return c.json({ error: 'event_cancelled' }, 409);
   // RSVPs close once the party has ended (same rule as guest RSVPs).
   if (eventPhase(event) === 'ended') return c.json({ error: 'event_ended' }, 409);
   // A host who blocked this user does not take their RSVPs.
@@ -219,6 +222,7 @@ rsvpsRouter.patch('/:id', async (c) => {
     if (!joinEvent || (isModerationHidden(joinEvent) && joinEvent.hostId !== userId)) {
       return c.json({ error: 'Event not found' }, 404);
     }
+    if (joinEvent.status === 'cancelled') return c.json({ error: 'event_cancelled' }, 409);
     if (eventPhase(joinEvent) === 'ended') return c.json({ error: 'event_ended' }, 409);
     if (joinEvent.hostId !== userId && (await isBlockedByHost(db, joinEvent.hostId, userId))) {
       return c.json({ error: 'Forbidden' }, 403);
