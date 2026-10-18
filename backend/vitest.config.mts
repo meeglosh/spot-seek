@@ -20,13 +20,13 @@ export default defineWorkersConfig({
 				// run dies if that API is unreachable. Tests don't use the real AI
 				// binding (MODERATION_AI=off + injected classifier).
 				remoteBindings: false,
-				// Test-only admin credential so the admin-gated job triggers
+				// Test-only credentials (admin + Better Auth signing secret) so the admin-gated job triggers
 				// (run-sweeps/run-reminders/run-reviews) are exercisable.
 				miniflare: {
 					// MODERATION_AI=off: tests never call the real Workers AI binding
 					// (moderation specs inject a mock classifier instead).
 					// SENTRY_DSN blank: Sentry is a no-op in tests (the wrangler var holds the real DSN).
-					bindings: { ADMIN_SECRET: "test-admin-secret", MODERATION_AI: "off", SENTRY_DSN: "", ...dbOverride },
+					bindings: { BETTER_AUTH_SECRET: "test-only-better-auth-secret-0123456789abcdef", ADMIN_SECRET: "test-admin-secret", MODERATION_AI: "off", SENTRY_DSN: "", ...dbOverride },
 				},
 			},
 		},

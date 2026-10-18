@@ -3,6 +3,8 @@
 interface Env {
   DATABASE_URL: string;
   BETTER_AUTH_URL?: string;
+  // Wrangler secret. Passed explicitly to Better Auth (src/auth.ts); createAuth throws without it.
+  BETTER_AUTH_SECRET?: string;
   // Public origin for every outward-facing link (share links, og:url, canonical,
   // email CTAs, onboarding pages). Defaults to the workers.dev URL when unset.
   PUBLIC_BASE_URL?: string;

@@ -23,6 +23,17 @@ export function setAuthBaseURL(url: string | undefined): void {
   if (url) configuredBaseURL = url;
 }
 
+// BETTER_AUTH_SECRET (wrangler secret), registered the same way. Better Auth only
+// looks for its secret in process.env, which Workers do NOT populate from bindings
+// at this compat date, so without an explicit `secret` it silently signs with its
+// published default key. createAuth() therefore throws if no secret was registered.
+let configuredSecret: string | undefined;
+export function setAuthSecret(secret: string | undefined): void {
+  if (secret) configuredSecret = secret;
+}
+// Better Auth's built-in fallback (better-auth/dist/utils/constants.mjs). Never acceptable.
+const BETTER_AUTH_DEFAULT_SECRET = 'better-auth-secret-12345678901234567890';
+
 // Origins allowed to make cookie-based (browser) POSTs to /api/auth/*. Native
 // requests are not affected (no Origin, no Cookie; they use a bearer token).
 export const AUTH_TRUSTED_ORIGINS = [
@@ -41,6 +52,11 @@ export function createAuth(
     sendResetPassword?: (data: { user: { email: string }; token: string }) => Promise<void>;
   },
 ) {
+  // Fail closed: never let Better Auth fall back to its public default secret.
+  if (!configuredSecret || configuredSecret === BETTER_AUTH_DEFAULT_SECRET) {
+    throw new Error('BETTER_AUTH_SECRET is not configured (or is the library default); refusing to create auth');
+  }
+
   // Pass only table objects — spreading the full schema includes pgEnum objects
   // which confuse Better Auth's Drizzle adapter.
   const db = drizzle(sql, {
@@ -58,6 +74,7 @@ export function createAuth(
   });
 
   return betterAuth({
+    secret: configuredSecret,
     // Always set explicitly (see DEFAULT_AUTH_BASE_URL); env override from index.ts.
     baseURL: opts?.baseURL || configuredBaseURL || DEFAULT_AUTH_BASE_URL,
 
