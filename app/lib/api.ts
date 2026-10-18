@@ -963,3 +963,43 @@ export async function requestPasswordReset(email: string): Promise<void> {
   });
   if (!res.ok) throw new Error(`Password reset request failed: ${res.status}`);
 }
+
+// ─── Guest RSVP claim ────────────────────────────────────────────────────────
+// A web guest RSVP is linked to an account only by opening the claim link from
+// their status page (/e/:eventId/claim/:token). Both values go in the JSON
+// body, never the path. Failures come back as a typed result, not a throw, so
+// the claim screen can map each code to its own copy.
+
+export type ClaimErrorCode =
+  | 'already_claimed' | 'not_confirmed' | 'event_ended' | 'own_event'
+  | 'forbidden' | 'not_found' | 'unauthorized' | 'network';
+
+export type ClaimResult =
+  | { ok: true; rsvp: { id: string; eventId: string; state: string } }
+  | { ok: false; error: ClaimErrorCode };
+
+const CLAIM_CONFLICTS: readonly ClaimErrorCode[] = ['already_claimed', 'not_confirmed', 'event_ended', 'own_event'];
+
+export async function claimGuestRsvp(eventId: string, token: string): Promise<ClaimResult> {
+  try {
+    const res = await apiFetch('/api/rsvps/claim', {
+      method: 'POST',
+      body: JSON.stringify({ eventId, token }),
+    });
+    if (res.ok) {
+      const body = await res.json() as { rsvp: { id: string; eventId: string; state: string } };
+      return { ok: true, rsvp: body.rsvp };
+    }
+    if (res.status === 401) return { ok: false, error: 'unauthorized' };
+    if (res.status === 403) return { ok: false, error: 'forbidden' };
+    if (res.status === 404) return { ok: false, error: 'not_found' };
+    if (res.status === 409) {
+      const body = await res.json().catch(() => ({})) as { error?: string };
+      const code = CLAIM_CONFLICTS.find((c) => c === body.error);
+      return { ok: false, error: code ?? 'not_found' };
+    }
+    return { ok: false, error: 'network' };
+  } catch {
+    return { ok: false, error: 'network' };
+  }
+}

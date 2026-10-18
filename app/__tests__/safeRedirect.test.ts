@@ -7,6 +7,7 @@ describe('safeRedirect', () => {
     '/(tabs)/parties',
     '/events/abc?x=1#top',
     '/(tabs)/sponsorship/browse?eventId=1',
+    '/e/abc/claim/def',
   ])('accepts in-app path %s', (p) => {
     expect(safeRedirect(p, FALLBACK)).toBe(p);
   });
