@@ -28,12 +28,15 @@ import { notify } from './notifications';
 import { publicBaseUrl } from './email';
 import { realStripe, verifyStripeSignature } from './stripe';
 import type { StripeClient } from './stripe';
+import { signState, verifyState } from './signed-state';
 
 // The fee itself is computed once and stored on sponsorships.platformFeeCents
 // at bid time (sponsors.ts PLATFORM_FEE_RATE) — payments only ever reads it
 // back to size the transfer, so no rate constant is needed here.
 const CURRENCY = 'usd';
 const PAYABLE_INTENT_STATUSES = new Set(['requires_payment_method', 'requires_confirmation', 'requires_action']);
+const ONBOARD_REFRESH_PURPOSE = 'spotseek-onboard-refresh-v1';
+const ONBOARD_REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
 const RELEASE_DELAY_MS = 24 * 60 * 60 * 1000; // 24h dispute window post-event
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
@@ -104,10 +107,16 @@ paymentsRouter.post('/connect/onboard', requireAuth, async (c) => {
     await db.update(schema.users).set({ stripeAccountId: accountId }).where(eq(schema.users.id, userId));
   }
 
+  // Stripe opens refresh_url in a bare browser (no session), so it carries a
+  // signed, expiring state instead of a bare account id. Fail closed without a key.
+  const authSecret = c.env.BETTER_AUTH_SECRET;
+  if (!authSecret) return c.json({ error: 'server_misconfigured' }, 500);
+  const state = await signState(authSecret, ONBOARD_REFRESH_PURPOSE, { userId, accountId }, ONBOARD_REFRESH_TTL_SECONDS);
+
   const base = publicBaseUrl(c.env);
   const link = await client.createAccountLink(
     accountId,
-    `${base}/payments/onboard/refresh?account=${encodeURIComponent(accountId)}`,
+    `${base}/payments/onboard/refresh?state=${encodeURIComponent(state)}`,
     `${base}/payments/onboard/return`,
   );
   return c.json({ url: link.url });
@@ -504,20 +513,32 @@ function onboardFallbackPage(): string {
 
 onboardPagesRouter.get('/onboard/refresh', async (c) => {
   c.header('Cache-Control', 'no-store');
-  const accountId = c.req.query('account');
   const client = getClient(c.env);
-  if (!accountId || !client) return c.html(onboardFallbackPage());
+  const authSecret = c.env.BETTER_AUTH_SECRET;
+  if (!client || !authSecret) return c.html(onboardFallbackPage());
 
-  // Only regenerate for accounts we created (belongs to a user row).
+  // The link is only valid with a state we signed (see connect/onboard); a bare
+  // ?account= id is never enough to mint an onboarding link.
+  const state = await verifyState<{ userId?: unknown; accountId?: unknown }>(
+    authSecret,
+    ONBOARD_REFRESH_PURPOSE,
+    c.req.query('state'),
+  );
+  if (!state || typeof state.userId !== 'string' || typeof state.accountId !== 'string') {
+    return c.html(onboardFallbackPage());
+  }
+  const { userId, accountId } = state;
+
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
-  const user = await db.query.users.findFirst({ where: eq(schema.users.stripeAccountId, accountId) });
-  if (!user) return c.html(onboardFallbackPage());
+  const user = await db.query.users.findFirst({ where: eq(schema.users.id, userId) });
+  if (!user || user.stripeAccountId !== accountId) return c.html(onboardFallbackPage());
 
   try {
     const base = publicBaseUrl(c.env);
+    const fresh = await signState(authSecret, ONBOARD_REFRESH_PURPOSE, { userId, accountId }, ONBOARD_REFRESH_TTL_SECONDS);
     const link = await client.createAccountLink(
       accountId,
-      `${base}/payments/onboard/refresh?account=${encodeURIComponent(accountId)}`,
+      `${base}/payments/onboard/refresh?state=${encodeURIComponent(fresh)}`,
       `${base}/payments/onboard/return`,
     );
     return c.redirect(link.url, 302);
