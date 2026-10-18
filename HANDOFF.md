@@ -25,6 +25,22 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
 
 ---
 
+## 0a. Update 2026-10-18 — build 43 uploaded
+
+- **Build 43** (security-scan fixes, guest RSVP claim screen, cancel party, i18n) was
+  archived and uploaded to App Store Connect on 2026-10-18. NOT yet added to the
+  "Friends beta" group / submitted for beta review — ask the owner first.
+- **Xcode 27.1 (Swift 6.4) gotcha:** Expo 57.0.26's prebuilt module XCFrameworks were
+  built with Swift 6.3.1 and fail to load ("this SDK is not supported by the compiler",
+  `ExpoModulesJSI`). `EXPO_USE_PRECOMPILED_MODULES=0` does NOT help (ExpoModulesJSI stays
+  prebuilt). Fix was updating to Expo 57.0.30 (`npx expo install expo@~57.0.30` +
+  `npx expo install --fix`), then `npx expo prebuild --platform ios --clean`. After an
+  Xcode update, update Expo to the latest patch before archiving.
+- The upload step (`xcodebuild -exportArchive`) is blocked for agents by the auto-mode
+  classifier; the owner runs it with `!`.
+- Security work, deploy steps and remaining owner decisions: see BLOCKED.md entries
+  dated 2026-10-18.
+
 ## 0. RESUME HERE — status as of 2026-10-15
 
 **Build 42 is submitted for External TestFlight beta review** (state
