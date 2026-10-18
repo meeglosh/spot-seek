@@ -10,7 +10,8 @@ import { lookupVenueTimezone } from './timezone';
 import { promoteFromWaitlist } from './waitlist';
 import { screenEventContent, logModeration, isPublishingPaused, REJECT_MESSAGE } from './moderation/screen';
 import { canViewEvent, isModerationHidden } from './moderation/visibility';
-import { isAdminAuthorized } from './admin';
+import { checkAdminBearer } from './admin';
+import { tooManyRequests } from './ratelimit';
 import { maskPrivateLocation } from './feed';
 
 type AppEnv = { Bindings: Env; Variables: { hostId?: string } };
@@ -124,8 +125,15 @@ eventsRouter.get('/:id', async (c) => {
   if (!event) return c.json({ error: 'Not found' }, 404);
   // Drafts and hidden/removed events 404 for everyone but the host (and admin).
   // Cancelled/completed stay visible so attendees can see that it was called off.
-  if (!canViewEvent(event, c.get('hostId')) && !(await isAdminAuthorized(c.env, c.req.header('Authorization')))) {
-    return c.json({ error: 'Not found' }, 404);
+  if (!canViewEvent(event, c.get('hostId'))) {
+    // Admin bearer check only for callers without a valid user session, so signed-in
+    // users are never rate-limited or counted as admin failures.
+    if (c.get('hostId') || !c.env.ADMIN_SECRET || !c.req.header('Authorization')) {
+      return c.json({ error: 'Not found' }, 404);
+    }
+    const adminCheck = await checkAdminBearer(c.env, c.req);
+    if (adminCheck === 'limited') return tooManyRequests();
+    if (adminCheck === 'denied') return c.json({ error: 'Not found' }, 404);
   }
 
   // Active sponsors for this event, highest bid first.
