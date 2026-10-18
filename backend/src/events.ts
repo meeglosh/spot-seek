@@ -131,7 +131,9 @@ eventsRouter.get('/:id', async (c) => {
     if (c.get('hostId') || !c.env.ADMIN_SECRET || !c.req.header('Authorization')) {
       return c.json({ error: 'Not found' }, 404);
     }
-    const adminCheck = await checkAdminBearer(c.env, c.req);
+    // Rate-limit only, never record a failure: stale user tokens from signed-out apps
+    // land here and must not raise admin alerts.
+    const adminCheck = await checkAdminBearer(c.env, c.req, { recordFailure: false });
     if (adminCheck === 'limited') return tooManyRequests();
     if (adminCheck === 'denied') return c.json({ error: 'Not found' }, 404);
   }

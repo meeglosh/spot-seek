@@ -443,13 +443,16 @@ describe('admin bearer: rate limit and failure tracking', () => {
       expect((await bearer(SECRET, ip, `/api/events/${ev.id}`, e)).status).toBe(200);
       expect(await failureCount()).toBe(0);
 
-      // A bearer that is neither admin nor a valid session is a failure and is limited.
+      // A stale/garbage bearer (neither admin nor a valid session) is limited but never
+      // recorded as an admin failure, so it cannot raise false alerts.
       expect((await bearer('not-a-session-or-admin', freshIp(), `/api/events/${ev.id}`, e)).status).toBe(404);
-      expect(await failureCount()).toBe(1);
+      expect(await failureCount()).toBe(0);
       const lim = freshIp();
       const out: number[] = [];
       for (let i = 0; i < 11; i++) out.push((await bearer('not-a-session-or-admin', lim, `/api/events/${ev.id}`, e)).status);
       expect(out[10]).toBe(429);
+      expect(await failureCount()).toBe(0);
+      expect(alerts()).toHaveLength(0);
     });
   });
 });

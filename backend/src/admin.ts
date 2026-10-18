@@ -37,15 +37,17 @@ export async function isAdminAuthorized(env: Env, authHeader: string | undefined
 // Rate-limited bearer check (same limiter and failure alert as the login page).
 // Call only when an Authorization header is present. 'limited' = over the per-IP
 // limit (checked before the secret so guessing is throttled); 'denied' = wrong
-// secret, recorded as a failure (alert at 5/hour). Successes are not counted.
+// secret, recorded as a failure (alert at 5/hour) unless opts.recordFailure is
+// false. Successes are not counted.
 export async function checkAdminBearer(
   env: Env,
   headers: { header(name: string): string | undefined },
+  opts: { recordFailure?: boolean } = {},
 ): Promise<'ok' | 'denied' | 'limited'> {
   const ip = headers.header('cf-connecting-ip') ?? 'unknown';
   if (!(await allowRequest(env.AUTH_LIMITER, `admin-bearer:${ip}`, AUTH_LIMIT_PER_MIN))) return 'limited';
   if (await isAdminAuthorized(env, headers.header('Authorization'))) return 'ok';
-  await recordAdminLoginFailure(env, ip);
+  if (opts.recordFailure !== false) await recordAdminLoginFailure(env, ip);
   return 'denied';
 }
 
