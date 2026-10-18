@@ -34,15 +34,14 @@ The agents write here instead of guessing. Read this each morning. Empty is good
 - Not covered: promoteFromWaitlist does not skip users the host blocked after they
   joined the waitlist.
 
-## Security scan 2026-10-18 — guest RSVP claim trusts unverified email (F8/F12/F13/F26) — PRODUCT DECISION
-- What it needs: sign-up hands every guest RSVP with a matching email to the new
-  account, and there is no email verification flow, so anyone can sign up with a guest's
-  email and take their RSVPs. Options: (a) claim only through an emailed "claim your
-  RSVPs" link; (b) require email verification at sign-up (auth config change, and uses
-  the 100/day Resend quota). F26: the guest RSVP endpoint reveals whether an email
-  belongs to an account that RSVP'd.
-- Why it is blocked: product behavior + possible auth config change. The block/hidden/
-  ended checks on the claim (F20/F32) and account deletion scope (F7) are fixed separately.
+## Security scan 2026-10-18 — guest RSVP claim (F8/F12/F13/F26) — RESOLVED 2026-10-18
+- Decision (owner): claim with the guest's own emailed token, never by email match.
+- Auto-claim by email removed. New `POST /api/rsvps/claim {eventId, token}`; the guest
+  status page links to `/e/:id/claim/:token` (universal link -> app claim screen; web
+  fallback page otherwise). F26: a claimed email now gets the same 202 as a fresh RSVP.
+- Needs a new App Store build for the app claim screen (ask owner before submitting).
+  Old builds opening the link land on an unknown route.
+- Existing claimed rows were left as they are.
 
 ## Security scan 2026-10-18 — one "hate" report hides any event (F10) — PRODUCT DECISION
 - What it needs: a single report of category hate auto-hides another host's event.
