@@ -10,6 +10,51 @@ The agents write here instead of guessing. Read this each morning. Empty is good
 - Real final error (verbatim, if any): 
 -->
 
+## Security scan 2026-10-18 — F1/F2 Better Auth runs on its default secret (CRITICAL) — OWNER REVIEW
+- What it needs: `createAuth` (backend/src/auth.ts) never passes `secret`, and with
+  compatibility_date 2025-01-01 Worker secrets are not on process.env, so Better Auth
+  signs tokens with its public built-in default. Fix: pass BETTER_AUTH_SECRET explicitly
+  (registered per request like `setAuthBaseURL`) and fail closed if it is missing.
+- Why it is blocked: auth/security config change (hard stop). Owner asked for the
+  security fixes on 2026-10-18; this entry is the required review flag. The fix lives on
+  branch task/sec-auth-secret and is NOT merged until the owner signs off.
+- Owner steps after merge (not done by agents): deploy, rotate BETTER_AUTH_SECRET,
+  revoke all sessions (expect every user to be signed out once).
+
+## Security scan 2026-10-18 — guest RSVP claim trusts unverified email (F8/F12/F13/F26) — PRODUCT DECISION
+- What it needs: sign-up hands every guest RSVP with a matching email to the new
+  account, and there is no email verification flow, so anyone can sign up with a guest's
+  email and take their RSVPs. Options: (a) claim only through an emailed "claim your
+  RSVPs" link; (b) require email verification at sign-up (auth config change, and uses
+  the 100/day Resend quota). F26: the guest RSVP endpoint reveals whether an email
+  belongs to an account that RSVP'd.
+- Why it is blocked: product behavior + possible auth config change. The block/hidden/
+  ended checks on the claim (F20/F32) and account deletion scope (F7) are fixed separately.
+
+## Security scan 2026-10-18 — one "hate" report hides any event (F10) — PRODUCT DECISION
+- What it needs: a single report of category hate auto-hides another host's event.
+  Options: distinct-reporter threshold, account-age/standing weighting, or queue for
+  moderator review only. Check intent first (may be deliberate for App Review UGC rules).
+- Why it is blocked: moderation policy is a product decision.
+
+## Security scan 2026-10-18 — payments/sponsorship findings (F14/F15, F17/F19, F21) — MONEY
+- F14/F15: PATCH /api/sponsors/bids/:id ignores the current status, so either side can
+  reverse the other's accept/reject/cancel, including on paid rows. Needs an explicit
+  state machine.
+- F17/F19: unauthenticated /payments/onboard/refresh mints a Stripe onboarding link for
+  any connected account id. Stripe's refresh_url is opened by a bare browser, so the fix
+  is a signed, expiring state parameter, not a session requirement.
+- F21: deleting an event cascades away paid sponsorships and their records. Likely fix:
+  refuse delete (409) while held/paid sponsorships exist, or soft-delete.
+- Why it is blocked: anything touching money goes to the owner.
+
+## Security scan 2026-10-18 — admin bearer check has no rate limit (F30) — AUTH
+- What it needs: the ADMIN_SECRET bearer check can be guessed without limit, bypassing
+  the login page's rate limit and alerts. Fix: apply the same limiter/alerting to bearer
+  failures.
+- Why it is blocked: admin auth change.
+
+
 ## Session lifetime — RESOLVED 2026-08-06: expiresIn extended to 1 year
 
 - Decision: `session.expiresIn` raised from Better Auth's 7-day default to
