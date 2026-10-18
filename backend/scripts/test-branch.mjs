@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const PROJECT_ID = process.env.NEON_PROJECT_ID ?? 'muddy-hall-40509626';
-const PARENT_BRANCH_ID = process.env.NEON_PARENT_BRANCH_ID ?? 'br-dark-term-att297p4'; // "dev"
+const PARENT_BRANCH_ID = process.env.NEON_PARENT_BRANCH_ID ?? 'br-dark-term-att297p4'; // live branch, named "production" since 2026-10-18
 const API = 'https://console.neon.tech/api/v2';
 const backendDir = dirname(dirname(fileURLToPath(import.meta.url)));
 

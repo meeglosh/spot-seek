@@ -25,23 +25,18 @@ The agents write here instead of guessing. Read this each morning. Empty is good
      out once (this also kills any session forged with the default key).
   3. Recommended: rotate BETTER_AUTH_SECRET and delete existing session/verification rows.
 
-## Security scan 2026-10-18 — follow-ups from the RSVP fixes — OWNER REVIEW
-- F7 behavior change (approved): account deletion no longer deletes unclaimed guest
-  RSVPs that merely match the account email; only rows claimed by the account. Trade-off:
-  a deleted user's genuinely-own unclaimed guest rows keep their email. Revisit with F8.
-- F35 only mitigated: POST recounts after insert and demotes to waitlisted if over
-  capacity; neon-http has no interactive transactions, so it is not strictly atomic.
-- Not covered: promoteFromWaitlist does not skip users the host blocked after they
-  joined the waitlist.
-
-## Security scan 2026-10-18 — guest RSVP claim (F8/F12/F13/F26) — RESOLVED 2026-10-18
-- Decision (owner): claim with the guest's own emailed token, never by email match.
-- Auto-claim by email removed. New `POST /api/rsvps/claim {eventId, token}`; the guest
-  status page links to `/e/:id/claim/:token` (universal link -> app claim screen; web
-  fallback page otherwise). F26: a claimed email now gets the same 202 as a fresh RSVP.
-- Needs a new App Store build for the app claim screen (ask owner before submitting).
-  Old builds opening the link land on an unknown route.
-- Existing claimed rows were left as they are.
+## Security scan 2026-10-18 — follow-ups — RESOLVED 2026-10-18
+- Owner confirmed: F7 trade-off stays; F35 overbooking stays mitigated-only (no Pool
+  transactions); requires_payment rows don't block event delete; a hate-flagged event
+  hides on any 2nd distinct report.
+- Fixed: RSVP/claim/PATCH refuse cancelled events (409 event_cancelled) and other
+  people's drafts (404); waitlist promotion skips host-blocked users; cancelling an event
+  cancels pending bids and open PaymentIntents; admin /verify returns an allowlist;
+  vitest testTimeout 20s.
+- Open (small): sponsors whose payment link is closed by an event cancel get no
+  notification (no sponsorship_cancelled type exists).
+- Neon: live branch br-dark-term renamed "production"; empty br-wispy-band renamed
+  "root-empty" (still the Neon default/primary branch).
 
 ## Security scan 2026-10-18 — F10 hate reports — RESOLVED 2026-10-18
 - Decision (owner): one hate report flags the event (stays live) and emails the admin
@@ -73,23 +68,18 @@ The agents write here instead of guessing. Read this each morning. Empty is good
   notifications) intermittently hit vitest's 5s default timeout; they pass alone in 2-3s
   and on rerun. Consider a higher testTimeout (owner call: it changes a check's config).
 
-## Security scan 2026-10-18 — follow-ups from the RSVP fixes — OWNER REVIEW
-- F7 behavior change (approved): account deletion no longer deletes unclaimed guest
-  RSVPs that merely match the account email; only rows claimed by the account. Trade-off:
-  a deleted user's genuinely-own unclaimed guest rows keep their email. Revisit with F8.
-- F35 only mitigated: POST recounts after insert and demotes to waitlisted if over
-  capacity; neon-http has no interactive transactions, so it is not strictly atomic.
-- Not covered: promoteFromWaitlist does not skip users the host blocked after they
-  joined the waitlist.
-
-## Security scan 2026-10-18 — guest RSVP claim (F8/F12/F13/F26) — RESOLVED 2026-10-18
-- Decision (owner): claim with the guest's own emailed token, never by email match.
-- Auto-claim by email removed. New `POST /api/rsvps/claim {eventId, token}`; the guest
-  status page links to `/e/:id/claim/:token` (universal link -> app claim screen; web
-  fallback page otherwise). F26: a claimed email now gets the same 202 as a fresh RSVP.
-- Needs a new App Store build for the app claim screen (ask owner before submitting).
-  Old builds opening the link land on an unknown route.
-- Existing claimed rows were left as they are.
+## Security scan 2026-10-18 — follow-ups — RESOLVED 2026-10-18
+- Owner confirmed: F7 trade-off stays; F35 overbooking stays mitigated-only (no Pool
+  transactions); requires_payment rows don't block event delete; a hate-flagged event
+  hides on any 2nd distinct report.
+- Fixed: RSVP/claim/PATCH refuse cancelled events (409 event_cancelled) and other
+  people's drafts (404); waitlist promotion skips host-blocked users; cancelling an event
+  cancels pending bids and open PaymentIntents; admin /verify returns an allowlist;
+  vitest testTimeout 20s.
+- Open (small): sponsors whose payment link is closed by an event cancel get no
+  notification (no sponsorship_cancelled type exists).
+- Neon: live branch br-dark-term renamed "production"; empty br-wispy-band renamed
+  "root-empty" (still the Neon default/primary branch).
 
 ## Security scan 2026-10-18 — one "hate" report hides any event (F10) — PRODUCT DECISION
 - What it needs: a single report of category hate auto-hides another host's event.
