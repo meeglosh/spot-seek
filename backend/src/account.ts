@@ -10,7 +10,7 @@
  *     released/refunded) where the user is the sponsor OR the host of the event.
  *  4. Attendee RSVPs: 'going' RSVPs are moved to 'cancelled' and
  *     promoteFromWaitlist runs for each event so freed spots are filled.
- *     Guest RSVPs (guest_rsvps) with the user's email, or claimed by the user,
+ *     Guest RSVPs (guest_rsvps) claimed by the user (never matched by email),
  *     are deleted first (privacy); the events where one was 'going' also get
  *     promotion (promoteFromWaitlist considers guests too).
  *  3b. Unfinished payments (requires_payment, as sponsor or on the user's
@@ -46,7 +46,6 @@ import * as schema from './schema';
 import * as authSchema from './auth-schema';
 import { createAuth } from './auth';
 import { promoteFromWaitlist } from './waitlist';
-import { normalizeEmail } from './guests';
 import { getClient } from './payments';
 import { notify } from './notifications';
 import { ensureDeletedHost, ensureDeletedSponsor } from './deleted-users';
@@ -213,15 +212,13 @@ accountRouter.delete('/', async (c) => {
     isNotNull(schema.sponsorships.transferId),
   );
   const hostedIdsAll = hosted.map((e) => e.id);
-  // Guest RSVPs (web /e/:id RSVPs, guest_rsvps) tied to this person are deleted
-  // for privacy: rows with their email (pending/unclaimed or otherwise) and rows
-  // claimed by their account (claimed_user_id would otherwise be SET NULL by the
-  // FK, leaving a phantom unclaimed 'going' guest that holds a spot and keeps
-  // their email). Spots they held are freed, so those events get promotion too.
-  const guestWhere = or(
-    eq(schema.guestRsvps.email, normalizeEmail(session.user.email)),
-    eq(schema.guestRsvps.claimedUserId, userId),
-  );
+  // Guest RSVPs (web /e/:id RSVPs, guest_rsvps) claimed by this account are
+  // deleted for privacy (claimed_user_id would otherwise be SET NULL by the FK,
+  // leaving a phantom unclaimed 'going' guest that holds a spot and keeps their
+  // email). Rows are matched by owner only, NOT by email: the account email is
+  // unverified, so an email match could erase someone else's confirmed guest
+  // RSVPs. Spots they held are freed, so those events get promotion too.
+  const guestWhere = eq(schema.guestRsvps.claimedUserId, userId);
   const [keptRows, sponsorHistory, goingRows, guestGoing] = await Promise.all([
     hostedIdsAll.length > 0
       ? db
