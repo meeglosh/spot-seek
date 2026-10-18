@@ -538,6 +538,6 @@ const s = StyleSheet.create({
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   paymentBlock: { gap: spacing.sm },
   processingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  noteInput: { minHeight: 80, textAlignVertical: 'top' },
+  noteInput: { minHeight: 80, textAlignVertical: 'top', lineHeight: t.bodyMd.lineHeight },
   testNote: { color: colors.textTertiary },
 });

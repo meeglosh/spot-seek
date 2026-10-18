@@ -302,7 +302,7 @@ const s = StyleSheet.create({
 
   requestForm: { gap: spacing.md, marginTop: spacing.xs },
   field: { gap: 0 },
-  noteInput: { minHeight: 72, textAlignVertical: 'top' },
+  noteInput: { minHeight: 72, textAlignVertical: 'top', lineHeight: t.bodyMd.lineHeight },
   requestActions: { flexDirection: 'row', gap: spacing.sm },
   requestBtn: { flex: 1 },
 });

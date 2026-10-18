@@ -187,7 +187,7 @@ const s = StyleSheet.create({
     borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center',
   },
   radioOn: { backgroundColor: colors.action, borderColor: colors.action },
-  note: { minHeight: 96 },
+  note: { minHeight: 96, lineHeight: t.bodyMd.lineHeight },
   counter: { color: colors.textTertiary, textAlign: 'right', marginTop: spacing.xs },
   sent: { alignItems: 'center', gap: spacing.md, paddingTop: spacing['3xl'] },
   sentIcon: {

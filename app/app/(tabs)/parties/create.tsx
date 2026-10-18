@@ -792,7 +792,7 @@ const s = StyleSheet.create({
 
   field: { gap: 0 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  textArea: { height: 100, paddingTop: spacing.md },
+  textArea: { height: 100, paddingTop: spacing.md, lineHeight: t.bodyMd.lineHeight },
 
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toggleLabels: { flex: 1, paddingRight: spacing.lg, gap: 2 },

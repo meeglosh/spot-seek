@@ -580,8 +580,11 @@ export function FieldLabel({ children, color = colors.textSecondary }: { childre
 
 // Filled well (surface2) with control radius. The 1px edge is transparent at
 // rest and turns action on focus, so focusing never shifts layout.
+// No lineHeight: on iOS it offsets single-line text below centre. Multiline
+// call sites re-add `lineHeight: t.bodyMd.lineHeight` in their own override.
 export const inputStyle = {
-  ...t.bodyMd,
+  fontSize: t.bodyMd.fontSize,
+  fontWeight: t.bodyMd.fontWeight,
   backgroundColor: colors.surface2,
   borderWidth: 1,
   borderColor: 'transparent',
@@ -620,14 +623,19 @@ const s = StyleSheet.create({
   },
   search: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 2,
-    minHeight: TAP + 8, paddingHorizontal: spacing.lg - 4,
+    minHeight: TAP, paddingHorizontal: spacing.lg - 4,
     borderRadius: radius.pill, backgroundColor: colors.surface1,
   },
   searchClear: {
     width: 24, height: 24, borderRadius: radius.round, backgroundColor: colors.surface3,
     alignItems: 'center', justifyContent: 'center',
   },
-  searchInput: { ...t.bodyLg, flex: 1, color: colors.textPrimary, paddingVertical: spacing.sm },
+  // No lineHeight and zero vertical padding: on iOS a lineHeight on a single-line
+  // TextInput pushes the text below centre. The row's alignItems centres it.
+  searchInput: {
+    fontSize: t.bodyLg.fontSize, fontWeight: t.bodyLg.fontWeight, flex: 1, color: colors.textPrimary,
+    alignSelf: 'stretch', paddingVertical: 0, paddingTop: 0, paddingBottom: 0, textAlignVertical: 'center',
+  },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     minHeight: TAP + 16, paddingVertical: spacing.md, paddingHorizontal: spacing.lg - 4,

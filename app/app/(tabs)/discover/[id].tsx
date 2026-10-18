@@ -779,7 +779,7 @@ const s = StyleSheet.create({
     borderRadius: radius.card,
   },
   rateField: { gap: spacing.sm },
-  textArea: { minHeight: 96 },
+  textArea: { minHeight: 96, lineHeight: t.bodyMd.lineHeight },
 
   // Reviews list
   reviewList: { gap: spacing.md },
