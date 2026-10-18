@@ -5,13 +5,14 @@
  * of these endpoints won't break the REST interface.
  */
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { and, eq, asc } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { CHAT_USER_HEADER } from './chat-room';
-import { isModerationHidden } from './moderation/visibility';
+import { canViewEvent } from './moderation/visibility';
 export { ChatRoom } from './chat-room';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
@@ -30,13 +31,20 @@ chatRouter.use('*', async (c, next) => {
   await next();
 });
 
+// One access rule for every chat entry point (REST and WebSocket): the event
+// must exist and be viewable by this user (draft = host only, hidden/removed =
+// host only), the same canViewEvent rule events and the feed use.
+async function findChatEvent(c: Context<AppEnv>, eventId: string) {
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const event = await db.query.events.findFirst({ where: eq(schema.events.id, eventId) });
+  if (!event || !canViewEvent(event, c.get('userId'))) return null;
+  return event;
+}
+
 // GET /api/chat/:eventId — list comments for an event.
 chatRouter.get('/:eventId', async (c) => {
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
-  const event = await db.query.events.findFirst({
-    where: eq(schema.events.id, c.req.param('eventId')),
-  });
-  if (!event || (isModerationHidden(event) && event.hostId !== c.get('userId'))) return c.json({ error: 'Event not found' }, 404);
+  if (!(await findChatEvent(c, c.req.param('eventId')))) return c.json({ error: 'Event not found' }, 404);
 
   const comments = await db.query.comments.findMany({
     where: eq(schema.comments.eventId, c.req.param('eventId')),
@@ -51,10 +59,7 @@ chatRouter.post('/:eventId', async (c) => {
   if (!userId) return c.json({ error: 'Unauthorized' }, 401);
 
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
-  const event = await db.query.events.findFirst({
-    where: eq(schema.events.id, c.req.param('eventId')),
-  });
-  if (!event || (isModerationHidden(event) && event.hostId !== userId)) return c.json({ error: 'Event not found' }, 404);
+  if (!(await findChatEvent(c, c.req.param('eventId')))) return c.json({ error: 'Event not found' }, 404);
 
   const { body } = await c.req.json<{ body?: string }>();
   if (!body?.trim()) return c.json({ error: 'body is required' }, 400);
@@ -76,6 +81,7 @@ chatRouter.get('/:eventId/ws', async (c) => {
   if (!userId) return c.json({ error: 'Unauthorized' }, 401);
 
   const eventId = c.req.param('eventId');
+  if (!(await findChatEvent(c, eventId))) return c.json({ error: 'Event not found' }, 404);
   const id = c.env.CHAT_ROOMS.idFromName(eventId);
   const stub = c.env.CHAT_ROOMS.get(id);
 

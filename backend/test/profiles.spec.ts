@@ -1,4 +1,5 @@
-import { SELF } from 'cloudflare:test';
+import { SELF, env } from 'cloudflare:test';
+import { neon } from '@neondatabase/serverless';
 import { describe, it, expect, beforeAll } from 'vitest';
 
 const AUTH = 'https://example.com/api/auth';
@@ -30,7 +31,34 @@ beforeAll(async () => {
   [alice, bob] = await Promise.all([signIn('alice'), signIn('bob')]);
 });
 
+const PRIVATE_KEYS = ['email', 'lastLat', 'lastLng', 'locationUpdatedAt', 'stripeAccountId', 'stripePayoutsEnabled', 'updatedAt'];
+const PUBLIC_KEYS = ['avatarUrl', 'createdAt', 'displayName', 'id', 'isVerified'];
+
 describe('profiles', () => {
+  it('public profile, followers and following expose only allowlisted fields', async () => {
+    // Dedicated users so the follow graph of alice/bob used below is untouched.
+    const [carol, dave] = await Promise.all([signIn('carol'), signIn('dave')]);
+    // Give carol stored location + Stripe data so a leaking projection would show it.
+    const sql = neon(env.DATABASE_URL);
+    await sql`UPDATE users SET last_lat = 40.7, last_lng = -74.0, location_updated_at = now(),
+              stripe_account_id = 'acct_test_leak', stripe_payouts_enabled = true WHERE id = ${carol.id}`;
+    await SELF.fetch(`${PROFILES}/${dave.id}/follow`, { method: 'POST', headers: { Cookie: carol.cookie } });
+    await SELF.fetch(`${PROFILES}/${carol.id}/follow`, { method: 'POST', headers: { Cookie: dave.cookie } });
+
+    const prof = await (await SELF.fetch(`${PROFILES}/${carol.id}`)).json() as { user: Record<string, unknown> };
+    const frs = await (await SELF.fetch(`${PROFILES}/${dave.id}/followers`)).json() as { followers: Record<string, unknown>[] };
+    const fing = await (await SELF.fetch(`${PROFILES}/${dave.id}/following`)).json() as { following: Record<string, unknown>[] };
+    expect(frs.followers.some((f) => f.id === carol.id)).toBe(true);
+    expect(fing.following.some((f) => f.id === carol.id)).toBe(true);
+
+    const objs = [prof.user, ...frs.followers, ...fing.following];
+    for (const o of objs) {
+      expect(Object.keys(o).sort()).toEqual(PUBLIC_KEYS);
+      for (const k of PRIVATE_KEYS) expect(o).not.toHaveProperty(k);
+    }
+    expect(JSON.stringify(objs)).not.toContain('acct_test_leak');
+  });
+
   it('GET /profiles/:id returns public profile (no email)', async () => {
     const res = await SELF.fetch(`${PROFILES}/${alice.id}`);
     expect(res.status).toBe(200);

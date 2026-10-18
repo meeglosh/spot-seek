@@ -3,7 +3,8 @@
  * compare, RSVP capacity bypass, chat WebSocket auth, private venue on /e/:id,
  * and rate limiting. Timestamp-unique fixtures (shared dev DB).
  */
-import { SELF } from 'cloudflare:test';
+import { SELF, env } from 'cloudflare:test';
+import { neon } from '@neondatabase/serverless';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { isAdminAuthorized } from '../src/admin';
 
@@ -169,6 +170,38 @@ describe('chat WebSocket auth', () => {
     expect(m.userId).not.toBe('victim');
     expect(m.userId).not.toBe('anonymous');
     ws.close();
+  });
+
+  it('refuses the upgrade (404) for hidden/removed events, but not for the host', async () => {
+    const sql = neon(env.DATABASE_URL);
+    for (const status of ['hidden', 'removed']) {
+      const event = await createEvent(host);
+      await sql`UPDATE events SET moderation_status = ${status} WHERE id = ${event.id}`;
+      const res = await SELF.fetch(`${CHAT}/${event.id}/ws`, { headers: { Upgrade: 'websocket', Cookie: a1 } });
+      expect(res.status).toBe(404);
+      const hostRes = await SELF.fetch(`${CHAT}/${event.id}/ws`, { headers: { Upgrade: 'websocket', Cookie: host } });
+      expect(hostRes.status).toBe(101);
+      hostRes.webSocket!.accept();
+      hostRes.webSocket!.close();
+    }
+  });
+
+  it('draft events: non-host refused on REST and WS (404), host allowed', async () => {
+    const event = await createEvent(host, { status: 'draft' });
+    const post = (cookie: string) => SELF.fetch(`${CHAT}/${event.id}`, {
+      method: 'POST', headers: { ...json, Cookie: cookie }, body: JSON.stringify({ body: 'hi' }),
+    });
+    expect((await SELF.fetch(`${CHAT}/${event.id}`)).status).toBe(404);
+    expect((await SELF.fetch(`${CHAT}/${event.id}`, { headers: { Cookie: a1 } })).status).toBe(404);
+    expect((await post(a1)).status).toBe(404);
+    expect((await SELF.fetch(`${CHAT}/${event.id}/ws`, { headers: { Upgrade: 'websocket', Cookie: a1 } })).status).toBe(404);
+
+    expect((await SELF.fetch(`${CHAT}/${event.id}`, { headers: { Cookie: host } })).status).toBe(200);
+    expect((await post(host)).status).toBe(201);
+    const ws = await SELF.fetch(`${CHAT}/${event.id}/ws`, { headers: { Upgrade: 'websocket', Cookie: host } });
+    expect(ws.status).toBe(101);
+    ws.webSocket!.accept();
+    ws.webSocket!.close();
   });
 
   it('chat write routes require auth (POST and DELETE -> 401)', async () => {
