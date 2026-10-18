@@ -8,7 +8,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppHeader } from '../../../components/AppHeader';
 import { colors, radius, spacing, type as t } from '../../../lib/theme';
-import { Btn, Chip, Badge, FieldLabel, RowSkeleton, EmptyState, ErrorState, inputStyle } from '../../../components/ui';
+import { Btn, Chip, Badge, FieldLabel, SearchField, RowSkeleton, EmptyState, ErrorState, inputStyle } from '../../../components/ui';
 import { GuestGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 import {
@@ -138,17 +138,16 @@ export default function BrowseSponsorsScreen() {
         contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing['2xl'] }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('findSponsors.title')}</Text>
+        <Text style={[t.displayXl, { color: colors.textPrimary }]}>{tr('findSponsors.title')}</Text>
         <Text style={[t.bodyMd, s.subtitle]} numberOfLines={1}>
           {event ? tr('findSponsors.forEvent', { title: event.title }) : trCommon('loading')}
         </Text>
 
         {!loading && !error && sponsors.length > 0 && (
           <>
-            <TextInput
-              style={[inputStyle, s.searchInput]}
+            <SearchField
+              style={s.searchInput}
               placeholder={tr('findSponsors.searchPlaceholder')}
-              placeholderTextColor={colors.textTertiary}
               value={query}
               onChangeText={setQuery}
               autoCapitalize="none"

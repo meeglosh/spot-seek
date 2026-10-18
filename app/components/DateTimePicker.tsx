@@ -5,7 +5,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Text } from './Text';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
-import { colors, radius, spacing, TAP, elevation, type as t } from '../lib/theme';
+import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { Press } from './ui';
 import { Icon } from './icons';
 
@@ -65,7 +65,7 @@ export function DateTimePicker({ value, onChange, placeholder, minimumDate }: Pr
 
   return (
     <>
-      {/* Underline trigger — action-coloured bottom border while the picker is open */}
+      {/* Field well — focus ring in action colour while the picker is open */}
       <Press
         style={[s.trigger, showPicker && { borderColor: colors.action }]}
         onPress={openPicker}
@@ -148,7 +148,7 @@ const s = StyleSheet.create({
 
   backdrop: { flex: 1, backgroundColor: colors.scrim },
   sheet: {
-    ...elevation(3),
+    backgroundColor: colors.surface1,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     paddingBottom: spacing['3xl'],

@@ -172,7 +172,7 @@ export default function CommandCenterScreen() {
         >
           {/* Header: headline + stat tiles */}
           <View style={s.headerBlock}>
-            <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('dashboard.commandCenter')}</Text>
+            <Text style={[t.displayXl, { color: colors.textPrimary }]}>{tr('dashboard.commandCenter')}</Text>
 
             {showPayoutBanner && (
               <Press style={s.payoutBanner} onPress={() => router.push('/settings' as never)} accessibilityRole="button">
@@ -353,21 +353,17 @@ const s = StyleSheet.create({
 
   headerBlock: {
     gap: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.md,
   },
   payoutBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.action,
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.actionWash,
     padding: spacing.md,
     marginTop: spacing.md,
-    borderRadius: radius.control,
+    borderRadius: radius.card,
   },
   payoutBannerText: { color: colors.textPrimary, flex: 1 },
   statTiles: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
@@ -385,7 +381,7 @@ const s = StyleSheet.create({
     gap: spacing.md,
     marginTop: spacing.md,
   },
-  dimSectionTitle: { color: colors.textSecondary, marginTop: spacing.xl },
+  dimSectionTitle: { color: colors.textPrimary, marginTop: spacing.xl },
   emptyLine: { color: colors.textTertiary },
   emptyActive: { backgroundColor: colors.surface1, borderRadius: radius.card },
 
@@ -399,12 +395,13 @@ const s = StyleSheet.create({
   activeCover: {
     width: '100%',
     height: 128,
+    borderRadius: radius.control,
   },
   rsvpRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.borderSubtle,
     paddingBottom: spacing.sm,
   },
@@ -435,7 +432,6 @@ const s = StyleSheet.create({
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: spacing.lg, paddingTop: spacing.md,
     backgroundColor: colors.canvas,
-    borderTopWidth: 1, borderTopColor: colors.borderSubtle,
   },
   footerBtn: { width: '100%' },
 });

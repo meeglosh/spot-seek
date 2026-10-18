@@ -762,8 +762,6 @@ const s = StyleSheet.create({
   problemActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
   guidelinesLinkBtn: { minHeight: TAP, justifyContent: 'center' },
   errorBanner: {
-    borderWidth: 1,
-    borderColor: colors.danger,
     backgroundColor: colors.dangerWash,
     padding: spacing.md,
     borderRadius: radius.control,
@@ -802,15 +800,13 @@ const s = StyleSheet.create({
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   toggleLabels: { flex: 1, paddingRight: spacing.lg, gap: 2 },
   venueFields: {
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.borderSubtle,
     paddingTop: spacing.lg,
     gap: spacing.lg,
   },
   mapPreviewWrap: {
     height: 150,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
     overflow: 'hidden',
     borderRadius: radius.control,
   },
@@ -828,8 +824,7 @@ const s = StyleSheet.create({
   successGlyphBox: {
     width: 72,
     height: 72,
-    borderWidth: 1,
-    borderColor: colors.confirmed,
+    backgroundColor: colors.confirmedWash,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xl,
@@ -846,8 +841,7 @@ const s = StyleSheet.create({
     marginTop: spacing.sm,
   },
   successWarn: {
-    borderWidth: 1,
-    borderColor: colors.live,
+    backgroundColor: colors.liveWash,
     padding: spacing.md,
     gap: spacing.xs,
     marginTop: spacing.xl,
@@ -875,8 +869,6 @@ const s = StyleSheet.create({
   privacyTileSub: { color: colors.textSecondary, textAlign: 'center' },
 
   confirmBox: {
-    borderWidth: 1,
-    borderColor: colors.danger,
     backgroundColor: colors.dangerWash,
     padding: spacing.lg,
     gap: spacing.md,
