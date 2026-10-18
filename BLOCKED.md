@@ -43,6 +43,54 @@ The agents write here instead of guessing. Read this each morning. Empty is good
   Old builds opening the link land on an unknown route.
 - Existing claimed rows were left as they are.
 
+## Security scan 2026-10-18 — F10 hate reports — RESOLVED 2026-10-18
+- Decision (owner): one hate report flags the event (stays live) and emails the admin
+  once; it hides when a 2nd distinct reporter files hate (`two_hate_reporters`).
+  `flagged_plus_report` and `three_reporters` unchanged, so a hate-flagged event also
+  hides on any 2nd distinct report. Guidelines copy updated.
+
+## Security scan 2026-10-18 — payments/sponsorship (F14/F15, F17/F19, F21) — RESOLVED 2026-10-18
+- F14/F15: explicit transition table in sponsors.ts. rejected/cancelled/released/refunded
+  are terminal. Host reject/cancel of a PAID sponsorship before start = full refund
+  (owner decision); after start = 403 cancel_event_instead. Webhook marks paid only for
+  active+requires_payment and auto-refunds payments landing on cancelled/rejected rows;
+  the sweep never releases a non-active row (refunds it instead).
+- F17/F19: onboarding refresh_url carries a signed 7-day state (userId+accountId, key
+  derived from BETTER_AUTH_SECRET); bare ?account= links show the restart page.
+- F21 (owner decision): event delete returns 409 has_sponsorship_history when money
+  history exists; otherwise open PaymentIntents are cancelled first. Agent judgement,
+  owner to confirm: `requires_payment` rows (PI open, no money moved) do NOT count as
+  history, so the PI is cancelled and the delete proceeds.
+- The app has no "cancel event" action, so the delete error only explains; consider adding one.
+
+## Security scan 2026-10-18 — admin bearer rate limit (F30) — RESOLVED 2026-10-18
+- Bearer checks are rate limited per IP on AUTH_LIMITER and failures feed the existing
+  5/hour admin alert. GET /api/events/:id rate-limits but does not record failures
+  (stale app tokens would cause false alerts).
+
+## Test-suite flakiness (observed 2026-10-18)
+- Under full-suite load some Neon-backed specs (reviews, waitlist, payments, account,
+  notifications) intermittently hit vitest's 5s default timeout; they pass alone in 2-3s
+  and on rerun. Consider a higher testTimeout (owner call: it changes a check's config).
+
+## Security scan 2026-10-18 — follow-ups from the RSVP fixes — OWNER REVIEW
+- F7 behavior change (approved): account deletion no longer deletes unclaimed guest
+  RSVPs that merely match the account email; only rows claimed by the account. Trade-off:
+  a deleted user's genuinely-own unclaimed guest rows keep their email. Revisit with F8.
+- F35 only mitigated: POST recounts after insert and demotes to waitlisted if over
+  capacity; neon-http has no interactive transactions, so it is not strictly atomic.
+- Not covered: promoteFromWaitlist does not skip users the host blocked after they
+  joined the waitlist.
+
+## Security scan 2026-10-18 — guest RSVP claim (F8/F12/F13/F26) — RESOLVED 2026-10-18
+- Decision (owner): claim with the guest's own emailed token, never by email match.
+- Auto-claim by email removed. New `POST /api/rsvps/claim {eventId, token}`; the guest
+  status page links to `/e/:id/claim/:token` (universal link -> app claim screen; web
+  fallback page otherwise). F26: a claimed email now gets the same 202 as a fresh RSVP.
+- Needs a new App Store build for the app claim screen (ask owner before submitting).
+  Old builds opening the link land on an unknown route.
+- Existing claimed rows were left as they are.
+
 ## Security scan 2026-10-18 — one "hate" report hides any event (F10) — PRODUCT DECISION
 - What it needs: a single report of category hate auto-hides another host's event.
   Options: distinct-reporter threshold, account-age/standing weighting, or queue for
