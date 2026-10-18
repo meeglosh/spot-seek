@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
+import { safeRedirect } from '../../lib/safeRedirect';
 import { getOnboardingSeen } from '../../lib/api';
 import { colors, fonts, spacing, type as t } from '../../lib/theme';
 import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
@@ -15,7 +16,7 @@ export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
   const { signUp } = useAuth();
   const { redirect, context } = useLocalSearchParams<{ redirect?: string; context?: string }>();
-  const target = typeof redirect === 'string' && redirect.startsWith('/') ? redirect : '/(tabs)/discover';
+  const target = safeRedirect(redirect, '/(tabs)/discover');
   // Scoped to the 'auth' namespace — tr()/t() calls below read
   // locales/<lang>/auth.json. Aliased to `tr` because this file already
   // uses `t` for theme.type tokens imported from ../../lib/theme. See

@@ -84,3 +84,19 @@ export async function shouldPromptForPush(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Sign-out: unregister this device's token from the signed-in account so its
+ * pushes stop reaching a device the person has left. Best-effort — a network
+ * failure must not block sign-out. `bearer` is the session token captured before it is cleared.
+ */
+export async function unregisterPushOnSignOut(bearer: string | null): Promise<void> {
+  try {
+    const token = await SecureStore.getItemAsync(TOKEN_KEY);
+    if (!token) return;
+    await deletePushToken(token, bearer);
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+  } catch (err) {
+    console.error('[push] sign-out unregister failed:', err);
+  }
+}

@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
-  API_BASE, apiFetch, setBearerToken, clearBearerToken, restoreBearerToken,
+  API_BASE, setBearerToken, clearBearerToken, restoreBearerToken, getBearerToken,
   setStoredUser, clearStoredUser, getStoredUser,
 } from './api';
 import { syncGuestInterests } from './guestState';
+import { signOutRemote } from './signOutRemote';
 
 export type AuthUser = {
   id: string;
@@ -172,7 +173,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   function signOut() {
-    apiFetch('/api/auth/sign-out', { method: 'POST' });
+    // Local sign-out is immediate. The server half unregisters this device's
+    // push token and then revokes the session, using the bearer captured now.
+    void signOutRemote(getBearerToken());
     clearBearerToken();
     clearStoredUser();
     setState({ status: 'unauthenticated' });
