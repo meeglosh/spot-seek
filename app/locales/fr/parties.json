@@ -169,6 +169,7 @@
     },
     "saveError": "Impossible d'enregistrer la soirée. Vérifiez votre connexion et réessayez.",
     "deleteError": "Impossible de supprimer la soirée. Réessayez.",
+    "deleteHasSponsorship": "Cette soirée a des paiements de sponsoring. Annulez-la plutôt.",
     "share": {
       "whenWithTime": "{{date}} à {{time}}"
     },

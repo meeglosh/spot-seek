@@ -18,6 +18,7 @@ import { neon } from '@neondatabase/serverless';
 import { createHmac } from 'node:crypto';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { __setTestStripeConfig } from '../src/payments';
+import { signState } from '../src/signed-state';
 
 const AUTH = 'https://example.com/api/auth';
 const EVENTS = 'https://example.com/api/events';
@@ -259,7 +260,9 @@ describe('configured mode', () => {
     expect(linkReq!.body.use_case.type).toBe('account_onboarding');
     // `configurations` is response-only on v2 account links; sending it is a 400.
     expect(linkReq!.body.use_case.account_onboarding.configurations).toBeUndefined();
-    expect(linkReq!.body.use_case.account_onboarding.refresh_url).toMatch(/\/payments\/onboard\/refresh\?account=acct_shape_1$/);
+    const refreshUrl = linkReq!.body.use_case.account_onboarding.refresh_url as string;
+    expect(refreshUrl).toMatch(/\/payments\/onboard\/refresh\?state=[A-Za-z0-9_.%-]+$/);
+    expect(refreshUrl).not.toContain('account=');
     expect(linkReq!.body.use_case.account_onboarding.return_url).toMatch(/\/payments\/onboard\/return$/);
   });
 
@@ -754,22 +757,105 @@ describe('onboarding return/refresh pages', () => {
       __setTestStripeConfig({ secretKey: STRIPE_SECRET_KEY, webhookSecret: STRIPE_WEBHOOK_SECRET });
     });
 
-    it('302s to a fresh account link for a known account', async () => {
-      const host = await signIn('onboard-refresh');
-      mockStripe('/v2/core/accounts', { id: 'acct_refresh_1' });
-      mockStripe('/v2/core/account_links', { url: 'https://connect.stripe.com/setup/first' });
+    // Earlier tests leave unconsumed Stripe interceptors queued (FIFO), which
+    // would answer these tests' calls instead of their own. Drain them first.
+    beforeAll(async () => {
+      for (const p of fetchMock.pendingInterceptors()) {
+        if (p.origin === 'https://api.stripe.com') {
+          await fetch(`${p.origin}${p.path}`, { method: p.method }).catch(() => {});
+        }
+      }
+    });
+
+    const REFRESH_PURPOSE = 'spotseek-onboard-refresh-v1';
+    const WEEK_S = 7 * 24 * 60 * 60;
+
+    // Onboards a fresh host and returns the signed `state` from the refresh_url
+    // handed to Stripe, plus the host's id.
+    async function onboardHost(suffix: string, accountId: string) {
+      const host = await signIn(suffix);
+      let accountLinkBody: Record<string, any> | null = null;
+      mockStripe('/v2/core/accounts', { id: accountId });
+      fetchMock.get('https://api.stripe.com').intercept({ path: '/v2/core/account_links', method: 'POST' }).reply(200, (opts) => {
+        accountLinkBody = JSON.parse(String(opts.body));
+        return { url: 'https://connect.stripe.com/setup/first' };
+      });
       await SELF.fetch(`${PAYMENTS}/connect/onboard`, { method: 'POST', headers: { Cookie: host.cookie } });
+      const refreshUrl = new URL(accountLinkBody!.use_case.account_onboarding.refresh_url);
+      expect(refreshUrl.searchParams.get('account')).toBeNull();
+      return { host, state: refreshUrl.searchParams.get('state')! };
+    }
+
+    // Asserts the fallback page was served and Stripe was never called. The
+    // armed interceptor is drained afterwards so it can't leak into later tests.
+    async function expectFallbackNoStripe(query: string) {
+      let called = false;
+      fetchMock.get('https://api.stripe.com').intercept({ path: '/v2/core/account_links', method: 'POST' }).reply(200, () => {
+        called = true;
+        return { url: 'https://connect.stripe.com/setup/should-not-happen' };
+      });
+      const res = await SELF.fetch(`${PAGES}/refresh${query}`, { redirect: 'manual' });
+      const html = await res.text();
+      const calledDuringRequest = called;
+      await fetch('https://api.stripe.com/v2/core/account_links', { method: 'POST' });
+      expect(res.status).toBe(200);
+      expect(html).toContain('Set up payouts');
+      expect(calledDuringRequest).toBe(false);
+    }
+
+    it('connect/onboard hands Stripe a refresh_url with a signed state and no account id', async () => {
+      const { state } = await onboardHost('onboard-refresh-url', 'acct_refresh_url');
+      expect(state).toMatch(/^\d+\.[A-Za-z0-9_-]+\.[0-9a-f]{64}$/);
+    });
+
+    it('302s to a fresh account link for a valid state', async () => {
+      const { state } = await onboardHost('onboard-refresh', 'acct_refresh_1');
 
       let linkBody: Record<string, any> | null = null;
       fetchMock.get('https://api.stripe.com').intercept({ path: '/v2/core/account_links', method: 'POST' }).reply(200, (opts) => {
         linkBody = JSON.parse(String(opts.body));
         return { url: 'https://connect.stripe.com/setup/fresh' };
       });
-      const res = await SELF.fetch(`${PAGES}/refresh?account=acct_refresh_1`, { redirect: 'manual' });
+      const res = await SELF.fetch(`${PAGES}/refresh?state=${encodeURIComponent(state)}`, { redirect: 'manual' });
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toBe('https://connect.stripe.com/setup/fresh');
       expect(linkBody!.account).toBe('acct_refresh_1');
-      expect(linkBody!.use_case.account_onboarding.refresh_url).toMatch(/\/payments\/onboard\/refresh\?account=acct_refresh_1$/);
+      const next = linkBody!.use_case.account_onboarding.refresh_url as string;
+      expect(next).toMatch(/\/payments\/onboard\/refresh\?state=/);
+      expect(next).not.toContain('account=');
+    });
+
+    it('fallback page for the old ?account= form alone (no Stripe call)', async () => {
+      await onboardHost('onboard-refresh-legacy', 'acct_refresh_legacy');
+      await expectFallbackNoStripe('?account=acct_refresh_legacy');
+    });
+
+    it('fallback page for a tampered state (no Stripe call)', async () => {
+      const { state } = await onboardHost('onboard-refresh-tamper', 'acct_refresh_tamper');
+      const [exp, body, sig] = state.split('.');
+      const forged = Buffer.from(JSON.stringify({ userId: 'someone-else', accountId: 'acct_victim' })).toString('base64url');
+      await expectFallbackNoStripe(`?state=${exp}.${forged}.${sig}`);
+      await expectFallbackNoStripe(`?state=${exp}.${body}.${'0'.repeat(64)}`);
+      await expectFallbackNoStripe('?state=garbage');
+    });
+
+    it('fallback page for an expired state (no Stripe call)', async () => {
+      const { host } = await onboardHost('onboard-refresh-expired', 'acct_refresh_expired');
+      const expired = await signState(env.BETTER_AUTH_SECRET!, REFRESH_PURPOSE, { userId: host.id, accountId: 'acct_refresh_expired' }, WEEK_S, Date.now() - 8 * 24 * 60 * 60 * 1000);
+      await expectFallbackNoStripe(`?state=${encodeURIComponent(expired)}`);
+    });
+
+    it('fallback page when the user stripeAccountId changed since signing (no Stripe call)', async () => {
+      const { host, state } = await onboardHost('onboard-refresh-changed', 'acct_refresh_changed');
+      const sql = neon(env.DATABASE_URL);
+      await sql`UPDATE users SET stripe_account_id = ${'acct_refresh_other_' + TS} WHERE id = ${host.id}`;
+      await expectFallbackNoStripe(`?state=${encodeURIComponent(state)}`);
+    });
+
+    it('fallback page for a state signed with a different purpose (no Stripe call)', async () => {
+      const { host } = await onboardHost('onboard-refresh-purpose', 'acct_refresh_purpose');
+      const wrong = await signState(env.BETTER_AUTH_SECRET!, 'some-other-purpose-v1', { userId: host.id, accountId: 'acct_refresh_purpose' }, WEEK_S);
+      await expectFallbackNoStripe(`?state=${encodeURIComponent(wrong)}`);
     });
 
     it('shows the fallback page for an unknown account (and does not call Stripe)', async () => {

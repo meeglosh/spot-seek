@@ -46,7 +46,7 @@ import * as schema from './schema';
 import * as authSchema from './auth-schema';
 import { createAuth } from './auth';
 import { promoteFromWaitlist } from './waitlist';
-import { getClient } from './payments';
+import { getClient, cancelOpenPaymentIntent } from './payments';
 import { notify } from './notifications';
 import { ensureDeletedHost, ensureDeletedSponsor } from './deleted-users';
 
@@ -156,18 +156,16 @@ accountRouter.delete('/', async (c) => {
     const stripe = getClient(c.env);
     const inFlight: typeof unfinished = [];
     for (const row of unfinished) {
-      if (stripe && row.paymentIntentId) {
-        let status: string;
-        try {
-          status = (await stripe.cancelPaymentIntent(row.paymentIntentId)).status;
-        } catch (err) {
-          console.error('[account] PaymentIntent cancel failed:', err);
-          return c.json({ error: 'payment_cancel_failed', sponsorshipId: row.id }, 502);
-        }
-        if (status !== 'canceled') {
-          inFlight.push(row);
-          continue;
-        }
+      let outcome: 'cancelled' | 'in_flight';
+      try {
+        outcome = await cancelOpenPaymentIntent(stripe, row.paymentIntentId);
+      } catch (err) {
+        console.error('[account] PaymentIntent cancel failed:', err);
+        return c.json({ error: 'payment_cancel_failed', sponsorshipId: row.id }, 502);
+      }
+      if (outcome === 'in_flight') {
+        inFlight.push(row);
+        continue;
       }
       await db
         .update(schema.sponsorships)

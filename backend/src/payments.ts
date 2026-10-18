@@ -28,12 +28,15 @@ import { notify } from './notifications';
 import { publicBaseUrl } from './email';
 import { realStripe, verifyStripeSignature } from './stripe';
 import type { StripeClient } from './stripe';
+import { signState, verifyState } from './signed-state';
 
 // The fee itself is computed once and stored on sponsorships.platformFeeCents
 // at bid time (sponsors.ts PLATFORM_FEE_RATE) — payments only ever reads it
 // back to size the transfer, so no rate constant is needed here.
 const CURRENCY = 'usd';
 const PAYABLE_INTENT_STATUSES = new Set(['requires_payment_method', 'requires_confirmation', 'requires_action']);
+const ONBOARD_REFRESH_PURPOSE = 'spotseek-onboard-refresh-v1';
+const ONBOARD_REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
 const RELEASE_DELAY_MS = 24 * 60 * 60 * 1000; // 24h dispute window post-event
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
@@ -65,6 +68,44 @@ export function getClient(env: Env): StripeClient | null {
 // can no longer withdraw.
 export function sponsorRefundWindowClosed(event: { startsAt: Date | null }, now = Date.now()): boolean {
   return event.startsAt != null && event.startsAt.getTime() <= now;
+}
+
+// Shared PaymentIntent cancel (account deletion, sponsorship cancel/reject,
+// event delete). Returns 'in_flight' when Stripe says the PI is NOT cancelled
+// (succeeded / processing: money is moving, the caller must refuse with a 409).
+// With no client (unconfigured) or no PI there is nothing to cancel. A Stripe
+// failure other than an already-settled PI throws; callers map it to 502.
+export async function cancelOpenPaymentIntent(
+  client: StripeClient | null,
+  paymentIntentId: string | null | undefined,
+): Promise<'cancelled' | 'in_flight'> {
+  if (!client || !paymentIntentId) return 'cancelled';
+  const { status } = await client.cancelPaymentIntent(paymentIntentId);
+  return status === 'canceled' ? 'cancelled' : 'in_flight';
+}
+
+// Shared full refund of a sponsorship's PaymentIntent (sponsor withdrawal, host
+// cancel before start, event-cancel/non-active sweep, late webhook on a dead
+// row). Refunds at Stripe first, then moves the row to paymentStatus 'refunded'
+// only while it is still in `expectPaymentStatus`. `extra` rides along on the
+// same UPDATE. Throws if the refund fails (nothing is changed). Returns the
+// updated row, or null if the row had moved on in the meantime.
+export async function refundSponsorshipPayment(
+  db: Db,
+  client: StripeClient,
+  sponsorship: { id: string; paymentIntentId: string | null },
+  expectPaymentStatus: string,
+  paymentIntentId: string | null = sponsorship.paymentIntentId,
+  extra: Partial<typeof schema.sponsorships.$inferInsert> = {},
+): Promise<typeof schema.sponsorships.$inferSelect | null> {
+  if (!paymentIntentId) throw new Error(`no payment intent to refund for sponsorship ${sponsorship.id}`);
+  await client.createRefund({ paymentIntentId });
+  const [updated] = await db
+    .update(schema.sponsorships)
+    .set({ ...extra, paymentStatus: 'refunded' })
+    .where(and(eq(schema.sponsorships.id, sponsorship.id), eq(schema.sponsorships.paymentStatus, expectPaymentStatus)))
+    .returning();
+  return updated ?? null;
 }
 
 function fmtUsd(cents: number): string {
@@ -104,10 +145,16 @@ paymentsRouter.post('/connect/onboard', requireAuth, async (c) => {
     await db.update(schema.users).set({ stripeAccountId: accountId }).where(eq(schema.users.id, userId));
   }
 
+  // Stripe opens refresh_url in a bare browser (no session), so it carries a
+  // signed, expiring state instead of a bare account id. Fail closed without a key.
+  const authSecret = c.env.BETTER_AUTH_SECRET;
+  if (!authSecret) return c.json({ error: 'server_misconfigured' }, 500);
+  const state = await signState(authSecret, ONBOARD_REFRESH_PURPOSE, { userId, accountId }, ONBOARD_REFRESH_TTL_SECONDS);
+
   const base = publicBaseUrl(c.env);
   const link = await client.createAccountLink(
     accountId,
-    `${base}/payments/onboard/refresh?account=${encodeURIComponent(accountId)}`,
+    `${base}/payments/onboard/refresh?state=${encodeURIComponent(state)}`,
     `${base}/payments/onboard/return`,
   );
   return c.json({ url: link.url });
@@ -224,7 +271,7 @@ paymentsRouter.post('/webhook', async (c) => {
   // v2 thin notifications (primary; no payload, re-fetch the account) and the
   // v1 snapshot `account.updated` (backup; also re-fetched when we can).
   if (event.type === 'payment_intent.succeeded') {
-    if (!event.account && event.data) await handlePaymentIntentSucceeded(db, c.env.RESEND_API_KEY, event.data.object);
+    if (!event.account && event.data) await handlePaymentIntentSucceeded(db, getClient(c.env), c.env.RESEND_API_KEY, event.data.object);
   } else if (event.type === 'account.updated') {
     await handleAccountUpdated(db, getClient(c.env), event.data?.object ?? {}, event.account);
   } else if (V2_ACCOUNT_REFRESH_EVENTS.has(event.type)) {
@@ -237,6 +284,7 @@ paymentsRouter.post('/webhook', async (c) => {
 
 async function handlePaymentIntentSucceeded(
   db: Db,
+  client: StripeClient | null,
   resendApiKey: string | undefined,
   object: Record<string, unknown>,
 ): Promise<void> {
@@ -247,13 +295,64 @@ async function handlePaymentIntentSucceeded(
   const sponsorship = await db.query.sponsorships.findFirst({
     where: eq(schema.sponsorships.id, sponsorshipId),
   });
-  if (!sponsorship || sponsorship.paymentStatus === 'paid') return; // idempotent on webhook redelivery
+  if (!sponsorship) {
+    // Money was taken for a sponsorship we cannot find. Do not throw (Stripe
+    // would retry forever); log loudly so it is reconciled by hand.
+    console.error(
+      '[payments] payment_intent.succeeded for MISSING sponsorship',
+      sponsorshipId,
+      'payment intent',
+      object.id,
+    );
+    return;
+  }
+  if (['paid', 'released', 'refunded'].includes(sponsorship.paymentStatus)) return; // idempotent on webhook redelivery
+
+  if (sponsorship.status !== 'active' || sponsorship.paymentStatus !== 'requires_payment') {
+    // Payment landed on a row that can no longer take it (cancelled / rejected
+    // while the sponsor was paying). Refund automatically, never mark paid.
+    const intentId = (object.id as string | undefined) ?? sponsorship.paymentIntentId;
+    if (sponsorship.status === 'cancelled' || sponsorship.status === 'rejected') {
+      if (!client || !intentId) {
+        console.error('[payments] payment succeeded on', sponsorship.status, 'sponsorship', sponsorship.id, 'but it cannot be auto-refunded (no Stripe client or payment intent)');
+        return;
+      }
+      try {
+        const refunded = await refundSponsorshipPayment(db, client, sponsorship, sponsorship.paymentStatus, intentId);
+        if (!refunded) return;
+      } catch (err) {
+        console.error('[payments] auto-refund failed for', sponsorship.status, 'sponsorship', sponsorship.id, err);
+        throw err; // 5xx so Stripe redelivers: this is the sponsor's money
+      }
+      const dead = await db.query.events.findFirst({ where: eq(schema.events.id, sponsorship.eventId) });
+      await notify(db, resendApiKey, {
+        userId: sponsorship.sponsorId,
+        type: 'payment_refunded',
+        title: `Refund issued${dead ? ` for "${dead.title}"` : ''}`,
+        body: `Your ${fmtUsd(sponsorship.amountCents)} payment arrived after the sponsorship was ${sponsorship.status}, so it was refunded in full.`,
+        eventId: sponsorship.eventId,
+      }).catch((err) => console.error('[payments] payment_refunded notify failed:', err));
+      return;
+    }
+    console.error('[payments] payment succeeded for sponsorship', sponsorship.id, 'in unexpected state', sponsorship.status, sponsorship.paymentStatus);
+    return;
+  }
 
   const [updated] = await db
     .update(schema.sponsorships)
     .set({ paymentStatus: 'paid', paidAt: new Date() })
-    .where(eq(schema.sponsorships.id, sponsorshipId))
+    .where(
+      and(
+        eq(schema.sponsorships.id, sponsorshipId),
+        eq(schema.sponsorships.status, 'active'),
+        eq(schema.sponsorships.paymentStatus, 'requires_payment'),
+      ),
+    )
     .returning();
+  if (!updated) {
+    console.error('[payments] sponsorship', sponsorshipId, 'changed state while its payment was being recorded');
+    return;
+  }
 
   const event = await db.query.events.findFirst({ where: eq(schema.events.id, updated.eventId) });
   if (!event) return;
@@ -384,19 +483,20 @@ export async function runPaymentSweeps(
     const event = eventById.get(sponsorship.eventId);
     if (!event) continue;
 
-    if (event.status === 'cancelled') {
+    // Paid money must never be released from a row that is not 'active'
+    // (cancelled / rejected / pending): refund it, same as a cancelled event.
+    if (event.status === 'cancelled' || sponsorship.status !== 'active') {
       if (!sponsorship.paymentIntentId) continue;
       try {
-        await client.createRefund({ paymentIntentId: sponsorship.paymentIntentId });
-        await db
-          .update(schema.sponsorships)
-          .set({ paymentStatus: 'refunded' })
-          .where(and(eq(schema.sponsorships.id, sponsorship.id), eq(schema.sponsorships.paymentStatus, 'paid')));
+        const done = await refundSponsorshipPayment(db, client, sponsorship, 'paid');
+        if (!done) continue;
         await notify(db, env.RESEND_API_KEY, {
           userId: sponsorship.sponsorId,
           type: 'payment_refunded',
           title: `Refund issued for "${event.title}"`,
-          body: `Your ${fmtUsd(sponsorship.amountCents)} sponsorship for "${event.title}" was refunded because the event was cancelled.`,
+          body: event.status === 'cancelled'
+            ? `Your ${fmtUsd(sponsorship.amountCents)} sponsorship for "${event.title}" was refunded because the event was cancelled.`
+            : `Your ${fmtUsd(sponsorship.amountCents)} sponsorship for "${event.title}" was refunded because the sponsorship is no longer active.`,
           eventId: event.id,
         }).catch((err) => console.error('[payments] payment_refunded notify failed:', err));
         refunded += 1;
@@ -421,7 +521,13 @@ export async function runPaymentSweeps(
       await db
         .update(schema.sponsorships)
         .set({ paymentStatus: 'released', releasedAt: new Date(), transferId: transfer.id })
-        .where(and(eq(schema.sponsorships.id, sponsorship.id), eq(schema.sponsorships.paymentStatus, 'paid')));
+        .where(
+          and(
+            eq(schema.sponsorships.id, sponsorship.id),
+            eq(schema.sponsorships.paymentStatus, 'paid'),
+            eq(schema.sponsorships.status, 'active'),
+          ),
+        );
       await notify(db, env.RESEND_API_KEY, {
         userId: event.hostId,
         type: 'payout_sent',
@@ -504,20 +610,32 @@ function onboardFallbackPage(): string {
 
 onboardPagesRouter.get('/onboard/refresh', async (c) => {
   c.header('Cache-Control', 'no-store');
-  const accountId = c.req.query('account');
   const client = getClient(c.env);
-  if (!accountId || !client) return c.html(onboardFallbackPage());
+  const authSecret = c.env.BETTER_AUTH_SECRET;
+  if (!client || !authSecret) return c.html(onboardFallbackPage());
 
-  // Only regenerate for accounts we created (belongs to a user row).
+  // The link is only valid with a state we signed (see connect/onboard); a bare
+  // ?account= id is never enough to mint an onboarding link.
+  const state = await verifyState<{ userId?: unknown; accountId?: unknown }>(
+    authSecret,
+    ONBOARD_REFRESH_PURPOSE,
+    c.req.query('state'),
+  );
+  if (!state || typeof state.userId !== 'string' || typeof state.accountId !== 'string') {
+    return c.html(onboardFallbackPage());
+  }
+  const { userId, accountId } = state;
+
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
-  const user = await db.query.users.findFirst({ where: eq(schema.users.stripeAccountId, accountId) });
-  if (!user) return c.html(onboardFallbackPage());
+  const user = await db.query.users.findFirst({ where: eq(schema.users.id, userId) });
+  if (!user || user.stripeAccountId !== accountId) return c.html(onboardFallbackPage());
 
   try {
     const base = publicBaseUrl(c.env);
+    const fresh = await signState(authSecret, ONBOARD_REFRESH_PURPOSE, { userId, accountId }, ONBOARD_REFRESH_TTL_SECONDS);
     const link = await client.createAccountLink(
       accountId,
-      `${base}/payments/onboard/refresh?account=${encodeURIComponent(accountId)}`,
+      `${base}/payments/onboard/refresh?state=${encodeURIComponent(fresh)}`,
       `${base}/payments/onboard/return`,
     );
     return c.redirect(link.url, 302);

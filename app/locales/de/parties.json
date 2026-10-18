@@ -169,6 +169,7 @@
     },
     "saveError": "Die Party konnte nicht gespeichert werden. Prüf deine Verbindung und versuch es nochmal.",
     "deleteError": "Die Party konnte nicht gelöscht werden. Versuch es nochmal.",
+    "deleteHasSponsorship": "Diese Party hat Sponsoring-Zahlungen. Sag sie stattdessen ab.",
     "share": {
       "whenWithTime": "{{date}} um {{time}}"
     },

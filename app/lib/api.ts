@@ -378,6 +378,8 @@ export async function fetchProfile(id: string): Promise<ApiProfile> {
 export async function deleteEvent(id: string): Promise<void> {
   const res = await apiFetch(`/api/events/${encodeURIComponent(id)}`, { method: 'DELETE' });
   if (res.status === 401) throw new Error('unauthorized');
+  // 409 has_sponsorship_history: the party has payments and must be cancelled, not deleted.
+  if (res.status === 409) throw await apiErrorFrom(res, `Delete failed: ${res.status}`);
   if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
 }
 

@@ -347,3 +347,112 @@ describe('failed admin login tracking and alert', () => {
     expect(rows[0].n).toBe(0);
   });
 });
+
+describe('admin bearer: rate limit and failure tracking', () => {
+  const alertEnv = { ...env, RESEND_API_KEY: 'test-resend-key' };
+  const bearer = (token: string, ip: string, path = '/api/admin/landing-health', e: object = alertEnv) =>
+    app(path, { headers: { Authorization: `Bearer ${token}`, 'cf-connecting-ip': ip } }, e);
+  const alerts = () => sentEmails.filter((m) => m.subject === 'Admin sign-in: 5 failed attempts in the last hour');
+  const failureCount = async () =>
+    ((await sql()`SELECT count(*)::int AS n FROM admin_login_failures`) as { n: number }[])[0].n;
+  let warn: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(async () => {
+    await sql()`DELETE FROM admin_login_failures`;
+    await sql()`DELETE FROM admin_login_alerts`;
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(async () => {
+    warn.mockRestore();
+    await sql()`DELETE FROM admin_login_failures`;
+    await sql()`DELETE FROM admin_login_alerts`;
+  });
+
+  it('a wrong bearer gets 401 and records a failure (secret never logged)', async () => {
+    const ip = freshIp();
+    expect((await bearer('wrong-bearer-value', ip)).status).toBe(401);
+    expect(await failureCount()).toBe(1);
+    const lines = warn.mock.calls.map((c) => String(c[0]));
+    expect(lines).toContain(`[ADMIN] failed login ip=${ip} count=1`);
+    expect(lines.join('\n')).not.toContain('wrong-bearer-value');
+  });
+
+  it('a missing Authorization header gets 401 without being counted', async () => {
+    const res = await app('/api/admin/landing-health', { headers: { 'cf-connecting-ip': freshIp() } });
+    expect(res.status).toBe(401);
+    expect(await failureCount()).toBe(0);
+  });
+
+  it('the correct bearer still works and is not counted', async () => {
+    const res = await bearer(SECRET, freshIp());
+    expect(res.status).toBe(200);
+    expect(await failureCount()).toBe(0);
+  });
+
+  it('503 when ADMIN_SECRET is unset', async () => {
+    const res = await bearer('anything', freshIp(), '/api/admin/landing-health', { ...env, ADMIN_SECRET: undefined });
+    expect(res.status).toBe(503);
+    expect(await failureCount()).toBe(0);
+  });
+
+  it('over the per-IP limit returns 429', async () => {
+    const ip = freshIp();
+    // Memory fallback: 10/min, so the 11th request from one IP is limited.
+    const e = { ...env, AUTH_LIMITER: undefined, RESEND_API_KEY: 'test-resend-key' };
+    const statuses: number[] = [];
+    for (let i = 0; i < 11; i++) statuses.push((await bearer('wrong-bearer-value', ip, '/api/admin/landing-health', e)).status);
+    expect(statuses.slice(0, 10).every((s) => s === 401)).toBe(true);
+    expect(statuses[10]).toBe(429);
+    // Even the correct secret is throttled once the IP is over the limit.
+    expect((await bearer(SECRET, ip, '/api/admin/landing-health', e)).status).toBe(429);
+  });
+
+  it('the 5th bearer failure in an hour sends exactly one alert', async () => {
+    for (let i = 0; i < 4; i++) await bearer('wrong-bearer-value', freshIp());
+    expect(alerts()).toHaveLength(0);
+    await bearer('wrong-bearer-value', freshIp());
+    expect(alerts()).toHaveLength(1);
+    await bearer('wrong-bearer-value', freshIp());
+    expect(alerts()).toHaveLength(1);
+  });
+
+  describe('GET /api/events/:id', () => {
+    it('ordinary signed-in users are never counted or limited; admin bearer sees a draft', async () => {
+      const email = `adm-bearer-user-${TS}@spotseek.test`;
+      const pw = 'Adminpage_Pwd_1!';
+      const jsonInit = (b: unknown) => ({ method: 'POST', headers: json, body: JSON.stringify(b) });
+      await app('/api/auth/sign-up/email', jsonInit({ email, password: pw, name: 'Bearer User' }));
+      const si = await app('/api/auth/sign-in/email', jsonInit({ email, password: pw }));
+      const token = ((await si.json()) as { token: string }).token;
+      const ev = await seedFlagged('bearer-detail');
+      await sql()`UPDATE events SET status = 'draft', moderation_status = 'ok' WHERE id = ${ev.id}`;
+      const pub = await seedFlagged('bearer-public');
+      await sql()`UPDATE events SET moderation_status = 'ok' WHERE id = ${pub.id}`;
+      const ip = freshIp();
+      const e = { ...env, AUTH_LIMITER: undefined, RESEND_API_KEY: 'test-resend-key' };
+
+      // A user bearer is a session, never an admin attempt: not limited, not counted,
+      // on a public event or a draft they cannot see.
+      for (let i = 0; i < 15; i++) {
+        expect((await bearer(token, ip, `/api/events/${pub.id}`, e)).status).toBe(200);
+        expect((await bearer(token, ip, `/api/events/${ev.id}`, e)).status).toBe(404);
+      }
+      expect(await failureCount()).toBe(0);
+
+      // Admin bearer sees the draft and is not counted.
+      expect((await bearer(SECRET, ip, `/api/events/${ev.id}`, e)).status).toBe(200);
+      expect(await failureCount()).toBe(0);
+
+      // A stale/garbage bearer (neither admin nor a valid session) is limited but never
+      // recorded as an admin failure, so it cannot raise false alerts.
+      expect((await bearer('not-a-session-or-admin', freshIp(), `/api/events/${ev.id}`, e)).status).toBe(404);
+      expect(await failureCount()).toBe(0);
+      const lim = freshIp();
+      const out: number[] = [];
+      for (let i = 0; i < 11; i++) out.push((await bearer('not-a-session-or-admin', lim, `/api/events/${ev.id}`, e)).status);
+      expect(out[10]).toBe(429);
+      expect(await failureCount()).toBe(0);
+      expect(alerts()).toHaveLength(0);
+    });
+  });
+});

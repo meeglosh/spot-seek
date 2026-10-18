@@ -13,6 +13,8 @@ import * as schema from './schema';
 import { bufferToHex, timingSafeEqualHex } from './stripe';
 import { landingHealth } from './landing-calendar';
 import { moderationAdminRouter } from './moderation/admin';
+import { recordAdminLoginFailure } from './moderation/admin-login-failures';
+import { allowRequest, tooManyRequests, AUTH_LIMIT_PER_MIN } from './ratelimit';
 
 type AppEnv = { Bindings: Env };
 
@@ -32,14 +34,32 @@ export async function isAdminAuthorized(env: Env, authHeader: string | undefined
   return timingSafeEqualHex(a, b);
 }
 
+// Rate-limited bearer check (same limiter and failure alert as the login page).
+// Call only when an Authorization header is present. 'limited' = over the per-IP
+// limit (checked before the secret so guessing is throttled); 'denied' = wrong
+// secret, recorded as a failure (alert at 5/hour) unless opts.recordFailure is
+// false. Successes are not counted.
+export async function checkAdminBearer(
+  env: Env,
+  headers: { header(name: string): string | undefined },
+  opts: { recordFailure?: boolean } = {},
+): Promise<'ok' | 'denied' | 'limited'> {
+  const ip = headers.header('cf-connecting-ip') ?? 'unknown';
+  if (!(await allowRequest(env.AUTH_LIMITER, `admin-bearer:${ip}`, AUTH_LIMIT_PER_MIN))) return 'limited';
+  if (await isAdminAuthorized(env, headers.header('Authorization'))) return 'ok';
+  if (opts.recordFailure !== false) await recordAdminLoginFailure(env, ip);
+  return 'denied';
+}
+
 // Reusable middleware: 503 when ADMIN_SECRET is not configured, 401 otherwise
-// unless the bearer matches. Also guards the manual job triggers
-// (/api/payments/run-sweeps, /api/notifications/run-reminders|run-reviews).
+// unless the bearer matches (429 past the per-IP limit). Also guards the manual
+// job triggers (/api/payments/run-sweeps, /api/notifications/run-reminders|run-reviews).
 export async function requireAdmin(c: Context<{ Bindings: Env }>, next: Next) {
   if (!c.env.ADMIN_SECRET) return c.json({ error: 'Admin not configured' }, 503);
-  if (!(await isAdminAuthorized(c.env, c.req.header('Authorization')))) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
+  if (!c.req.header('Authorization')) return c.json({ error: 'Unauthorized' }, 401);
+  const result = await checkAdminBearer(c.env, c.req);
+  if (result === 'limited') return tooManyRequests();
+  if (result === 'denied') return c.json({ error: 'Unauthorized' }, 401);
   await next();
 }
 

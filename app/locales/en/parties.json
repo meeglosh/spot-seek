@@ -169,6 +169,7 @@
     },
     "saveError": "Couldn't save the party. Check your connection and try again.",
     "deleteError": "Couldn't delete the party. Try again.",
+    "deleteHasSponsorship": "This party has sponsorship payments. Cancel it instead.",
     "share": {
       "whenWithTime": "{{date}} at {{time}}"
     },

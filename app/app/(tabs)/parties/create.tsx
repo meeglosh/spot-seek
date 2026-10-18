@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
-import { createEvent, updateEvent, fetchEvent, type ApiEvent } from '../../../lib/api';
+import { createEvent, updateEvent, fetchEvent, ApiError, type ApiEvent } from '../../../lib/api';
 import { publishProblem, openGuidelines, type PublishProblem } from '../../../lib/moderation';
 import { eventShareUrl } from '../../../lib/shareLinks';
 import { API_BASE, uploadEventCover, deleteEvent } from '../../../lib/api';
@@ -244,7 +244,13 @@ export default function CreateEventScreen() {
       await deleteEvent(eventId);
       setOutcome({ kind: 'deleted' });
     } catch (err) {
-      setError((err as Error).message || tr('create.deleteError'));
+      // Payments on the party: it can't be deleted, only cancelled (the app has
+      // no cancel-party action yet, so this is just the explanation).
+      setError(
+        err instanceof ApiError && err.code === 'has_sponsorship_history'
+          ? tr('create.deleteHasSponsorship')
+          : (err as Error).message || tr('create.deleteError'),
+      );
       setShowDeleteConfirm(false);
     } finally {
       setLoading(false);
