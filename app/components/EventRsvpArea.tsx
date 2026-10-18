@@ -20,6 +20,8 @@ type Props = {
   rsvpError?: string;
   isActive?: boolean;
   onRsvp?: () => void;
+  /** The host's own party: replaces RSVP (a host can't RSVP to it) with this action. */
+  hostAction?: { label: string; onPress: () => void };
   /** Ended panel */
   dateLabel?: string | null;
   canReview?: boolean;
@@ -30,7 +32,7 @@ type Props = {
 };
 
 export function EventRsvpArea({
-  phase, rsvpLabel, rsvpColor, rsvpLoading = false, rsvpError, isActive = false, onRsvp,
+  phase, rsvpLabel, rsvpColor, rsvpLoading = false, rsvpError, isActive = false, onRsvp, hostAction,
   dateLabel, canReview = false, hasReview = false, onReview, bottomInset = 0, style,
 }: Props) {
   const { t: tr } = useTranslation('discover');
@@ -50,6 +52,20 @@ export function EventRsvpArea({
             onPress={onReview ?? (() => {})}
           />
         )}
+      </View>
+    );
+  }
+
+  if (hostAction) {
+    return (
+      <View style={[s.bar, { paddingBottom: bottomInset + spacing.md }, style]}>
+        <Press
+          style={[s.rsvpBtn, { backgroundColor: colors.action }]}
+          onPress={hostAction.onPress}
+          accessibilityRole="button"
+        >
+          <Text style={[t.button, { color: colors.textOnFill }]}>{hostAction.label}</Text>
+        </Press>
       </View>
     );
   }

@@ -244,7 +244,7 @@ export default function SettingsScreen() {
   if (auth.status !== 'authenticated') {
     return (
       <View style={s.container}>
-        <AppHeader back />
+        <AppHeader back title={tr('title')} />
         <GuestGate
           title={tr('guestGate.title')}
           message={tr('guestGate.message')}
@@ -259,13 +259,11 @@ export default function SettingsScreen() {
 
   return (
     <View style={s.container}>
-      <AppHeader back />
+      <AppHeader back title={tr('title')} />
       <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing.xl }]}>
-        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('title')}</Text>
-
         {/* ACCOUNT */}
         <View style={s.section}>
-          <SectionTitle>{tr('account.title')}</SectionTitle>
+          <SectionTitle style={s.sectionHead}>{tr('account.title')}</SectionTitle>
           <SettingsRow
             label={tr('account.signedInAs')}
             sub={auth.user.email}
@@ -358,7 +356,7 @@ export default function SettingsScreen() {
 
         {/* NOTIFICATIONS */}
         <View style={s.section}>
-          <SectionTitle>{tr('notifications.title')}</SectionTitle>
+          <SectionTitle style={s.sectionHead}>{tr('notifications.title')}</SectionTitle>
           {prefsError ? <Text style={[t.bodySm, { color: colors.danger }]}>{prefsError}</Text> : null}
 
           <SettingsRow
@@ -395,7 +393,7 @@ export default function SettingsScreen() {
 
         {/* LANGUAGE */}
         <View style={s.section}>
-          <SectionTitle>{tr('language.title')}</SectionTitle>
+          <SectionTitle style={s.sectionHead}>{tr('language.title')}</SectionTitle>
           <ListRow
             title={tr('language.systemDefault')}
             onPress={() => setAppLocale(null)}
@@ -413,7 +411,7 @@ export default function SettingsScreen() {
 
         {/* PAYOUTS (hidden in the beta) */}
         {isSponsorshipEnabled() && <View style={s.section}>
-          <SectionTitle>{tr('payouts.title')}</SectionTitle>
+          <SectionTitle style={s.sectionHead}>{tr('payouts.title')}</SectionTitle>
           {connectStatus?.configured === false ? (
             <Text style={[t.bodySm, { color: colors.textSecondary }]}>
               {tr('payouts.notConfigured')}
@@ -439,19 +437,19 @@ export default function SettingsScreen() {
 
         {/* FAVOURITES */}
         <View style={s.section}>
-          <SectionTitle>{tr('favourites.title')}</SectionTitle>
+          <SectionTitle style={s.sectionHead}>{tr('favourites.title')}</SectionTitle>
           <ListRow icon="star" title={tr('favourites.manage')} onPress={() => router.push('/(auth)/interests' as never)} trailing={<Icon name="chevronRight" size={18} color={colors.textTertiary} />} />
         </View>
 
         {/* SAFETY */}
         <View style={s.section}>
-          <SectionTitle>{tr('safety.title')}</SectionTitle>
+          <SectionTitle style={s.sectionHead}>{tr('safety.title')}</SectionTitle>
           <ListRow icon="block" title={tr('safety.blocked')} onPress={() => router.push('/blocked' as never)} trailing={<Icon name="chevronRight" size={18} color={colors.textTertiary} />} />
         </View>
 
         {/* ABOUT */}
         <View style={s.section}>
-          <SectionTitle>{tr('about.title')}</SectionTitle>
+          <SectionTitle style={s.sectionHead}>{tr('about.title')}</SectionTitle>
           <ListRow title={tr('about.guidelines')} onPress={openGuidelines} trailing={<Icon name="chevronRight" size={18} color={colors.textTertiary} />} />
           <ListRow title={tr('about.terms')} onPress={openTerms} trailing={<Icon name="chevronRight" size={18} color={colors.textTertiary} />} />
           <ListRow title={tr('about.privacy')} onPress={openPrivacy} trailing={<Icon name="chevronRight" size={18} color={colors.textTertiary} />} />
@@ -472,7 +470,9 @@ export default function SettingsScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
-  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, gap: spacing['2xl'] },
+  scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.xs, gap: spacing.xs },
+  // FotMob rhythm: ~28 above a section header (4 gap + 24 margin), ~12 below (4 + 8 gap).
+  sectionHead: { marginBottom: spacing.xs },
   section: { gap: spacing.sm },
   fullBtn: { alignSelf: 'stretch' },
   confirmBox: {

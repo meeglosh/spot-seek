@@ -94,7 +94,7 @@ export default function NotificationsScreen() {
   if (auth.status !== 'authenticated') {
     return (
       <View style={s.container}>
-        <AppHeader back />
+        <AppHeader back title={tr('title')} />
         <GuestGate
           title={tr('guestGate.title')}
           message={tr('guestGate.message')}
@@ -106,10 +106,8 @@ export default function NotificationsScreen() {
 
   return (
     <View style={s.container}>
-      <AppHeader back />
+      <AppHeader back title={tr('title')} />
       <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing.xl }]}>
-        <Text style={[t.headlineLg, s.title]}>{tr('title')}</Text>
-
         {loading ? (
           <View style={s.list} accessibilityLabel={trCommon('loading')}>
             <RowSkeleton />
@@ -163,7 +161,6 @@ export default function NotificationsScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, gap: spacing.lg },
-  title: { color: colors.textPrimary },
   list: { gap: spacing.md },
   row: {
     backgroundColor: colors.surface1,

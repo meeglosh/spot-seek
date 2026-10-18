@@ -446,6 +446,13 @@ export default function EventDetailScreen() {
           {coverSrc && (
             <Image source={coverSrc} style={[StyleSheet.absoluteFill, pres.muted && s.coverMuted]} resizeMode="cover" />
           )}
+          {!coverSrc && (
+            <View style={s.heroFallback} pointerEvents="none">
+              <View style={s.heroFallbackTile}>
+                <Icon name="ball" size={44} color={colors.textTertiary} />
+              </View>
+            </View>
+          )}
           <View style={[StyleSheet.absoluteFill, s.mediaDim]} />
           {!isHost && (
             <Press
@@ -648,6 +655,7 @@ export default function EventDetailScreen() {
         rsvpError={rsvpError}
         isActive={isActive}
         onRsvp={() => handleRsvp()}
+        hostAction={isHost ? { label: trParties('myParties.manage'), onPress: () => router.push('/(tabs)/parties/dashboard' as never) } : undefined}
         dateLabel={dateStr}
         canReview={canReview}
         hasReview={!!reviewsCtx.myReview}
@@ -692,6 +700,12 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.surface1,
     justifyContent: 'flex-end',
+  },
+  // No cover image: a flat muted tile with the sport glyph instead of an empty block.
+  heroFallback: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', paddingTop: spacing.xl },
+  heroFallbackTile: {
+    width: 88, height: 88, borderRadius: radius.round, backgroundColor: colors.surface2,
+    alignItems: 'center', justifyContent: 'center',
   },
   mediaDim: { backgroundColor: colors.mediaDim },
   coverMuted: { opacity: 0.5 },

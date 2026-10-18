@@ -419,7 +419,7 @@ export default function CreateEventScreen() {
       style={s.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <AppHeader back onBack={leaveCreate} />
+      <AppHeader back onBack={leaveCreate} title={isEdit ? tr('create.headline.edit') : tr('create.headline.create')} />
 
       <ScrollView
         ref={scrollRef}
@@ -428,9 +428,6 @@ export default function CreateEventScreen() {
       >
         {/* Headline */}
         <View style={s.headlineBlock}>
-          <Text style={[t.headlineLg, { color: colors.textPrimary }]}>
-            {isEdit ? tr('create.headline.edit') : tr('create.headline.create')}
-          </Text>
           <Text style={[t.bodyMd, { color: colors.textSecondary }]}>
             {tr('create.subtitle')}
           </Text>

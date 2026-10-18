@@ -162,6 +162,18 @@ describe('EventRsvpArea', () => {
     }
   });
 
+  it('the host sees the host action, not RSVP; a guest still sees RSVP', async () => {
+    const onPress = jest.fn();
+    const host = await mount(
+      <EventRsvpArea phase="upcoming" rsvpLabel="RSVP" rsvpColor={colors.action} hostAction={{ label: 'Manage', onPress }} />,
+    );
+    const ht = texts(host.toJSON());
+    expect(ht).toContain('Manage');
+    expect(ht).not.toContain('RSVP');
+    const guest = await mount(<EventRsvpArea phase="upcoming" rsvpLabel="RSVP" rsvpColor={colors.action} />);
+    expect(texts(guest.toJSON())).toContain('RSVP');
+  });
+
   it('an RSVP stays cancellable while the party is on', async () => {
     const r = await mount(<EventRsvpArea phase="live" rsvpLabel="Going" rsvpColor={colors.confirmed} isActive />);
     expect(texts(r.toJSON())).toContain('detail.cancelRsvp');

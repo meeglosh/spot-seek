@@ -22,7 +22,7 @@ export const ICON_PATHS = {
   close:        [{ d: 'M5 5l14 14 M19 5L5 19' }],
   check:        [{ d: 'M4 12l5 5L20 6' }],
   plus:         [{ d: 'M12 4v16 M4 12h16' }],
-  search:       [{ d: 'M4 4h11v11H4z M15 15l6 6' }],
+  search:       [{ d: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M16 16l4.5 4.5' }],
   filter:       [{ d: 'M3 5h18l-7.5 8.5V20l-3-2v-4.5z' }],
   map:          [{ d: 'M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z M9 4v14 M15 6v14' }],
   list:         [{ d: 'M8 6h13 M8 12h13 M8 18h13 M3 6h2 M3 12h2 M3 18h2' }],

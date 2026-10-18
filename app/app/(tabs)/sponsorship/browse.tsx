@@ -121,7 +121,7 @@ export default function BrowseSponsorsScreen() {
   if (auth.status !== 'authenticated') {
     return (
       <View style={s.container}>
-        <AppHeader back />
+        <AppHeader back title={tr('findSponsors.title')} />
         <GuestGate
           title={tr('findSponsors.title')}
           message={tr('findSponsors.guestMessage')}
@@ -133,12 +133,11 @@ export default function BrowseSponsorsScreen() {
 
   return (
     <View style={s.container}>
-      <AppHeader back onBack={() => router.back()} />
+      <AppHeader back onBack={() => router.back()} title={tr('findSponsors.title')} />
       <ScrollView
         contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing['2xl'] }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[t.displayXl, { color: colors.textPrimary }]}>{tr('findSponsors.title')}</Text>
         <Text style={[t.bodyMd, s.subtitle]} numberOfLines={1}>
           {event ? tr('findSponsors.forEvent', { title: event.title }) : trCommon('loading')}
         </Text>

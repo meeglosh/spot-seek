@@ -154,7 +154,9 @@ function DrawerMenu({
 
 // `onBack` overrides the default router.back(), which is a no-op on screens
 // with no history beneath them (e.g. a modal opened directly into its stack).
-export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: () => void }) {
+// Inner screens (`back`) swap the wordmark for a centred semibold `title`
+// (FotMob style); root tab screens keep the wordmark.
+export function AppHeader({ back = false, onBack, title }: { back?: boolean; onBack?: () => void; title?: string }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const auth = useAuth();
@@ -193,6 +195,7 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
   return (
     <View style={[s.header, { paddingTop: insets.top + spacing.sm }]}>
       {back ? (
+        <View style={s.sideSlot}>
         <Press
           onPress={onBack ?? (() => router.back())}
           style={s.headerBtn}
@@ -201,6 +204,7 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
         >
           <Icon name="back" size={22} color={colors.textPrimary} />
         </Press>
+        </View>
       ) : (
         <Press
           onPress={() => setMenuOpen(true)}
@@ -212,7 +216,11 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
         </Press>
       )}
 
-      <Text style={[t.wordmark, s.wordmark]} numberOfLines={1}>SPOT SEEK</Text>
+      {back ? (
+        <Text style={[t.headlineSm, s.title]} numberOfLines={1} accessibilityRole="header">{title ?? ''}</Text>
+      ) : (
+        <Text style={[t.wordmark, s.wordmark]} numberOfLines={1}>SPOT SEEK</Text>
+      )}
 
       <View style={s.headerRight}>
         <Press
@@ -277,6 +285,9 @@ const s = StyleSheet.create({
   },
   // Brand wordmark (the only Anton text) is not interactive, so not cyan.
   wordmark: { color: colors.textPrimary, flex: 1, marginHorizontal: spacing.md },
+  // Back mode: left slot matches the right cluster's width so the title is truly centred.
+  sideSlot: { width: TAP * 2 + spacing.sm, alignItems: 'flex-start' },
+  title: { color: colors.textPrimary, flex: 1, textAlign: 'center', fontWeight: '600', marginHorizontal: spacing.sm },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   bellBtn: {
     width: TAP, height: TAP, borderRadius: radius.round, backgroundColor: colors.surface1,

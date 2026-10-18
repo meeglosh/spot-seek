@@ -91,7 +91,7 @@ export default function BlockedPeopleScreen() {
   if (auth.status !== 'authenticated') {
     return (
       <View style={s.container}>
-        <AppHeader back />
+        <AppHeader back title={tr('blocked.title')} />
         <GuestGate
           title={tr('blocked.title')}
           message={tr('blocked.subtitle')}
@@ -103,9 +103,8 @@ export default function BlockedPeopleScreen() {
 
   return (
     <View style={s.container}>
-      <AppHeader back />
+      <AppHeader back title={tr('blocked.title')} />
       <ScrollView contentContainerStyle={[s.scroll, { paddingBottom: insets.bottom + spacing.xl }]}>
-        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('blocked.title')}</Text>
         {!loading && !error && blocks.length > 0 && (
           <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{tr('blocked.subtitle')}</Text>
         )}

@@ -318,10 +318,10 @@ export function BackLink({ label, onPress }: { label: string; onPress: () => voi
 // ─── Section title: bold, left, optional right-aligned link in action ───────
 
 export function SectionTitle({
-  children, actionLabel, onAction, leading,
-}: { children: string; actionLabel?: string; onAction?: () => void; leading?: React.ReactNode }) {
+  children, actionLabel, onAction, leading, style,
+}: { children: string; actionLabel?: string; onAction?: () => void; leading?: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   return (
-    <View style={s.sectionWrap}>
+    <View style={[s.sectionWrap, style]}>
       {leading}
       <Text style={[t.headlineMd, { color: colors.textPrimary, flexShrink: 1, ...(leading ? { flex: 1 } : null) }]}>{children}</Text>
       {actionLabel && onAction && (

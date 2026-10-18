@@ -227,17 +227,8 @@ export default function DiscoverScreen() {
       <View style={s.header}>
         <Text style={[t.displayXl, { color: colors.textPrimary }]}>{tr('feed.title')}</Text>
 
-        {/* LIST | MAP toggle + search */}
-        <View style={s.controlsRow}>
-          <SegmentedControl
-            value={viewMode}
-            onChange={handleModePress}
-            options={[
-              { key: 'list', label: tr('feed.viewList'), icon: 'list', accessibilityLabel: tr('feed.switchToListView') },
-              { key: 'map', label: tr('feed.viewMap'), icon: 'map', accessibilityLabel: tr('feed.switchToMapView') },
-            ]}
-          />
-
+        {/* Search pill on its own row, with the filter button to its right */}
+        <View style={s.searchRow}>
           {viewMode === 'list' && (
             <View style={s.searchWrap}>
               <SearchField
@@ -266,6 +257,16 @@ export default function DiscoverScreen() {
             )}
           </IconButton>
         </View>
+
+        {/* List | Map text tabs on their own row */}
+        <SegmentedControl
+          value={viewMode}
+          onChange={handleModePress}
+          options={[
+            { key: 'list', label: tr('feed.viewList'), icon: 'list', accessibilityLabel: tr('feed.switchToListView') },
+            { key: 'map', label: tr('feed.viewMap'), icon: 'map', accessibilityLabel: tr('feed.switchToMapView') },
+          ]}
+        />
 
         {/* Active filter summary chips */}
         {filterCount > 0 && (
@@ -383,7 +384,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
   header: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.md },
 
-  controlsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  searchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.md },
 
   searchWrap: { flex: 1, justifyContent: 'center' },
 

@@ -121,7 +121,7 @@ export default function CommandCenterScreen() {
   if (auth.status !== 'authenticated') {
     return (
       <View style={s.container}>
-        <AppHeader back />
+        <AppHeader back title={tr('dashboard.commandCenter')} />
         <GuestGate
           title={tr('dashboard.guestGate.title')}
           message={tr('dashboard.guestGate.message')}
@@ -145,11 +145,10 @@ export default function CommandCenterScreen() {
 
   return (
     <View style={s.container}>
-      <AppHeader back />
+      <AppHeader back title={tr('dashboard.commandCenter')} />
 
       {loading && !refreshing ? (
         <View style={s.scroll} accessibilityLabel={tr('dashboard.loading')}>
-          <Skeleton width="60%" height={34} />
           <View style={s.statTiles}>
             <Skeleton height={84} radius={radius.card} style={{ flex: 1 }} />
             <Skeleton height={84} radius={radius.card} style={{ flex: 1 }} />
@@ -172,8 +171,6 @@ export default function CommandCenterScreen() {
         >
           {/* Header: headline + stat tiles */}
           <View style={s.headerBlock}>
-            <Text style={[t.displayXl, { color: colors.textPrimary }]}>{tr('dashboard.commandCenter')}</Text>
-
             {showPayoutBanner && (
               <Press style={s.payoutBanner} onPress={() => router.push('/settings' as never)} accessibilityRole="button">
                 <Text style={[t.bodySm, s.payoutBannerText]}>{tr('dashboard.payoutBanner')}</Text>
