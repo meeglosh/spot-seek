@@ -199,7 +199,7 @@ export default function SponsorshipHubScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textTertiary} />}
       >
-        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('browse.title')}</Text>
+        <Text style={[t.displayXl, { color: colors.textPrimary }]}>{tr('browse.title')}</Text>
         <Text style={[t.bodyMd, s.subtitle]}>{tr('browse.subtitle')}</Text>
 
         {loading ? (
@@ -399,7 +399,7 @@ export default function SponsorshipHubScreen() {
                       )}
                     </View>
                     <View style={s.eventBody}>
-                      <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{ev.title}</Text>
+                      <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{ev.title}</Text>
                       <View style={s.venueLine}>
                         <Icon name="pin" size={16} color={colors.textSecondary} />
                         <Text style={[t.bodySm, { color: colors.textSecondary, flexShrink: 1 }]} numberOfLines={1}>
@@ -494,7 +494,7 @@ const s = StyleSheet.create({
   eventCard: {
     backgroundColor: colors.surface1,
     marginBottom: spacing.xl,
-    borderRadius: radius.card,
+    borderRadius: radius.tile,
     overflow: 'hidden',
   },
   coverWrap: {

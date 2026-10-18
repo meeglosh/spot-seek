@@ -127,7 +127,7 @@ export function BroadcastSubjectInput({
 
   return (
     <View>
-      {/* Input — underline style, action colour on focus */}
+      {/* Input — field well, action ring on focus */}
       <TextInput
         ref={inputRef}
         style={[inputStyle, focused && inputFocusedStyle]}

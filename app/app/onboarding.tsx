@@ -38,7 +38,7 @@ export default function OnboardingScreen() {
     <View style={[s.container, { paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + spacing.xl }]}>
       <View style={s.brand}>
         <Image source={BRAND_LOGO} resizeMode="contain" style={s.logo} />
-        <Text style={[t.headlineSm, s.wordmark]}>SPOT SEEK</Text>
+        <Text style={[t.wordmark, s.wordmark]}>SPOT SEEK</Text>
       </View>
 
       <View style={s.hero}>
@@ -65,7 +65,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas, paddingHorizontal: spacing.xl },
   brand: { alignItems: 'center', gap: spacing.xs },
   logo: { width: 72, height: 72 },
-  wordmark: { color: colors.textPrimary, letterSpacing: 1 },
+  wordmark: { color: colors.textPrimary },
   hero: { flex: 1, justifyContent: 'center', gap: spacing.lg },
   title: { color: colors.textPrimary, textAlign: 'center' },
   body: { color: colors.textSecondary, textAlign: 'center', alignSelf: 'center', maxWidth: 320 },

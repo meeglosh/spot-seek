@@ -14,7 +14,7 @@ import {
   API_BASE, fetchMyRsvps, fetchDashboard,
   type ApiRsvp, type ApiEvent, type ApiDashboardEvent,
 } from '../../../lib/api';
-import { colors, radius, spacing, elevation, type as t } from '../../../lib/theme';
+import { colors, radius, spacing, type as t } from '../../../lib/theme';
 import { useOpenDirections, hasDirectionsTarget } from '../../../lib/directions';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 import { eventPhase, newestFirst, soonestFirst, type EventPhase } from '../../../lib/eventTime';
@@ -82,7 +82,7 @@ function AttendingCard({ rsvp }: { rsvp: ApiRsvp }) {
         </View>
 
         <View style={s.titleRow}>
-          <Text style={[t.headlineMd, s.cardTitle, ended && s.titleMuted]} numberOfLines={3}>{e.title}</Text>
+          <Text style={[t.headlineSm, s.cardTitle, ended && s.titleMuted]} numberOfLines={3}>{e.title}</Text>
           <View style={s.timeCol}>
             <Text style={[t.monoData, { color: tonight ? colors.live : ended ? colors.textSecondary : colors.textPrimary }]}>
               {e.startsAt ? timeLabel(e.startsAt, e.venueTimezone) : tr('myParties.tbd')}
@@ -133,7 +133,7 @@ function HostingCard({ event, onManage }: { event: ApiDashboardEvent; onManage: 
         </View>
 
         <View style={s.titleRow}>
-          <Text style={[t.headlineMd, s.cardTitle, ended && s.titleMuted]} numberOfLines={3}>{event.title}</Text>
+          <Text style={[t.headlineSm, s.cardTitle, ended && s.titleMuted]} numberOfLines={3}>{event.title}</Text>
           <View style={s.timeCol}>
             <Text style={[t.monoData, { color: ended ? colors.textSecondary : colors.textPrimary }]}>
               {event.startsAt ? timeLabel(event.startsAt, event.venueTimezone) : tr('myParties.tbd')}
@@ -232,7 +232,7 @@ export default function MyPartiesScreen() {
       <AppHeader />
 
       <View style={s.headerBlock}>
-        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('myParties.title')}</Text>
+        <Text style={[t.displayXl, { color: colors.textPrimary }]}>{tr('myParties.title')}</Text>
 
         <SegmentedControl
           value={tab}
@@ -365,9 +365,8 @@ const s = StyleSheet.create({
 
   list: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, flexGrow: 1 },
 
-  // Outer = opaque surface + soft shadow; inner clips the cover (iOS drops a
-  // shadow on an overflow:hidden view).
-  card: { ...elevation(1), borderRadius: radius.card },
+  // Flat row card: opaque surface, no shadow; inner view clips the cover.
+  card: { backgroundColor: colors.surface1, borderRadius: radius.card },
   cardClip: { overflow: 'hidden', borderRadius: radius.card, backgroundColor: colors.surface1 },
   cardCover: { width: '100%', height: 150 },
   coverMuted: { opacity: 0.5 },
@@ -389,7 +388,7 @@ const s = StyleSheet.create({
   stat: { flex: 1, alignItems: 'center', gap: 2 },
 
   cardFooter: {
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.borderSubtle,
     paddingTop: spacing.md,
   },
@@ -397,8 +396,7 @@ const s = StyleSheet.create({
   footerBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: spacing.lg, paddingTop: spacing.md,
-    ...elevation(1),
-    shadowOffset: { width: 0, height: -2 },
+    backgroundColor: colors.canvas,
   },
   footerBtn: { width: '100%' },
 });

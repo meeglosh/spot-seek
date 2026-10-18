@@ -4,7 +4,7 @@ import { Text } from '../../components/Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, TAP, elevation, type as t } from '../../lib/theme';
+import { colors, radius, spacing, TAP, type as t } from '../../lib/theme';
 import { Btn, Press } from '../../components/ui';
 
 export default function WelcomeScreen() {
@@ -19,7 +19,7 @@ export default function WelcomeScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + spacing.xl }]}>
       {/* Brand mark — wordmark, kept untranslated */}
-      <Text style={[t.headlineSm, s.brand]}>Spot Seek</Text>
+      <Text style={[t.wordmark, s.brand]}>Spot Seek</Text>
 
       {/* Hero */}
       <View style={s.hero}>
@@ -55,10 +55,10 @@ const s = StyleSheet.create({
   },
   tagline: { color: colors.textSecondary, textAlign: 'center', maxWidth: 300 },
   panel: {
-    ...elevation(2),
+    backgroundColor: colors.surface1,
     padding: spacing.xl,
     gap: spacing.md,
-    borderRadius: radius.card,
+    borderRadius: radius.tile,
   },
   skipLink: { alignItems: 'center', justifyContent: 'center', minHeight: TAP },
 });
