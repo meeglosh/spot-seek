@@ -148,16 +148,16 @@
     "announceWaitlist": "Tu es sur la liste d'attente"
   },
   "claim": {
-    "title": "Joining the party",
-    "joining": "Linking your RSVP…",
-    "success": "You're in. RSVP linked to your account.",
-    "alreadyClaimed": "This RSVP is already linked to another account",
-    "notConfirmed": "Confirm your RSVP from the email first",
-    "eventEnded": "This event has already ended",
-    "ownEvent": "This is your own event",
-    "forbidden": "You can't join this event",
-    "invalid": "This link isn't valid",
-    "viewEvent": "View event",
-    "browse": "Back to Discover"
+    "title": "Rejoindre la soirée",
+    "joining": "Association de votre réservation…",
+    "success": "C'est bon, vous y êtes. Réservation associée à votre compte.",
+    "alreadyClaimed": "Cette réservation est déjà associée à un autre compte",
+    "notConfirmed": "Confirmez d'abord votre réservation depuis l'e-mail",
+    "eventEnded": "Cette soirée est déjà terminée",
+    "ownEvent": "C'est votre propre soirée",
+    "forbidden": "Vous ne pouvez pas rejoindre cette soirée",
+    "invalid": "Ce lien n'est pas valide",
+    "viewEvent": "Voir la soirée",
+    "browse": "Retour à Découvrir"
   }
 }

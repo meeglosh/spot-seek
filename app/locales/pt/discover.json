@@ -148,16 +148,16 @@
     "announceWaitlist": "Estás em espera"
   },
   "claim": {
-    "title": "Joining the party",
-    "joining": "Linking your RSVP…",
-    "success": "You're in. RSVP linked to your account.",
-    "alreadyClaimed": "This RSVP is already linked to another account",
-    "notConfirmed": "Confirm your RSVP from the email first",
-    "eventEnded": "This event has already ended",
-    "ownEvent": "This is your own event",
-    "forbidden": "You can't join this event",
-    "invalid": "This link isn't valid",
-    "viewEvent": "View event",
-    "browse": "Back to Discover"
+    "title": "Entrar na festa",
+    "joining": "A associar a tua presença…",
+    "success": "Já estás dentro. Presença associada à tua conta.",
+    "alreadyClaimed": "Esta presença já está associada a outra conta",
+    "notConfirmed": "Confirma primeiro a tua presença através do e-mail",
+    "eventEnded": "Esta festa já terminou",
+    "ownEvent": "Esta é a tua própria festa",
+    "forbidden": "Não podes entrar nesta festa",
+    "invalid": "Este link não é válido",
+    "viewEvent": "Ver festa",
+    "browse": "Voltar a Descobrir"
   }
 }
