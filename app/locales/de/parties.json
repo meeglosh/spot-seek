@@ -168,6 +168,19 @@
       "publishParty": "Party veröffentlichen"
     },
     "saveError": "Die Party konnte nicht gespeichert werden. Prüf deine Verbindung und versuch es nochmal.",
+    "cancel": {
+      "button": "Party absagen",
+      "confirm": "Diese Party absagen? Alle, die zugesagt haben oder auf der Warteliste stehen, werden benachrichtigt, und bezahlte Sponsorings werden erstattet. Das lässt sich in der App nicht rückgängig machen.",
+      "keep": "Party behalten",
+      "yes": "Ja, Party absagen",
+      "cancelInstead": "Stattdessen Party absagen",
+      "error": "Die Party konnte nicht abgesagt werden. Versuch es nochmal.",
+      "alreadyCancelled": "Diese Party wurde abgesagt. Sie lässt sich nicht mehr bearbeiten.",
+      "outcome": {
+        "title": "Party abgesagt",
+        "body": "Die Gäste wurden benachrichtigt, und Sponsoring-Zahlungen werden erstattet."
+      }
+    },
     "deleteError": "Die Party konnte nicht gelöscht werden. Versuch es nochmal.",
     "deleteHasSponsorship": "Diese Party hat Sponsoring-Zahlungen. Sag sie stattdessen ab.",
     "share": {

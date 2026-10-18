@@ -50,6 +50,7 @@ export default function EventDetailScreen() {
   const auth = useAuth();
   const { t: tr } = useTranslation('discover');
   const { t: trCommon } = useTranslation('common');
+  const { t: trParties } = useTranslation('parties');
   const openDirectionsSheet = useOpenDirections();
   const { t: trSettings } = useTranslation('settings');
   const { t: trMod } = useTranslation('moderation');
@@ -367,13 +368,16 @@ export default function EventDetailScreen() {
     : null;
 
   // One shared rule for ended / on now / upcoming (lib/eventTime.ts).
-  const phase = eventPhase(event);
+  // A cancelled party is over for guests whatever the clock says: no RSVP, muted.
+  const isCancelled = event.status === 'cancelled';
+  const timePhase = eventPhase(event);
+  const phase = isCancelled ? 'ended' : timePhase;
   const pres = presentationFor(phase);
   const ended = phase === 'ended';
   const liveTonight = startsToday(event.startsAt) && phase === 'upcoming';
 
   const isHost = auth.status === 'authenticated' && auth.user.id === event.hostId;
-  const canReview = canLeaveReview(phase, isGoing, isHost);
+  const canReview = canLeaveReview(timePhase, isGoing, isHost);
 
   const hostRatingLabel = reviewsCtx.host
     ? tr('detail.reviews.ratingSummary', { avg: reviewsCtx.host.avg.toFixed(1), count: reviewsCtx.host.count })
@@ -493,7 +497,7 @@ export default function EventDetailScreen() {
               <Text style={[t.monoData, s.tileValue]}>
                 {dateStr ? `${dateStr}${timeStr ? `\n${timeStr}` : ''}` : tr('detail.tba')}
               </Text>
-              {ended && <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} style={s.endedTag} />}
+              {ended && <Badge label={isCancelled ? trParties('myParties.statusLabels.cancelled') : trCommon('phase.ended')} tone="neutral" dot={false} style={s.endedTag} />}
             </View>
             {statusValue && (
               <View style={s.tile}>
