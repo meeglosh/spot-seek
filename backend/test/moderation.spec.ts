@@ -569,3 +569,24 @@ describe('guidelines page', () => {
     expect(await (await app('/')).text()).toContain('href="/guidelines"');
   });
 });
+
+describe('blocklist matching cost', () => {
+  // The old regexes backtracked quadratically on long runs of one letter
+  // (n+i+g+g+e+r+). Host-supplied text is unbounded, so matching must be linear.
+  it('screens 50k-char worst-case inputs in well under 100ms', () => {
+    const inputs = [
+      'ni' + 'g'.repeat(50_000) + 'x',
+      'n i ' + 'g '.repeat(25_000) + 'x',
+    ];
+    for (const text of inputs) {
+      const t0 = performance.now();
+      expect(matchBlocklist(text)).toBeNull();
+      expect(performance.now() - t0).toBeLessThan(100);
+    }
+  });
+
+  it('still catches long repeated-letter evasions', () => {
+    expect(matchBlocklist('ni' + 'g'.repeat(50_000) + 'er')).toBe('nigger');
+    expect(matchBlocklist('n i ' + 'g '.repeat(2000) + 'e r')).toBe('nigger');
+  });
+});

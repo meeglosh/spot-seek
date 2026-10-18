@@ -32,12 +32,31 @@ const LEET: Record<string, string> = {
   '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '@': 'a', '$': 's', '!': 'i', '|': 'i',
 };
 
-function esc(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Each letter matches one or more times: "nigger" needs n, i, 2+ g, e, r. Done by
+// comparing run-length encodings so matching is linear (the equivalent regex
+// ^n+i+g+g+e+r+$ backtracks quadratically on long runs of a repeated letter).
+type Runs = { ch: string; n: number }[];
+
+function runLengths(w: string): Runs {
+  const runs: Runs = [];
+  for (const ch of w) {
+    const last = runs[runs.length - 1];
+    if (last && last.ch === ch) last.n++;
+    else runs.push({ ch, n: 1 });
+  }
+  return runs;
 }
 
-// Each letter matches one or more times: "nigger" -> ^n+i+g+g+e+r+$ (needs 2 g's).
-const WORD_RES = WORDS.map((w) => new RegExp(`^${[...w].map((ch) => `${esc(ch)}+`).join('')}$`));
+const WORD_RUNS = WORDS.map(runLengths);
+
+function matchesWord(s: string, term: Runs): boolean {
+  const r = runLengths(s);
+  return r.length === term.length && r.every((x, i) => x.ch === term[i].ch && x.n >= term[i].n);
+}
+
+function findWord(s: string): number {
+  return WORD_RUNS.findIndex((t) => matchesWord(s, t));
+}
 
 const PHRASE_RES = PHRASES.map((p) => new RegExp(`(^| )${p}( |$)`));
 
@@ -58,14 +77,14 @@ function words(s: string): string[] {
 
 function hitWord(ws: string[]): string | null {
   for (const w of ws) {
-    const i = WORD_RES.findIndex((re) => re.test(w));
+    const i = findWord(w);
     if (i !== -1) return WORDS[i];
   }
   // Runs of 4+ single letters ("n i g g e r") are joined and tested as one word.
   let run = '';
   const flush = (): string | null => {
     if (run.length >= 4) {
-      const i = WORD_RES.findIndex((re) => re.test(run));
+      const i = findWord(run);
       if (i !== -1) return WORDS[i];
     }
     run = '';
