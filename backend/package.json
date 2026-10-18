@@ -7,7 +7,7 @@
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"test": "node scripts/test-branch.mjs",
-		"test:shared": "vitest",
+		"test:live-db": "vitest",
 		"cf-typegen": "wrangler types",
 		"lint": "tsc --noEmit",
 		"check:bundle": "wrangler deploy --dry-run --outdir /tmp/spot-seek-worker-check",

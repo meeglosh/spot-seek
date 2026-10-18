@@ -8,9 +8,9 @@
  * dev branch's current data and leaves no fixtures behind, and parallel runs
  * cannot step on each other.
  *
- * Falls back to the shared dev DB (the pre-2026-10-15 behaviour, with the
- * global teardown cleaning up) when NEON_API_KEY is missing or
- * TEST_DB_BRANCH=0 is set. `npm run test:shared` is the explicit form.
+ * When NEON_API_KEY is missing or TEST_DB_BRANCH=0 is set, the only fallback is
+ * the shared dev DB, which is the LIVE production database. That now fails
+ * closed: it refuses unless SPOTSEEK_ALLOW_LIVE_DB_TESTS=1 is set.
  *
  * Needs in env or backend/.dev.vars: NEON_API_KEY, DATABASE_URL (for the role,
  * database name and query params; the host is replaced by the branch's).
@@ -81,7 +81,17 @@ function branchUrl(templateUrl, host) {
 async function main() {
   const apiKey = vars.NEON_API_KEY;
   if (!apiKey || process.env.TEST_DB_BRANCH === '0') {
-    console.warn('[test-branch] no NEON_API_KEY (or TEST_DB_BRANCH=0): running against the SHARED dev DB');
+    if (process.env.SPOTSEEK_ALLOW_LIVE_DB_TESTS !== '1') {
+      console.error(
+        '[test-branch] REFUSING to run: no NEON_API_KEY (or TEST_DB_BRANCH=0), so the suite would fall back to the\n' +
+          'SHARED dev DB, which is the LIVE production database behind spotseek.app. Tests write fixtures to it\n' +
+          'and some specs create triggers on live tables.\n' +
+          'Fix: set NEON_API_KEY (env or backend/.dev.vars) so the suite runs on an ephemeral Neon branch.\n' +
+          'Only if you really mean to hit live data: SPOTSEEK_ALLOW_LIVE_DB_TESTS=1.',
+      );
+      process.exit(1);
+    }
+    console.warn('[test-branch] SPOTSEEK_ALLOW_LIVE_DB_TESTS=1: running against the SHARED dev DB (LIVE production data)');
     process.exit(await runVitest(process.env));
   }
   if (!vars.DATABASE_URL) throw new Error('[test-branch] DATABASE_URL not found in env or backend/.dev.vars');

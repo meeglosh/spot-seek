@@ -283,8 +283,10 @@ npx tsc --noEmit
 npm test                # 399 tests on an ephemeral Neon branch (created from the
                         # dev branch and deleted afterwards by scripts/test-branch.mjs;
                         # needs NEON_API_KEY in .dev.vars). `npm test -- --run test/x.spec.ts`
-                        # for one file. `npm run test:shared` = old behaviour on the
-                        # shared dev DB with the global teardown cleaning up.
+                        # for one file. `npm run test:live-db` (plain vitest) targets the
+                        # LIVE production DB and refuses unless
+                        # SPOTSEEK_ALLOW_LIVE_DB_TESTS=1 is set; without NEON_API_KEY
+                        # `npm test` refuses too (same opt-in).
 npm run check:bundle
 npm run deploy          # dev/preview worker (allowed per CLAUDE.md)
 ```
@@ -325,8 +327,8 @@ npm run deploy          # dev/preview worker (allowed per CLAUDE.md)
   event screen. Guests get 401 (swallowed) on `/api/reviews/*` and
   `/api/favourites`; the feed, `/api/events/:id` and `/api/profiles/:id` are
   public. `assets/onboarding/*` is no longer referenced (removable).
-- `npm test` runs on a throwaway Neon branch; `npm run test:shared` hits the
-  REAL shared dev DB — keep fixtures timestamp-unique so both modes work.
+- `npm test` runs on a throwaway Neon branch; `npm run test:live-db` hits the
+  LIVE production DB (needs SPOTSEEK_ALLOW_LIVE_DB_TESTS=1, else refuses) — keep fixtures timestamp-unique so both modes work.
 - The Workers vitest pool blanks the bare `process.env` global inside
   globalSetup files; read env via `import process from 'node:process'`.
 

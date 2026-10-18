@@ -33,6 +33,13 @@ function databaseUrl(): string {
 }
 
 export default async function setup() {
+  // Fail closed: the shared DB in .dev.vars is the LIVE production database.
+  if (!nodeProcess.env.SPOTSEEK_TEST_DB_BRANCH && nodeProcess.env.SPOTSEEK_ALLOW_LIVE_DB_TESTS !== '1') {
+    throw new Error(
+      '[test-guard] refusing to run: this would use the shared DB from backend/.dev.vars, which is the LIVE production database. ' +
+        'Use `npm test` with NEON_API_KEY set (ephemeral branch), or set SPOTSEEK_ALLOW_LIVE_DB_TESTS=1 to knowingly hit live data.',
+    );
+  }
   if (nodeProcess.env.SPOTSEEK_TEST_DB_BRANCH) {
     console.log(`[test-teardown] ephemeral branch ${nodeProcess.env.SPOTSEEK_TEST_DB_BRANCH}: no fixture cleanup needed`);
     return async () => {};
