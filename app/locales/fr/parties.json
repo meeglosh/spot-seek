@@ -168,6 +168,19 @@
       "publishParty": "Publier la soirée"
     },
     "saveError": "Impossible d'enregistrer la soirée. Vérifiez votre connexion et réessayez.",
+    "cancel": {
+      "button": "Annuler la soirée",
+      "confirm": "Annuler cette soirée ? Toutes les personnes inscrites ou en liste d'attente seront prévenues, et les sponsorings payés seront remboursés. Impossible de revenir en arrière depuis l'appli.",
+      "keep": "Garder la soirée",
+      "yes": "Oui, annuler la soirée",
+      "cancelInstead": "Annuler la soirée plutôt",
+      "error": "Impossible d'annuler la soirée. Réessayez.",
+      "alreadyCancelled": "Cette soirée a été annulée. Elle ne peut plus être modifiée.",
+      "outcome": {
+        "title": "Soirée annulée",
+        "body": "Les invités ont été prévenus et les paiements de sponsoring seront remboursés."
+      }
+    },
     "deleteError": "Impossible de supprimer la soirée. Réessayez.",
     "deleteHasSponsorship": "Cette soirée a des paiements de sponsoring. Annulez-la plutôt.",
     "share": {

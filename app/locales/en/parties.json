@@ -168,6 +168,19 @@
       "publishParty": "Publish party"
     },
     "saveError": "Couldn't save the party. Check your connection and try again.",
+    "cancel": {
+      "button": "Cancel party",
+      "confirm": "Cancel this party? Everyone who's going or waitlisted will be notified, and paid sponsorships will be refunded. This can't be undone from the app.",
+      "keep": "Keep party",
+      "yes": "Yes, cancel party",
+      "cancelInstead": "Cancel party instead",
+      "error": "Couldn't cancel the party. Try again.",
+      "alreadyCancelled": "This party was cancelled. It can't be edited.",
+      "outcome": {
+        "title": "Party cancelled",
+        "body": "Guests have been notified and sponsorship payments will be refunded."
+      }
+    },
     "deleteError": "Couldn't delete the party. Try again.",
     "deleteHasSponsorship": "This party has sponsorship payments. Cancel it instead.",
     "share": {

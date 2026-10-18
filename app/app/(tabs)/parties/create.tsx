@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../../lib/auth';
-import { createEvent, updateEvent, fetchEvent, ApiError, type ApiEvent } from '../../../lib/api';
+import { createEvent, updateEvent, fetchEvent, cancelEvent, ApiError, type ApiEvent } from '../../../lib/api';
+import { hasEnded } from '../../../lib/eventTime';
 import { publishProblem, openGuidelines, type PublishProblem } from '../../../lib/moderation';
 import { eventShareUrl } from '../../../lib/shareLinks';
 import { API_BASE, uploadEventCover, deleteEvent } from '../../../lib/api';
@@ -89,10 +90,15 @@ export default function CreateEventScreen() {
   const [problem, setProblem] = useState<PublishProblem | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  // Set when delete is refused because the party has sponsorship payments.
+  const [deleteBlocked, setDeleteBlocked] = useState(false);
+  // Status as loaded, to decide whether "Cancel party" applies.
+  const [loadedStatus, setLoadedStatus] = useState<string | null>(null);
   // Terminal state: replaces the form with a success screen once the
   // publish/draft/delete round-trip has actually completed.
   const [outcome, setOutcome] = useState<{
-    kind: 'published' | 'draft' | 'deleted';
+    kind: 'published' | 'draft' | 'deleted' | 'cancelled';
     savedEventId?: string;
     coverError?: string;
   } | null>(null);
@@ -115,6 +121,7 @@ export default function CreateEventScreen() {
         }
         setIsPrivate(e.isPrivateLocation);
         setExistingCoverUrl(e.coverImageUrl);
+        setLoadedStatus(e.status);
         if (e.moderationStatus === 'removed') setProblem({ kind: 'event_removed' });
       })
       .catch(() => setError(tr('create.loadError')))
@@ -163,7 +170,14 @@ export default function CreateEventScreen() {
     Share.share(Platform.OS === 'ios' ? { message: iosMessage, url: link } : { message: androidMessage }).catch(() => {});
   }
 
-  const canSave = title.trim().length > 0 && broadcastSubject.trim().length > 0 && !loading;
+  const isCancelled = loadedStatus === 'cancelled';
+  // Saving re-publishes, which would silently un-cancel the party, so a
+  // cancelled party is read-only here.
+  const canSave = title.trim().length > 0 && broadcastSubject.trim().length > 0 && !loading && !isCancelled;
+  // Only a live-or-upcoming published party can be called off.
+  const canCancel = isEdit && loadedStatus === 'published' && !hasEnded({
+    startsAt: startsAt?.toISOString(), endsAt: endsAt?.toISOString(),
+  });
 
   async function pickImage() {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -244,14 +258,26 @@ export default function CreateEventScreen() {
       await deleteEvent(eventId);
       setOutcome({ kind: 'deleted' });
     } catch (err) {
-      // Payments on the party: it can't be deleted, only cancelled (the app has
-      // no cancel-party action yet, so this is just the explanation).
-      setError(
-        err instanceof ApiError && err.code === 'has_sponsorship_history'
-          ? tr('create.deleteHasSponsorship')
-          : (err as Error).message || tr('create.deleteError'),
-      );
+      // Payments on the party: it can't be deleted, only cancelled. Explain,
+      // and offer cancelling instead when the party is still cancellable.
+      const blocked = err instanceof ApiError && err.code === 'has_sponsorship_history';
+      setDeleteBlocked(blocked);
+      setError(blocked ? tr('create.deleteHasSponsorship') : (err as Error).message || tr('create.deleteError'));
       setShowDeleteConfirm(false);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCancel() {
+    if (!eventId) return;
+    setLoading(true);
+    try {
+      await cancelEvent(eventId);
+      setOutcome({ kind: 'cancelled' });
+    } catch (err) {
+      setError((err as Error).message || tr('create.cancel.error'));
+      setShowCancelConfirm(false);
     } finally {
       setLoading(false);
     }
@@ -320,6 +346,10 @@ export default function CreateEventScreen() {
       deleted: {
         title: tr('create.outcome.deleted.title'),
         body: tr('create.outcome.deleted.body'),
+      },
+      cancelled: {
+        title: tr('create.cancel.outcome.title'),
+        body: tr('create.cancel.outcome.body'),
       },
     }[outcome.kind];
 
@@ -409,6 +439,20 @@ export default function CreateEventScreen() {
         {!!error && (
           <View style={s.errorBanner}>
             <Text style={[t.bodySm, { color: colors.danger }]}>{error}</Text>
+            {deleteBlocked && canCancel && !showCancelConfirm && (
+              <Btn
+                label={tr('create.cancel.cancelInstead')}
+                variant="danger"
+                small
+                onPress={() => { setError(''); setDeleteBlocked(false); setShowCancelConfirm(true); }}
+              />
+            )}
+          </View>
+        )}
+
+        {isCancelled && (
+          <View style={s.errorBanner}>
+            <Text style={[t.bodySm, { color: colors.textSecondary }]}>{tr('create.cancel.alreadyCancelled')}</Text>
           </View>
         )}
 
@@ -626,6 +670,35 @@ export default function CreateEventScreen() {
           onPress={() => handleSave('draft')}
           disabled={!canSave}
         />
+
+        {canCancel && (
+          !showCancelConfirm ? (
+            <Btn label={tr('create.cancel.button')} variant="danger" onPress={() => setShowCancelConfirm(true)} />
+          ) : (
+            <View style={s.confirmBox}>
+              <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
+                {tr('create.cancel.confirm')}
+              </Text>
+              <View style={s.confirmBtns}>
+                <Btn
+                  label={tr('create.cancel.keep')}
+                  variant="ghost"
+                  small
+                  style={s.confirmBtn}
+                  onPress={() => setShowCancelConfirm(false)}
+                />
+                <Btn
+                  label={loading ? '…' : tr('create.cancel.yes')}
+                  variant="danger"
+                  small
+                  style={s.confirmBtn}
+                  onPress={handleCancel}
+                  disabled={loading}
+                />
+              </View>
+            </View>
+          )
+        )}
 
         {isEdit && (
           !showDeleteConfirm ? (

@@ -375,6 +375,18 @@ export async function fetchProfile(id: string): Promise<ApiProfile> {
   return user;
 }
 
+/** Host calls the party off. Attendees are notified; paid sponsorships are refunded by the payment sweep. */
+export async function cancelEvent(id: string): Promise<ApiEvent> {
+  const res = await apiFetch(`/api/events/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status: 'cancelled' }),
+  });
+  if (res.status === 401) throw new Error('unauthorized');
+  if (!res.ok) throw await apiErrorFrom(res, `Cancel failed: ${res.status}`);
+  const { event } = await res.json() as { event: ApiEvent };
+  return event;
+}
+
 export async function deleteEvent(id: string): Promise<void> {
   const res = await apiFetch(`/api/events/${encodeURIComponent(id)}`, { method: 'DELETE' });
   if (res.status === 401) throw new Error('unauthorized');

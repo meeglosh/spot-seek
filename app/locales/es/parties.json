@@ -168,6 +168,19 @@
       "publishParty": "Publicar fiesta"
     },
     "saveError": "No pudimos guardar la fiesta. Revisa tu conexión e inténtalo de nuevo.",
+    "cancel": {
+      "button": "Cancelar fiesta",
+      "confirm": "¿Cancelar esta fiesta? Se avisará a todos los que van o están en lista de espera, y se reembolsarán los patrocinios pagados. No se puede deshacer desde la app.",
+      "keep": "Mantener fiesta",
+      "yes": "Sí, cancelar fiesta",
+      "cancelInstead": "Cancelar la fiesta en su lugar",
+      "error": "No pudimos cancelar la fiesta. Inténtalo de nuevo.",
+      "alreadyCancelled": "Esta fiesta fue cancelada. No se puede editar.",
+      "outcome": {
+        "title": "Fiesta cancelada",
+        "body": "Avisamos a los invitados y los pagos de patrocinio se reembolsarán."
+      }
+    },
     "deleteError": "No pudimos eliminar la fiesta. Inténtalo de nuevo.",
     "deleteHasSponsorship": "Esta fiesta tiene pagos de patrocinio. Cancélala en su lugar.",
     "share": {
