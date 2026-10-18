@@ -30,7 +30,7 @@ const BUNDLE_ID = 'com.spotseek.app';
 /** Max URLs in sitemap.xml (protocol limit is 50,000). */
 export const SITEMAP_MAX_URLS = 1000;
 /** Static public pages listed after the homepage in sitemap.xml. */
-const STATIC_PATHS = ['/guidelines', '/privacy', '/terms'];
+const STATIC_PATHS = ['/guidelines', '/privacy', '/support', '/terms'];
 
 deeplinksRouter.get('/.well-known/apple-app-site-association', (c) => c.body(
   JSON.stringify({
@@ -57,6 +57,7 @@ deeplinksRouter.get('/robots.txt', (c) => {
       'Allow: /e/',
       'Allow: /guidelines',
       'Allow: /privacy',
+      'Allow: /support',
       'Allow: /terms',
       'Disallow: /admin',
       'Disallow: /api/',

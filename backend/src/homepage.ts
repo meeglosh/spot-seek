@@ -547,6 +547,7 @@ ${calendarHtml(rows)}
   <a href="/guidelines">Community guidelines</a>
   <a href="/terms">Terms</a>
   <a href="/privacy">Privacy</a>
+  <a href="/support">Support</a>
   <span>Coming soon to the App Store</span>
 </footer>
 <script>${SX_JS}</script>

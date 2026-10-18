@@ -85,9 +85,26 @@ describe('legal pages', () => {
     expect(home).toContain('href="/terms"');
     expect(home).toContain('href="/privacy"');
     const sitemap = await (await get('/sitemap.xml')).text();
-    for (const p of ['/privacy', '/terms', '/guidelines']) expect(sitemap).toContain(`<loc>https://spotseek.app${p}</loc>`);
+    for (const p of ['/privacy', '/terms', '/guidelines', '/support']) expect(sitemap).toContain(`<loc>https://spotseek.app${p}</loc>`);
     const robots = await (await get('/robots.txt')).text();
     expect(robots).toContain('Allow: /privacy');
     expect(robots).toContain('Allow: /terms');
+    expect(robots).toContain('Allow: /support');
+    expect(home).toContain('href="/support"');
+  });
+
+  it('/support serves HTML with contact info, the FAQ and links, and no chat or payments', async () => {
+    const res = await get('/support');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/html');
+    const html = await res.text();
+    expect(html).toContain('<h1>Support</h1>');
+    expect(html).toContain('href="mailto:hello@spotseek.app"');
+    expect(html).toContain('How do I delete my account?');
+    expect(html).toContain('href="https://spotseek.app/guidelines"');
+    expect(html).toContain('href="https://spotseek.app/privacy"');
+    expect(html).toContain('href="https://spotseek.app/terms"');
+    expect(html).not.toContain('—');
+    expect(html.toLowerCase()).not.toMatch(/\bchat\b|sponsor|payment/);
   });
 });

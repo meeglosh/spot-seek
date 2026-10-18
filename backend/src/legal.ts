@@ -46,7 +46,7 @@ export function draftBanner(): string {
 export function legalFooter(baseUrl: string): string {
   const base = escapeHtml(baseUrl);
   return `<div class="legal-foot">
-    <a href="${base}/terms">Terms</a><a href="${base}/privacy">Privacy</a><a href="${base}/guidelines">Community guidelines</a><a href="${base}/">Home</a>
+    <a href="${base}/terms">Terms</a><a href="${base}/privacy">Privacy</a><a href="${base}/guidelines">Community guidelines</a><a href="${base}/support">Support</a><a href="${base}/">Home</a>
     <p class="fine"><a href="mailto:${CONTACT}">${CONTACT}</a> · ${escapeHtml(LEGAL_COMPANY)}</p>
   </div>`;
 }

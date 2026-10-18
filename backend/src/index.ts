@@ -32,6 +32,7 @@ import { passwordResetRouter, sendResetEmail } from './password-reset';
 import { reportRouter, blocksRouter } from './moderation/routes';
 import { runModerationDigest } from './moderation/admin';
 import { renderGuidelinesPage } from './guidelines';
+import { renderSupportPage } from './support';
 import { renderPrivacyPage, renderTermsPage } from './legal';
 import { paymentsRouter, onboardPagesRouter, runPaymentSweeps } from './payments';
 import { sentryOptions } from './sentry';
@@ -181,6 +182,14 @@ app.get('/', (c) =>
 // Community guidelines (Apple 1.2: published contact info + what is not allowed).
 app.get('/guidelines', (c) =>
   c.html(renderGuidelinesPage({ baseUrl: publicBaseUrl(c.env) }), 200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'public, max-age=3600',
+  }),
+);
+
+// Support page (App Store "Support URL"): contact info + short FAQ.
+app.get('/support', (c) =>
+  c.html(renderSupportPage({ baseUrl: publicBaseUrl(c.env) }), 200, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'public, max-age=3600',
   }),
