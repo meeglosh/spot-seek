@@ -6,11 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
 import { safeRedirect } from '../../lib/safeRedirect';
-import { colors, radius, spacing, type as t } from '../../lib/theme';
-import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
-
-// Pill input: the shared input well, fully rounded.
-const pillInput = { ...inputStyle, borderRadius: radius.pill } as const;
+import { colors, spacing, type as t } from '../../lib/theme';
+import { BackLink, Btn, FieldLabel, pillInputStyle, inputFocusedStyle, Press } from '../../components/ui';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -66,7 +63,7 @@ export default function SignInScreen() {
           <View style={s.field}>
             <FieldLabel>{tr('signIn.emailLabel')}</FieldLabel>
             <TextInput
-              style={[pillInput, focused === 'email' && inputFocusedStyle]}
+              style={[pillInputStyle, focused === 'email' && inputFocusedStyle]}
               placeholder={tr('signIn.emailPlaceholder')}
               placeholderTextColor={colors.textTertiary}
               value={email}
@@ -82,7 +79,7 @@ export default function SignInScreen() {
           <View style={s.field}>
             <FieldLabel>{tr('signIn.passwordLabel')}</FieldLabel>
             <TextInput
-              style={[pillInput, focused === 'password' && inputFocusedStyle]}
+              style={[pillInputStyle, focused === 'password' && inputFocusedStyle]}
               placeholder={tr('signIn.passwordPlaceholder')}
               placeholderTextColor={colors.textTertiary}
               value={password}

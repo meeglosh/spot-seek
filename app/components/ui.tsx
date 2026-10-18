@@ -318,11 +318,12 @@ export function BackLink({ label, onPress }: { label: string; onPress: () => voi
 // ─── Section title: bold, left, optional right-aligned link in action ───────
 
 export function SectionTitle({
-  children, actionLabel, onAction,
-}: { children: string; actionLabel?: string; onAction?: () => void }) {
+  children, actionLabel, onAction, leading,
+}: { children: string; actionLabel?: string; onAction?: () => void; leading?: React.ReactNode }) {
   return (
     <View style={s.sectionWrap}>
-      <Text style={[t.headlineMd, { color: colors.textPrimary, flexShrink: 1 }]}>{children}</Text>
+      {leading}
+      <Text style={[t.headlineMd, { color: colors.textPrimary, flexShrink: 1, ...(leading ? { flex: 1 } : null) }]}>{children}</Text>
       {actionLabel && onAction && (
         <Press onPress={onAction} accessibilityRole="button" hitSlop={8}>
           <Text style={[t.bodyMdStrong, { color: colors.action }]}>{actionLabel}</Text>
@@ -335,8 +336,10 @@ export function SectionTitle({
 // ─── Circular icon button (header actions, back) ─────────────────────────────
 
 export function IconButton({
-  icon, onPress, accessibilityLabel, color = colors.textPrimary, size = TAP, children, style,
+  icon, onPress, accessibilityLabel, color = colors.textPrimary, size = TAP, children, style, active,
 }: {
+  /** Cyan ring: the control currently has an effect (e.g. filters applied). */
+  active?: boolean;
   icon?: IconName;
   onPress: () => void;
   accessibilityLabel: string;
@@ -353,6 +356,7 @@ export function IconButton({
       style={[{
         width: size, height: size, borderRadius: radius.round, backgroundColor: colors.surface1,
         alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1.5, borderColor: active ? colors.action : 'transparent',
       }, style]}
     >
       {icon && <Icon name={icon} size={22} color={color} />}
@@ -364,8 +368,13 @@ export function IconButton({
 // ─── Search field: fully rounded dark pill with a leading magnifier ──────────
 
 export function SearchField({
-  value, onChangeText, placeholder, style, ...rest
-}: Omit<TextInputProps, 'style'> & { style?: StyleProp<ViewStyle> }) {
+  value, onChangeText, placeholder, style, onClear, clearAccessibilityLabel, ...rest
+}: Omit<TextInputProps, 'style'> & {
+  style?: StyleProp<ViewStyle>;
+  /** When set and the value is non-empty, shows a trailing circular clear (x) button. */
+  onClear?: () => void;
+  clearAccessibilityLabel?: string;
+}) {
   return (
     <View style={[s.search, style]}>
       <Icon name="search" size={20} color={colors.textTertiary} />
@@ -377,6 +386,17 @@ export function SearchField({
         style={s.searchInput}
         {...rest}
       />
+      {onClear && value ? (
+        <Press
+          onPress={onClear}
+          accessibilityRole="button"
+          accessibilityLabel={clearAccessibilityLabel}
+          hitSlop={8}
+          style={s.searchClear}
+        >
+          <Icon name="close" size={14} color={colors.textPrimary} />
+        </Press>
+      ) : null}
     </View>
   );
 }
@@ -385,8 +405,10 @@ export function SearchField({
 // grey subtitle, optional trailing control (toggle, chevron, pill) ───────────
 
 export function ListRow({
-  icon, title, subtitle, trailing, onPress, accessibilityLabel, style,
+  icon, title, subtitle, trailing, onPress, accessibilityLabel, style, iconTint,
 }: {
+  /** Icon colour (default textPrimary), e.g. colors.danger for a destructive row. */
+  iconTint?: string;
   icon?: IconName;
   title: string;
   subtitle?: string;
@@ -399,7 +421,7 @@ export function ListRow({
     <>
       {icon && (
         <View style={s.rowIcon}>
-          <Icon name={icon} size={18} color={colors.textPrimary} />
+          <Icon name={icon} size={18} color={iconTint ?? colors.textPrimary} />
         </View>
       )}
       <View style={{ flex: 1 }}>
@@ -570,6 +592,9 @@ export const inputStyle = {
   paddingVertical: spacing.md,
 } as const;
 
+// Fully rounded variant of the input well (auth screens).
+export const pillInputStyle = { ...inputStyle, borderRadius: radius.pill } as const;
+
 export const inputFocusedStyle = { borderColor: colors.action } as const;
 
 const s = StyleSheet.create({
@@ -597,6 +622,10 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 2,
     minHeight: TAP + 8, paddingHorizontal: spacing.lg - 4,
     borderRadius: radius.pill, backgroundColor: colors.surface1,
+  },
+  searchClear: {
+    width: 24, height: 24, borderRadius: radius.round, backgroundColor: colors.surface3,
+    alignItems: 'center', justifyContent: 'center',
   },
   searchInput: { ...t.bodyLg, flex: 1, color: colors.textPrimary, paddingVertical: spacing.sm },
   row: {

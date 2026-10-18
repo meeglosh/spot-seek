@@ -14,7 +14,6 @@ import { fetchFavourites, type ApiFavourite } from '../../../lib/api';
 import { DateTimePicker } from '../../../components/DateTimePicker';
 import { useDiscoverFilters } from '../../../lib/discover-filters';
 import { colors, spacing, TAP, type as t } from '../../../lib/theme';
-import { Icon } from '../../../components/icons';
 import { Btn, Chip, SectionTitle, SearchField, IconButton, ListRow, Press, Toggle } from '../../../components/ui';
 import { useAuthGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
@@ -207,18 +206,12 @@ export default function FilterScreen() {
         {/* Venue */}
         <View style={s.section}>
           <SectionTitle>{tr('filters.venue')}</SectionTitle>
-          <View style={s.searchWrap}>
-            <SearchField
-              placeholder={tr('filters.venuePlaceholder')}
-              value={venueSearch}
-              onChangeText={setVenueSearch}
-            />
-            {venueSearch.length > 0 && (
-              <Press onPress={() => setVenueSearch('')} style={s.clearBtn} accessibilityRole="button">
-                <Icon name="close" size={16} color={colors.textTertiary} />
-              </Press>
-            )}
-          </View>
+          <SearchField
+            placeholder={tr('filters.venuePlaceholder')}
+            value={venueSearch}
+            onChangeText={setVenueSearch}
+            onClear={() => setVenueSearch('')}
+          />
         </View>
 
         {/* Past parties: opt-in, off by default, never persisted */}
@@ -282,8 +275,6 @@ const s = StyleSheet.create({
 
   sportRow: { gap: spacing.sm, paddingRight: spacing.md, flexDirection: 'row' },
 
-  searchWrap: { justifyContent: 'center' },
-  clearBtn: { position: 'absolute', right: 0, width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   favSection: { gap: spacing.sm },

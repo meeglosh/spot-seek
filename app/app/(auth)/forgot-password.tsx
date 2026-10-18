@@ -8,13 +8,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { requestPasswordReset } from '../../lib/api';
 import { colors, radius, spacing, type as t } from '../../lib/theme';
-import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../components/ui';
+import { BackLink, Btn, FieldLabel, pillInputStyle, inputFocusedStyle } from '../../components/ui';
 
 // Requests a password-reset email. The server never reveals whether the email
 // has an account, so on success we always show the same neutral confirmation.
-// Pill input: the shared input well, fully rounded.
-const pillInput = { ...inputStyle, borderRadius: radius.pill } as const;
-
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -63,7 +60,7 @@ export default function ForgotPasswordScreen() {
             <View style={s.form}>
               <FieldLabel>{tr('forgot.emailLabel')}</FieldLabel>
               <TextInput
-                style={[pillInput, focused && inputFocusedStyle]}
+                style={[pillInputStyle, focused && inputFocusedStyle]}
                 placeholder={tr('forgot.emailPlaceholder')}
                 placeholderTextColor={colors.textTertiary}
                 value={email}

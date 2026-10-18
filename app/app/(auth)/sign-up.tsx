@@ -7,12 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
 import { safeRedirect } from '../../lib/safeRedirect';
 import { getOnboardingSeen } from '../../lib/api';
-import { colors, radius, spacing, type as t } from '../../lib/theme';
-import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
+import { colors, spacing, type as t } from '../../lib/theme';
+import { BackLink, Btn, FieldLabel, pillInputStyle, inputFocusedStyle, Press } from '../../components/ui';
 import { openGuidelines, openTerms, openPrivacy } from '../../lib/moderation';
-
-// Pill input: the shared input well, fully rounded.
-const pillInput = { ...inputStyle, borderRadius: radius.pill } as const;
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -91,7 +88,7 @@ export default function SignUpScreen() {
             <View key={id} style={s.field}>
               <FieldLabel>{label}</FieldLabel>
               <TextInput
-                style={[pillInput, focused === id && inputFocusedStyle]}
+                style={[pillInputStyle, focused === id && inputFocusedStyle]}
                 placeholder={placeholder}
                 placeholderTextColor={colors.textTertiary}
                 value={value}

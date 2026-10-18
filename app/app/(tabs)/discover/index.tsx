@@ -8,9 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
 import { AppHeader } from '../../../components/AppHeader';
-import { Chip, SegmentedControl, SearchField, IconButton, Press, Skeleton, EventCardSkeleton, EmptyState, ErrorState } from '../../../components/ui';
-import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
-import { Icon } from '../../../components/icons';
+import { Chip, SegmentedControl, SearchField, IconButton, Skeleton, EventCardSkeleton, EmptyState, ErrorState } from '../../../components/ui';
+import { colors, radius, spacing, type as t } from '../../../lib/theme';
 import { onBlocksChanged } from '../../../lib/moderation';
 import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
@@ -245,17 +244,9 @@ export default function DiscoverScreen() {
                 placeholder={tr('feed.searchPlaceholder')}
                 value={search}
                 onChangeText={setSearch}
+                onClear={() => setSearch('')}
+                clearAccessibilityLabel={trCommon('shell.accessibility.clear')}
               />
-              {search.length > 0 && (
-                <Press
-                  onPress={() => setSearch('')}
-                  style={s.clearBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel={trCommon('shell.accessibility.clear')}
-                >
-                  <Icon name="close" size={16} color={colors.textTertiary} />
-                </Press>
-              )}
             </View>
           )}
 
@@ -263,7 +254,8 @@ export default function DiscoverScreen() {
           <IconButton
             icon="filter"
             color={filterCount > 0 ? colors.action : colors.textSecondary}
-            style={[s.filterIconBtn, filterCount > 0 && s.filterIconBtnActive]}
+            active={filterCount > 0}
+            style={s.filterIconBtn}
             onPress={openFilters}
             accessibilityLabel={tr('feed.filtersLabel')}
           >
@@ -394,11 +386,9 @@ const s = StyleSheet.create({
   controlsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 
   searchWrap: { flex: 1, justifyContent: 'center' },
-  clearBtn: { position: 'absolute', right: 0, width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
 
   // Single filters entry point: a circular icon button; the ring marks active filters
-  filterIconBtn: { borderWidth: 1.5, borderColor: 'transparent', alignSelf: 'center' },
-  filterIconBtnActive: { borderColor: colors.action },
+  filterIconBtn: { alignSelf: 'center' },
   filterBadge: {
     position: 'absolute',
     top: -6,
