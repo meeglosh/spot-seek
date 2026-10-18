@@ -24,7 +24,7 @@ export function renderGuidelinesPage(opts: { baseUrl: string }): string {
         <li>Violence or content that encourages it.</li>
         <li>Spam, scams and fake parties.</li>
       </ul>
-      <p class="fine">This applies to titles, descriptions, venue names, photos and chat.</p>
+      <p class="fine">This applies to titles, descriptions, venue names, photos and profiles.</p>
     </div>
 
     <div class="panel">
