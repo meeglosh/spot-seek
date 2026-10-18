@@ -89,7 +89,7 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     gap: spacing.sm,
   },
-  rsvpBtn: { height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: radius.control },
+  rsvpBtn: { height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: radius.cta },
   rsvpError: { color: colors.danger, textAlign: 'center' },
   textLink: { minHeight: TAP, alignItems: 'center', justifyContent: 'center' },
   cancelText: { color: colors.textTertiary, textAlign: 'center' },

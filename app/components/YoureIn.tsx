@@ -234,7 +234,7 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', justifyContent: 'center', gap: spacing.sm, marginTop: spacing.sm },
   ghost: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: TAP,
-    paddingHorizontal: spacing.md, borderRadius: radius.control, backgroundColor: colors.surface2,
+    paddingHorizontal: spacing.md, borderRadius: radius.cta, backgroundColor: colors.surface2,
   },
-  done: { height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: radius.control },
+  done: { height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: radius.cta },
 });

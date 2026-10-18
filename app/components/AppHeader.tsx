@@ -199,7 +199,7 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
           accessibilityRole="button"
           accessibilityLabel={tr('shell.accessibility.back')}
         >
-          <Icon name="back" size={24} color={colors.textPrimary} />
+          <Icon name="back" size={22} color={colors.textPrimary} />
         </Press>
       ) : (
         <Press
@@ -208,11 +208,11 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
           accessibilityRole="button"
           accessibilityLabel={tr('shell.accessibility.openMenu')}
         >
-          <Icon name="menu" size={24} color={colors.action} />
+          <Icon name="menu" size={22} color={colors.textPrimary} />
         </Press>
       )}
 
-      <Text style={[t.headlineMd, s.wordmark]}>SPOT SEEK</Text>
+      <Text style={[t.wordmark, s.wordmark]} numberOfLines={1}>SPOT SEEK</Text>
 
       <View style={s.headerRight}>
         <Press
@@ -223,7 +223,7 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
           accessibilityRole="button"
           accessibilityLabel={tr('shell.accessibility.notifications')}
         >
-          <Icon name="bell" size={24} color={colors.textSecondary} />
+          <Icon name="bell" size={22} color={colors.textPrimary} />
           {unread > 0 && (
             <View style={s.bellBadge}>
               <Text style={[t.labelSm, s.bellBadgeText]} numberOfLines={1}>
@@ -242,7 +242,7 @@ export function AppHeader({ back = false, onBack }: { back?: boolean; onBack?: (
           accessibilityRole="button"
           accessibilityLabel={tr('shell.accessibility.profile')}
         >
-          <Text style={[t.label, { color: colors.action }]}>{initial}</Text>
+          <Text style={[t.label, { color: colors.textPrimary }]}>{initial}</Text>
         </Press>
       </View>
 
@@ -270,15 +270,22 @@ const s = StyleSheet.create({
     paddingBottom: spacing.sm,
     backgroundColor: colors.canvas,
   },
-  headerBtn: { width: TAP, height: TAP, alignItems: 'flex-start', justifyContent: 'center' },
-  // Brand wordmark is not interactive, so it is not `action` cyan.
-  wordmark: { color: colors.textPrimary, letterSpacing: 1 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  bellBtn: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
+  // Circular dark icon buttons (menu / back, bell).
+  headerBtn: {
+    width: TAP, height: TAP, borderRadius: radius.round, backgroundColor: colors.surface1,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  // Brand wordmark (the only Anton text) is not interactive, so not cyan.
+  wordmark: { color: colors.textPrimary, flex: 1, marginHorizontal: spacing.md },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  bellBtn: {
+    width: TAP, height: TAP, borderRadius: radius.round, backgroundColor: colors.surface1,
+    alignItems: 'center', justifyContent: 'center',
+  },
   // Unread count is neither action nor live: a neutral paper chip.
   bellBadge: {
     position: 'absolute',
-    top: 4,
+    top: 2,
     right: 0,
     minWidth: 18,
     height: 18,
@@ -291,14 +298,12 @@ const s = StyleSheet.create({
   bellBadgeText: { color: colors.textOnFill },
   // Avatars are true circles (radius.round).
   avatar: {
-    width: 36,
-    height: 36,
+    width: TAP,
+    height: TAP,
     borderRadius: radius.round,
-    borderWidth: 1,
-    borderColor: colors.action,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.surface1,
   },
 
   scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.scrim },
@@ -311,12 +316,13 @@ const s = StyleSheet.create({
     ...elevation(3),
     borderTopRightRadius: radius.sheet,
     borderBottomRightRadius: radius.sheet,
+    backgroundColor: colors.surface1,
     paddingHorizontal: spacing.lg,
   },
   drawerProfile: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.lg },
   drawerAvatar: {
     width: 52, height: 52, borderRadius: radius.round,
-    backgroundColor: colors.surface1,
+    backgroundColor: colors.surface3,
     alignItems: 'center', justifyContent: 'center',
   },
   drawerDivider: { height: 1, backgroundColor: colors.borderSubtle, marginVertical: spacing.md },

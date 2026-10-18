@@ -22,9 +22,9 @@ const ratio = (a: string, b: string) => {
 };
 const isOpaqueHex = (c: string) => /^#[0-9a-f]{6}$/i.test(c);
 
-describe('theme (Soft Brutalist, dark-only, semantic roles)', () => {
-  it('uses the warm near-black canvas', () => {
-    expect(colors.canvas).toBe('#101014');
+describe('theme (FotMob structure, SpotSeek brand, dark-only, semantic roles)', () => {
+  it('uses the brand-ink canvas', () => {
+    expect(colors.canvas).toBe('#0f0f12');
   });
 
   it('is dark-only: light and dark resolve to the same palette', () => {
@@ -32,23 +32,26 @@ describe('theme (Soft Brutalist, dark-only, semantic roles)', () => {
     expect(dark).toBe(colors);
   });
 
-  it('locks radius by role: control 10, card 14, sheet 20, pill/round fully round', () => {
-    expect(radius.control).toBe(10);
-    expect(radius.card).toBe(14);
-    expect(radius.sheet).toBe(20);
+  it('locks radius by role: control 12, card 18, tile 22, sheet 28, cta 10, pill/round fully round', () => {
+    expect(radius.control).toBe(12);
+    expect(radius.card).toBe(18);
+    expect(radius.tile).toBe(22);
+    expect(radius.sheet).toBe(28);
+    expect(radius.cta).toBe(10);
     expect(radius.pill).toBeGreaterThanOrEqual(999);
     expect(radius.round).toBeGreaterThanOrEqual(999);
     expect(radius.none).toBe(0);
-    expect(Object.keys(radius).sort()).toEqual(['card', 'control', 'none', 'pill', 'round', 'sheet']);
+    expect(Object.keys(radius).sort()).toEqual(['card', 'control', 'cta', 'none', 'pill', 'round', 'sheet', 'tile']);
     // the scale rises with the size of the surface
     expect(radius.control).toBeLessThan(radius.card);
-    expect(radius.card).toBeLessThan(radius.sheet);
+    expect(radius.card).toBeLessThan(radius.tile);
+    expect(radius.tile).toBeLessThan(radius.sheet);
   });
 
-  it('maps display type to Anton and labels to Space Grotesk', () => {
+  it('maps the wordmark to Anton, CTA labels to Space Grotesk and reading text to the system font', () => {
     expect(fonts.display).toBe('Anton_400Regular');
     expect(fonts.label).toContain('SpaceGrotesk');
-    expect(fonts.sansRegular).toContain('ArchivoNarrow');
+    expect(fonts.sansRegular).toBe('System');
   });
 
   it('has a more generous spacing rhythm, with more space above headings than below', () => {
@@ -153,15 +156,18 @@ describe('depth model: the elevation ladder', () => {
     for (const lvl of [1, 2, 3] as const) {
       const lo = elevation((lvl - 1) as 0 | 1 | 2);
       const hi = elevation(lvl);
-      expect(hi.shadowRadius).toBeGreaterThan(lo.shadowRadius);
-      expect(hi.elevation).toBeGreaterThan(lo.elevation);
+      expect(hi.shadowRadius).toBeGreaterThanOrEqual(lo.shadowRadius);
+      expect(hi.elevation).toBeGreaterThanOrEqual(lo.elevation);
       expect(hi.shadowOffset.height).toBeGreaterThanOrEqual(lo.shadowOffset.height);
     }
   });
 
-  it('uses soft black shadows: blurred, low opacity, never a hard offset', () => {
-    expect(elevation(0).shadowOpacity).toBe(0);
-    for (const lvl of [1, 2, 3] as const) {
+  it('is flat: only level 3 (sheets, drawer) casts a soft black shadow', () => {
+    for (const lvl of [0, 1, 2] as const) {
+      expect(elevation(lvl).shadowOpacity).toBe(0);
+      expect(elevation(lvl).elevation).toBe(0);
+    }
+    for (const lvl of [3] as const) {
       const sh = elevation(lvl);
       expect(sh.shadowColor).toBe('#000000');
       expect(sh.shadowRadius).toBeGreaterThanOrEqual(8);
@@ -187,10 +193,12 @@ describe('press feedback', () => {
 });
 
 describe('type roles', () => {
-  it('uses Anton only for display roles', () => {
+  it('uses Anton only for the wordmark and Space Grotesk only for CTA buttons and the tag', () => {
     for (const [name, role] of Object.entries(type)) {
-      const isDisplay = /^(display|headline)/.test(name);
-      expect(role.fontFamily === fonts.display).toBe(isDisplay);
+      const family = (role as { fontFamily?: string }).fontFamily;
+      expect(family === fonts.display).toBe(name === 'wordmark');
+      const grotesk = ['button', 'buttonSm', 'tag'].includes(name);
+      expect(family !== undefined && family.startsWith('SpaceGrotesk')).toBe(grotesk);
     }
   });
 
@@ -201,28 +209,25 @@ describe('type roles', () => {
     expect(type.tag.fontSize).toBeGreaterThanOrEqual(11);
   });
 
-  it('uses ALL CAPS for every Anton role and the tag role, nothing else', () => {
+  it('uses ALL CAPS for the tracked tag role only (sentence case everywhere else)', () => {
     const caps = Object.entries(type)
       .filter(([, r]) => 'textTransform' in r && r.textTransform === 'uppercase')
       .map(([n]) => n)
       .sort();
-    expect(caps).toEqual(
-      ['displayHero', 'displayXl', 'headlineLg', 'headlineMd', 'headlineSm', 'tag'].sort(),
-    );
-    for (const [, r] of Object.entries(type)) {
-      if (r.fontFamily === fonts.display) expect('textTransform' in r && r.textTransform).toBe('uppercase');
-    }
+    expect(caps).toEqual(['tag']);
     expect(type.tag.letterSpacing).toBeGreaterThanOrEqual(1);
     for (const k of ['button', 'buttonSm', 'label', 'labelSm', 'labelMd'] as const) {
       expect('textTransform' in type[k]).toBe(false);
-      expect(type[k].fontFamily).toBe(fonts.label); // Space Grotesk Medium
     }
+    expect(type.button.fontFamily).toBe(fonts.label); // CTA: Space Grotesk Medium
+    expect(type.buttonSm.fontFamily).toBe(fonts.label);
   });
 
-  it('shrinks Anton below the v2 sizes so display stops shouting', () => {
-    expect(type.headlineLg.fontSize).toBeLessThanOrEqual(28);
-    expect(type.headlineMd.fontSize).toBeLessThanOrEqual(21);
-    expect(type.displayHero.fontSize).toBeLessThanOrEqual(48);
+  it('uses a bold system-font title scale (screen title ~34, section header ~22)', () => {
+    expect(type.displayXl.fontSize).toBeGreaterThanOrEqual(32);
+    expect(Number(type.displayXl.fontWeight)).toBeGreaterThanOrEqual(700);
+    expect(type.headlineMd.fontSize).toBeGreaterThanOrEqual(20);
+    expect(Number(type.headlineMd.fontWeight)).toBeGreaterThanOrEqual(700);
   });
 
   it('defines a 44pt tap target', () => {

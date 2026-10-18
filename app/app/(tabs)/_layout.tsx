@@ -8,7 +8,7 @@ import { Text } from '../../components/Text';
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs/types';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '../../components/icons';
-import { colors, radius, elevation, type as t } from '../../lib/theme';
+import { colors, radius, spacing, type as t } from '../../lib/theme';
 import { useAuthGate } from '../../components/AuthGate';
 
 // Tab icons come from the SpotSeek SVG icon set (components/icons), not an
@@ -16,13 +16,13 @@ import { useAuthGate } from '../../components/AuthGate';
 type TabIconName = 'discover' | 'parties' | 'profile';
 
 function TabIcon({ focused, icon }: { focused: boolean; icon: TabIconName }) {
-  return <Icon name={icon} size={24} color={focused ? colors.action : colors.textTertiary} />;
+  return <Icon name={icon} size={24} color={focused ? colors.action : colors.textSecondary} />;
 }
 
 function TabLabel({ label, focused }: { label: string; focused: boolean }) {
   return (
     <Text
-      style={[t.labelSm, { color: focused ? colors.action : colors.textTertiary }]}
+      style={[t.labelSm, { color: focused ? colors.action : colors.textSecondary }]}
       maxFontSizeMultiplier={1.2}
     >
       {label}
@@ -75,7 +75,7 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
     // the content row, not as extra height the row (or the pill) stretches
     // into — otherwise the pill's top/bottom-anchored positioning resolves
     // against the padded total height instead of the icon+label content.
-    <View style={[s.tabBarOuter, { paddingBottom: insets.bottom }]}>
+    <View style={[s.tabBarOuter, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
       <View style={s.tabBarRow}>
         <Animated.View
           pointerEvents="none"
@@ -91,7 +91,7 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
           if (hidden) return null;
 
           const focused = state.index === index;
-          const tintColor = focused ? colors.action : colors.textTertiary;
+          const tintColor = focused ? colors.action : colors.textSecondary;
           const icon = options.tabBarIcon?.({ focused, color: tintColor, size: 24 });
           const label = typeof options.tabBarLabel === 'function'
             ? options.tabBarLabel({
@@ -116,7 +116,7 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
                 // margin the previous per-tab pill used) rather than sized to
                 // fill it — filling it would span nearly edge-to-edge
                 // between tabs.
-                const inset = 8;
+                const inset = 4;
                 const { x, width } = e.nativeEvent.layout;
                 const next = { x: x + inset, width: width - inset * 2 };
                 setLayouts((prev) => (
@@ -184,33 +184,36 @@ export default function TabsLayout() {
 }
 
 const s = StyleSheet.create({
-  // Safe-area inset lives here as pure padding below the content row — it
-  // must not be part of the row's own (resolved, content-driven) height, or
-  // the pill's top/bottom-anchored fill stretches into that empty space too.
-  // Level-1 rung: lighter than the canvas, with a soft shadow cast upward.
+  // FotMob-style floating pill. The outer wrapper is transparent and sits in
+  // flow under the screens (so scrollable content ends above it and is never
+  // hidden); it only carries the side inset and the gap above the home
+  // indicator (safe-area inset added inline as paddingBottom).
   tabBarOuter: {
-    ...elevation(1),
-    shadowOffset: { width: 0, height: -2 },
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    backgroundColor: colors.canvas,
   },
+  // The capsule: an OPAQUE flat surface (no border, no shadow).
   tabBarRow: {
     flexDirection: 'row',
     position: 'relative',
-    paddingTop: 10,
-    paddingBottom: 14,
+    padding: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface1,
   },
-  // Active tab indicator: a soft pill with a washed action fill. No border,
-  // no shadow; the translucent fill sits on the opaque bar.
+  // Active tab highlight: a filled rounded capsule behind the active tab.
   pill: {
     position: 'absolute',
     top: 6,
     bottom: 6,
-    backgroundColor: colors.actionWash,
-    borderRadius: radius.control + 4,
+    backgroundColor: colors.surface3,
+    borderRadius: radius.pill,
   },
   tabButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+    paddingVertical: 8,
   },
 });

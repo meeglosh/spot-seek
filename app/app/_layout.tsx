@@ -3,12 +3,6 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { Anton_400Regular } from '@expo-google-fonts/anton';
-import {
-  ArchivoNarrow_400Regular,
-  ArchivoNarrow_500Medium,
-  ArchivoNarrow_600SemiBold,
-  ArchivoNarrow_700Bold,
-} from '@expo-google-fonts/archivo-narrow';
 import { SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import { AuthProvider } from '../lib/auth';
 import { colors } from '../lib/theme';
@@ -37,10 +31,6 @@ const SPLASH_HOLD_MS = 1100;
 function RootLayout() {
   const [loaded] = useFonts({
     Anton_400Regular,
-    ArchivoNarrow_400Regular,
-    ArchivoNarrow_500Medium,
-    ArchivoNarrow_600SemiBold,
-    ArchivoNarrow_700Bold,
     SpaceGrotesk_500Medium,
     SpaceGrotesk_700Bold,
   });

@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Pressable, Animated, AccessibilityInfo, StyleSheet, Switch,
-  type ViewStyle, type StyleProp, type PressableProps,
+  View, Pressable, Animated, AccessibilityInfo, StyleSheet, Switch, TextInput,
+  type TextInputProps, type ViewStyle, type StyleProp, type PressableProps,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Text } from './Text';
 import { Icon, type IconName } from './icons';
-import { colors, radius, spacing, space, type as t, TAP, elevation, press } from '../lib/theme';
+import { colors, radius, spacing, space, type as t, TAP, press, cta } from '../lib/theme';
 
 // ─── Reduce Motion ────────────────────────────────────────────────────────────
 
@@ -253,14 +253,11 @@ export function SoonTag({ label }: { label: string }) {
   );
 }
 
-// ─── Segmented control ───────────────────────────────────────────────────────
-// A recessed track (surface2) holding a raised thumb (surface3, opaque, with a
-// soft level-1 shadow). Sizing: segments hug their content by default and the
-// control never exceeds its container (`maxWidth: '100%'`, labels truncate).
-// Pass `fill` to stretch the control and share the width equally. The thumb's
-// radius is the track's minus the track padding, so the curves stay concentric.
-
-const SEG_PAD = 3;
+// ─── Segmented control: plain text tabs ──────────────────────────────────────
+// No track, no box, no underline: the active tab is bold and primary, the
+// others grey. Tabs hug their content by default and the control never exceeds
+// its container (`maxWidth: '100%'`, labels truncate). Pass `fill` to share the
+// width equally.
 
 export function SegmentedControl<K extends string>({
   options, value, onChange, style, fill = false,
@@ -282,17 +279,16 @@ export function SegmentedControl<K extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
             accessibilityLabel={opt.accessibilityLabel}
-            style={[
-              s.segmentBtn,
-              fill ? s.segmentFill : s.segmentHug,
-              on && s.segmentOn,
-            ]}
+            style={[s.segmentBtn, fill ? s.segmentFill : s.segmentHug]}
           >
             {opt.icon && (
-              <Icon name={opt.icon} size={16} color={on ? colors.action : colors.textTertiary} />
+              <Icon name={opt.icon} size={16} color={on ? colors.textPrimary : colors.textTertiary} />
             )}
             <Text
-              style={[t.label, { color: on ? colors.textPrimary : colors.textSecondary }]}
+              style={[
+                t.bodyMd,
+                { fontWeight: on ? '700' : '500', color: on ? colors.textPrimary : colors.textTertiary },
+              ]}
               numberOfLines={1}
             >
               {opt.label}
@@ -319,13 +315,105 @@ export function BackLink({ label, onPress }: { label: string; onPress: () => voi
   );
 }
 
-// ─── Section title: Anton, mixed case, room above and less below ─────────────
+// ─── Section title: bold, left, optional right-aligned link in action ───────
 
-export function SectionTitle({ children }: { children: string }) {
+export function SectionTitle({
+  children, actionLabel, onAction,
+}: { children: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <View style={s.sectionWrap}>
-      <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{children}</Text>
+      <Text style={[t.headlineMd, { color: colors.textPrimary, flexShrink: 1 }]}>{children}</Text>
+      {actionLabel && onAction && (
+        <Press onPress={onAction} accessibilityRole="button" hitSlop={8}>
+          <Text style={[t.bodyMdStrong, { color: colors.action }]}>{actionLabel}</Text>
+        </Press>
+      )}
     </View>
+  );
+}
+
+// ─── Circular icon button (header actions, back) ─────────────────────────────
+
+export function IconButton({
+  icon, onPress, accessibilityLabel, color = colors.textPrimary, size = TAP, children, style,
+}: {
+  icon?: IconName;
+  onPress: () => void;
+  accessibilityLabel: string;
+  color?: string;
+  size?: number;
+  children?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Press
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      style={[{
+        width: size, height: size, borderRadius: radius.round, backgroundColor: colors.surface1,
+        alignItems: 'center', justifyContent: 'center',
+      }, style]}
+    >
+      {icon && <Icon name={icon} size={22} color={color} />}
+      {children}
+    </Press>
+  );
+}
+
+// ─── Search field: fully rounded dark pill with a leading magnifier ──────────
+
+export function SearchField({
+  value, onChangeText, placeholder, style, ...rest
+}: Omit<TextInputProps, 'style'> & { style?: StyleProp<ViewStyle> }) {
+  return (
+    <View style={[s.search, style]}>
+      <Icon name="search" size={20} color={colors.textTertiary} />
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textTertiary}
+        style={s.searchInput}
+        {...rest}
+      />
+    </View>
+  );
+}
+
+// ─── List row: its own rounded card, leading icon in a circle, title +
+// grey subtitle, optional trailing control (toggle, chevron, pill) ───────────
+
+export function ListRow({
+  icon, title, subtitle, trailing, onPress, accessibilityLabel, style,
+}: {
+  icon?: IconName;
+  title: string;
+  subtitle?: string;
+  trailing?: React.ReactNode;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const body = (
+    <>
+      {icon && (
+        <View style={s.rowIcon}>
+          <Icon name={icon} size={18} color={colors.textPrimary} />
+        </View>
+      )}
+      <View style={{ flex: 1 }}>
+        <Text style={[t.bodyLg, { color: colors.textPrimary }]}>{title}</Text>
+        {subtitle ? <Text style={[t.bodySm, { color: colors.textTertiary }]}>{subtitle}</Text> : null}
+      </View>
+      {trailing}
+    </>
+  );
+  if (!onPress) return <View style={[s.row, style]}>{body}</View>;
+  return (
+    <Press onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel} style={[s.row, style]}>
+      {body}
+    </Press>
   );
 }
 
@@ -349,7 +437,7 @@ export function Btn({
 }) {
   let bg: string = colors.action;
   let textColor: string = colors.textOnFill;
-  if (variant === 'secondary') { bg = colors.surface3; textColor = colors.textPrimary; }
+  if (variant === 'secondary') { bg = cta.secondaryBg; textColor = cta.textPrimary; }
   else if (variant === 'ghost') { bg = 'transparent'; textColor = colors.actionMuted; }
   else if (variant === 'danger') { bg = colors.dangerWash; textColor = colors.danger; }
 
@@ -367,9 +455,8 @@ export function Btn({
   );
 }
 
-// ─── Chip: pill. Selected = tone wash + tone text + faint tone edge ──────────
-// No shadow, no stacked layers: a selected chip is ONE view with ONE label
-// (brutalist-v2 shadowed a translucent chip and iOS drew the label twice).
+// ─── Chip: pill. Selected = flat tone fill + dark text; resting = raised grey ─
+// No border, no shadow, ONE view with ONE label.
 
 export function Chip({
   label, active = false, onPress, tone = 'action', trailingIcon,
@@ -381,20 +468,13 @@ export function Chip({
   onPress?: () => void;
   tone?: 'action' | 'live' | 'confirmed' | 'neutral';
 }) {
-  const toneColor =
+  const fill =
     tone === 'live' ? colors.live
       : tone === 'confirmed' ? colors.confirmed
         : tone === 'neutral' ? colors.textPrimary
           : colors.action;
-  const wash =
-    tone === 'live' ? colors.liveWash
-      : tone === 'confirmed' ? colors.confirmedWash
-        : tone === 'neutral' ? colors.surface3
-          : colors.actionWash;
-  const fg = active ? toneColor : colors.textSecondary;
-  const frame: ViewStyle = active
-    ? { backgroundColor: wash, borderColor: `${toneColor}55` }
-    : { backgroundColor: colors.surface2, borderColor: 'transparent' };
+  const fg = active ? colors.textOnFill : colors.textSecondary;
+  const frame: ViewStyle = { backgroundColor: active ? fill : colors.surface3 };
   const content = (
     <>
       <Text style={[t.labelMd, { color: fg }]} numberOfLines={1}>{label}</Text>
@@ -417,7 +497,8 @@ export function Chip({
 }
 
 // ─── Badge: state marker. Pulsing dot only for tone="live" ───────────────────
-// Tiny caps tag (the one place caps live), on an opaque surface3 pill.
+// Tiny tracked-caps tag (the one place caps live), on a flat surface3 pill;
+// a confirmed badge is a flat lime fill with dark text.
 
 export function Badge({
   label, tone = 'live', dot = true, icon, style,
@@ -433,13 +514,15 @@ export function Badge({
       : tone === 'confirmed' ? colors.confirmed
         : tone === 'neutral' ? colors.textSecondary
           : colors.live;
+  const filled = tone === 'confirmed';
+  const fg = filled ? colors.textOnFill : tone === 'neutral' ? colors.textPrimary : toneColor;
   return (
-    <View style={[s.badge, style]}>
-      {icon && <Icon name={icon} size={12} color={toneColor} />}
-      {dot && !icon && (tone === 'live'
+    <View style={[s.badge, filled && { backgroundColor: colors.confirmed }, style]}>
+      {icon && <Icon name={icon} size={12} color={fg} />}
+      {dot && !icon && !filled && (tone === 'live'
         ? <LiveDot color={toneColor} size={7} />
         : <View style={[s.badgeDot, { backgroundColor: toneColor }]} />)}
-      <Text style={[t.tag, { color: tone === 'neutral' ? colors.textPrimary : toneColor }]}>{label}</Text>
+      <Text style={[t.tag, { color: fg }]}>{label}</Text>
     </View>
   );
 }
@@ -476,7 +559,7 @@ export function FieldLabel({ children, color = colors.textSecondary }: { childre
 // Filled well (surface2) with control radius. The 1px edge is transparent at
 // rest and turns action on focus, so focusing never shifts layout.
 export const inputStyle = {
-  ...t.bodyMdStrong,
+  ...t.bodyMd,
   backgroundColor: colors.surface2,
   borderWidth: 1,
   borderColor: 'transparent',
@@ -490,34 +573,41 @@ export const inputStyle = {
 export const inputFocusedStyle = { borderColor: colors.action } as const;
 
 const s = StyleSheet.create({
-  segmented: {
-    flexDirection: 'row',
-    gap: 2,
-    backgroundColor: colors.surface2,
-    borderRadius: radius.control,
-    padding: SEG_PAD,
-    maxWidth: '100%',
-  },
+  segmented: { flexDirection: 'row', gap: spacing.lg, maxWidth: '100%' },
   segmentedHug: { alignSelf: 'flex-start', flexShrink: 1 },
   segmentedFill: { alignSelf: 'stretch' },
   segmentBtn: {
     flexDirection: 'row',
     gap: 6,
-    minHeight: TAP - SEG_PAD,
-    paddingHorizontal: spacing.md,
+    minHeight: TAP,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.control - SEG_PAD,
   },
   segmentHug: { flexShrink: 1, minWidth: 0 },
   segmentFill: { flex: 1, minWidth: 0 },
-  // Opaque thumb, soft level-1 shadow.
-  segmentOn: { ...elevation(1), backgroundColor: colors.surface3 },
   backLink: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     minHeight: TAP, alignSelf: 'flex-start',
   },
-  sectionWrap: { marginTop: space.headingAbove - spacing.sm, marginBottom: space.headingBelow },
+  sectionWrap: {
+    marginTop: space.headingAbove - spacing.sm, marginBottom: space.headingBelow,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md,
+  },
+  search: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 2,
+    minHeight: TAP + 8, paddingHorizontal: spacing.lg - 4,
+    borderRadius: radius.pill, backgroundColor: colors.surface1,
+  },
+  searchInput: { ...t.bodyLg, flex: 1, color: colors.textPrimary, paddingVertical: spacing.sm },
+  row: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    minHeight: TAP + 16, paddingVertical: spacing.md, paddingHorizontal: spacing.lg - 4,
+    borderRadius: radius.card, backgroundColor: colors.surface1,
+  },
+  rowIcon: {
+    width: 36, height: 36, borderRadius: radius.round, backgroundColor: colors.surface3,
+    alignItems: 'center', justifyContent: 'center',
+  },
 
   btn: {
     alignItems: 'center',
@@ -525,13 +615,12 @@ const s = StyleSheet.create({
     minHeight: TAP + 8,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
-    borderRadius: radius.control,
+    borderRadius: radius.cta,
   },
   // Small buttons keep the 44pt minimum tap height.
   btnSmall: { minHeight: TAP, paddingVertical: spacing.sm, paddingHorizontal: spacing.lg },
 
   chip: {
-    borderWidth: 1,
     borderRadius: radius.pill,
     minHeight: 34,
     flexDirection: 'row',
@@ -552,7 +641,7 @@ const s = StyleSheet.create({
   },
   badgeDot: { width: 7, height: 7, borderRadius: radius.round },
 
-  skelCard: { ...elevation(1), borderRadius: radius.card, overflow: 'hidden' },
+  skelCard: { backgroundColor: colors.surface1, borderRadius: radius.tile, overflow: 'hidden' },
   skelBody: { padding: spacing.lg, gap: spacing.sm },
   skelFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md },
   skelRow: { backgroundColor: colors.surface1, borderRadius: radius.card, padding: spacing.lg, gap: spacing.sm },
