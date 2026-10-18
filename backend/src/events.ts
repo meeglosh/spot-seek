@@ -11,6 +11,7 @@ import { promoteFromWaitlist } from './waitlist';
 import { screenEventContent, logModeration, isPublishingPaused, REJECT_MESSAGE } from './moderation/screen';
 import { canViewEvent, isModerationHidden } from './moderation/visibility';
 import { isAdminAuthorized } from './admin';
+import { maskPrivateLocation } from './feed';
 
 type AppEnv = { Bindings: Env; Variables: { hostId?: string } };
 
@@ -135,7 +136,26 @@ eventsRouter.get('/:id', async (c) => {
     .where(and(eq(schema.sponsorships.eventId, event.id), eq(schema.sponsorships.status, 'active')))
     .orderBy(desc(schema.sponsorships.amountCents));
 
-  return c.json({ event: { ...event, sponsors: sponsorRows } });
+  // Same rule as the feed: private-location address/coords are shown only to
+  // going/waitlisted attendees. The host also sees them (the edit form loads them here).
+  const callerId = c.get('hostId');
+  let revealed = !!callerId && callerId === event.hostId;
+  if (!revealed && callerId && event.isPrivateLocation) {
+    const [rsvp] = await db
+      .select({ id: schema.rsvps.id })
+      .from(schema.rsvps)
+      .where(
+        and(
+          eq(schema.rsvps.eventId, event.id),
+          eq(schema.rsvps.userId, callerId),
+          inArray(schema.rsvps.state, ['going', 'waitlisted']),
+        ),
+      )
+      .limit(1);
+    revealed = !!rsvp;
+  }
+
+  return c.json({ event: { ...maskPrivateLocation(event, revealed), sponsors: sponsorRows } });
 });
 
 // PATCH /:id — host edits their own event.
@@ -375,7 +395,10 @@ eventsRouter.get('/:id/occurrences', async (c) => {
 
   try {
     const rule = parseRRule(event.recurrenceRule);
-    const max = Math.min(parseInt(c.req.query('max') ?? '52', 10), 365);
+    // Non-numeric / negative / non-integer input falls back to the default cap.
+    const maxParam = c.req.query('max') ?? '';
+    const parsedMax = /^\d+$/.test(maxParam) ? parseInt(maxParam, 10) : 52;
+    const max = Math.min(parsedMax < 1 ? 52 : parsedMax, 365);
     const occurrences = generateOccurrences(event.startsAt, rule, max);
     return c.json({ occurrences: occurrences.map((d) => d.toISOString()) });
   } catch (err) {

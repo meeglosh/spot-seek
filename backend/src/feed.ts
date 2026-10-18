@@ -49,6 +49,14 @@ function haversineKm(lat: number, lng: number) {
 // Hard cap on rows per response (Neon egress protection).
 const FEED_MAX_LIMIT = 200;
 
+// Shared with GET /api/events/:id: the one rule for hiding a private-location
+// event's exact address and coordinates (venue name stays visible).
+export function maskPrivateLocation<T extends { isPrivateLocation: boolean }>(ev: T, revealed: boolean) {
+  return !ev.isPrivateLocation || revealed
+    ? ev
+    : { ...ev, venueAddress: null, venueLat: null, venueLng: null };
+}
+
 feedRouter.get('/', async (c) => {
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
 
@@ -202,10 +210,7 @@ feedRouter.get('/', async (c) => {
   }
 
   const events = rows.map((ev) => {
-    const masked = !ev.isPrivateLocation || rsvpdEventIds.has(ev.id)
-      ? ev
-      // Mask exact address and coordinates for private-location events.
-      : { ...ev, venueAddress: null, venueLat: null, venueLng: null };
+    const masked = maskPrivateLocation(ev, rsvpdEventIds.has(ev.id));
     return {
       ...masked,
       sponsorCount: sponsorCountByEvent.get(ev.id) ?? 0,
