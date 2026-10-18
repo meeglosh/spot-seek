@@ -47,7 +47,7 @@ export default function LaunchSplash({ dismiss, onDone }: Props) {
     <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, s.container, { opacity }]}>
       <View style={s.center}>
         <Image source={BRAND_LOGO} resizeMode="contain" style={s.logo} />
-        <Text style={[t.displayXl, s.wordmark]}>SPOT SEEK</Text>
+        <Text style={[t.wordmark, s.wordmark]}>SPOT SEEK</Text>
         <Text style={[t.label, s.tagline]}>{tr('brand.tagline')}</Text>
       </View>
     </Animated.View>
@@ -58,6 +58,6 @@ const s = StyleSheet.create({
   container: { backgroundColor: colors.canvas, alignItems: 'center', justifyContent: 'center' },
   center: { alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   logo: { width: 140, height: 140, marginBottom: spacing.sm },
-  wordmark: { color: colors.textPrimary, letterSpacing: 1 },
-  tagline: { color: colors.textSecondary, letterSpacing: 3 },
+  wordmark: { color: colors.textPrimary, fontSize: 34, lineHeight: 42 },
+  tagline: { color: colors.textSecondary },
 });

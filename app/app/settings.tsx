@@ -19,7 +19,7 @@ import {
 import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { Icon } from '../components/icons';
 import { AppHeader } from '../components/AppHeader';
-import { Btn, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle, Press, Toggle, SoonTag } from '../components/ui';
+import { Btn, ListRow, SectionTitle, FieldLabel, inputStyle, inputFocusedStyle, Press, Toggle, SoonTag } from '../components/ui';
 import { GuestGate } from '../components/AuthGate';
 import { SUPPORTED_LOCALES, setAppLocale } from '../lib/i18n';
 import { enablePush, disablePush } from '../lib/push';
@@ -39,15 +39,7 @@ function SettingsRow({
   sub?: string;
   right: React.ReactNode;
 }) {
-  return (
-    <View style={s.row}>
-      <View style={s.rowLabels}>
-        <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{label}</Text>
-        {sub ? <Text style={[t.bodySm, { color: colors.textSecondary }]}>{sub}</Text> : null}
-      </View>
-      {right}
-    </View>
-  );
+  return <ListRow title={label} subtitle={sub} trailing={right} />;
 }
 
 export default function SettingsScreen() {
@@ -404,26 +396,18 @@ export default function SettingsScreen() {
         {/* LANGUAGE */}
         <View style={s.section}>
           <SectionTitle>{tr('language.title')}</SectionTitle>
-          <Press
-            style={s.linkRow}
+          <ListRow
+            title={tr('language.systemDefault')}
             onPress={() => setAppLocale(null)}
-          >
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('language.systemDefault')}</Text>
-            {!storedLocaleOverride ? (
-              <Icon name="check" size={18} color={colors.action} />
-            ) : null}
-          </Press>
+            trailing={!storedLocaleOverride ? <Icon name="check" size={18} color={colors.action} /> : undefined}
+          />
           {SUPPORTED_LOCALES.map(({ code, nativeName }) => (
-            <Press
+            <ListRow
               key={code}
-              style={s.linkRow}
+              title={nativeName}
               onPress={() => setAppLocale(code)}
-            >
-              <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{nativeName}</Text>
-              {storedLocaleOverride === code ? (
-                <Icon name="check" size={18} color={colors.action} />
-              ) : null}
-            </Press>
+              trailing={storedLocaleOverride === code ? <Icon name="check" size={18} color={colors.action} /> : undefined}
+            />
           ))}
         </View>
 
@@ -456,47 +440,26 @@ export default function SettingsScreen() {
         {/* FAVOURITES */}
         <View style={s.section}>
           <SectionTitle>{tr('favourites.title')}</SectionTitle>
-          <Press
-            style={s.linkRow}
-            onPress={() => router.push('/(auth)/interests' as never)}
-          >
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('favourites.manage')}</Text>
-            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Press>
+          <ListRow icon="star" title={tr('favourites.manage')} onPress={() => router.push('/(auth)/interests' as never)} trailing={<Icon name="chevronRight" size={18} color={colors.textTertiary} />} />
         </View>
 
         {/* SAFETY */}
         <View style={s.section}>
           <SectionTitle>{tr('safety.title')}</SectionTitle>
-          <Press
-            style={s.linkRow}
-            onPress={() => router.push('/blocked' as never)}
-            accessibilityRole="button"
-          >
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('safety.blocked')}</Text>
-            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Press>
+          <ListRow icon="block" title={tr('safety.blocked')} onPress={() => router.push('/blocked' as never)} trailing={<Icon name="chevronRight" size={18} color={colors.textTertiary} />} />
         </View>
 
         {/* ABOUT */}
         <View style={s.section}>
           <SectionTitle>{tr('about.title')}</SectionTitle>
-          <Press style={s.linkRow} onPress={openGuidelines} accessibilityRole="link">
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.guidelines')}</Text>
-            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Press>
-          <Press style={s.linkRow} onPress={openTerms} accessibilityRole="link">
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.terms')}</Text>
-            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Press>
-          <Press style={s.linkRow} onPress={openPrivacy} accessibilityRole="link">
-            <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('about.privacy')}</Text>
-            <Icon name="chevronRight" size={18} color={colors.textTertiary} />
-          </Press>
-          <View style={[s.linkRow, s.linkRowSoon]} accessibilityState={{ disabled: true }}>
-            <Text style={[t.bodyMd, { color: colors.textTertiary }]}>{tr('about.contactSupport')}</Text>
-            <SoonTag label={trCommon('soon')} />
-          </View>
+          <ListRow title={tr('about.guidelines')} onPress={openGuidelines} trailing={<Icon name="chevronRight" size={18} color={colors.textTertiary} />} />
+          <ListRow title={tr('about.terms')} onPress={openTerms} trailing={<Icon name="chevronRight" size={18} color={colors.textTertiary} />} />
+          <ListRow title={tr('about.privacy')} onPress={openPrivacy} trailing={<Icon name="chevronRight" size={18} color={colors.textTertiary} />} />
+          <ListRow
+            style={s.linkRowSoon}
+            title={tr('about.contactSupport')}
+            trailing={<SoonTag label={trCommon('soon')} />}
+          />
 
           <Text style={[t.labelSm, s.versionText]}>
             {build ? tr('about.versionLabelWithBuild', { version: version ?? '—', build }) : tr('about.versionLabel', { version: version ?? '—' })}
@@ -510,25 +473,23 @@ export default function SettingsScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
   scroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, gap: spacing['2xl'] },
-  section: { gap: spacing.md },
-  row: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-  },
-  rowLabels: { flex: 1, gap: 2 },
+  section: { gap: spacing.sm },
   fullBtn: { alignSelf: 'stretch' },
   confirmBox: {
-    borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.surface2,
+    backgroundColor: colors.surface1,
     padding: spacing.lg, gap: spacing.md,
-    borderRadius: radius.control,
+    borderRadius: radius.card,
   },
   confirmBtns: { flexDirection: 'row', gap: spacing.md },
   confirmBtn: { flex: 1 },
-  sliderBlock: { gap: spacing.xs, paddingVertical: spacing.md },
+  sliderBlock: {
+    gap: spacing.xs, padding: spacing.lg - 4,
+    backgroundColor: colors.surface1, borderRadius: radius.card,
+  },
   linkRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    minHeight: TAP, paddingVertical: spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: colors.borderSubtle,
+    minHeight: TAP + 16, paddingHorizontal: spacing.lg - 4, paddingVertical: spacing.sm,
+    backgroundColor: colors.surface1, borderRadius: radius.card,
   },
   linkRowSoon: { opacity: 0.7 },
   versionText: { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.lg },

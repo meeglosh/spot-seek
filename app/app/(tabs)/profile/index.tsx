@@ -239,7 +239,7 @@ export default function ProfileScreen() {
                 );
               })}
               <Press
-                style={({ pressed }) => [s.teamAdd, pressed && { borderColor: colors.action }]}
+                style={({ pressed }) => [s.teamAdd, pressed && { backgroundColor: colors.surface2 }]}
                 onPress={() => router.push('/(auth)/interests')}
               >
                 <Icon name="plus" size={24} color={colors.textSecondary} />
@@ -307,7 +307,7 @@ export default function ProfileScreen() {
                 {hostedPast.map((e) => (
                   <View key={e.id} style={s.historyRow}>
                     <View style={s.historyIcon}>
-                      <Icon name="grid" size={20} color={colors.textSecondary} />
+                      <Icon name="grid" size={18} color={colors.textSecondary} />
                     </View>
                     <View style={s.rowBody}>
                       <Text style={[t.label, s.rowTitle, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -380,8 +380,7 @@ const s = StyleSheet.create({
   heroTop: { flexDirection: 'row', gap: spacing.lg, alignItems: 'center' },
   avatar: {
     width: 88, height: 88, borderRadius: radius.round,
-    borderWidth: 1, borderColor: colors.borderStrong,
-    backgroundColor: colors.surface2,
+    backgroundColor: colors.surface3,
     alignItems: 'center', justifyContent: 'center',
   },
   avatarInitial: { color: colors.textPrimary, paddingTop: 4 },
@@ -401,10 +400,10 @@ const s = StyleSheet.create({
   },
   hostPlus: {
     width: 56, height: 56,
-    borderWidth: 1, borderColor: colors.action,
+    backgroundColor: colors.surface3,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: spacing.xs,
-    borderRadius: radius.control,
+    borderRadius: radius.round,
   },
   hostBody: { color: colors.textSecondary, textAlign: 'center' },
   hostBtn: { alignSelf: 'stretch', marginTop: spacing.md },
@@ -418,7 +417,7 @@ const s = StyleSheet.create({
     padding: spacing.lg,
     alignItems: 'center',
     gap: spacing.sm,
-    borderRadius: radius.card,
+    borderRadius: radius.tile,
   },
   teamLogo: {
     width: 64, height: 64, borderRadius: radius.round,
@@ -428,16 +427,13 @@ const s = StyleSheet.create({
   teamName: { color: colors.textPrimary, textAlign: 'center' },
   teamAdd: {
     width: 148,
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surfaceSunken,
+    backgroundColor: colors.surface1,
     padding: spacing.lg,
     minHeight: TAP,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    borderRadius: radius.card,
+    borderRadius: radius.tile,
   },
   sportChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.xl },
 
@@ -462,9 +458,9 @@ const s = StyleSheet.create({
     borderRadius: radius.card,
   },
   historyIcon: {
-    width: 44, height: 44,
+    width: 36, height: 36,
     backgroundColor: colors.surface3,
-    borderRadius: radius.control,
+    borderRadius: radius.round,
     alignItems: 'center', justifyContent: 'center',
   },
   emptyCard: {

@@ -6,7 +6,7 @@
  * Skippable.
  */
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TextInput } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text } from '../../components/Text';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +18,7 @@ import { safeRedirect } from '../../lib/safeRedirect';
 import { setGuestInterests } from '../../lib/guestState';
 import { colors, radius, spacing, TAP, type as t } from '../../lib/theme';
 import { Icon } from '../../components/icons';
-import { Btn, Chip, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
+import { Btn, Chip, SearchField, Press } from '../../components/ui';
 
 export default function InterestsScreen() {
   const router = useRouter();
@@ -36,7 +36,6 @@ export default function InterestsScreen() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expandedSport, setExpandedSport] = useState<string | null>(null);
   const [teamSearch, setTeamSearch] = useState('');
-  const [searchFocused, setSearchFocused] = useState(false);
   const [saving, setSaving] = useState(false);
 
   function toggle(key: string) {
@@ -85,7 +84,7 @@ export default function InterestsScreen() {
       {/* Header */}
       <View style={s.header}>
         <View style={s.headerText}>
-          <Text style={[t.headlineMd, s.title]}>{tr('interests.title')}</Text>
+          <Text style={[t.displayXl, s.title]}>{tr('interests.title')}</Text>
           <Text style={[t.bodySm, s.subtitle]}>
             {tr('interests.subtitle')}
           </Text>
@@ -99,15 +98,12 @@ export default function InterestsScreen() {
         </Press>
       </View>
 
-      {/* Team search — underline input per the design */}
-      <TextInput
-        style={[inputStyle, s.search, searchFocused && inputFocusedStyle]}
+      {/* Team search: pill field */}
+      <SearchField
+        style={s.search}
         placeholder={tr('interests.searchPlaceholder')}
-        placeholderTextColor={colors.textTertiary}
         value={teamSearch}
         onChangeText={setTeamSearch}
-        onFocus={() => setSearchFocused(true)}
-        onBlur={() => setSearchFocused(false)}
         autoCapitalize="none"
       />
 
@@ -236,8 +232,8 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     minHeight: TAP, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     borderWidth: 1, borderColor: 'transparent',
-    backgroundColor: colors.surface2,
-    borderRadius: radius.control,
+    backgroundColor: colors.surface1,
+    borderRadius: radius.card,
   },
   sportRowOn: { borderColor: colors.action, backgroundColor: colors.actionWash },
   sportName: { flex: 1, color: colors.textPrimary },
@@ -249,9 +245,9 @@ const s = StyleSheet.create({
   leagueBlock: { gap: spacing.sm },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   resultChip: {
-    borderWidth: 1, borderColor: 'transparent', backgroundColor: colors.surface2,
+    borderWidth: 1, borderColor: 'transparent', backgroundColor: colors.surface1,
     minHeight: TAP, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 2,
-    borderRadius: radius.control,
+    borderRadius: radius.card,
   },
   resultChipOn: { borderColor: colors.action, backgroundColor: colors.actionWash },
   saveBar: {

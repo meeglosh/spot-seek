@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, TAP, elevation, type as t } from '../lib/theme';
+import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { Btn, Press } from '../components/ui';
 import { Icon } from '../components/icons';
 
@@ -58,7 +58,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas, paddingHorizontal: spacing.xl },
   hero: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg },
   iconWrap: {
-    ...elevation(2),
+    backgroundColor: colors.surface1,
     width: 96,
     height: 96,
     borderRadius: radius.round,

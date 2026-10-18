@@ -7,9 +7,12 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
 import { safeRedirect } from '../../lib/safeRedirect';
 import { getOnboardingSeen } from '../../lib/api';
-import { colors, fonts, spacing, type as t } from '../../lib/theme';
+import { colors, radius, spacing, type as t } from '../../lib/theme';
 import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
 import { openGuidelines, openTerms, openPrivacy } from '../../lib/moderation';
+
+// Pill input: the shared input well, fully rounded.
+const pillInput = { ...inputStyle, borderRadius: radius.pill } as const;
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -62,7 +65,7 @@ export default function SignUpScreen() {
           <BackLink label={tr('back')} onPress={() => router.back()} />
         </View>
 
-        <Text style={[t.headlineLg, s.title]}>{tr('signUp.title')}</Text>
+        <Text style={[t.displayXl, s.title]}>{tr('signUp.title')}</Text>
         <Text style={[t.bodyMd, s.subtitle]}>{context || tr('signUp.subtitle')}</Text>
 
         <View style={s.form}>
@@ -88,7 +91,7 @@ export default function SignUpScreen() {
             <View key={id} style={s.field}>
               <FieldLabel>{label}</FieldLabel>
               <TextInput
-                style={[inputStyle, focused === id && inputFocusedStyle]}
+                style={[pillInput, focused === id && inputFocusedStyle]}
                 placeholder={placeholder}
                 placeholderTextColor={colors.textTertiary}
                 value={value}
@@ -160,5 +163,5 @@ const s = StyleSheet.create({
   agreeText: { color: colors.textTertiary, textAlign: 'center' },
   agreeLink: { color: colors.actionMuted, textDecorationLine: 'underline' },
   switchText: { color: colors.textSecondary, textAlign: 'center' },
-  switchLink: { color: colors.action, fontFamily: fonts.sansBold },
+  switchLink: { color: colors.action, fontWeight: '700' },
 });

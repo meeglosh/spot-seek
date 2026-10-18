@@ -6,8 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../lib/auth';
 import { safeRedirect } from '../../lib/safeRedirect';
-import { colors, fonts, spacing, type as t } from '../../lib/theme';
+import { colors, radius, spacing, type as t } from '../../lib/theme';
 import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle, Press } from '../../components/ui';
+
+// Pill input: the shared input well, fully rounded.
+const pillInput = { ...inputStyle, borderRadius: radius.pill } as const;
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -56,14 +59,14 @@ export default function SignInScreen() {
           <BackLink label={tr('back')} onPress={() => router.back()} />
         </View>
 
-        <Text style={[t.headlineLg, s.title]}>{tr('signIn.title')}</Text>
+        <Text style={[t.displayXl, s.title]}>{tr('signIn.title')}</Text>
         <Text style={[t.bodyMd, s.subtitle]}>{context || tr('signIn.subtitle')}</Text>
 
         <View style={s.form}>
           <View style={s.field}>
             <FieldLabel>{tr('signIn.emailLabel')}</FieldLabel>
             <TextInput
-              style={[inputStyle, focused === 'email' && inputFocusedStyle]}
+              style={[pillInput, focused === 'email' && inputFocusedStyle]}
               placeholder={tr('signIn.emailPlaceholder')}
               placeholderTextColor={colors.textTertiary}
               value={email}
@@ -79,7 +82,7 @@ export default function SignInScreen() {
           <View style={s.field}>
             <FieldLabel>{tr('signIn.passwordLabel')}</FieldLabel>
             <TextInput
-              style={[inputStyle, focused === 'password' && inputFocusedStyle]}
+              style={[pillInput, focused === 'password' && inputFocusedStyle]}
               placeholder={tr('signIn.passwordPlaceholder')}
               placeholderTextColor={colors.textTertiary}
               value={password}
@@ -155,6 +158,6 @@ const s = StyleSheet.create({
   forgotLink: { alignSelf: 'flex-start' },
   footer: { gap: spacing.lg },
   switchText: { color: colors.textSecondary, textAlign: 'center' },
-  switchLink: { color: colors.action, fontFamily: fonts.sansBold },
+  switchLink: { color: colors.action, fontWeight: '700' },
   skipLink: { alignItems: 'center', paddingTop: spacing.sm },
 });

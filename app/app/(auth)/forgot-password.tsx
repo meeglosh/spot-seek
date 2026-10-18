@@ -12,6 +12,9 @@ import { BackLink, Btn, FieldLabel, inputStyle, inputFocusedStyle } from '../../
 
 // Requests a password-reset email. The server never reveals whether the email
 // has an account, so on success we always show the same neutral confirmation.
+// Pill input: the shared input well, fully rounded.
+const pillInput = { ...inputStyle, borderRadius: radius.pill } as const;
+
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -48,7 +51,7 @@ export default function ForgotPasswordScreen() {
           <BackLink label={tr('forgot.backToSignIn')} onPress={() => router.back()} />
         </View>
 
-        <Text style={[t.headlineLg, s.title]}>{tr('forgot.title')}</Text>
+        <Text style={[t.displayXl, s.title]}>{tr('forgot.title')}</Text>
         <Text style={[t.bodyMd, s.subtitle]}>{tr('forgot.subtitle')}</Text>
 
         {sent ? (
@@ -60,7 +63,7 @@ export default function ForgotPasswordScreen() {
             <View style={s.form}>
               <FieldLabel>{tr('forgot.emailLabel')}</FieldLabel>
               <TextInput
-                style={[inputStyle, focused && inputFocusedStyle]}
+                style={[pillInput, focused && inputFocusedStyle]}
                 placeholder={tr('forgot.emailPlaceholder')}
                 placeholderTextColor={colors.textTertiary}
                 value={email}
@@ -98,8 +101,8 @@ const s = StyleSheet.create({
   form: { marginBottom: spacing['2xl'], gap: spacing.sm },
   errorText: { color: colors.danger },
   sentBox: {
-    borderWidth: 1, borderColor: colors.confirmed, backgroundColor: colors.surface2,
+    backgroundColor: colors.confirmedWash,
     padding: spacing.lg,
-    borderRadius: radius.control,
+    borderRadius: radius.card,
   },
 });
