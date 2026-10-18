@@ -435,6 +435,44 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
     }).catch((err) => console.error('[sponsors] payment_refunded notify failed:', err));
   }
 
+  // Cancels/withdrawals tell the counterparty (owner request 2026-10-18). Runs
+  // only after the guarded update returned a row, so a refused/raced transition
+  // never notifies and a repeat (409) never double-notifies. A host ending a
+  // paid sponsorship is covered by payment_refunded above, so the sponsor gets
+  // nothing extra there; a sponsor withdrawing a paid one still tells the host.
+  if (event && status === 'cancelled' && !(isHost && refundPaymentIntentId)) {
+    try {
+      const wasPending = bid.status === 'pending';
+      let userId: string;
+      let title: string;
+      let body: string;
+      if (isHost) {
+        userId = bid.sponsorId;
+        title = wasPending
+          ? `The host withdrew their request for "${event.title}"`
+          : `Your sponsorship of "${event.title}" was cancelled`;
+        body = wasPending
+          ? "You weren't charged."
+          : "The host ended this sponsorship before any payment. You weren't charged.";
+      } else {
+        const sponsor = await db.query.sponsorProfiles.findFirst({
+          where: eq(schema.sponsorProfiles.id, bid.sponsorId),
+        });
+        const name = sponsor?.companyName ?? 'A sponsor';
+        userId = event.hostId;
+        title = `"${name}" withdrew ${wasPending ? 'their offer on' : 'from'} "${event.title}"`;
+        body = wasPending
+          ? 'Their offer was cancelled before it was accepted.'
+          : refundPaymentIntentId
+            ? 'Their sponsorship was cancelled and refunded in full.'
+            : 'Their sponsorship was cancelled before any payment.';
+      }
+      await notify(db, c.env.RESEND_API_KEY, { userId, type: 'sponsorship_cancelled', title, body, eventId: event.id });
+    } catch (err) {
+      console.error('[sponsors] sponsorship_cancelled notify failed:', err);
+    }
+  }
+
   if (event && status === 'active') {
     const amount = (bid.amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
     await notify(db, c.env.RESEND_API_KEY, {

@@ -51,6 +51,7 @@ export const HEADLINES: Record<string, string> = {
   sponsorship_request: 'Sponsor request',
   sponsorship_accepted: 'Bid accepted',
   sponsorship_rejected: 'Bid update',
+  sponsorship_cancelled: 'Sponsorship cancelled',
   payment_due: 'Payment due',
   payment_received: 'Payment received',
   payout_sent: 'Payout sent',

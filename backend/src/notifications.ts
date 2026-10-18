@@ -25,6 +25,7 @@ export type NotificationType =
   | 'sponsorship_request'
   | 'sponsorship_accepted'
   | 'sponsorship_rejected'
+  | 'sponsorship_cancelled'
   | 'rsvp'
   | 'reminder_24h'
   | 'reminder_1h'

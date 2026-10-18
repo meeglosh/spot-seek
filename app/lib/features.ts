@@ -26,7 +26,7 @@ export const SPONSORSHIP_FALLBACK_ROUTE = '/(tabs)/discover';
 
 /** Notification types that only make sense with sponsorship on. */
 export const SPONSOR_NOTIFICATION_TYPES = [
-  'sponsor_bid', 'sponsorship_request', 'payment_due', 'payment_received', 'payment_refunded', 'payout_sent',
+  'sponsor_bid', 'sponsorship_request', 'sponsorship_cancelled', 'payment_due', 'payment_received', 'payment_refunded', 'payout_sent',
 ] as const;
 
 export function isSponsorNotificationType(type: string | undefined | null): boolean {

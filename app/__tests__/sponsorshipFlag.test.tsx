@@ -95,7 +95,7 @@ describe('feature flag', () => {
 });
 
 describe('notification routing', () => {
-  const sponsorTypes = ['sponsor_bid', 'sponsorship_request', 'payment_due', 'payment_received', 'payment_refunded', 'payout_sent'];
+  const sponsorTypes = ['sponsor_bid', 'sponsorship_request', 'sponsorship_cancelled', 'payment_due', 'payment_received', 'payment_refunded', 'payout_sent'];
   it('flag off: every sponsor type goes to Discover, even without an event', () => {
     mockExtra = OFF;
     for (const type of sponsorTypes) {

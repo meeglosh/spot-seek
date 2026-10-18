@@ -16,6 +16,9 @@ describe('routeFor (shared by Notification Center and push taps)', () => {
   it('routes sponsor payment states to the bid screen', () => {
     expect(routeFor('payment_due', 'e1')).toBe('/(tabs)/sponsorship/e1');
   });
+  it('sponsorship_cancelled goes to the event page for both host and sponsor', () => {
+    expect(routeFor('sponsorship_cancelled', 'e1')).toBe('/(tabs)/discover/e1');
+  });
   it('defaults to the event page', () => {
     expect(routeFor('reminder_1h', 'e1')).toBe('/(tabs)/discover/e1');
     expect(routeFor(undefined, 'e1')).toBe('/(tabs)/discover/e1');
