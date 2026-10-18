@@ -9,7 +9,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { and, eq } from 'drizzle-orm';
 import * as schema from '../src/schema';
-import { claimGuestRsvps } from '../src/guests';
+import { claimGuestRsvp } from '../src/guests';
 
 const BASE = 'https://example.com';
 const AUTH = `${BASE}/api/auth`;
@@ -104,7 +104,7 @@ describe('PATCH /api/rsvps/:id gates (F34/F36)', () => {
   }, 60_000);
 });
 
-describe('claimGuestRsvps gates (F20/F32)', () => {
+describe('claimGuestRsvp gates (F20/F32)', () => {
   const guest = (eventId: string, email: string, state: schema.GuestRsvpState) =>
     db.insert(schema.guestRsvps).values({
       eventId, name: 'Guest', email, state, token: `${TS}-${Math.random().toString(16).slice(2)}`,
@@ -128,7 +128,8 @@ describe('claimGuestRsvps gates (F20/F32)', () => {
     const gEnded = await guest(endedEv.id, u.email, 'waitlisted');
     const gOk = await guest(okEv.id, u.email, 'going');
 
-    expect(await claimGuestRsvps(db, u.id, u.email.toUpperCase())).toBe(1);
+    const results = await Promise.all([gBlocked, gHidden, gEnded, gOk].map((g) => claimGuestRsvp(db, u.id, g)));
+    expect(results.map((r) => (r.ok ? 'ok' : r.error))).toEqual(['forbidden', 'not_found', 'event_ended', 'ok']);
 
     for (const [g, ev] of [[gBlocked, blockedEv], [gHidden, hiddenEv], [gEnded, endedEv]] as const) {
       expect(await myRsvp(ev.id, u.id)).toHaveLength(0);

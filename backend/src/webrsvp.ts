@@ -16,7 +16,7 @@ import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import * as schema from './schema';
 import { publicBaseUrl } from './email';
 import { sendEmail } from './reminders';
@@ -134,11 +134,9 @@ webRsvpRouter.post('/rsvp/:eventId', async (c) => {
     guest = (await db.query.guestRsvps.findFirst({
       where: and(eq(schema.guestRsvps.eventId, eventId), eq(schema.guestRsvps.email, normalized)),
     }))!;
-    if (guest.claimedUserId) {
-      // Already attached to an account: tell them to sign in rather than mail a stale link.
-      return fail(c, 409, 'You already RSVP\'d with an account. Open the SpotSeek app to manage it.', eventId);
-    }
-    if (guest.state === 'cancelled') {
+    // A row attached to an account answers exactly like a fresh pending RSVP
+    // (and sends no email), so this form never reveals account membership.
+    if (!guest.claimedUserId && guest.state === 'cancelled') {
       const [revived] = await db
         .update(schema.guestRsvps)
         .set({ state: 'pending', name: cleaned, updatedAt: new Date() })
@@ -148,7 +146,7 @@ webRsvpRouter.post('/rsvp/:eventId', async (c) => {
     }
   }
 
-  await sendConfirmationEmail(c, event, guest);
+  if (!guest.claimedUserId) await sendConfirmationEmail(c, event, guest);
 
   if (wantsJson(c)) return c.json({ ok: true, status: 'pending_confirmation' }, 202);
   return c.html(
@@ -281,7 +279,10 @@ async function loadGuest(c: Ctx) {
 function statusPage(c: Ctx, event: schema.Event, guest: schema.GuestRsvp) {
   const base = publicBaseUrl(c.env);
   const manage = `${base}/rsvp/${event.id}/${guest.token}`;
-  const view = {
+  const claimed = guest.claimedUserId !== null;
+  const view = claimed
+    ? { cls: 'status-going', big: 'In your app', sub: 'This RSVP is now in your SpotSeek app. Manage it there.' }
+    : {
     going: { cls: 'status-going', big: "You're going", sub: `Your spot at ${event.title} is locked in.` },
     waitlisted: {
       cls: 'status-wait',
@@ -301,7 +302,11 @@ function statusPage(c: Ctx, event: schema.Event, guest: schema.GuestRsvp) {
     guest.state === 'pending'
       ? `<a class="btn" href="${escapeHtml(manage)}/confirm">Confirm my spot</a>`
       : '';
-  const cancel = active
+  const claimLink =
+    !claimed && (guest.state === 'going' || guest.state === 'waitlisted')
+      ? `<a class="btn btn-ghost" href="${escapeHtml(base)}/e/${escapeHtml(event.id)}/claim/${escapeHtml(guest.token)}">Add to my SpotSeek account</a>`
+      : '';
+  const cancel = active && !claimed
     ? `<form method="post" action="${escapeHtml(manage)}/cancel" style="margin-top:20px"><button class="link-btn" type="submit">Cancel my RSVP</button></form>`
     : '';
   const again =
@@ -317,7 +322,7 @@ function statusPage(c: Ctx, event: schema.Event, guest: schema.GuestRsvp) {
   <div class="big ${view.cls}">${escapeHtml(view.big)}</div>
   <p class="meta">${escapeHtml(view.sub)}</p>
   ${when ? `<p class="fine">${escapeHtml(when)}</p>` : ''}
-  ${confirmBtn}${calendar}${again}
+  ${confirmBtn}${calendar}${claimLink}${again}
   ${active && guest.state !== 'pending' ? installCtas(c.env.APP_STORE_URL, event.id) : ''}
   ${cancel}
   <p class="fine"><a href="${escapeHtml(base)}/e/${escapeHtml(event.id)}">View the event page</a></p>
@@ -352,12 +357,19 @@ webRsvpRouter.post('/rsvp/:eventId/:token/cancel', async (c) => {
   if (!found) return messagePage(c, 404, 'Link not found', 'This link is invalid or has expired.');
   const { db, event } = found;
   let { guest } = found;
-  if (guest.state !== 'cancelled') {
+  // A claimed row now lives in the user's account: the web link may not change it.
+  if (guest.claimedUserId === null && guest.state !== 'cancelled') {
     const wasGoing = guest.state === 'going';
-    await db
+    const updated = await db
       .update(schema.guestRsvps)
       .set({ state: 'cancelled', updatedAt: new Date() })
-      .where(eq(schema.guestRsvps.id, guest.id));
+      .where(and(eq(schema.guestRsvps.id, guest.id), isNull(schema.guestRsvps.claimedUserId)))
+      .returning({ id: schema.guestRsvps.id });
+    if (updated.length === 0) {
+      // Claimed between load and update: change nothing, don't promote.
+      const current = await db.query.guestRsvps.findFirst({ where: eq(schema.guestRsvps.id, guest.id) });
+      return statusPage(c, event, current ?? guest);
+    }
     guest = { ...guest, state: 'cancelled' };
     // A going spot was freed: promote the earliest waitlisted attendee.
     if (wasGoing) {

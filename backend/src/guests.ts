@@ -128,50 +128,65 @@ async function notifyHostOfGuest(db: Db, resendApiKey: string | undefined, event
   });
 }
 
+export type ClaimResult =
+  | { ok: true; rsvp: { id: string; eventId: string; state: schema.Rsvp['state'] } }
+  | { ok: false; error: 'not_found' | 'already_claimed' | 'not_confirmed' | 'event_ended' | 'forbidden' | 'own_event' };
+
 /**
- * Attach a newly signed-up/authenticated user's guest RSVPs (same email) to
- * their account. Creates the real rsvps row FIRST (keeping the guest's
- * created/updated timestamps so a waitlist position survives), then marks the
- * guest row claimed. The brief overlap errs toward over-counting, never
- * over-filling. Returns the number of guest RSVPs claimed.
+ * Attach ONE guest RSVP to an account. The caller must already have proven
+ * possession of the guest row's emailed token (account emails are unverified,
+ * so matching by email would let anyone take over a guest's RSVP).
+ *
+ * Creates the real rsvps row FIRST (keeping the guest's created/updated
+ * timestamps so a waitlist position survives), then marks the guest row
+ * claimed. The brief overlap errs toward over-counting, never over-filling.
+ * Idempotent for the same user. If another user wins the claim race, the rsvps
+ * row this call inserted is removed again.
  *
  * A claim never creates an account RSVP that POST /api/rsvps would refuse:
- * hidden/removed, ended, or host-blocked events are skipped and the guest row
- * is left untouched (unclaimed).
+ * hidden/removed, ended, or host-blocked events are refused and the guest row
+ * is left untouched (unclaimed). A host cannot claim onto their own event.
  */
-export async function claimGuestRsvps(db: Db, userId: string, email: string): Promise<number> {
-  const normalized = normalizeEmail(email);
-  const guests = await db.query.guestRsvps.findMany({
-    where: and(
-      eq(schema.guestRsvps.email, normalized),
-      sql`${schema.guestRsvps.claimedUserId} IS NULL`,
-      inArray(schema.guestRsvps.state, ['going', 'waitlisted']),
-    ),
-  });
-  if (guests.length === 0) return 0;
+export async function claimGuestRsvp(db: Db, userId: string, guest: schema.GuestRsvp): Promise<ClaimResult> {
+  const mine = () =>
+    db.query.rsvps.findFirst({
+      where: and(eq(schema.rsvps.eventId, guest.eventId), eq(schema.rsvps.userId, userId)),
+    });
+  const done = (r: schema.Rsvp): ClaimResult => ({ ok: true, rsvp: { id: r.id, eventId: r.eventId, state: r.state } });
 
-  let claimed = 0;
-  for (const g of guests) {
-    const event = await db.query.events.findFirst({ where: eq(schema.events.id, g.eventId) });
-    if (
-      event &&
-      event.hostId !== userId &&
-      (isModerationHidden(event) || eventPhase(event) === 'ended' || (await isBlockedByHost(db, event.hostId, userId)))
-    ) {
-      continue;
-    }
-    if (event && event.hostId !== userId) {
-      await db.execute(sql`
-        INSERT INTO rsvps (event_id, user_id, state, created_at, updated_at)
-        VALUES (${g.eventId}, ${userId}, ${g.state}::rsvp_state, ${g.createdAt.toISOString()}, ${g.updatedAt.toISOString()})
-        ON CONFLICT ON CONSTRAINT rsvps_event_user_unique DO NOTHING
-      `);
-    }
-    await db
-      .update(schema.guestRsvps)
-      .set({ claimedUserId: userId, updatedAt: new Date() })
-      .where(and(eq(schema.guestRsvps.id, g.id), sql`${schema.guestRsvps.claimedUserId} IS NULL`));
-    claimed += 1;
+  if (guest.claimedUserId) {
+    if (guest.claimedUserId !== userId) return { ok: false, error: 'already_claimed' };
+    const existing = await mine();
+    return existing ? done(existing) : { ok: false, error: 'not_found' };
   }
-  return claimed;
+  if (guest.state !== 'going' && guest.state !== 'waitlisted') return { ok: false, error: 'not_confirmed' };
+
+  const event = await db.query.events.findFirst({ where: eq(schema.events.id, guest.eventId) });
+  if (!event || isModerationHidden(event)) return { ok: false, error: 'not_found' };
+  if (event.hostId === userId) return { ok: false, error: 'own_event' };
+  if (eventPhase(event) === 'ended') return { ok: false, error: 'event_ended' };
+  if (await isBlockedByHost(db, event.hostId, userId)) return { ok: false, error: 'forbidden' };
+
+  const inserted = await db.execute(sql`
+    INSERT INTO rsvps (event_id, user_id, state, created_at, updated_at)
+    VALUES (${guest.eventId}, ${userId}, ${guest.state}::rsvp_state, ${guest.createdAt.toISOString()}, ${guest.updatedAt.toISOString()})
+    ON CONFLICT ON CONSTRAINT rsvps_event_user_unique DO NOTHING
+    RETURNING id
+  `);
+  const insertedId = (inserted.rows?.[0] as { id?: string } | undefined)?.id;
+
+  const won = await db
+    .update(schema.guestRsvps)
+    .set({ claimedUserId: userId, updatedAt: new Date() })
+    .where(and(eq(schema.guestRsvps.id, guest.id), sql`${schema.guestRsvps.claimedUserId} IS NULL`))
+    .returning({ id: schema.guestRsvps.id });
+  if (won.length === 0) {
+    const current = await db.query.guestRsvps.findFirst({ where: eq(schema.guestRsvps.id, guest.id) });
+    if (current?.claimedUserId !== userId) {
+      if (insertedId) await db.delete(schema.rsvps).where(eq(schema.rsvps.id, insertedId));
+      return { ok: false, error: 'already_claimed' };
+    }
+  }
+  const row = await mine();
+  return row ? done(row) : { ok: false, error: 'not_found' };
 }

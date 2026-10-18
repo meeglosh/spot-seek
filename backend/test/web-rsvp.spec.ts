@@ -270,7 +270,7 @@ describe('guest RSVP flow', () => {
     expect(other.status).toBe(400);
   }, 60_000);
 
-  it('attaches guest RSVPs to the account when the same email signs up', async () => {
+  it('does NOT attach guest RSVPs to an account that signs up with the same email (unverified email)', async () => {
     const ev = await createEvent(host);
     const email = `g-link-${TS}@spotseek.test`;
     await guestJoin(ev.id, 'Lin Linked', email);
@@ -279,8 +279,8 @@ describe('guest RSVP flow', () => {
     const user = await signUp('linked', email);
     const mine = await app('/api/rsvps/mine', { headers: { Cookie: user.cookie } });
     const { rsvps } = (await mine.json()) as { rsvps: { eventId: string; state: string }[] };
-    expect(rsvps.find((r) => r.eventId === ev.id)?.state).toBe('going');
-    // No double counting: still exactly one going.
+    expect(rsvps.find((r) => r.eventId === ev.id)).toBeUndefined();
+    // The guest row still counts exactly once.
     expect((await countsFor(host, ev.id)).rsvpCounts.going).toBe(1);
   }, 60_000);
 });

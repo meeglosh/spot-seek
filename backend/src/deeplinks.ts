@@ -140,6 +140,41 @@ export function absoluteImageUrl(base: string, coverImageUrl: string | null): st
   return coverImageUrl.startsWith('/') ? `${base}${coverImageUrl}` : coverImageUrl;
 }
 
+// Web fallback for the in-app "claim this guest RSVP" link. With the app
+// installed iOS opens it in the app (it falls under the /e/* AASA path); this
+// page is what everyone else sees. It does no lookups and so reveals nothing
+// about the token: the claim itself happens in the app via POST /api/rsvps/claim.
+deeplinksRouter.get('/e/:id/claim/:token', (c) => {
+  const id = c.req.param('id');
+  const token = c.req.param('token');
+  const notFound = () =>
+    c.html(
+      renderPage({
+        title: 'Link not found · SpotSeek',
+        noindex: true,
+        body: '<div class="content"><h1>Link not found</h1><p class="meta">This link is invalid or has expired.</p></div>',
+      }),
+      404,
+    );
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) || !/^[0-9a-f]{48}$/.test(token)) {
+    return notFound();
+  }
+  const base = publicBaseUrl(c.env);
+  return c.html(
+    renderPage({
+      title: 'Add this RSVP to your account · SpotSeek',
+      noindex: true,
+      body: `<div class="content">
+  <div class="label">One more step</div>
+  <h1>Open SpotSeek to add this RSVP to your account</h1>
+  <p class="meta">Sign in to the app and this RSVP moves into your account.</p>
+  ${installCtas(c.env.APP_STORE_URL, id)}
+  <p class="fine"><a href="${escapeHtml(base)}/rsvp/${escapeHtml(id)}/${escapeHtml(token)}">Back to my RSVP</a></p>
+</div>`,
+    }),
+  );
+});
+
 deeplinksRouter.get('/e/:id', async (c) => {
   const id = c.req.param('id');
   const base = publicBaseUrl(c.env);

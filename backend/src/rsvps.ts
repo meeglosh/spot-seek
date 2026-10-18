@@ -2,12 +2,12 @@ import { eventPhase } from './eventTime';
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import * as schema from './schema';
 import { createAuth } from './auth';
 import { notify } from './notifications';
 import { promoteFromWaitlist } from './waitlist';
-import { goingTotalSql, countGoing, claimGuestRsvps } from './guests';
+import { goingTotalSql, countGoing, claimGuestRsvp } from './guests';
 import { canViewEvent, isModerationHidden } from './moderation/visibility';
 import { isBlockedByHost } from './moderation/routes';
 import { allowRequest, tooManyRequests, RSVP_LIMIT_PER_MIN } from './ratelimit';
@@ -26,13 +26,45 @@ rsvpsRouter.use('*', async (c, next) => {
   if (c.req.method !== 'GET' && !(await allowRequest(c.env.RSVP_LIMITER, `rsvp:${session.user.id}`, RSVP_LIMIT_PER_MIN))) {
     return tooManyRequests();
   }
-  // Account linking: guest RSVPs made on the web with this email become this
-  // user's real RSVPs on their first authenticated request (no Better Auth
-  // config involved). Failures must never block the request.
-  await claimGuestRsvps(drizzle(neon(c.env.DATABASE_URL), { schema }), session.user.id, session.user.email).catch(
-    (err) => console.error('[rsvps] guest claim failed:', err),
-  );
   await next();
+});
+
+// POST /api/rsvps/claim — attach a guest (web) RSVP to the signed-in account.
+// Possession of the guest row's emailed token is the ONLY proof accepted
+// (account emails are unverified, so email matching would allow takeover).
+const CLAIM_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const CLAIM_TOKEN_RE = /^[0-9a-f]{48}$/;
+const CLAIM_LIMIT_PER_MIN = 10;
+const CLAIM_STATUS = {
+  not_found: 404,
+  already_claimed: 409,
+  not_confirmed: 409,
+  event_ended: 409,
+  own_event: 409,
+  forbidden: 403,
+} as const;
+
+rsvpsRouter.post('/claim', async (c) => {
+  const userId = c.get('userId');
+  // Stricter than the generic write limit: this endpoint takes a bearer-style secret.
+  if (!(await allowRequest(c.env.RSVP_LIMITER, `rsvp-claim:${userId}`, CLAIM_LIMIT_PER_MIN))) {
+    return tooManyRequests();
+  }
+  const body = await c.req
+    .json<{ eventId?: unknown; token?: unknown }>()
+    .catch(() => ({}) as { eventId?: unknown; token?: unknown });
+  const { eventId, token } = body;
+  if (typeof eventId !== 'string' || typeof token !== 'string' || !CLAIM_UUID_RE.test(eventId) || !CLAIM_TOKEN_RE.test(token)) {
+    return c.json({ error: 'not_found' }, 404);
+  }
+  const db = drizzle(neon(c.env.DATABASE_URL), { schema });
+  const guest = await db.query.guestRsvps.findFirst({
+    where: and(eq(schema.guestRsvps.token, token), eq(schema.guestRsvps.eventId, eventId)),
+  });
+  if (!guest) return c.json({ error: 'not_found' }, 404);
+  const result = await claimGuestRsvp(db, userId, guest);
+  if (!result.ok) return c.json({ error: result.error }, CLAIM_STATUS[result.error]);
+  return c.json({ ok: true, rsvp: result.rsvp });
 });
 
 // GET /api/rsvps/mine — current user's RSVPs with event details.
