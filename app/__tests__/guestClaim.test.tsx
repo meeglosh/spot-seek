@@ -78,6 +78,21 @@ describe('claim screen', () => {
     expect(safeRedirect('/e/evt1/claim/tok1', '/x')).toBe('/e/evt1/claim/tok1');
   });
 
+  it('while auth is loading: no navigation, no claim; then claims once when authenticated', async () => {
+    mockStatus = 'loading';
+    mockClaim.mockResolvedValue({ ok: true, rsvp: { id: 'r1', eventId: 'evt1', state: 'confirmed' } });
+    const r = await render(<ClaimScreen />);
+    expect(texts(r)).toContain('Linking your RSVP');
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(mockClaim).not.toHaveBeenCalled();
+    mockStatus = 'authenticated';
+    await act(async () => { r.update(<ClaimScreen />); });
+    await act(async () => { r.update(<ClaimScreen />); });
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockClaim).toHaveBeenCalledTimes(1);
+  });
+
   it('signed in: claims once and replaces to the event with a confirmation', async () => {
     mockClaim.mockResolvedValue({ ok: true, rsvp: { id: 'r1', eventId: 'evt1', state: 'confirmed' } });
     const r = await render(<ClaimScreen />);

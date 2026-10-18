@@ -31,13 +31,15 @@ export default function ClaimGuestRsvpScreen() {
   const { t: tr } = useTranslation('discover');
   const [error, setError] = useState<ShownError | null>(null);
   const started = useRef(false);
-  const signedIn = auth.status === 'authenticated';
+  const status = auth.status;
 
   useEffect(() => {
     if (!id || !token) { setError('not_found'); return; }
+    // Cold start from a universal link: the session is still being restored.
+    if (status === 'loading') return;
     const claimPath = `/e/${encodeURIComponent(id)}/claim/${encodeURIComponent(token)}`;
     const goSignIn = () => router.push({ pathname: '/(auth)/sign-in', params: { redirect: claimPath } } as never);
-    if (!signedIn) { goSignIn(); return; }
+    if (status !== 'authenticated') { goSignIn(); return; }
     if (started.current) return;
     started.current = true;
     void claimGuestRsvp(id, token).then((result) => {
@@ -52,7 +54,7 @@ export default function ClaimGuestRsvpScreen() {
         setError(result.error);
       }
     });
-  }, [id, token, signedIn, router, tr]);
+  }, [id, token, status, router, tr]);
 
   if (error) {
     const showEvent = error !== 'not_found' && error !== 'network' && !!id;
