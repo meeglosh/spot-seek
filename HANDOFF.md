@@ -25,6 +25,15 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
 
 ---
 
+## 0b. Update 2026-10-18 — build 44 submitted
+
+- **Build 44** (FotMob-style restyle, sponsorship notices, plus everything in 43) was
+  uploaded, added to the external "Friends beta" group and submitted for beta review
+  via the ASC API on 2026-10-18 (state WAITING_FOR_REVIEW). "What to test" notes are
+  build 42's text with a line about the new look. Build 43 was skipped (never reviewed).
+- Export warnings about missing dSYMs for React/ReactNativeDependencies/hermesvm
+  frameworks are harmless (prebuilt frameworks ship without them).
+
 ## 0a. Update 2026-10-18 — build 43 uploaded
 
 - **Build 43** (security-scan fixes, guest RSVP claim screen, cancel party, i18n) was
