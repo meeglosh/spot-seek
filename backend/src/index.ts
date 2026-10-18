@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import * as Sentry from '@sentry/cloudflare';
 import { neon } from '@neondatabase/serverless';
-import { createAuth, setAuthBaseURL } from './auth';
+import { createAuth, setAuthBaseURL, setAuthSecret } from './auth';
 import { eventsRouter } from './events';
 import { feedRouter } from './feed';
 import { rsvpsRouter } from './rsvps';
@@ -63,6 +63,7 @@ app.use('*', async (c, next) => {
   configurePublicBaseUrl(c.env.PUBLIC_BASE_URL);
   configureEmailGuard(c.env);
   setAuthBaseURL(c.env.BETTER_AUTH_URL);
+  setAuthSecret(c.env.BETTER_AUTH_SECRET);
   try { configureApns(c.env, c.executionCtx); } catch { configureApns(c.env); }
   await next();
 });
