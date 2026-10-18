@@ -44,7 +44,7 @@
 		// Sentry (crash/error reporting). The DSN is public (ingest-only), safe to commit.
 		// Tests blank it (vitest.config.mts) so Sentry is a no-op there.
 		"SENTRY_DSN": "https://76f9b024a56144fc2826221142377535@o4511334152732672.ingest.us.sentry.io/4512255020236800",
-		"SENTRY_ENVIRONMENT": "dev"
+		"SENTRY_ENVIRONMENT": "production"
 	},
 	"durable_objects": {
 		"bindings": [
