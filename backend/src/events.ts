@@ -334,21 +334,28 @@ eventsRouter.post('/:id/cover', async (c) => {
   const file = formData.get('image') as File | null;
   if (!file) return c.json({ error: 'image field required' }, 400);
 
-  // Derive the extension defensively: some multipart encoders omit the
-  // filename, and a name without a dot would otherwise yield the whole name
-  // as the "extension". Fall back to the content type, then to jpg.
-  const MIME_EXT: Record<string, string> = {
-    'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
-    'image/gif': 'gif', 'image/webp': 'webp', 'image/heic': 'heic',
-  };
-  const nameExt = file.name && file.name.includes('.')
-    ? file.name.split('.').pop()!.toLowerCase()
-    : undefined;
-  const ext = nameExt ?? MIME_EXT[file.type?.toLowerCase() ?? ''] ?? 'jpg';
-  const key = `events/${c.req.param('id')}/cover.${ext}`;
+  // Raster allowlist only (never SVG/HTML): the bytes must match the magic
+  // number of an allowed type, and any declared type must agree. The stored
+  // Content-Type and key extension come from the sniffed type, never the client.
+  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  const ascii = (from: number, to: number) => String.fromCharCode(...head.slice(from, to));
+  let kind: { type: string; ext: string } | null = null;
+  if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) kind = { type: 'image/jpeg', ext: 'jpg' };
+  else if (head[0] === 0x89 && ascii(1, 4) === 'PNG') kind = { type: 'image/png', ext: 'png' };
+  else if (ascii(0, 4) === 'GIF8') kind = { type: 'image/gif', ext: 'gif' };
+  else if (ascii(0, 4) === 'RIFF' && ascii(8, 12) === 'WEBP') kind = { type: 'image/webp', ext: 'webp' };
+  else if (ascii(4, 8) === 'ftyp' && /^(heic|heix|hevc|hevx|mif1|msf1|heim|heis)$/.test(ascii(8, 12))) {
+    kind = { type: 'image/heic', ext: 'heic' };
+  }
+  if (!kind) return c.json({ error: 'Unsupported image type' }, 415);
+  const declared = (file.type ?? '').toLowerCase().replace('image/jpg', 'image/jpeg').replace('image/heif', 'image/heic');
+  if (declared && declared !== 'application/octet-stream' && declared !== kind.type) {
+    return c.json({ error: 'Unsupported image type' }, 415);
+  }
+  const key = `events/${c.req.param('id')}/cover.${kind.ext}`;
 
   await c.env.SPOTSEEK_IMAGES.put(key, file.stream(), {
-    httpMetadata: { contentType: file.type || 'image/jpeg' },
+    httpMetadata: { contentType: kind.type },
   });
 
   // Serve through the Worker so we don't need a public R2 domain yet.

@@ -139,14 +139,26 @@ app.route('/admin', adminPageRouter);
 app.route('/', webRsvpRouter);
 app.route('/', deeplinksRouter);
 
+const IMAGE_SERVE_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic']);
+
 // GET /api/images/:key — serve R2 images through the Worker.
 // Replace with a public R2 domain once the bucket has one configured.
 app.get('/api/images/*', async (c) => {
   const key = c.req.path.replace('/api/images/', '');
   const obj = await c.env.SPOTSEEK_IMAGES.get(key);
   if (!obj) return c.json({ error: 'Not found' }, 404);
-  const contentType = obj.httpMetadata?.contentType ?? 'image/jpeg';
-  return new Response(obj.body, { headers: { 'Content-Type': contentType, 'Cache-Control': 'public, max-age=31536000' } });
+  // Never echo a stored Content-Type (objects may predate upload validation):
+  // only raster types are served inline; anything else is a forced download.
+  const stored = obj.httpMetadata?.contentType?.toLowerCase();
+  const safe = stored !== undefined && IMAGE_SERVE_TYPES.has(stored);
+  const headers: Record<string, string> = {
+    'Content-Type': safe ? stored : 'application/octet-stream',
+    'X-Content-Type-Options': 'nosniff',
+    'Content-Security-Policy': "default-src 'none'; sandbox",
+    'Cache-Control': 'public, max-age=31536000',
+  };
+  if (!safe) headers['Content-Disposition'] = 'attachment';
+  return new Response(obj.body, { headers });
 });
 
 // Public logo used by transactional emails (derived from app/assets/icon.png).
