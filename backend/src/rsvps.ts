@@ -123,6 +123,22 @@ rsvpsRouter.post('/', async (c) => {
 
   // Map snake_case DB columns to camelCase for API consistency.
   const row = rows.rows[0] as Record<string, unknown>;
+
+  // neon-http has no transactions, so concurrent inserts can all pass the
+  // count above on the same snapshot. Re-count after the write and demote this
+  // row if capacity was exceeded (same pattern as PATCH / confirmGuest). If
+  // several racers demote each other, promotion refills any slot left empty.
+  if (row['state'] === 'going' && capacity !== null && (await countGoing(db, eventId)) > capacity) {
+    await db
+      .update(schema.rsvps)
+      .set({ state: 'waitlisted', updatedAt: new Date() })
+      .where(eq(schema.rsvps.id, row['id'] as string));
+    row['state'] = 'waitlisted';
+    await promoteFromWaitlist(db, c.env.RESEND_API_KEY, eventId).catch((err) =>
+      console.error('[rsvps] waitlist promotion failed:', err),
+    );
+  }
+
   const rsvp = {
     id: row['id'],
     eventId: row['event_id'],
@@ -161,6 +177,20 @@ rsvpsRouter.patch('/:id', async (c) => {
   const { state } = await c.req.json<{ state: schema.RsvpState }>();
   if (!['going', 'interested', 'waitlisted', 'cancelled'].includes(state)) {
     return c.json({ error: 'Invalid state' }, 400);
+  }
+
+  // Moving into 'going' or 'waitlisted' is a (re)join, so it gets the same gates
+  // as POST: hidden/removed events 404, ended events 409, host-blocked users 403.
+  // Cancelling or moving to 'interested' stays allowed so a user can always leave.
+  if (state === 'going' || state === 'waitlisted') {
+    const joinEvent = await db.query.events.findFirst({ where: eq(schema.events.id, rsvp.eventId) });
+    if (!joinEvent || (isModerationHidden(joinEvent) && joinEvent.hostId !== userId)) {
+      return c.json({ error: 'Event not found' }, 404);
+    }
+    if (eventPhase(joinEvent) === 'ended') return c.json({ error: 'event_ended' }, 409);
+    if (joinEvent.hostId !== userId && (await isBlockedByHost(db, joinEvent.hostId, userId))) {
+      return c.json({ error: 'Forbidden' }, 403);
+    }
   }
 
   // Moving into 'going' must respect capacity just like the POST insert path

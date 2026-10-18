@@ -12,6 +12,8 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
 import { notify } from './notifications';
+import { isModerationHidden } from './moderation/visibility';
+import { isBlockedByHost } from './moderation/routes';
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -132,6 +134,10 @@ async function notifyHostOfGuest(db: Db, resendApiKey: string | undefined, event
  * created/updated timestamps so a waitlist position survives), then marks the
  * guest row claimed. The brief overlap errs toward over-counting, never
  * over-filling. Returns the number of guest RSVPs claimed.
+ *
+ * A claim never creates an account RSVP that POST /api/rsvps would refuse:
+ * hidden/removed, ended, or host-blocked events are skipped and the guest row
+ * is left untouched (unclaimed).
  */
 export async function claimGuestRsvps(db: Db, userId: string, email: string): Promise<number> {
   const normalized = normalizeEmail(email);
@@ -147,6 +153,13 @@ export async function claimGuestRsvps(db: Db, userId: string, email: string): Pr
   let claimed = 0;
   for (const g of guests) {
     const event = await db.query.events.findFirst({ where: eq(schema.events.id, g.eventId) });
+    if (
+      event &&
+      event.hostId !== userId &&
+      (isModerationHidden(event) || eventPhase(event) === 'ended' || (await isBlockedByHost(db, event.hostId, userId)))
+    ) {
+      continue;
+    }
     if (event && event.hostId !== userId) {
       await db.execute(sql`
         INSERT INTO rsvps (event_id, user_id, state, created_at, updated_at)

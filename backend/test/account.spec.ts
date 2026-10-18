@@ -200,11 +200,11 @@ describe('DELETE /api/account — guest RSVPs', () => {
     expect(rows.find((r) => r.id === g.id)?.state).toBe('going');
   }, 60_000);
 
-  it('deletes unclaimed/pending guest RSVPs with the deleted user email (any case) and frees their spot', async () => {
+  it('does NOT delete unclaimed guest RSVPs that merely match the deleted user email (unverified email, F7)', async () => {
     const [host, u, waiter] = await Promise.all([signUp('gd-host'), signUp('gd'), signUp('gd-waiter')]);
     const ev = await createEvent(host, { capacity: 1, startsAt: iso(48 * HOUR) });
     const ev2 = await createEvent(host, { startsAt: iso(72 * HOUR) });
-    // The guest row for u's email holds the only spot on ev; waiter is waitlisted.
+    // Guest rows for u's email are NOT u's: they belong to whoever confirmed the email link.
     const mine = await guest(ev.id, u.email.toLowerCase(), 'going');
     expect((await rsvp(waiter, ev.id)).state).toBe('waitlisted');
     const pending = await guest(ev2.id, u.email.toLowerCase(), 'pending');
@@ -212,11 +212,11 @@ describe('DELETE /api/account — guest RSVPs', () => {
 
     expect((await del(u)).status).toBe(200);
 
-    expect((await guestRows(ev.id)).find((r) => r.id === mine.id)).toBeUndefined();
-    expect((await guestRows(ev2.id)).find((r) => r.id === pending.id)).toBeUndefined();
+    expect((await guestRows(ev.id)).find((r) => r.id === mine.id)?.state).toBe('going');
+    expect((await guestRows(ev2.id)).find((r) => r.id === pending.id)).toBeDefined();
     expect((await guestRows(ev2.id)).find((r) => r.id === bystander.id)).toBeDefined();
     const wr = await db.select().from(schema.rsvps).where(and(eq(schema.rsvps.eventId, ev.id), eq(schema.rsvps.userId, waiter.id)));
-    expect(wr[0].state).toBe('going'); // freed guest spot was promoted
+    expect(wr[0].state).toBe('waitlisted'); // the guest still holds the spot
   }, 60_000);
 
   it('deletes guest rows claimed by the user (no phantom unclaimed row) and cascades on their own past events', async () => {
