@@ -71,6 +71,16 @@ adminRouter.route('/moderation', moderationAdminRouter);
 // GET /api/admin/landing-health: runway of the landing page's curated calendar (no side effects).
 adminRouter.get('/landing-health', (c) => c.json(landingHealth(new Date())));
 
+// Allowlist of users columns returned by verify/unverify (never the whole row:
+// it carries email, location and Stripe fields). Same set as publicUserColumns.
+const publicUserReturning = {
+  id: schema.users.id,
+  displayName: schema.users.displayName,
+  avatarUrl: schema.users.avatarUrl,
+  isVerified: schema.users.isVerified,
+  createdAt: schema.users.createdAt,
+};
+
 // POST /api/admin/verify/:userId — mark a host as verified.
 adminRouter.post('/verify/:userId', async (c) => {
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
@@ -83,7 +93,7 @@ adminRouter.post('/verify/:userId', async (c) => {
     .update(schema.users)
     .set({ isVerified: true, updatedAt: new Date() })
     .where(eq(schema.users.id, c.req.param('userId')))
-    .returning();
+    .returning(publicUserReturning);
 
   return c.json({ user: updated });
 });
@@ -95,7 +105,7 @@ adminRouter.post('/unverify/:userId', async (c) => {
     .update(schema.users)
     .set({ isVerified: false, updatedAt: new Date() })
     .where(eq(schema.users.id, c.req.param('userId')))
-    .returning();
+    .returning(publicUserReturning);
 
   if (!updated) return c.json({ error: 'User not found' }, 404);
   return c.json({ user: updated });

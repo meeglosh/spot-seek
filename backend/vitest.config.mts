@@ -8,6 +8,8 @@ const dbOverride = process.env.SPOTSEEK_TEST_DB_BRANCH && process.env.DATABASE_U
 
 export default defineWorkersConfig({
 	test: {
+		// Neon-backed specs intermittently exceed the 5s default under full-suite load.
+		testTimeout: 20000,
 		// Shared-DB runs only: deletes this run's fixture users/events afterwards.
 		// A no-op on an ephemeral branch (the whole branch is deleted instead).
 		globalSetup: ["./test/global-teardown.ts"],

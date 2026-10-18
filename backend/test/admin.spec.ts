@@ -44,4 +44,21 @@ describe('host verification', () => {
     expect('isVerified' in user).toBe(true);
     expect(user.isVerified).toBe(false);
   });
+
+  it('verify and unverify return only the public allowlist', async () => {
+    const allowed = ['avatarUrl', 'createdAt', 'displayName', 'id', 'isVerified'];
+    const headers = { Authorization: `Bearer ${ADMIN_SECRET}` };
+    const v = await SELF.fetch(`${ADMIN}/verify/${userId}`, { method: 'POST', headers });
+    expect(v.status).toBe(200);
+    const vBody = await v.json() as { user: Record<string, unknown> };
+    expect(Object.keys(vBody.user).sort()).toEqual(allowed);
+    expect(vBody.user.isVerified).toBe(true);
+    expect(vBody.user.id).toBe(userId);
+
+    const u = await SELF.fetch(`${ADMIN}/unverify/${userId}`, { method: 'POST', headers });
+    expect(u.status).toBe(200);
+    const uBody = await u.json() as { user: Record<string, unknown> };
+    expect(Object.keys(uBody.user).sort()).toEqual(allowed);
+    expect(uBody.user.isVerified).toBe(false);
+  });
 });

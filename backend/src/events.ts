@@ -279,6 +279,46 @@ eventsRouter.patch('/:id', async (c) => {
         existing.venueLng !== updated.venueLng
       : false;
 
+  // Cancelling the event closes its sponsorship payment links: pending bids are
+  // cancelled and open PaymentIntents (requires_payment) are cancelled at Stripe.
+  // A PI already in flight (succeeded/processing) is left alone: the webhook marks
+  // it paid and the sweep refunds paid rows on a cancelled event. A Stripe error
+  // never fails the event cancel; the row stays active/requires_payment, which the
+  // webhook (auto-refund) and the sweep recover if the sponsor still pays.
+  if (becameCancelled) {
+    await (async () => {
+      await db
+        .update(schema.sponsorships)
+        .set({ status: 'cancelled', updatedAt: new Date() })
+        .where(and(eq(schema.sponsorships.eventId, id), eq(schema.sponsorships.status, 'pending')));
+      const open = await db.query.sponsorships.findMany({
+        where: and(
+          eq(schema.sponsorships.eventId, id),
+          eq(schema.sponsorships.status, 'active'),
+          eq(schema.sponsorships.paymentStatus, 'requires_payment'),
+        ),
+      });
+      const stripe = getClient(c.env);
+      for (const s of open) {
+        try {
+          if ((await cancelOpenPaymentIntent(stripe, s.paymentIntentId)) === 'in_flight') continue;
+          await db
+            .update(schema.sponsorships)
+            .set({ status: 'cancelled', paymentStatus: 'unpaid', updatedAt: new Date() })
+            .where(
+              and(
+                eq(schema.sponsorships.id, s.id),
+                eq(schema.sponsorships.status, 'active'),
+                eq(schema.sponsorships.paymentStatus, 'requires_payment'),
+              ),
+            );
+        } catch (err) {
+          console.error('[events] PaymentIntent cancel on event cancel failed for sponsorship', s.id, err);
+        }
+      }
+    })().catch((err) => console.error('[events] cancel sponsorship cleanup failed:', err));
+  }
+
   if (becameCancelled || venueChanged) {
     await (async () => {
       const rsvps = await db.query.rsvps.findMany({
