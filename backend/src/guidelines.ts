@@ -30,7 +30,7 @@ export function renderGuidelinesPage(opts: { baseUrl: string }): string {
     <div class="panel">
       <h2>How reporting works</h2>
       <p class="meta">Open any party in the app and tap Report. Pick a reason and add a note if you like. You can also block a host so you never see their parties.</p>
-      <p class="meta">New parties are checked before they go live. If a report looks serious, or a few people report the same party, we hide it right away and then review it. The host is told their party is under review.</p>
+      <p class="meta">New parties are checked before they go live. If a report looks serious, we review it right away; if a few people report the same party, we hide it while we review. The host is told their party is under review.</p>
       <p class="meta">If we take a party down, the host is told why. Hosts who repeatedly break the guidelines lose the ability to publish.</p>
     </div>
 

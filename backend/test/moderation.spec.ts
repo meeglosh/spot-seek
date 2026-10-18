@@ -225,22 +225,97 @@ describe('reporting', () => {
     expect(await modStatus(ev.id)).toBe('ok');
   });
 
-  it('hides immediately on a single hate report, tells the host, keeps RSVPs', async () => {
+  // Hate-report alerts go to the digest address; the Resend stub captures them.
+  const reportK = (user: User, eventId: string, reason = 'hate') =>
+    app(`/api/events/${eventId}/report`, {
+      method: 'POST', headers: { ...json, Cookie: user.cookie }, body: JSON.stringify({ reason }),
+    }, { RESEND_API_KEY: 'test-resend-key' });
+  const alertsFor = (id: string) =>
+    resendSent.filter((m) => m.to === 'hello@spotseek.app' && m.subject.startsWith('Hate report') && JSON.stringify(m).includes(id));
+  const hostNotes = async (host: User, id: string) =>
+    (await sql()`SELECT type FROM notifications WHERE user_id = ${host.id} AND event_id = ${id} AND type = 'event_under_review'`) as { type: string }[];
+
+  it('flags (does not hide) on a single hate report, alerts admin once, does not tell the host', async () => {
     const host = await signIn('hate-host');
     const att = await signIn('hate-att');
     const rep = await signIn('hate-rep');
     const ev = await mk(host);
     expect((await app('/api/rsvps', { method: 'POST', headers: { ...json, Cookie: att.cookie }, body: JSON.stringify({ eventId: ev.id }) })).status).toBe(201);
 
-    expect((await report(rep, ev.id, 'hate')).status).toBe(201);
-    expect(await modStatus(ev.id)).toBe('hidden');
-    expect(await logActions(ev.id)).toContain('auto_hidden');
+    expect((await reportK(rep, ev.id)).status).toBe(201);
+    expect(await modStatus(ev.id)).toBe('flagged');
+    expect(await logActions(ev.id)).toEqual(['auto_flagged']);
+    const log = (await sql()`SELECT reason FROM moderation_events WHERE event_id = ${ev.id}`) as { reason: string }[];
+    expect(log[0].reason).toBe('hate_report');
 
-    const notes = (await sql()`SELECT title, body, type FROM notifications WHERE user_id = ${host.id} AND event_id = ${ev.id}`) as { title: string; type: string }[];
-    expect(notes.some((n) => n.type === 'event_under_review' && n.title === 'Your party is under review.')).toBe(true);
+    expect((await getEvent(ev.id)).status).toBe(200);
+    expect(await feedIds(ev.title)).toContain(ev.id);
+    expect(alertsFor(ev.id).length).toBe(1);
+    expect((await hostNotes(host, ev.id)).length).toBe(0);
 
     const rsvps = (await sql()`SELECT state FROM rsvps WHERE event_id = ${ev.id} AND user_id = ${att.id}`) as { state: string }[];
     expect(rsvps[0].state).toBe('going');
+  });
+
+  it('hides when a second distinct reporter also reports hate, and tells the host', async () => {
+    const host = await signIn('hate2-host');
+    const [a, b] = await Promise.all([signIn('hate2-a'), signIn('hate2-b')]);
+    const ev = await mk(host);
+    await reportK(a, ev.id);
+    expect(await modStatus(ev.id)).toBe('flagged');
+    await reportK(b, ev.id);
+    expect(await modStatus(ev.id)).toBe('hidden');
+    const hid = (await sql()`SELECT reason FROM moderation_events WHERE event_id = ${ev.id} AND action = 'auto_hidden'`) as { reason: string }[];
+    expect(hid[0].reason).toBe('two_hate_reporters');
+    expect((await hostNotes(host, ev.id)).length).toBe(1);
+    expect(alertsFor(ev.id).length).toBe(1);
+  });
+
+  it('a duplicate hate report from the same user does not hide or re-alert', async () => {
+    const host = await signIn('hate3-host');
+    const a = await signIn('hate3-a');
+    const ev = await mk(host);
+    expect((await reportK(a, ev.id)).status).toBe(201);
+    const dup = await reportK(a, ev.id);
+    expect(dup.status).toBe(200);
+    expect(await modStatus(ev.id)).toBe('flagged');
+    expect(alertsFor(ev.id).length).toBe(1);
+  });
+
+  it('two hate reports produce only one admin alert', async () => {
+    const host = await signIn('hate4-host');
+    const [a, b] = await Promise.all([signIn('hate4-a'), signIn('hate4-b')]);
+    const ev = await mk(host);
+    await reportK(a, ev.id);
+    await reportK(b, ev.id);
+    expect(await modStatus(ev.id)).toBe('hidden');
+    expect(alertsFor(ev.id).length).toBe(1);
+  });
+
+  it('one hate report on a classifier-flagged event still hides it (flagged_plus_report)', async () => {
+    const host = await signIn('hate5-host');
+    const a = await signIn('hate5-a');
+    const ev = await mk(host, { description: 'FLAGME' });
+    expect(ev.moderationStatus).toBe('flagged');
+    await reportK(a, ev.id);
+    expect(await modStatus(ev.id)).toBe('hidden');
+    const hid = (await sql()`SELECT reason FROM moderation_events WHERE event_id = ${ev.id} AND action = 'auto_hidden'`) as { reason: string }[];
+    expect(hid[0].reason).toBe('flagged_plus_report');
+    expect(alertsFor(ev.id).length).toBe(0);
+  });
+
+  it('after an admin restore the report window resets', async () => {
+    const host = await signIn('hate6-host');
+    const [a, b] = await Promise.all([signIn('hate6-a'), signIn('hate6-b')]);
+    const ev = await mk(host);
+    await reportK(a, ev.id);
+    expect(alertsFor(ev.id).length).toBe(1);
+    expect((await app(`/api/admin/moderation/events/${ev.id}/restore`, { method: 'POST', headers: ADMIN })).status).toBe(200);
+    expect(await modStatus(ev.id)).toBe('ok');
+    // a's pre-restore report no longer counts: b alone only flags again.
+    await reportK(b, ev.id);
+    expect(await modStatus(ev.id)).toBe('flagged');
+    expect(alertsFor(ev.id).length).toBe(2);
   });
 
   it('hides at 3 distinct reporters, not before', async () => {
@@ -290,7 +365,7 @@ describe('visibility', () => {
     const host = await signIn('vis-host');
     const other = await signIn('vis-other');
     const rep = await signIn('vis-rep');
-    const ev = await mk(host);
+    const ev = await mk(host, { description: 'FLAGME' });
     expect(await feedIds(ev.title)).toContain(ev.id);
     await report(rep, ev.id, 'hate');
     expect(await modStatus(ev.id)).toBe('hidden');
@@ -344,7 +419,7 @@ describe('visibility', () => {
 
   it('guest web RSVP is refused for hidden and draft events', async () => {
     const host = await signIn('guest-host');
-    const hidden = await mk(host);
+    const hidden = await mk(host, { description: 'FLAGME' });
     const rep = await signIn('guest-rep');
     await report(rep, hidden.id, 'hate');
     const draft = await mk(host, { status: 'draft' });
@@ -422,7 +497,9 @@ describe('admin moderation', () => {
     const r1 = await signIn('adm-r1');
     const r2 = await signIn('adm-r2');
     const r3 = await signIn('adm-r3');
+    const r0 = await signIn('adm-r0');
     const ev = await mk(host);
+    await report(r0, ev.id, 'hate');
     await report(r1, ev.id, 'hate', 'bad stuff');
 
     const queue = (await (await app('/api/admin/moderation/queue', { headers: ADMIN })).json()) as {
@@ -430,15 +507,15 @@ describe('admin moderation', () => {
     };
     const item = queue.events.find((e) => e.id === ev.id)!;
     expect(item.moderationStatus).toBe('hidden');
-    expect(item.reportCount).toBe(1);
-    expect(item.reasons).toEqual({ hate: 1 });
+    expect(item.reportCount).toBe(2);
+    expect(item.reasons).toEqual({ hate: 2 });
     expect(item.notes).toEqual(['bad stuff']);
 
     const restored = await app(`/api/admin/moderation/events/${ev.id}/restore`, { method: 'POST', headers: ADMIN });
     expect(restored.status).toBe(200);
     expect(await modStatus(ev.id)).toBe('ok');
     expect((await getEvent(ev.id)).status).toBe(200);
-    expect(await logActions(ev.id)).toEqual(['auto_hidden', 'restored']);
+    expect(await logActions(ev.id)).toEqual(['auto_flagged', 'auto_hidden', 'restored']);
 
     // Old reports do not count after a restore: one new non-hate report leaves it up.
     await report(r2, ev.id, 'spam');
@@ -506,7 +583,7 @@ describe('moderation digest', () => {
     const host = await signIn('dig-host');
     const rep = await signIn('dig-rep');
     try {
-      const ev = await mk(host);
+      const ev = await mk(host, { description: 'FLAGME' });
       await report(rep, ev.id, 'hate'); // guarantees a non-empty queue
       await rehome(host, `dig-host-${TS}@digest-fixture.example.com`);
 
@@ -532,7 +609,7 @@ describe('moderation digest', () => {
   it('skips events hosted by @spotseek.test / @spotseek-dev.test accounts (digest only, not the admin queue)', async () => {
     const host = await signIn('dig-skip'); // @spotseek.test
     const rep = await signIn('dig-skip-rep');
-    const ev = await mk(host);
+    const ev = await mk(host, { description: 'FLAGME' });
     await report(rep, ev.id, 'hate');
     expect(await modStatus(ev.id)).toBe('hidden');
 

@@ -19,6 +19,9 @@ import { classifyText } from './classifier';
 import { logModeration, markFlagged } from './screen';
 import { matchBlocklistFields } from './blocklist';
 import { canViewEvent } from './visibility';
+import { DIGEST_TO } from './admin';
+import { sendEmail } from '../reminders';
+import { publicBaseUrl } from '../email';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
 type Db = ReturnType<typeof drizzle<typeof schema>>;
@@ -26,6 +29,7 @@ type Db = ReturnType<typeof drizzle<typeof schema>>;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const REPORT_LIMIT_PER_MIN = 10;
 export const REPORT_AUTO_HIDE_DISTINCT_REPORTERS = 3;
+export const REPORT_AUTO_HIDE_DISTINCT_HATE_REPORTERS = 2;
 export const NOTE_MAX = 500;
 
 async function requireUser(c: import('hono').Context<AppEnv>, next: import('hono').Next) {
@@ -133,11 +137,28 @@ export async function evaluateReports(
     }
   }
 
+  // `flagged` is captured BEFORE the hate rule below can set the flag, so a flag
+  // raised by this very hate report never combines with it into flagged_plus_report.
+  // Reports are unique per reporter, so reasons.hate is a distinct-reporter count.
   let rule: string | null = null;
-  if (reasons.hate) rule = 'hate_report';
+  if ((reasons.hate ?? 0) >= REPORT_AUTO_HIDE_DISTINCT_HATE_REPORTERS) rule = 'two_hate_reporters';
   else if (flagged && reports.length >= 1) rule = 'flagged_plus_report';
   else if (reporters.size >= REPORT_AUTO_HIDE_DISTINCT_REPORTERS) rule = 'three_reporters';
-  if (!rule) return null;
+  if (!rule) {
+    // A single hate report flags (stays live) and alerts an admin once. markFlagged
+    // is atomic ok -> flagged, so only the report that wins it logs and alerts.
+    if (reasons.hate && !flagged && (await markFlagged(db, event.id))) {
+      await logModeration(db, {
+        eventId: event.id,
+        action: 'auto_flagged',
+        reason: 'hate_report',
+        actor: 'system',
+        detail: { reportCount: reports.length, distinctReporters: reporters.size, reasons },
+      });
+      await alertAdminHateReport(env, event, resendApiKey);
+    }
+    return null;
+  }
 
   const hidden = await db
     .update(schema.events)
@@ -162,6 +183,20 @@ export async function evaluateReports(
     eventId: event.id,
   }).catch((err) => console.error('[moderation] host notify failed:', err));
   return rule;
+}
+
+/** One immediate admin email for a hate-flagged event. Never throws. */
+async function alertAdminHateReport(env: Env, event: schema.Event, resendApiKey: string | undefined): Promise<void> {
+  const subject = 'Hate report: event flagged for review';
+  const body =
+    `"${event.title}" was reported for hate and flagged. It stays live until a second reporter or an admin acts.\n\n` +
+    `Review, restore or remove: ${publicBaseUrl(env)}/admin/moderation\nEvent id ${event.id}`;
+  try {
+    if (!resendApiKey) console.log(`[DEV MODERATION ALERT] ${subject} ${event.id}`);
+    else await sendEmail(DIGEST_TO, subject, body, resendApiKey, { type: 'moderation_alert', eventId: event.id });
+  } catch (err) {
+    console.error('[moderation] admin alert failed:', err);
+  }
 }
 
 // ─── Blocking ─────────────────────────────────────────────────────────────────
