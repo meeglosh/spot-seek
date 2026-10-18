@@ -168,7 +168,7 @@ deeplinksRouter.get('/e/:id/claim/:token', (c) => {
   <div class="label">One more step</div>
   <h1>Open SpotSeek to add this RSVP to your account</h1>
   <p class="meta">Sign in to the app and this RSVP moves into your account.</p>
-  ${installCtas(c.env.APP_STORE_URL, id)}
+  ${installCtas(c.env.APP_STORE_URL, id, `/claim/${encodeURIComponent(token)}`)}
   <p class="fine"><a href="${escapeHtml(base)}/rsvp/${escapeHtml(id)}/${escapeHtml(token)}">Back to my RSVP</a></p>
 </div>`,
     }),
