@@ -15,11 +15,24 @@ The agents write here instead of guessing. Read this each morning. Empty is good
   compatibility_date 2025-01-01 Worker secrets are not on process.env, so Better Auth
   signs tokens with its public built-in default. Fix: pass BETTER_AUTH_SECRET explicitly
   (registered per request like `setAuthBaseURL`) and fail closed if it is missing.
-- Why it is blocked: auth/security config change (hard stop). Owner asked for the
-  security fixes on 2026-10-18; this entry is the required review flag. The fix lives on
-  branch task/sec-auth-secret and is NOT merged until the owner signs off.
-- Owner steps after merge (not done by agents): deploy, rotate BETTER_AUTH_SECRET,
-  revoke all sessions (expect every user to be signed out once).
+- Status: APPROVED by owner 2026-10-18 and merged to main (task/sec-auth-secret).
+  createAuth now passes `secret` explicitly and throws if it is missing or is the
+  library default.
+- Owner steps (not done by agents), in order:
+  1. BEFORE deploying: `wrangler secret list` and confirm BETTER_AUTH_SECRET exists on
+     the Worker; if not, set it, or every auth call returns 500 after deploy.
+  2. Deploy. Every existing bearer token/cookie stops verifying, so all users are signed
+     out once (this also kills any session forged with the default key).
+  3. Recommended: rotate BETTER_AUTH_SECRET and delete existing session/verification rows.
+
+## Security scan 2026-10-18 — follow-ups from the RSVP fixes — OWNER REVIEW
+- F7 behavior change (approved): account deletion no longer deletes unclaimed guest
+  RSVPs that merely match the account email; only rows claimed by the account. Trade-off:
+  a deleted user's genuinely-own unclaimed guest rows keep their email. Revisit with F8.
+- F35 only mitigated: POST recounts after insert and demotes to waitlisted if over
+  capacity; neon-http has no interactive transactions, so it is not strictly atomic.
+- Not covered: promoteFromWaitlist does not skip users the host blocked after they
+  joined the waitlist.
 
 ## Security scan 2026-10-18 — guest RSVP claim trusts unverified email (F8/F12/F13/F26) — PRODUCT DECISION
 - What it needs: sign-up hands every guest RSVP with a matching email to the new
