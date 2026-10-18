@@ -18,9 +18,44 @@ import { isPlaceholderUserId } from './deleted-users';
 import { createAuth } from './auth';
 import { notify } from './notifications';
 import { guestGoingCounts } from './guests';
-import { getClient, sponsorRefundWindowClosed } from './payments';
+import { getClient, sponsorRefundWindowClosed, cancelOpenPaymentIntent, refundSponsorshipPayment } from './payments';
 
 const PLATFORM_FEE_RATE = 0.15;
+
+// ── Sponsorship status machine (PATCH /bids/:id) ─────────────────────────────
+// Explicit table: current status -> requested status -> who may do it and in
+// which payment states. Anything not listed is 409 invalid_transition.
+//   reviewer  = the party that did NOT create the proposal
+//   initiator = the party that created it
+//   either    = both parties
+// `active` is only ever entered from `unpaid`, so requires_payment can never
+// overwrite paid/released/refunded. rejected/cancelled are terminal.
+type Actor = 'reviewer' | 'initiator' | 'either';
+type Transition = { by: Actor; payment: readonly string[] };
+const SPONSORSHIP_TRANSITIONS: Record<string, Record<string, Transition>> = {
+  pending: {
+    active: { by: 'reviewer', payment: ['unpaid'] },
+    rejected: { by: 'reviewer', payment: ['unpaid'] },
+    cancelled: { by: 'initiator', payment: ['unpaid'] },
+  },
+  active: {
+    // unpaid covers legacy active rows that never entered the money machine.
+    cancelled: { by: 'either', payment: ['unpaid', 'requires_payment', 'paid'] },
+    rejected: { by: 'reviewer', payment: ['unpaid', 'requires_payment', 'paid'] },
+  },
+  // rejected, cancelled: terminal (no entries).
+};
+
+function transitionAllowed(
+  from: string,
+  to: string,
+  paymentStatus: string,
+  isReviewer: boolean,
+): boolean {
+  const t = SPONSORSHIP_TRANSITIONS[from]?.[to];
+  if (!t || !t.payment.includes(paymentStatus)) return false;
+  return t.by === 'either' || (t.by === 'reviewer' ? isReviewer : !isReviewer);
+}
 
 type AppEnv = { Bindings: Env; Variables: { userId?: string } };
 
@@ -298,39 +333,57 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
   const isInitiator = !isReviewer && (isHost || isSponsor);
 
   const { status } = await c.req.json<{ status: schema.SponsorshipStatus }>();
-  if (isReviewer && !['active', 'rejected'].includes(status))
-    return c.json({ error: `${reviewer === 'host' ? 'Host' : 'Sponsor'} may set status to active or rejected` }, 400);
-  if (isInitiator && status !== 'cancelled')
-    return c.json({ error: 'Only the reviewer may accept or reject. You may only cancel' }, 400);
+  if (!['active', 'rejected', 'cancelled'].includes(status))
+    return c.json({ error: 'status must be active, rejected or cancelled' }, 400);
+
+  // Money that has already moved on is frozen, whatever the request.
+  if (bid.paymentStatus === 'released') return c.json({ error: 'already_released' }, 409);
+  if (bid.paymentStatus === 'refunded') return c.json({ error: 'invalid_transition' }, 409);
+
+  // Pending proposals keep their role-specific messages: whoever didn't
+  // initiate may accept/reject; the initiator may only cancel.
+  if (bid.status === 'pending') {
+    if (isReviewer && !['active', 'rejected'].includes(status))
+      return c.json({ error: `${reviewer === 'host' ? 'Host' : 'Sponsor'} may set status to active or rejected` }, 400);
+    if (isInitiator && status !== 'cancelled')
+      return c.json({ error: 'Only the reviewer may accept or reject. You may only cancel' }, 400);
+  }
+  if (!transitionAllowed(bid.status, status, bid.paymentStatus, isReviewer))
+    return c.json({ error: 'invalid_transition' }, 409);
 
   // Accepting a sponsorship for a party that is already over is not allowed
   // (rejecting / cancelling stays possible so stale proposals can be cleared).
   if (status === 'active' && event && eventPhase(event) === 'ended')
     return c.json({ error: 'event_ended' }, 409);
 
-  // Refund policy (PAYMENTS.md). A sponsor stepping out of a sponsorship they
-  // have money in (cancel as initiator, or reject as reviewer):
-  //   - released: funds already went to the host -> no withdrawal, no refund.
-  //   - paid, event started: window closed -> only a host cancelling the event
-  //     refunds (handled by the payments sweep).
-  //   - paid, before start: withdraw + full refund (below, once updated).
-  // Pre-payment states (pending/requires_payment) are unchanged.
+  // Money handling for leaving an active sponsorship (PAYMENTS.md):
+  //   - requires_payment: cancel the open PaymentIntent, back to unpaid. A PI
+  //     that already succeeded/is processing -> 409 payment_in_progress.
+  //   - paid, sponsor withdrawing: before start full refund, after start
+  //     403 refund_window_closed.
+  //   - paid, host rejecting/cancelling: before start full refund (same
+  //     path), after start 403 cancel_event_instead.
+  //   - released/refunded were refused above.
   let refundPaymentIntentId: string | null = null;
-  const sponsorWithdrawing = isSponsor && !isHost && (status === 'cancelled' || status === 'rejected');
-  if (sponsorWithdrawing && bid.paymentStatus === 'released')
-    return c.json({ error: 'already_released' }, 409);
-  if (sponsorWithdrawing && bid.paymentStatus === 'paid') {
+  let refundedByHost = false;
+  let clearedPayment = false;
+  if (bid.status === 'active' && bid.paymentStatus === 'requires_payment') {
+    try {
+      if ((await cancelOpenPaymentIntent(getClient(c.env), bid.paymentIntentId)) === 'in_flight')
+        return c.json({ error: 'payment_in_progress' }, 409);
+    } catch (err) {
+      console.error('[sponsors] PaymentIntent cancel failed for sponsorship', bid.id, err);
+      return c.json({ error: 'payment_cancel_failed' }, 502);
+    }
+    clearedPayment = true;
+  }
+  if (bid.status === 'active' && bid.paymentStatus === 'paid') {
+    refundedByHost = isHost;
     if (event && sponsorRefundWindowClosed(event))
-      return c.json({ error: 'refund_window_closed' }, 403);
+      return c.json({ error: isHost ? 'cancel_event_instead' : 'refund_window_closed' }, 403);
     const client = getClient(c.env);
     if (!client) return c.json({ error: 'payments_not_configured' }, 503);
     if (!bid.paymentIntentId) return c.json({ error: 'No payment to refund' }, 409);
-    try {
-      await client.createRefund({ paymentIntentId: bid.paymentIntentId });
-    } catch (err) {
-      console.error('[sponsors] withdrawal refund failed for sponsorship', bid.id, err);
-      return c.json({ error: 'refund_failed' }, 502);
-    }
     refundPaymentIntentId = bid.paymentIntentId;
   }
 
@@ -342,20 +395,42 @@ sponsorsRouter.patch('/bids/:id', async (c) => {
     updatedAt: new Date(),
   };
   if (status === 'active') updateValues.paymentStatus = 'requires_payment';
-  if (refundPaymentIntentId) updateValues.paymentStatus = 'refunded';
+  if (clearedPayment) updateValues.paymentStatus = 'unpaid';
 
-  const [updated] = await db
-    .update(schema.sponsorships)
-    .set(updateValues)
-    .where(eq(schema.sponsorships.id, bid.id))
-    .returning();
+  // Guarded on the state we validated, so a webhook/sweep that moved the row
+  // in the meantime makes this a 409 instead of overwriting it.
+  let updated: typeof schema.sponsorships.$inferSelect | undefined;
+  if (refundPaymentIntentId) {
+    try {
+      updated =
+        (await refundSponsorshipPayment(
+          db, getClient(c.env)!, bid, 'paid', refundPaymentIntentId, { status, updatedAt: updateValues.updatedAt },
+        )) ?? undefined;
+    } catch (err) {
+      console.error('[sponsors] withdrawal refund failed for sponsorship', bid.id, err);
+      return c.json({ error: 'refund_failed' }, 502);
+    }
+  } else {
+    [updated] = await db
+      .update(schema.sponsorships)
+      .set(updateValues)
+      .where(
+        and(
+          eq(schema.sponsorships.id, bid.id),
+          eq(schema.sponsorships.status, bid.status),
+          eq(schema.sponsorships.paymentStatus, bid.paymentStatus),
+        ),
+      )
+      .returning();
+  }
+  if (!updated) return c.json({ error: 'invalid_transition' }, 409);
 
   if (event && refundPaymentIntentId) {
     await notify(db, c.env.RESEND_API_KEY, {
       userId: bid.sponsorId,
       type: 'payment_refunded',
       title: `Refund issued for "${event.title}"`,
-      body: `Your ${(bid.amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })} sponsorship for "${event.title}" was refunded because you withdrew before the event started.`,
+      body: `Your ${(bid.amountCents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' })} sponsorship for "${event.title}" was refunded because ${refundedByHost ? 'the host ended it' : 'you withdrew'} before the event started.`,
       eventId: event.id,
     }).catch((err) => console.error('[sponsors] payment_refunded notify failed:', err));
   }

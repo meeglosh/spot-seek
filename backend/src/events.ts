@@ -12,6 +12,7 @@ import { screenEventContent, logModeration, isPublishingPaused, REJECT_MESSAGE }
 import { canViewEvent, isModerationHidden } from './moderation/visibility';
 import { isAdminAuthorized } from './admin';
 import { maskPrivateLocation } from './feed';
+import { getClient, cancelOpenPaymentIntent } from './payments';
 
 type AppEnv = { Bindings: Env; Variables: { hostId?: string } };
 
@@ -331,6 +332,37 @@ eventsRouter.delete('/:id', async (c) => {
   const existing = await db.query.events.findFirst({ where: eq(schema.events.id, c.req.param('id')) });
   if (!existing) return c.json({ error: 'Not found' }, 404);
   if (existing.hostId !== hostId) return c.json({ error: 'Forbidden' }, 403);
+
+  // Deleting cascades sponsorships away, which would destroy payment records.
+  // History = same predicate as account deletion (account.ts): paymentStatus
+  // != 'unpaid', or a paymentIntentId/transferId set. The one exception is a
+  // row still awaiting payment (requires_payment): its open PaymentIntent has
+  // taken no money and is cancelled below, then the row goes with the event.
+  const sponsorshipRows = await db.query.sponsorships.findMany({
+    where: eq(schema.sponsorships.eventId, existing.id),
+  });
+  const hasHistory = sponsorshipRows.some(
+    (s) =>
+      s.paymentStatus !== 'requires_payment' &&
+      (s.paymentStatus !== 'unpaid' || s.paymentIntentId != null || s.transferId != null),
+  );
+  if (hasHistory) {
+    return c.json(
+      { error: 'has_sponsorship_history', message: 'This party has sponsorship payments. Cancel it instead.' },
+      409,
+    );
+  }
+  const stripe = getClient(c.env);
+  for (const s of sponsorshipRows) {
+    if (s.paymentStatus !== 'requires_payment') continue;
+    try {
+      if ((await cancelOpenPaymentIntent(stripe, s.paymentIntentId)) === 'in_flight')
+        return c.json({ error: 'payment_in_progress' }, 409);
+    } catch (err) {
+      console.error('[events] PaymentIntent cancel failed for sponsorship', s.id, err);
+      return c.json({ error: 'payment_cancel_failed' }, 502);
+    }
+  }
 
   // rsvps.event_id has no ON DELETE CASCADE (unlike comments/reminders/
   // sponsorships), so deleting an event with RSVPs violates the FK and 500s.

@@ -169,6 +169,7 @@
     },
     "saveError": "Não foi possível guardar a festa. Verifica a ligação e tenta de novo.",
     "deleteError": "Não foi possível eliminar a festa. Tenta de novo.",
+    "deleteHasSponsorship": "Esta festa tem pagamentos de patrocínio. Cancela-a em vez disso.",
     "share": {
       "whenWithTime": "{{date}} às {{time}}"
     },
