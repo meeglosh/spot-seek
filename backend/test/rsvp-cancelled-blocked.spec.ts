@@ -137,12 +137,25 @@ describe('cancelled events refuse every join path', () => {
     expect(await db.select().from(schema.rsvps).where(eq(schema.rsvps.eventId, ev.id))).toHaveLength(0);
   }, 60_000);
 
-  it('records how a draft event treats POST /api/rsvps (report only)', async () => {
+  it('draft events are host-only: POST, PATCH and claim 404/not_found for others, host unaffected', async () => {
     const [host, u] = await Promise.all([signUp('d-host'), signUp('d-u')]);
-    const ev = await createEvent(host, { status: 'draft' });
-    const res = await post(u, ev.id);
-    console.log(`[draft probe] POST /api/rsvps on a draft event -> ${res.status} ${await res.text()}`);
-    expect(res.status).toBeGreaterThan(0);
+    const ev = await createEvent(host);
+    const uid = await joined(u, ev.id, 'cancelled');
+    const g = await guest(ev.id, `cxl-draft-${TS}@spotseek.test`, 'going');
+    await sqlRaw`UPDATE events SET status = 'draft' WHERE id = ${ev.id}`;
+
+    let res = await post(u, ev.id);
+    expect([res.status, await res.json()]).toEqual([404, { error: 'Event not found' }]);
+    for (const state of ['going', 'waitlisted']) {
+      res = await patch(u, uid, state);
+      expect([res.status, await res.json()]).toEqual([404, { error: 'Event not found' }]);
+    }
+    expect(await rsvpState(uid)).toBe('cancelled');
+    const r = await claimGuestRsvp(db, u.id, g);
+    expect(r.ok ? 'ok' : r.error).toBe('not_found');
+    expect((await db.select().from(schema.guestRsvps).where(eq(schema.guestRsvps.id, g.id)))[0].claimedUserId).toBeNull();
+
+    expect((await post(host, ev.id)).status).toBe(201); // host keeps today's behaviour
   }, 60_000);
 });
 

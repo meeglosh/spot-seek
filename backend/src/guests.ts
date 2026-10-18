@@ -12,7 +12,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
 import { notify } from './notifications';
-import { isModerationHidden } from './moderation/visibility';
+import { canViewEvent } from './moderation/visibility';
 import { isBlockedByHost } from './moderation/routes';
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
@@ -162,7 +162,7 @@ export async function claimGuestRsvp(db: Db, userId: string, guest: schema.Guest
   if (guest.state !== 'going' && guest.state !== 'waitlisted') return { ok: false, error: 'not_confirmed' };
 
   const event = await db.query.events.findFirst({ where: eq(schema.events.id, guest.eventId) });
-  if (!event || isModerationHidden(event)) return { ok: false, error: 'not_found' };
+  if (!event || !canViewEvent(event, userId)) return { ok: false, error: 'not_found' };
   if (event.hostId === userId) return { ok: false, error: 'own_event' };
   if (event.status === 'cancelled') return { ok: false, error: 'event_cancelled' };
   if (eventPhase(event) === 'ended') return { ok: false, error: 'event_ended' };

@@ -8,7 +8,7 @@ import { createAuth } from './auth';
 import { notify } from './notifications';
 import { promoteFromWaitlist } from './waitlist';
 import { goingTotalSql, countGoing, claimGuestRsvp } from './guests';
-import { canViewEvent, isModerationHidden } from './moderation/visibility';
+import { canViewEvent } from './moderation/visibility';
 import { isBlockedByHost } from './moderation/routes';
 import { allowRequest, tooManyRequests, RSVP_LIMIT_PER_MIN } from './ratelimit';
 
@@ -108,7 +108,7 @@ rsvpsRouter.post('/', async (c) => {
   const event = await db.query.events.findFirst({
     where: eq(schema.events.id, body.eventId),
   });
-  if (!event || (isModerationHidden(event) && event.hostId !== userId)) {
+  if (!event || !canViewEvent(event, userId)) {
     return c.json({ error: 'Event not found' }, 404);
   }
   // A cancelled party takes no RSVPs.
@@ -219,7 +219,7 @@ rsvpsRouter.patch('/:id', async (c) => {
   // Cancelling or moving to 'interested' stays allowed so a user can always leave.
   if (state === 'going' || state === 'waitlisted') {
     const joinEvent = await db.query.events.findFirst({ where: eq(schema.events.id, rsvp.eventId) });
-    if (!joinEvent || (isModerationHidden(joinEvent) && joinEvent.hostId !== userId)) {
+    if (!joinEvent || !canViewEvent(joinEvent, userId)) {
       return c.json({ error: 'Event not found' }, 404);
     }
     if (joinEvent.status === 'cancelled') return c.json({ error: 'event_cancelled' }, 409);
