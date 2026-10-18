@@ -4,7 +4,7 @@
  * Passes filter state back via router.back() + a shared state atom.
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TextInput } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,9 +13,9 @@ import { SPORTS, searchTeams } from '../../../lib/sports-data';
 import { fetchFavourites, type ApiFavourite } from '../../../lib/api';
 import { DateTimePicker } from '../../../components/DateTimePicker';
 import { useDiscoverFilters } from '../../../lib/discover-filters';
-import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
+import { colors, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
-import { Btn, Chip, SectionTitle, Press, Toggle } from '../../../components/ui';
+import { Btn, Chip, SectionTitle, SearchField, IconButton, ListRow, Press, Toggle } from '../../../components/ui';
 import { useAuthGate } from '../../../components/AuthGate';
 import { useAuth } from '../../../lib/auth';
 
@@ -106,35 +106,20 @@ export default function FilterScreen() {
         {auth.status !== 'authenticated' ? (
           <View style={s.section}>
             <SectionTitle>{tr('filters.yourInterests')}</SectionTitle>
-            <Press
-              style={s.favouriteRow}
+            <ListRow
+              title={tr('filters.filterByYourTeamsTitle')}
+              subtitle={tr('filters.filterByYourTeamsSub')}
               onPress={() => requireAuth({ kind: 'favourite' })}
-            >
-              <View style={s.favouriteLabels}>
-                <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
-                  {tr('filters.filterByYourTeamsTitle')}
-                </Text>
-                <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                  {tr('filters.filterByYourTeamsSub')}
-                </Text>
-              </View>
-            </Press>
+            />
           </View>
         ) : favourites.length > 0 && (
           <View style={s.section}>
             <SectionTitle>{tr('filters.yourInterests')}</SectionTitle>
-            <View style={s.favouriteRow}>
-              <View style={s.favouriteLabels}>
-                <Text style={[t.bodyMd, { color: colors.textPrimary }]}>
-                  {tr('filters.showOnlyYourTeams')}
-                </Text>
-                <Text style={[t.bodySm, { color: colors.textSecondary }]}>
-                  {[...favSports, ...favTeams].slice(0, 3).join(', ')}
-                  {favourites.length > 3 ? tr('filters.moreFavourites', { count: favourites.length - 3 }) : ''}
-                </Text>
-              </View>
-              <Toggle value={useFavourites} onValueChange={setUseFavourites} />
-            </View>
+            <ListRow
+              title={tr('filters.showOnlyYourTeams')}
+              subtitle={`${[...favSports, ...favTeams].slice(0, 3).join(', ')}${favourites.length > 3 ? tr('filters.moreFavourites', { count: favourites.length - 3 }) : ''}`}
+              trailing={<Toggle value={useFavourites} onValueChange={setUseFavourites} />}
+            />
           </View>
         )}
 
@@ -156,16 +141,11 @@ export default function FilterScreen() {
         {/* Teams */}
         <View style={s.section}>
           <SectionTitle>{tr('filters.teams')}</SectionTitle>
-          <View style={s.searchRow}>
-            <Icon name="search" size={18} color={colors.textTertiary} />
-            <TextInput
-              style={s.searchInput}
-              placeholder={tr('filters.searchTeamsPlaceholder')}
-              placeholderTextColor={colors.textTertiary}
-              value={teamSearch}
-              onChangeText={setTeamSearch}
-            />
-          </View>
+          <SearchField
+            placeholder={tr('filters.searchTeamsPlaceholder')}
+            value={teamSearch}
+            onChangeText={setTeamSearch}
+          />
 
           {/* Selected teams */}
           {selectedTeams.length > 0 && (
@@ -227,12 +207,9 @@ export default function FilterScreen() {
         {/* Venue */}
         <View style={s.section}>
           <SectionTitle>{tr('filters.venue')}</SectionTitle>
-          <View style={s.searchRow}>
-            <Icon name="search" size={18} color={colors.textTertiary} />
-            <TextInput
-              style={s.searchInput}
+          <View style={s.searchWrap}>
+            <SearchField
               placeholder={tr('filters.venuePlaceholder')}
-              placeholderTextColor={colors.textTertiary}
               value={venueSearch}
               onChangeText={setVenueSearch}
             />
@@ -246,13 +223,11 @@ export default function FilterScreen() {
 
         {/* Past parties: opt-in, off by default, never persisted */}
         <View style={s.section}>
-          <View style={s.favouriteRow}>
-            <View style={s.favouriteLabels}>
-              <Text style={[t.bodyMd, { color: colors.textPrimary }]}>{tr('filters.showPast')}</Text>
-              <Text style={[t.bodySm, { color: colors.textSecondary }]}>{tr('filters.showPastSub')}</Text>
-            </View>
-            <Toggle value={showPast} onValueChange={setShowPast} accessibilityLabel={tr('filters.showPast')} />
-          </View>
+          <ListRow
+            title={tr('filters.showPast')}
+            subtitle={tr('filters.showPastSub')}
+            trailing={<Toggle value={showPast} onValueChange={setShowPast} accessibilityLabel={tr('filters.showPast')} />}
+          />
         </View>
 
       </ScrollView>
@@ -262,14 +237,11 @@ export default function FilterScreen() {
           scroll view reserves HEADER_H at its top and room for the bar. */}
       <View style={s.overlay} pointerEvents="box-none" collapsable={false}>
       <View style={s.header}>
-        <Press
+        <IconButton
+          icon="close"
           onPress={closeFilter}
-          style={s.closeBtn}
-          accessibilityRole="button"
           accessibilityLabel={tr('filters.title')}
-        >
-          <Icon name="close" size={22} color={colors.textPrimary} />
-        </Press>
+        />
         <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{tr('filters.title')}</Text>
         <Press onPress={clearAll} style={s.clearAll} accessibilityRole="button">
           <Text style={[t.labelSm, { color: activeCount > 0 ? colors.action : colors.textTertiary }]}>
@@ -304,40 +276,14 @@ const s = StyleSheet.create({
     height: HEADER_H,
   },
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'space-between' },
-  closeBtn: { width: TAP, height: TAP, alignItems: 'flex-start', justifyContent: 'center' },
   clearAll: { minHeight: TAP, justifyContent: 'center' },
   scroll: { paddingHorizontal: spacing.lg, paddingTop: HEADER_H, gap: spacing.lg },
   section: { gap: spacing.md },
 
-  favouriteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.lg,
-    backgroundColor: colors.surface2,
-    borderRadius: radius.card,
-  },
-  favouriteLabels: { flex: 1, paddingRight: spacing.lg, gap: 3 },
-
   sportRow: { gap: spacing.sm, paddingRight: spacing.md, flexDirection: 'row' },
 
-  // Filled search inputs
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface2,
-    borderRadius: radius.control,
-    paddingHorizontal: spacing.md,
-    gap: spacing.sm,
-  },
-  searchInput: {
-    ...t.labelMd,
-    flex: 1,
-    color: colors.textPrimary,
-    minHeight: TAP,
-    paddingVertical: spacing.sm,
-  },
-  clearBtn: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center', marginRight: -spacing.md },
+  searchWrap: { justifyContent: 'center' },
+  clearBtn: { position: 'absolute', right: 0, width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   favSection: { gap: spacing.sm },

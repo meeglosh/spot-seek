@@ -687,7 +687,10 @@ const s = StyleSheet.create({
   // Hero
   hero: {
     minHeight: 260,
-    backgroundColor: colors.surface2,
+    marginHorizontal: spacing.lg,
+    borderRadius: radius.tile,
+    overflow: 'hidden',
+    backgroundColor: colors.surface1,
     justifyContent: 'flex-end',
   },
   mediaDim: { backgroundColor: colors.mediaDim },
@@ -695,23 +698,23 @@ const s = StyleSheet.create({
   endedTag: { alignSelf: 'flex-start', marginTop: spacing.xs },
   shareBtn: {
     position: 'absolute',
-    top: spacing.lg,
-    right: spacing.lg,
+    top: spacing.md,
+    right: spacing.md,
     width: TAP,
     height: TAP,
     backgroundColor: colors.mediaChip,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.control,
+    borderRadius: radius.round,
   },
-  moreBtn: { right: spacing.lg + TAP + spacing.sm },
+  moreBtn: { right: spacing.md + TAP + spacing.sm },
   heroContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: spacing['3xl'], gap: spacing.md },
   heroBadges: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
 
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, gap: spacing.xl },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg },
 
   // Meta tile grid
-  tileRow: { flexDirection: 'row', gap: spacing.xs },
+  tileRow: { flexDirection: 'row', gap: spacing.sm },
   tile: {
     flex: 1,
     backgroundColor: colors.surface1,

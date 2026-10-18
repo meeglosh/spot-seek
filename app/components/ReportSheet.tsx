@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Text } from './Text';
 import { Icon } from './icons';
-import { Btn, FieldLabel, Press, inputStyle, inputFocusedStyle } from './ui';
+import { Btn, FieldLabel, IconButton, Press, inputStyle, inputFocusedStyle } from './ui';
 import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { reportEvent, REPORT_NOTE_MAX, type ReportReason } from '../lib/api';
 import { REPORT_REASON_KEYS, reasonLabelKey, reportErrorKey } from '../lib/moderation';
@@ -74,15 +74,13 @@ export function ReportForm({
           <Text style={[t.headlineMd, { color: colors.textPrimary }]}>{tr('report.title')}</Text>
           <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{tr('report.subtitle')}</Text>
         </View>
-        <Press
+        <IconButton
+          icon="close"
+          color={colors.textSecondary}
           onPress={onClose}
-          hitSlop={8}
-          accessibilityRole="button"
           accessibilityLabel={tr('report.close')}
-          style={s.closeBtn}
-        >
-          <Icon name="close" size={20} color={colors.textSecondary} />
-        </Press>
+          style={{ backgroundColor: colors.surface3 }}
+        />
       </View>
 
       <View style={s.list} accessibilityRole="radiogroup">
@@ -177,10 +175,6 @@ const s = StyleSheet.create({
   form: { gap: spacing.lg },
   headRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
   headText: { flex: 1, gap: spacing.xs },
-  closeBtn: {
-    width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.surface2, borderRadius: radius.round,
-  },
   list: { backgroundColor: colors.surface1, borderRadius: radius.card, overflow: 'hidden' },
   row: {
     minHeight: TAP + 8, flexDirection: 'row', alignItems: 'center', gap: spacing.md,

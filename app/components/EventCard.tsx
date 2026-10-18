@@ -161,7 +161,7 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
             )}
             {(dateStr || timeStr) && (
               <View style={s.dateRow}>
-                <Text style={[t.monoData, { color: colors.textSecondary }]}>
+                <Text style={[t.monoData, { color: colors.textTertiary }]}>
                   {[dateStr, timeStr].filter(Boolean).join(' · ')}
                 </Text>
                 {ended && <Badge label={trCommon('phase.ended')} tone="neutral" dot={false} />}
@@ -174,7 +174,7 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
         <View style={s.footer}>
           <View style={s.footerLeft}>
             {typeof event.goingCount === 'number' && (
-              <Text style={[t.label, { color: colors.textPrimary }]}>
+              <Text style={[t.label, { color: colors.textSecondary }]}>
                 {tr('card.goingCount', { count: event.goingCount })}
               </Text>
             )}
@@ -233,15 +233,15 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
 const s = StyleSheet.create({
   card: { ...elevation(1), borderRadius: radius.card },
   clip: { borderRadius: radius.card, overflow: 'hidden', backgroundColor: colors.surface1 },
-  coverWrap: { width: '100%', height: 160 },
+  coverWrap: { height: 168, margin: spacing.sm, marginBottom: 0, borderRadius: radius.tile, overflow: 'hidden' },
   cover: { width: '100%', height: '100%' },
   coverMuted: { opacity: 0.5 },
   mediaDim: { backgroundColor: colors.mediaDim },
   coverBadges: { position: 'absolute', top: spacing.md, left: spacing.md },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.lg, gap: spacing.sm },
-  bodyCompact: { paddingTop: spacing.md },
-  venueText: { color: colors.textPrimary },
+  body: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg, gap: spacing.sm },
+  bodyCompact: { paddingTop: spacing.lg },
+  venueText: { color: colors.textSecondary },
   meta: { gap: 2 },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
   footer: {

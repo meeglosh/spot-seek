@@ -86,7 +86,6 @@ const s = StyleSheet.create({
     ...elevation(1),
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
-    shadowOffset: { width: 0, height: -2 },
     gap: spacing.sm,
   },
   rsvpBtn: { height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: radius.cta },

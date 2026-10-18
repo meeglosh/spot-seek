@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl, TextInput } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
 import { AppHeader } from '../../../components/AppHeader';
-import { Chip, SegmentedControl, Press, Skeleton, EventCardSkeleton, EmptyState, ErrorState } from '../../../components/ui';
+import { Chip, SegmentedControl, SearchField, IconButton, Press, Skeleton, EventCardSkeleton, EmptyState, ErrorState } from '../../../components/ui';
 import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
 import { onBlocksChanged } from '../../../lib/moderation';
@@ -226,7 +226,7 @@ export default function DiscoverScreen() {
 
       {/* Header */}
       <View style={s.header}>
-        <Text style={[t.headlineLg, { color: colors.textPrimary }]}>{tr('feed.title')}</Text>
+        <Text style={[t.displayXl, { color: colors.textPrimary }]}>{tr('feed.title')}</Text>
 
         {/* LIST | MAP toggle + search */}
         <View style={s.controlsRow}>
@@ -240,12 +240,9 @@ export default function DiscoverScreen() {
           />
 
           {viewMode === 'list' && (
-            <View style={s.searchRow}>
-              <Icon name="search" size={18} color={colors.textTertiary} />
-              <TextInput
-                style={s.searchInput}
+            <View style={s.searchWrap}>
+              <SearchField
                 placeholder={tr('feed.searchPlaceholder')}
-                placeholderTextColor={colors.textTertiary}
                 value={search}
                 onChangeText={setSearch}
               />
@@ -263,19 +260,19 @@ export default function DiscoverScreen() {
           )}
 
           {/* Single filters entry point — opens the full filter half-sheet */}
-          <Press
+          <IconButton
+            icon="filter"
+            color={filterCount > 0 ? colors.action : colors.textSecondary}
             style={[s.filterIconBtn, filterCount > 0 && s.filterIconBtnActive]}
             onPress={openFilters}
-            accessibilityRole="button"
             accessibilityLabel={tr('feed.filtersLabel')}
           >
-            <Icon name="filter" size={20} color={filterCount > 0 ? colors.action : colors.textSecondary} />
             {filterCount > 0 && (
               <View style={s.filterBadge}>
                 <Text style={[t.labelSm, s.filterBadgeText]}>{filterCount}</Text>
               </View>
             )}
-          </Press>
+          </IconButton>
         </View>
 
         {/* Active filter summary chips */}
@@ -343,7 +340,7 @@ export default function DiscoverScreen() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />
             }
             ListHeaderComponent={
-              <Text style={[t.label, s.sectionLabel]}>
+              <Text style={[t.bodyMd, s.sectionLabel]}>
                 {displayed.length === 0
                   ? tr('feed.noEventsFound')
                   : comingUpCount === 0
@@ -394,41 +391,14 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
   header: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.md },
 
-  controlsRow: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.md },
+  controlsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 
-  // Filled search input
-  searchRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface2,
-    borderRadius: radius.control,
-    paddingHorizontal: spacing.md,
-    gap: spacing.sm,
-  },
-  searchInput: {
-    ...t.labelMd,
-    flex: 1,
-    color: colors.textPrimary,
-    minHeight: TAP - 4,
-    paddingVertical: spacing.sm,
-  },
-  clearBtn: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center', marginRight: -spacing.md },
+  searchWrap: { flex: 1, justifyContent: 'center' },
+  clearBtn: { position: 'absolute', right: 0, width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
 
-  // Single filters entry point — replaces the old Sport/Teams/Date/Venue row
-  filterIconBtn: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface2,
-    borderRadius: radius.control,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  filterIconBtnActive: {
-    borderColor: colors.action,
-  },
+  // Single filters entry point: a circular icon button; the ring marks active filters
+  filterIconBtn: { borderWidth: 1.5, borderColor: 'transparent', alignSelf: 'center' },
+  filterIconBtnActive: { borderColor: colors.action },
   filterBadge: {
     position: 'absolute',
     top: -6,
@@ -450,7 +420,7 @@ const s = StyleSheet.create({
 
   // List
   list: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
-  sectionLabel: { color: colors.textSecondary, marginBottom: spacing.md },
+  sectionLabel: { color: colors.textTertiary, marginBottom: spacing.md },
 
   // States
   mapSkeleton: { flex: 1 },
