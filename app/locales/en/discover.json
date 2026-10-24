@@ -32,6 +32,8 @@
     "nothingUpcoming": "Nothing coming up"
   },
   "card": {
+    "selectHint": "Shows it on the map",
+    "openHint": "Opens the party",
     "today": "Today",
     "join": "RSVP",
     "goingCount_one": "{{count}} going",

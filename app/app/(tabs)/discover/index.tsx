@@ -16,6 +16,7 @@ import { useAuth } from '../../../lib/auth';
 import { useAuthGate } from '../../../components/AuthGate';
 import { getGuestInterests } from '../../../lib/guestState';
 import { eventPhase } from '../../../lib/eventTime';
+import { useSplitLayout } from '../../../lib/splitLayout';
 import { useDiscoverFilters, activeFilterCount, clearFiltersGlobal } from '../../../lib/discover-filters';
 
 // 'This week' first — it's the default; 'All' last since it's the least-used option.
@@ -96,6 +97,18 @@ export default function DiscoverScreen() {
   const [filter, setFilter] = useState<Filter>('This week');
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  // Wide landscape windows (iPhone Duo inner display, iPad landscape) show the
+  // list and map side by side; the List|Map toggle is then hidden and the map
+  // is always on. `viewMode` only matters in the single-pane layout.
+  const split = useSplitLayout();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const listRef = useRef<FlatList<EventItem>>(null);
+  const wasSplit = useRef(split);
+  useEffect(() => {
+    // Folding or rotating out of split lands on the list, never a stray map.
+    if (wasSplit.current && !split) setViewMode('list');
+    wasSplit.current = split;
+  }, [split]);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
 
@@ -217,19 +230,41 @@ export default function DiscoverScreen() {
   // the headline counts what is still to come.
   const comingUpCount = displayed.filter((e) => eventPhase(e) !== 'ended').length;
 
+  // A pin tap selects its event and brings the card into view; a card tap
+  // selects it and the map pans (EventMapView follows `selectedId`).
+  const selectFromMap = (e: EventItem) => {
+    setSelectedId(e.id);
+    const index = displayed.findIndex((d) => d.id === e.id);
+    if (index >= 0) listRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: true });
+  };
+  const selectFromCard = (e: EventItem) => setSelectedId(e.id);
+
+  const showList = split || viewMode === 'list';
+  const mapEl = loading ? (
+    <View style={s.mapSkeleton}><Skeleton height="100%" radius={0} /></View>
+  ) : (
+    <EventMapView
+      events={displayed}
+      userLocation={userLocation}
+      {...(split ? { selectedId, onSelectEvent: selectFromMap } : {})}
+    />
+  );
+
   const openFilters = () => router.push('/(tabs)/discover/filter');
 
   return (
     <View style={s.container}>
       <AppHeader />
 
+      <View style={split ? s.splitRow : s.fill}>
+      <View style={s.fill}>
       {/* Header */}
       <View style={s.header}>
         <Text style={[t.displayXl, { color: colors.textPrimary }]}>{tr('feed.title')}</Text>
 
         {/* Search pill on its own row, with the filter button to its right */}
         <View style={s.searchRow}>
-          {viewMode === 'list' && (
+          {showList && (
             <View style={s.searchWrap}>
               <SearchField
                 placeholder={tr('feed.searchPlaceholder')}
@@ -259,14 +294,16 @@ export default function DiscoverScreen() {
         </View>
 
         {/* List | Map text tabs on their own row */}
-        <SegmentedControl
-          value={viewMode}
-          onChange={handleModePress}
-          options={[
-            { key: 'list', label: tr('feed.viewList'), icon: 'list', accessibilityLabel: tr('feed.switchToListView') },
-            { key: 'map', label: tr('feed.viewMap'), icon: 'map', accessibilityLabel: tr('feed.switchToMapView') },
-          ]}
-        />
+        {!split && (
+          <SegmentedControl
+            value={viewMode}
+            onChange={handleModePress}
+            options={[
+              { key: 'list', label: tr('feed.viewList'), icon: 'list', accessibilityLabel: tr('feed.switchToListView') },
+              { key: 'map', label: tr('feed.viewMap'), icon: 'map', accessibilityLabel: tr('feed.switchToMapView') },
+            ]}
+          />
+        )}
 
         {/* Active filter summary chips */}
         {filterCount > 0 && (
@@ -297,20 +334,11 @@ export default function DiscoverScreen() {
         </View>
       </View>
 
-      {/* Map view */}
-      {viewMode === 'map' && (
-        loading ? (
-          <View style={s.mapSkeleton}><Skeleton height="100%" radius={0} /></View>
-        ) : (
-          <EventMapView
-            events={displayed}
-            userLocation={userLocation}
-          />
-        )
-      )}
+      {/* Map view (single pane) */}
+      {!split && viewMode === 'map' && mapEl}
 
-      {/* List view */}
-      {viewMode === 'list' && (
+      {/* List view (also the left pane in split mode) */}
+      {showList && (
         loading && !refreshing ? (
           <View style={[s.list, { gap: spacing.lg }]} accessibilityLabel={tr('feed.loadingEvents')}>
             <EventCardSkeleton />
@@ -325,6 +353,12 @@ export default function DiscoverScreen() {
           />
         ) : (
           <FlatList
+            ref={listRef}
+            extraData={selectedId}
+            onScrollToIndexFailed={(info) => {
+              // Cards vary in height, so an off-screen index may not be measured yet.
+              listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true });
+            }}
             data={displayed}
             keyExtractor={(e) => e.id}
             contentContainerStyle={[s.list, { paddingBottom: insets.bottom + spacing.xl }]}
@@ -370,11 +404,21 @@ export default function DiscoverScreen() {
                 />
               )
             }
-            renderItem={({ item }) => <EventCard event={item} />}
+            renderItem={({ item }) => (
+              split
+                ? <EventCard event={item} selected={item.id === selectedId} onSelect={selectFromCard} />
+                : <EventCard event={item} />
+            )}
             showsVerticalScrollIndicator={false}
           />
         )
       )}
+      </View>
+
+      {/* Right pane: the map, always on in split mode. Half the window, so a
+          vertical fold falls between the panes. It never asks for location. */}
+      {split && <View style={s.mapPane}>{mapEl}</View>}
+      </View>
       {gateSheet}
     </View>
   );
@@ -382,6 +426,9 @@ export default function DiscoverScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
+  fill: { flex: 1 },
+  splitRow: { flex: 1, flexDirection: 'row' },
+  mapPane: { flex: 1, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.surface3 },
   header: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.md },
 
   searchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.md },

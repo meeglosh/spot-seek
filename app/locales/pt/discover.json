@@ -32,6 +32,8 @@
     "nothingUpcoming": "Nada a caminho"
   },
   "card": {
+    "selectHint": "Mostra no mapa",
+    "openHint": "Abre a festa",
     "today": "Hoje",
     "join": "Confirmar",
     "goingCount_one": "{{count}} vai",

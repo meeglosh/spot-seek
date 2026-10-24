@@ -50,7 +50,17 @@ function startsToday(startsAt?: string | null): boolean {
   );
 }
 
-export function EventCard({ event, compact = false }: { event: EventItem; compact?: boolean }) {
+type EventCardProps = {
+  event: EventItem;
+  compact?: boolean;
+  // Split-layout selection (Discover). With `onSelect`, tapping the card body
+  // selects it (the map pans to it) instead of navigating; tapping the
+  // already-selected card, or its View/RSVP button, opens the event.
+  selected?: boolean;
+  onSelect?: (event: EventItem) => void;
+};
+
+export function EventCard({ event, compact = false, selected = false, onSelect }: EventCardProps) {
   const router = useRouter();
   const { t: tr } = useTranslation('discover');
   const { t: trCommon } = useTranslation('common');
@@ -124,12 +134,24 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
   // context menu (Share, Get directions) and a tap navigates through the Link.
   // The Link supplies onPress, so the card carries none of its own there.
   // Elsewhere the card is a plain Press.
-  const native = Platform.OS === 'ios';
+  // Selecting needs a plain tap handler, so the split layout skips the
+  // Link wrapper (and with it the long-press menu) rather than fight its tap.
+  const selectable = !!onSelect;
+  const native = Platform.OS === 'ios' && !selectable;
 
   const card = (
     // Outer view: opaque surface + soft shadow. Inner view: clips the cover to
     // the rounded corners (iOS drops a shadow on an overflow:hidden view).
-    <Press style={s.card} onPress={native ? undefined : goTo} accessibilityRole="button">
+    <Press
+      style={[s.card, selectable && selected && s.cardSelected]}
+      onPress={native ? undefined : selectable ? (selected ? goTo : () => onSelect!(event)) : goTo}
+      accessibilityRole="button"
+      {...(selectable ? {
+        accessibilityLabel: event.venueName ? `${event.title}, ${event.venueName}` : event.title,
+        accessibilityHint: selected ? tr('card.openHint') : tr('card.selectHint'),
+        accessibilityState: { selected },
+      } : {})}
+    >
       <View style={s.clip}>
       {/* Full-bleed cover, dimmed with the scrim token for legibility */}
       {coverSrc && !compact && (
@@ -232,6 +254,7 @@ export function EventCard({ event, compact = false }: { event: EventItem; compac
 
 const s = StyleSheet.create({
   card: { ...elevation(1), borderRadius: radius.card },
+  cardSelected: { borderWidth: 2, borderColor: colors.action },
   clip: { borderRadius: radius.card, overflow: 'hidden', backgroundColor: colors.surface1 },
   coverWrap: { height: 168, margin: spacing.sm, marginBottom: 0, borderRadius: radius.tile, overflow: 'hidden' },
   cover: { width: '100%', height: '100%' },

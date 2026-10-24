@@ -32,6 +32,8 @@
     "nothingUpcoming": "Rien à venir"
   },
   "card": {
+    "selectHint": "L'affiche sur la carte",
+    "openHint": "Ouvre la soirée",
     "today": "Aujourd'hui",
     "join": "Réserver",
     "goingCount_one": "{{count}} participant",
