@@ -211,9 +211,13 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
     }).start(() => setSelected(null));
   }
 
-  const region = userLocation
-    ? { ...userLocation, latitudeDelta: 0.08, longitudeDelta: 0.08 }
-    : initialRegion ?? DEFAULT_REGION;
+  // A selection that already exists when the map mounts (rotating back into
+  // the split layout) opens centred on it rather than on the default view.
+  const region = controlled && selLat != null && selLng != null
+    ? { latitude: selLat, longitude: selLng, latitudeDelta: 0.08, longitudeDelta: 0.08 }
+    : userLocation
+      ? { ...userLocation, latitudeDelta: 0.08, longitudeDelta: 0.08 }
+      : initialRegion ?? DEFAULT_REGION;
 
   return (
     <View style={s.container}>
