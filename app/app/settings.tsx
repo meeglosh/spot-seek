@@ -436,9 +436,9 @@ export default function SettingsScreen() {
                     const label = tr(channel === 'push' ? 'notifications.channelPush' : 'notifications.channelEmail');
                     return (
                       <View key={channel} style={[s.channel, !masterOn && s.channelOff]}>
-                        <Text style={[t.label, { color: colors.textSecondary }]}>{label}</Text>
+                        <Text style={[t.label, { color: masterOn ? colors.textSecondary : colors.textTertiary }]}>{label}</Text>
                         <Toggle
-                          value={row[channel]}
+                          value={masterOn && row[channel]}
                           disabled={!masterOn || !prefs}
                           onValueChange={(v) => handleTypeToggle(key, channel, v)}
                           accessibilityLabel={`${tr(`notifications.types.${key}.title`)}, ${label}`}
@@ -554,7 +554,7 @@ const s = StyleSheet.create({
   },
   channelRow: { flexDirection: 'row', gap: spacing.xl },
   channel: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  channelOff: { opacity: 0.4 },
+  channelOff: { opacity: 0.6 },
   linkRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     minHeight: TAP + 16, paddingHorizontal: spacing.lg - 4, paddingVertical: spacing.sm,

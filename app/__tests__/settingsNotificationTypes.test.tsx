@@ -27,7 +27,7 @@ jest.mock('../lib/auth', () => {
 });
 jest.mock('../lib/features', () => ({ isSponsorshipEnabled: () => false }));
 jest.mock('../lib/i18n', () => ({ SUPPORTED_LOCALES: [], setAppLocale: jest.fn() }));
-jest.mock('../lib/push', () => ({ enablePush: jest.fn(), disablePush: jest.fn() }));
+jest.mock('../lib/push', () => ({ enablePush: jest.fn(async () => 'enabled'), disablePush: jest.fn() }));
 jest.mock('../lib/moderation', () => ({ openGuidelines: jest.fn(), openTerms: jest.fn(), openPrivacy: jest.fn() }));
 jest.mock('../components/AuthGate', () => ({ GuestGate: () => null }));
 jest.mock('../components/AppHeader', () => ({ AppHeader: () => null }));
@@ -161,5 +161,36 @@ describe('settings notification types', () => {
       expect(typeSwitch(r, k, 'email').props.disabled).toBe(true);
       expect(typeSwitch(r, k, 'push').props.disabled).toBe(false);
     }
+  });
+
+  it('renders per-type toggles OFF when the master is off, restores stored values when on, and never PUTs types', async () => {
+    mockFetchPrefs.mockResolvedValue(prefs({ pushEnabled: false }));
+    const r = await mount();
+    for (const k of KEYS) {
+      expect(typeSwitch(r, k, 'push').props.value).toBe(false);
+      expect(typeSwitch(r, k, 'push').props.disabled).toBe(true);
+      expect(typeSwitch(r, k, 'email').props.value).toBe(true);
+      expect(typeSwitch(r, k, 'email').props.disabled).toBe(false);
+    }
+    const pushMaster = r.root.findAllByType(Switch).filter((n) => !n.props.accessibilityLabel?.toString().includes(','))
+      .find((n) => n.props.value === false);
+    expect(pushMaster).toBeTruthy();
+    await act(async () => { (pushMaster!.props.onValueChange as (v: boolean) => void)(true); });
+    for (const k of KEYS) {
+      expect(typeSwitch(r, k, 'push').props.value).toBe(true);
+      expect(typeSwitch(r, k, 'push').props.disabled).toBe(false);
+    }
+    for (const call of mockUpdatePrefs.mock.calls) expect(call[0]).not.toHaveProperty('types');
+  });
+
+  it('email master off shows email per-type toggles off without touching stored values', async () => {
+    mockFetchPrefs.mockResolvedValue(prefs({ emailEnabled: false }));
+    const r = await mount();
+    for (const k of KEYS) {
+      expect(typeSwitch(r, k, 'email').props.value).toBe(false);
+      expect(typeSwitch(r, k, 'email').props.disabled).toBe(true);
+      expect(typeSwitch(r, k, 'push').props.value).toBe(true);
+    }
+    expect(mockUpdatePrefs).not.toHaveBeenCalled();
   });
 });
