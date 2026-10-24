@@ -30,10 +30,38 @@
     "pushDeniedTitle": "Las notificaciones están desactivadas",
     "pushDeniedBody": "Activa las notificaciones de SpotSeek en los Ajustes de tu iPhone para recibir avisos.",
     "openSettings": "Abrir Ajustes",
-    "pushPromptTitle": "¿Quieres un aviso antes de que empiece?",
-    "pushPromptBody": "Te recordaremos antes de que arranque tu fiesta.",
+    "pushPromptTitle": "¿Quieres un recordatorio antes de que empiece?",
+    "pushPromptBody": "Te avisamos el día antes y una hora antes.",
     "pushPromptLater": "Ahora no",
-    "pushPromptEnable": "Activar"
+    "pushPromptEnable": "Activar",
+    "typesTitle": "Qué enviarte",
+    "typesNote": "Las notificaciones dentro de la app siempre aparecen en tu centro de notificaciones.",
+    "channelPush": "Push",
+    "channelEmail": "Email",
+    "typeError": "No se pudo guardar este ajuste. Inténtalo de nuevo.",
+    "pushPromptDone": "Recordatorios activados.",
+    "types": {
+      "reminders": {
+        "title": "Recordatorios",
+        "body": "El día antes y una hora antes de las fiestas a las que vas"
+      },
+      "updates": {
+        "title": "Novedades de la fiesta",
+        "body": "Cancelada, cambio de local o un hueco libre en la lista de espera"
+      },
+      "hosting": {
+        "title": "Como anfitrión",
+        "body": "Nuevas confirmaciones en las fiestas que organizas"
+      },
+      "nearby": {
+        "title": "Fiestas cerca",
+        "body": "Fiestas nuevas cerca de ti"
+      },
+      "reviews": {
+        "title": "Reseñas",
+        "body": "Una petición rápida de reseña después de la fiesta"
+      }
+    }
   },
   "language": {
     "title": "Idioma",

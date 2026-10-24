@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from './Text';
 import { Icon } from './icons';
 import { Press, useReduceMotion } from './ui';
+import { PushReminderCard } from './PushReminderCard';
 import { colors, radius, spacing, TAP, elevation, type as t } from '../lib/theme';
 import { momentFor, momentTiming as T } from '../lib/youreIn';
 
@@ -20,6 +21,8 @@ type Props = {
   title: string;
   when: string | null;
   canGetDirections: boolean;
+  /** Signed-in guests may be offered push reminders under the confirmation. */
+  signedIn?: boolean;
   onShare: () => void;
   onDirections: () => void;
   onDone: () => void;
@@ -28,7 +31,7 @@ type Props = {
 const DROP_FROM = -240;
 const SHEET_FROM = 520;
 
-export function YoureIn({ visible, state, title, when, canGetDirections, onShare, onDirections, onDone }: Props) {
+export function YoureIn({ visible, state, title, when, canGetDirections, signedIn = false, onShare, onDirections, onDone }: Props) {
   const { t: tr } = useTranslation('discover');
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
@@ -198,6 +201,11 @@ export function YoureIn({ visible, state, title, when, canGetDirections, onShare
               </Press>
             )}
           </Animated.View>
+          {signedIn ? (
+            <Animated.View style={{ opacity: o(actions) }}>
+              <PushReminderCard signedIn />
+            </Animated.View>
+          ) : null}
           <Animated.View style={{ opacity: o(actions) }}>
             <Press style={[s.done, { backgroundColor: accent }]} onPress={onDone} accessibilityRole="button">
               <Text style={[t.button, { color: colors.textOnFill }]}>{tr('youreIn.done')}</Text>

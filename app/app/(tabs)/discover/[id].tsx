@@ -6,7 +6,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../lib/auth';
-import { enablePush, shouldPromptForPush } from '../../../lib/push';
 import {
   fetchEvent, rsvpToEvent, cancelRsvp, fetchMyRsvps, fetchProfile, fetchEventReviews, submitReview,
   API_BASE, type ApiEvent, type ApiRsvp, type ApiProfile, type ApiEventReviews,
@@ -52,7 +51,6 @@ export default function EventDetailScreen() {
   const { t: trCommon } = useTranslation('common');
   const { t: trParties } = useTranslation('parties');
   const openDirectionsSheet = useOpenDirections();
-  const { t: trSettings } = useTranslation('settings');
   const { t: trMod } = useTranslation('moderation');
   const blockHost = useBlockHost();
   const [reportOpen, setReportOpen] = useState(false);
@@ -65,7 +63,6 @@ export default function EventDetailScreen() {
   const [rsvpError, setRsvpError] = useState('');
   // The "You're in." moment (phase 5), shown when an RSVP lands as going or waitlisted.
   const [moment, setMoment] = useState<'going' | 'waitlisted' | null>(null);
-  const pushOfferPending = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const reviewY = useRef({ content: 0, section: 0 });
   const { requireAuth, gateSheet } = useAuthGate();
@@ -203,7 +200,6 @@ export default function EventDetailScreen() {
         // dismissed (an Alert over a Modal does not present on iOS).
         if (momentFor(newRsvp.state, false)) {
           setMoment(newRsvp.state as 'going' | 'waitlisted');
-          pushOfferPending.current = newRsvp.state === 'going';
         }
       }
     } catch (err) {
@@ -232,25 +228,13 @@ export default function EventDetailScreen() {
   }
 
   // Dismissing the moment settles into the normal "Going" state underneath.
-  // First time going: a natural moment to offer reminders (once per install;
-  // the OS prompt only appears if they accept ours).
   function closeMoment() {
     setMoment(null);
-    if (!pushOfferPending.current) return;
-    pushOfferPending.current = false;
-    shouldPromptForPush().then((ask) => {
-      if (!ask) return;
-      Alert.alert(trSettings('notifications.pushPromptTitle'), trSettings('notifications.pushPromptBody'), [
-        { text: trSettings('notifications.pushPromptLater'), style: 'cancel' },
-        { text: trSettings('notifications.pushPromptEnable'), onPress: () => { enablePush(); } },
-      ]);
-    });
   }
 
   // Share and the directions chooser are native sheets; they cannot present
   // over the Modal, so close the moment first and open them once it is gone.
   function afterMoment(action: () => void) {
-    pushOfferPending.current = false;
     setMoment(null);
     setTimeout(action, 350);
   }
@@ -670,6 +654,7 @@ export default function EventDetailScreen() {
           title={event.title}
           when={dateStr ? `${dateStr}${timeStr ? ` ${tr('detail.share.at')} ${timeStr}` : ''}` : null}
           canGetDirections={canShowDirections}
+          signedIn={auth.status === 'authenticated'}
           onShare={() => afterMoment(handleShare)}
           onDirections={() => afterMoment(openDirections)}
           onDone={closeMoment}

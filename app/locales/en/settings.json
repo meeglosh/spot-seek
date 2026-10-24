@@ -30,10 +30,38 @@
     "pushDeniedTitle": "Notifications are off",
     "pushDeniedBody": "Turn on notifications for SpotSeek in your iPhone Settings to get alerts.",
     "openSettings": "Open Settings",
-    "pushPromptTitle": "Want a nudge before it starts?",
-    "pushPromptBody": "We'll remind you before your watch party kicks off.",
+    "pushPromptTitle": "Want a reminder before it starts?",
+    "pushPromptBody": "We'll ping you the day before and an hour before.",
     "pushPromptLater": "Not now",
-    "pushPromptEnable": "Turn on"
+    "pushPromptEnable": "Turn on",
+    "typesTitle": "What to send",
+    "typesNote": "In-app notifications always appear in your notification centre.",
+    "channelPush": "Push",
+    "channelEmail": "Email",
+    "typeError": "Couldn't save that setting. Try again.",
+    "pushPromptDone": "Reminders are on.",
+    "types": {
+      "reminders": {
+        "title": "Reminders",
+        "body": "The day before and an hour before parties you're going to"
+      },
+      "updates": {
+        "title": "Party updates",
+        "body": "Cancelled, venue changed, or a waitlist spot opened"
+      },
+      "hosting": {
+        "title": "Hosting",
+        "body": "New RSVPs to parties you host"
+      },
+      "nearby": {
+        "title": "Nearby parties",
+        "body": "New parties near you"
+      },
+      "reviews": {
+        "title": "Reviews",
+        "body": "A quick review request after a party"
+      }
+    }
   },
   "language": {
     "title": "Language",

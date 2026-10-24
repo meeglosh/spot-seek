@@ -30,10 +30,38 @@
     "pushDeniedTitle": "Benachrichtigungen sind aus",
     "pushDeniedBody": "Aktiviere Benachrichtigungen für SpotSeek in den iPhone-Einstellungen, um Hinweise zu bekommen.",
     "openSettings": "Einstellungen öffnen",
-    "pushPromptTitle": "Kurz vorher erinnert werden?",
-    "pushPromptBody": "Wir geben dir Bescheid, bevor deine Watch Party losgeht.",
+    "pushPromptTitle": "Erinnerung vor dem Start?",
+    "pushPromptBody": "Wir melden uns am Vortag und eine Stunde vorher.",
     "pushPromptLater": "Nicht jetzt",
-    "pushPromptEnable": "Aktivieren"
+    "pushPromptEnable": "Aktivieren",
+    "typesTitle": "Was wir dir schicken",
+    "typesNote": "Mitteilungen in der App erscheinen immer in deiner Mitteilungszentrale.",
+    "channelPush": "Push",
+    "channelEmail": "E-Mail",
+    "typeError": "Einstellung konnte nicht gespeichert werden. Versuch es noch mal.",
+    "pushPromptDone": "Erinnerungen sind an.",
+    "types": {
+      "reminders": {
+        "title": "Erinnerungen",
+        "body": "Am Vortag und eine Stunde vor Partys, zu denen du gehst"
+      },
+      "updates": {
+        "title": "Party-Updates",
+        "body": "Abgesagt, Ort geändert oder ein Wartelisten-Platz ist frei"
+      },
+      "hosting": {
+        "title": "Als Gastgeber",
+        "body": "Neue Zusagen zu Partys, die du veranstaltest"
+      },
+      "nearby": {
+        "title": "Partys in der Nähe",
+        "body": "Neue Partys in deiner Nähe"
+      },
+      "reviews": {
+        "title": "Bewertungen",
+        "body": "Eine kurze Bewertungsanfrage nach der Party"
+      }
+    }
   },
   "language": {
     "title": "Sprache",

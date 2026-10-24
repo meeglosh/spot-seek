@@ -2,15 +2,14 @@
  * Native push (direct APNs — NOT the Expo push service). The device token is
  * the raw APNs hex token from getDevicePushTokenAsync, registered with our
  * backend, which pushes to Apple itself. Permission is requested only from
- * user-initiated moments (Settings toggle, first "going" RSVP) — never on cold
+ * user-initiated moments (Settings toggle, the post-RSVP reminder card) — never on cold
  * launch.
  */
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
-import { registerPushToken, deletePushToken, updateNotificationPrefs } from './api';
+import { registerPushToken, deletePushToken, updateNotificationPrefs, fetchNotificationPrefs } from './api';
 
-const PROMPTED_KEY = 'spotseek_push_prompted';
 const TOKEN_KEY = 'spotseek_push_token';
 
 // TestFlight / App Store builds talk to production APNs; debug builds run by
@@ -72,16 +71,32 @@ export async function refreshPushRegistration(): Promise<void> {
   }
 }
 
-/** True at most once per install — gates the first-RSVP permission prompt. */
-export async function shouldPromptForPush(): Promise<boolean> {
-  if (Platform.OS !== 'ios') return false;
+const OFFER_DISMISSED_KEY = 'spotseek_push_offer_dismissed';
+
+/**
+ * Whether the post-RSVP "Want a reminder?" card should show: signed in, iOS,
+ * push not already on, OS permission not denied, and "Not now" never tapped.
+ * Never prompts by itself; the OS dialog only appears from enablePush().
+ */
+export async function shouldOfferPushReminder(signedIn: boolean): Promise<boolean> {
+  if (!signedIn || Platform.OS !== 'ios') return false;
   try {
-    if (await SecureStore.getItemAsync(PROMPTED_KEY)) return false;
-    await SecureStore.setItemAsync(PROMPTED_KEY, '1');
+    if (await SecureStore.getItemAsync(OFFER_DISMISSED_KEY)) return false;
     const perm = await Notifications.getPermissionsAsync();
-    return !perm.granted && perm.canAskAgain;
+    if (perm.status === 'denied') return false;
+    const prefs = await fetchNotificationPrefs();
+    return !!prefs && !prefs.pushEnabled;
   } catch {
     return false;
+  }
+}
+
+/** Remembers "Not now" so the card never comes back. */
+export async function dismissPushReminderOffer(): Promise<void> {
+  try {
+    await SecureStore.setItemAsync(OFFER_DISMISSED_KEY, '1');
+  } catch {
+    // Best-effort: worst case the card shows once more.
   }
 }
 

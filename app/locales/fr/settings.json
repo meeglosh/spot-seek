@@ -30,10 +30,38 @@
     "pushDeniedTitle": "Les notifications sont désactivées",
     "pushDeniedBody": "Activez les notifications SpotSeek dans les Réglages de votre iPhone pour recevoir des alertes.",
     "openSettings": "Ouvrir les Réglages",
-    "pushPromptTitle": "Un rappel avant le coup d'envoi ?",
-    "pushPromptBody": "On vous prévient avant le début de votre soirée.",
+    "pushPromptTitle": "Un rappel avant le début ?",
+    "pushPromptBody": "On vous prévient la veille et une heure avant.",
     "pushPromptLater": "Pas maintenant",
-    "pushPromptEnable": "Activer"
+    "pushPromptEnable": "Activer",
+    "typesTitle": "Ce que l'on vous envoie",
+    "typesNote": "Les notifications dans l'app apparaissent toujours dans votre centre de notifications.",
+    "channelPush": "Push",
+    "channelEmail": "E-mail",
+    "typeError": "Impossible d'enregistrer ce réglage. Réessayez.",
+    "pushPromptDone": "Rappels activés.",
+    "types": {
+      "reminders": {
+        "title": "Rappels",
+        "body": "La veille et une heure avant les soirées auxquelles vous allez"
+      },
+      "updates": {
+        "title": "Infos sur la soirée",
+        "body": "Annulation, changement de lieu ou place libérée sur la liste d'attente"
+      },
+      "hosting": {
+        "title": "Vos soirées",
+        "body": "Nouvelles réponses aux soirées que vous organisez"
+      },
+      "nearby": {
+        "title": "Soirées près de vous",
+        "body": "Nouvelles soirées près de chez vous"
+      },
+      "reviews": {
+        "title": "Avis",
+        "body": "Une demande d'avis rapide après une soirée"
+      }
+    }
   },
   "language": {
     "title": "Langue",
