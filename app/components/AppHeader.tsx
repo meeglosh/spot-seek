@@ -11,6 +11,7 @@ import { Icon, type IconName } from './icons';
 import { colors, radius, spacing, TAP, elevation, type as t } from '../lib/theme';
 import { Press, SoonTag } from './ui';
 import { useAuth } from '../lib/auth';
+import { sidePadding } from '../lib/safeArea';
 import { fetchNotifications } from '../lib/api';
 import { useAuthGate, type GateIntent } from './AuthGate';
 
@@ -193,7 +194,7 @@ export function AppHeader({ back = false, onBack, title }: { back?: boolean; onB
   }, [menuOpen, auth.status]);
 
   return (
-    <View style={[s.header, { paddingTop: insets.top + spacing.sm }]}>
+    <View style={[s.header, { paddingTop: insets.top + spacing.sm }, sidePadding(spacing.lg, insets)]}>
       {back ? (
         <View style={s.sideSlot}>
         <Press

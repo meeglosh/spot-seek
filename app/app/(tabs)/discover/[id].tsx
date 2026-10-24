@@ -12,6 +12,7 @@ import {
 } from '../../../lib/api';
 import { useOpenDirections } from '../../../lib/directions';
 import { eventShareUrl } from '../../../lib/shareLinks';
+import { trailingOffset } from '../../../lib/safeArea';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 import { eventPhase, presentationFor, canLeaveReview } from '../../../lib/eventTime';
 import { EventRsvpArea } from '../../../components/EventRsvpArea';
@@ -441,7 +442,11 @@ export default function EventDetailScreen() {
           {!isHost && (
             <Press
               onPress={openMoreMenu}
-              style={({ pressed }) => [s.shareBtn, s.moreBtn, pressed && s.pressed]}
+              style={({ pressed }) => [
+                s.shareBtn, s.moreBtn,
+                { right: trailingOffset(spacing.md + TAP + spacing.sm, insets) },
+                pressed && s.pressed,
+              ]}
               accessibilityRole="button"
               accessibilityLabel={trMod('menu.more')}
             >
@@ -450,7 +455,7 @@ export default function EventDetailScreen() {
           )}
           <Press
             onPress={handleShare}
-            style={({ pressed }) => [s.shareBtn, pressed && s.pressed]}
+            style={({ pressed }) => [s.shareBtn, { right: trailingOffset(spacing.md, insets) }, pressed && s.pressed]}
             accessibilityRole="button"
             accessibilityLabel={tr('detail.shareEvent')}
           >

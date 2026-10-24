@@ -228,7 +228,7 @@ export default function DiscoverScreen() {
         <Text style={[t.displayXl, { color: colors.textPrimary }]}>{tr('feed.title')}</Text>
 
         {/* Search pill on its own row, with the filter button to its right */}
-        <View style={s.searchRow}>
+        <View style={[s.searchRow, { paddingRight: insets.right }]}>
           {viewMode === 'list' && (
             <View style={s.searchWrap}>
               <SearchField
