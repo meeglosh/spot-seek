@@ -304,6 +304,9 @@ export const notificationPrefs = pgTable('notification_prefs', {
   emailEnabled: boolean('email_enabled').notNull().default(true),
   pushEnabled: boolean('push_enabled').notNull().default(false),
   radiusMiles: integer('radius_miles').notNull().default(100),
+  // Per-type switches { [group]: { push?: boolean, email?: boolean } }; missing key = on.
+  // See src/notification-prefs.ts. Added by scripts/add-type-prefs.ts.
+  typePrefs: jsonb('type_prefs').notNull().default({}),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

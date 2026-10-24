@@ -17,6 +17,7 @@ import { sendEmail } from './reminders';
 import { formatEventDateTime } from './timezone';
 import { requireAdmin } from './admin';
 import { pushToUser, schedulePush } from './apns';
+import { mergeTypePrefs, parseTypePrefsPatch, resolveTypePrefs, typeAllows } from './notification-prefs';
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -69,11 +70,12 @@ export async function notify(
 
   // Push runs in parallel with the email send and never blocks (waitUntil when
   // the request has an execution context). Prefs default pushEnabled=false.
-  if (prefs?.pushEnabled ?? DEFAULT_PREFS.pushEnabled) {
+  // Master switch AND the per-type (group) switch must both allow it.
+  if ((prefs?.pushEnabled ?? DEFAULT_PREFS.pushEnabled) && typeAllows(prefs?.typePrefs, args.type, 'push')) {
     schedulePush(pushToUser(db, args.userId, { title: args.title, body: args.body, eventId: args.eventId, type: args.type }));
   }
 
-  if (emailEnabled && user?.email) {
+  if (emailEnabled && typeAllows(prefs?.typePrefs, args.type, 'email') && user?.email) {
     if (resendApiKey) {
       await sendEmail(user.email, args.title, args.body, resendApiKey, {
         type: args.type,
@@ -407,6 +409,7 @@ notificationsRouter.get('/prefs', async (c) => {
       emailEnabled: prefs?.emailEnabled ?? DEFAULT_PREFS.emailEnabled,
       pushEnabled: prefs?.pushEnabled ?? DEFAULT_PREFS.pushEnabled,
       radiusMiles: prefs?.radiusMiles ?? DEFAULT_PREFS.radiusMiles,
+      types: resolveTypePrefs(prefs?.typePrefs),
       lastLat: user?.lastLat ?? null,
       lastLng: user?.lastLng ?? null,
     },
@@ -417,8 +420,11 @@ notificationsRouter.put('/prefs', async (c) => {
   const userId = c.get('userId');
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
   const body = await c.req.json<{
-    emailEnabled?: boolean; pushEnabled?: boolean; radiusMiles?: number; lat?: number; lng?: number;
+    emailEnabled?: boolean; pushEnabled?: boolean; radiusMiles?: number; lat?: number; lng?: number; types?: unknown;
   }>();
+
+  const typesPatch = parseTypePrefsPatch(body.types);
+  if (!typesPatch.ok) return c.json({ error: typesPatch.error }, 400);
 
   const existing = await db.query.notificationPrefs.findFirst({
     where: eq(schema.notificationPrefs.userId, userId),
@@ -432,11 +438,13 @@ notificationsRouter.put('/prefs', async (c) => {
         ? Math.min(500, Math.max(10, body.radiusMiles))
         : (existing?.radiusMiles ?? DEFAULT_PREFS.radiusMiles),
   };
+  const types = mergeTypePrefs(existing?.typePrefs, typesPatch.value);
+  const row = { ...values, typePrefs: types };
 
   await db
     .insert(schema.notificationPrefs)
-    .values({ userId, ...values })
-    .onConflictDoUpdate({ target: schema.notificationPrefs.userId, set: { ...values, updatedAt: new Date() } });
+    .values({ userId, ...row })
+    .onConflictDoUpdate({ target: schema.notificationPrefs.userId, set: { ...row, updatedAt: new Date() } });
 
   if (typeof body.lat === 'number' && typeof body.lng === 'number') {
     const lat = Math.round(body.lat * 100) / 100;
@@ -451,6 +459,7 @@ notificationsRouter.put('/prefs', async (c) => {
   return c.json({
     prefs: {
       ...values,
+      types,
       lastLat: user?.lastLat ?? null,
       lastLng: user?.lastLng ?? null,
     },

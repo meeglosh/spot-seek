@@ -40,7 +40,11 @@ describe('notification prefs', () => {
     const res = await SELF.fetch(`${NOTIFICATIONS}/prefs`, { headers: { Cookie: u.cookie } });
     expect(res.status).toBe(200);
     const { prefs } = await res.json() as { prefs: Prefs };
-    expect(prefs).toEqual({ emailEnabled: true, pushEnabled: false, radiusMiles: 100, lastLat: null, lastLng: null });
+    const on = { push: true, email: true };
+    expect(prefs).toEqual({
+      emailEnabled: true, pushEnabled: false, radiusMiles: 100, lastLat: null, lastLng: null,
+      types: { reminders: on, updates: on, hosting: on, nearby: on, reviews: on },
+    });
   });
 
   it('PUT /prefs upserts, clamps radius, and rounds lat/lng coarsely', async () => {

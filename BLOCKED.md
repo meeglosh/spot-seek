@@ -336,3 +336,12 @@ It does not touch Better Auth config, sessions, CORS or app auth, but CLAUDE.md 
 - State-changing POSTs need the session-bound CSRF token (HMAC of the cookie) plus an Origin that equals the request origin or PUBLIC_BASE_URL (missing Origin is rejected).
 - Pages send Cache-Control: no-store, noindex, X-Frame-Options: DENY. /admin is disallowed in robots.txt (sitemap only lists events and the home page).
 - Decide: is a 12h non-revocable session acceptable, and should login failures be logged/alerted?
+
+## Per-type notification prefs: additive migration needs to run on the live DB before deploy
+
+- What it needs: one column, `notification_prefs.type_prefs jsonb NOT NULL DEFAULT '{}'::jsonb`. Run from `backend/` (`.dev.vars` points at the live DB; the script prefers `DATABASE_URL_UNPOOLED`):
+  `cd backend && node --env-file=.dev.vars scripts/add-type-prefs.ts`
+  (Node 22.6+ strips the TypeScript types natively; the repo has no tsx.)
+- It is additive and idempotent (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`), no backfill needed, safe to re-run.
+- Run it BEFORE deploying the Worker: the new code reads `type_prefs` in every notify(), so without the column notification sends would fail on the live DB.
+- Tests do not need it on live: `npm test` applies the script to its ephemeral Neon branch (`BRANCH_MIGRATIONS` in `backend/scripts/test-branch.mjs`). Remove that entry once live has the column.

@@ -49,6 +49,19 @@ function runVitest(env) {
   });
 }
 
+// Additive, idempotent scripts (backend/scripts) applied to the ephemeral branch before vitest.
+// Add a script here when a feature needs schema the live DB does not have yet; drop it once the
+// owner has run it on live (see BLOCKED.md).
+const BRANCH_MIGRATIONS = ['scripts/add-type-prefs.ts'];
+
+function runScript(script, env) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [script], { stdio: 'inherit', env, cwd: backendDir });
+    child.on('exit', (code, signal) => resolve(code ?? (signal ? 1 : 0)));
+    child.on('error', () => resolve(1));
+  });
+}
+
 async function neonFetch(apiKey, method, path, body) {
   const res = await fetch(`${API}${path}`, {
     method,
@@ -136,6 +149,12 @@ async function main() {
       DATABASE_URL_UNPOOLED: branchUrl(vars.DATABASE_URL_UNPOOLED ?? vars.DATABASE_URL, endpoint.host),
       SPOTSEEK_TEST_DB_BRANCH: branchId,
     };
+    // The branch is cut from the live DB, which lacks additive columns/tables until the owner
+    // runs their scripts there. Apply the pending ones to THIS ephemeral branch only (env points
+    // at the branch; the scripts are idempotent ADD ... IF NOT EXISTS).
+    for (const script of BRANCH_MIGRATIONS) {
+      if ((await runScript(script, env)) !== 0) throw new Error(`[test-branch] migration ${script} failed on the test branch`);
+    }
     console.log(`[test-branch] branch ready (${endpoint.host}); running vitest`);
     code = await runVitest(env);
   } finally {

@@ -18,6 +18,7 @@ import type { Event, Rsvp } from './schema';
 import { createAuth } from './auth';
 import { renderEmailHtml, renderEmailText, REPLY_TO } from './email';
 import { checkEmailAllowed } from './email-guard';
+import { typeAllows } from './notification-prefs';
 
 // ─── Email sender via Resend ──────────────────────────────────────────────────
 export interface SendEmailOptions {
@@ -192,8 +193,21 @@ export async function fireReminders(
       : [];
   const emailById = new Map(users.map((u) => [u.id, u.email]));
 
+  // Same gating as notify(): master email switch AND the per-type 'reminders' email switch.
+  const prefsRows =
+    userIds.length > 0
+      ? await db.query.notificationPrefs.findMany({
+          where: (p, { inArray }) => inArray(p.userId, userIds),
+        })
+      : [];
+  const prefsById = new Map(prefsRows.map((p) => [p.userId, p]));
+
   await Promise.all(
-    rsvps.map((r) => sendReminder(r, event, emailById.get(r.userId) ?? null, resendApiKey)),
+    rsvps.map((r) => {
+      const prefs = prefsById.get(r.userId);
+      const emailOk = (prefs?.emailEnabled ?? true) && typeAllows(prefs?.typePrefs, 'reminder_1h', 'email');
+      return sendReminder(r, event, emailOk ? (emailById.get(r.userId) ?? null) : null, resendApiKey);
+    }),
   );
 
   return { sent: rsvps.length };
