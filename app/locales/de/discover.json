@@ -32,6 +32,8 @@
     "nothingUpcoming": "Nichts in Sicht"
   },
   "card": {
+    "selectHint": "Zeigt sie auf der Karte",
+    "openHint": "Öffnet die Party",
     "today": "Heute",
     "join": "Zusagen",
     "goingCount_one": "{{count}} dabei",

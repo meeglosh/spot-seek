@@ -32,6 +32,8 @@
     "nothingUpcoming": "Nada próximo"
   },
   "card": {
+    "selectHint": "La muestra en el mapa",
+    "openHint": "Abre la fiesta",
     "today": "Hoy",
     "join": "Apuntarme",
     "goingCount_one": "{{count}} asistente",

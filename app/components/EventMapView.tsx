@@ -59,6 +59,12 @@ type Props = {
     latitude: number; longitude: number;
     latitudeDelta: number; longitudeDelta: number;
   };
+  // Controlled selection (Discover split layout). When `onSelectEvent` is
+  // given the parent owns the selection: pins report taps to it, the map pans
+  // to `selectedId`, and the bottom sheet is not shown (the list highlights
+  // the card instead).
+  selectedId?: string | null;
+  onSelectEvent?: (event: EventItem) => void;
 };
 
 const DEFAULT_REGION = {
@@ -70,12 +76,16 @@ const DEFAULT_REGION = {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export function EventMapView({ events, userLocation, initialRegion }: Props) {
+export function EventMapView({ events, userLocation, initialRegion, selectedId, onSelectEvent }: Props) {
+  const controlled = !!onSelectEvent;
   const router = useRouter();
   const { t: tr } = useTranslation('discover');
   const { t: trCommon } = useTranslation('common');
 
-  const [selected, setSelected] = useState<EventItem | null>(null);
+  const [localSelected, setSelected] = useState<EventItem | null>(null);
+  const selected = controlled
+    ? events.find((e) => e.id === selectedId) ?? null
+    : localSelected;
   const [liveOnly, setLiveOnly] = useState(false);
   const [sportFilter, setSportFilter] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
@@ -103,6 +113,16 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
       }, 350);
     }
   }, [userLocation, selected]);
+
+  // Controlled mode: pan to whichever event the parent selected (a pin tap or
+  // a card tap). Keeps the current zoom; also runs on mount so rotating into
+  // the split layout recentres on the existing selection.
+  const selLat = selected?.venueLat;
+  const selLng = selected?.venueLng;
+  useEffect(() => {
+    if (!controlled || selLat == null || selLng == null) return;
+    mapRef.current?.animateCamera({ center: { latitude: selLat, longitude: selLng } }, { duration: 350 });
+  }, [controlled, selectedId, selLat, selLng]);
 
   async function centerOnMyLocation() {
     if (locating) return;
@@ -173,6 +193,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
   }
 
   function selectEvent(event: EventItem) {
+    if (controlled) { onSelectEvent!(event); return; }
     setSelected(event);
     Animated.spring(slideAnim, {
       toValue: 0,
@@ -190,9 +211,13 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
     }).start(() => setSelected(null));
   }
 
-  const region = userLocation
-    ? { ...userLocation, latitudeDelta: 0.08, longitudeDelta: 0.08 }
-    : initialRegion ?? DEFAULT_REGION;
+  // A selection that already exists when the map mounts (rotating back into
+  // the split layout) opens centred on it rather than on the default view.
+  const region = controlled && selLat != null && selLng != null
+    ? { latitude: selLat, longitude: selLng, latitudeDelta: 0.08, longitudeDelta: 0.08 }
+    : userLocation
+      ? { ...userLocation, latitudeDelta: 0.08, longitudeDelta: 0.08 }
+      : initialRegion ?? DEFAULT_REGION;
 
   return (
     <View style={s.container}>
@@ -216,7 +241,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
         // double-tap-to-zoom gesture that triggers it; pinch-to-zoom and
         // pan are unaffected.
         zoomTapEnabled={false}
-        onPress={() => selected && dismiss()}
+        onPress={() => !controlled && selected && dismiss()}
       >
         {shown.map((event) => {
           const live = isLiveSoon(event);
@@ -233,6 +258,11 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
               }}
               onPress={() => selectEvent(event)}
               tracksViewChanges={false}
+              // The pin is a bare View, so give VoiceOver the party it stands for.
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={event.venueName ? `${event.title}, ${event.venueName}` : event.title}
+              accessibilityState={{ selected: isSel }}
             >
               {/* Pin — action by default, live orange when live-soon; selected = hard shadow */}
               <View style={[s.pinWrap, pastPin && s.pinPast]}>
@@ -295,7 +325,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
       <Pressable
         style={[
           s.locateBtn,
-          selected && s.locateBtnLifted,
+          selected && !controlled && s.locateBtnLifted,
           locating && s.locateBtnDisabled,
         ]}
         onPress={centerOnMyLocation}
@@ -316,7 +346,7 @@ export function EventMapView({ events, userLocation, initialRegion }: Props) {
       )}
 
       {/* Bottom card — slides up when a marker is tapped */}
-      {selected && (
+      {selected && !controlled && (
         <Animated.View
           style={[s.bottomCard, { transform: [{ translateY: slideAnim }] }]}
         >
