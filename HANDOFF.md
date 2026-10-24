@@ -35,9 +35,12 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
   (Social Networking / Entertainment), copyright, age rating 16+ override, free, US only,
   review details copied from TestFlight. 6 iPhone 6.9" + 6 iPad 13" screenshots uploaded
   (built from fictional seeded data; no chat screen exists, so none is shown or claimed).
-- **Not done, owner:** App Privacy labels (website only, incl. Crash Data = Linked);
-  re-date the reviewer demo parties (events 1f06897c…, c2b1b0e9…, ~Oct 23–26); confirm the
-  "social media" age answer (set to no). Nothing has been submitted for App Store review.
+- **SUBMITTED FOR APP STORE REVIEW 2026-10-23** (version 1.0, build 45; state
+  WAITING_FOR_REVIEW; release type AFTER_APPROVAL, so it goes live automatically once
+  approved). App Privacy published (8 types, all App Functionality, linked, no tracking).
+  Content rights: no third-party content. Age "social media" answer: no (owner confirmed).
+  Reviewer demo parties re-dated +21 days to Nov 13 and Nov 16 2026 (UTC); re-date again
+  if a resubmission runs past that.
 - **/support page** is live (App Store Support URL). Guidelines no longer mention chat.
 - **Per-type notification prefs:** `notification_prefs.type_prefs` (jsonb) was added to
   the live DB by the owner on 2026-10-23 (`scripts/add-type-prefs.ts`); backend deployed
