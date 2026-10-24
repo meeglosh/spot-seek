@@ -25,6 +25,27 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
 
 ---
 
+## 0c. Update 2026-10-23 — build 45, App Store listing, per-type notifications
+
+- **Build 45** (per-type notification settings, post-RSVP "Want a reminder?" card) is
+  uploaded, attached to App Store version 1.0 (replacing 44), and in the "Friends beta"
+  group, submitted for beta review (WAITING_FOR_REVIEW). Build 44 was beta-APPROVED.
+- **App Store listing (1.0) filled via the ASC API:** name "SpotSeek: Watch Parties",
+  subtitle, description, keywords, promo text, support/marketing/privacy URLs, categories
+  (Social Networking / Entertainment), copyright, age rating 16+ override, free, US only,
+  review details copied from TestFlight. 6 iPhone 6.9" + 6 iPad 13" screenshots uploaded
+  (built from fictional seeded data; no chat screen exists, so none is shown or claimed).
+- **Not done, owner:** App Privacy labels (website only, incl. Crash Data = Linked);
+  re-date the reviewer demo parties (events 1f06897c…, c2b1b0e9…, ~Oct 23–26); confirm the
+  "social media" age answer (set to no). Nothing has been submitted for App Store review.
+- **/support page** is live (App Store Support URL). Guidelines no longer mention chat.
+- **Per-type notification prefs:** `notification_prefs.type_prefs` (jsonb) was added to
+  the live DB by the owner on 2026-10-23 (`scripts/add-type-prefs.ts`); backend deployed
+  (version 3249d05d). Groups: reminders, updates, hosting, nearby, reviews; in-app always on.
+  `scripts/test-branch.mjs` BRANCH_MIGRATIONS still lists that script; it is idempotent
+  and can be dropped now that live has the column.
+- **Push** is live in production (APNS_KEY_P8 is set).
+
 ## 0b. Update 2026-10-18 — build 44 submitted
 
 - **Build 44** (FotMob-style restyle, sponsorship notices, plus everything in 43) was
