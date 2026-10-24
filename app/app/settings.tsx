@@ -14,7 +14,8 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../lib/auth';
 import {
   fetchNotificationPrefs, updateNotificationPrefs, deleteAccount, DeleteAccountBlockedError, getStoredLocale,
-  fetchConnectStatus, startConnectOnboarding, type ApiNotificationPrefs, type ApiConnectStatus, type DeleteBlocker,
+  fetchConnectStatus, startConnectOnboarding, NOTIFICATION_TYPE_KEYS, type NotificationTypeKey, type NotificationChannel,
+  type NotificationTypePrefs, type ApiNotificationPrefs, type ApiConnectStatus, type DeleteBlocker,
 } from '../lib/api';
 import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { Icon } from '../components/icons';
@@ -27,6 +28,15 @@ import { openGuidelines, openTerms, openPrivacy } from '../lib/moderation';
 
 // Typed (case-sensitive) to re-confirm account deletion; sent to the server too.
 const DELETE_WORD = 'DELETE';
+
+// An older backend may omit `types`; read it as all on and hide nothing.
+function typePrefsOf(p: ApiNotificationPrefs | null): NotificationTypePrefs {
+  const out = {} as NotificationTypePrefs;
+  for (const k of NOTIFICATION_TYPE_KEYS) {
+    out[k] = { push: p?.types?.[k]?.push ?? true, email: p?.types?.[k]?.email ?? true };
+  }
+  return out;
+}
 
 function milesToKm(mi: number): number {
   return Math.round(mi * 1.609);
@@ -205,6 +215,24 @@ export default function SettingsScreen() {
       ]);
     } else {
       setPrefsError(tr('notifications.pushError'));
+    }
+  }
+
+  async function handleTypeToggle(key: NotificationTypeKey, channel: NotificationChannel, value: boolean) {
+    const prevPrefs = prefs;
+    if (!prevPrefs) return;
+    setPrefsError('');
+    // Optimistic, same as the master toggles: flip now, reconcile with the
+    // server's full prefs, roll back on error.
+    const optimistic = typePrefsOf(prevPrefs);
+    optimistic[key] = { ...optimistic[key], [channel]: value };
+    setPrefs({ ...prevPrefs, types: optimistic });
+    try {
+      const updated = await updateNotificationPrefs({ types: { [key]: { [channel]: value } } });
+      setPrefs(updated.types ? updated : { ...updated, types: optimistic });
+    } catch {
+      setPrefs(prevPrefs);
+      setPrefsError(tr('notifications.typeError'));
     }
   }
 
@@ -391,6 +419,40 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* NOTIFICATION TYPES */}
+        <View style={s.section}>
+          <SectionTitle style={s.sectionHead}>{tr('notifications.typesTitle')}</SectionTitle>
+          {NOTIFICATION_TYPE_KEYS.map((key) => {
+            const row = typePrefsOf(prefs)[key];
+            return (
+              <View key={key} style={s.typeCard}>
+                <View>
+                  <Text style={[t.bodyLg, { color: colors.textPrimary }]}>{tr(`notifications.types.${key}.title`)}</Text>
+                  <Text style={[t.bodySm, { color: colors.textTertiary }]}>{tr(`notifications.types.${key}.body`)}</Text>
+                </View>
+                <View style={s.channelRow}>
+                  {(['push', 'email'] as const).map((channel) => {
+                    const masterOn = channel === 'push' ? !!prefs?.pushEnabled : !!prefs?.emailEnabled;
+                    const label = tr(channel === 'push' ? 'notifications.channelPush' : 'notifications.channelEmail');
+                    return (
+                      <View key={channel} style={[s.channel, !masterOn && s.channelOff]}>
+                        <Text style={[t.label, { color: colors.textSecondary }]}>{label}</Text>
+                        <Toggle
+                          value={row[channel]}
+                          disabled={!masterOn || !prefs}
+                          onValueChange={(v) => handleTypeToggle(key, channel, v)}
+                          accessibilityLabel={`${tr(`notifications.types.${key}.title`)}, ${label}`}
+                        />
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })}
+          <Text style={[t.bodySm, { color: colors.textTertiary }]}>{tr('notifications.typesNote')}</Text>
+        </View>
+
         {/* LANGUAGE */}
         <View style={s.section}>
           <SectionTitle style={s.sectionHead}>{tr('language.title')}</SectionTitle>
@@ -486,6 +548,13 @@ const s = StyleSheet.create({
     gap: spacing.xs, padding: spacing.lg - 4,
     backgroundColor: colors.surface1, borderRadius: radius.card,
   },
+  typeCard: {
+    gap: spacing.sm, padding: spacing.lg - 4,
+    backgroundColor: colors.surface1, borderRadius: radius.card,
+  },
+  channelRow: { flexDirection: 'row', gap: spacing.xl },
+  channel: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  channelOff: { opacity: 0.4 },
   linkRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     minHeight: TAP + 16, paddingHorizontal: spacing.lg - 4, paddingVertical: spacing.sm,

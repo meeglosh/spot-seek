@@ -860,13 +860,29 @@ export type ApiNotification = {
   createdAt: string;
 };
 
+export const NOTIFICATION_TYPE_KEYS = ['reminders', 'updates', 'hosting', 'nearby', 'reviews'] as const;
+export type NotificationTypeKey = typeof NOTIFICATION_TYPE_KEYS[number];
+export type NotificationChannel = 'push' | 'email';
+export type NotificationTypePrefs = Record<NotificationTypeKey, Record<NotificationChannel, boolean>>;
+
 export type ApiNotificationPrefs = {
   emailEnabled: boolean;
   pushEnabled: boolean;
   radiusMiles: number;
   lastLat: number | null;
   lastLng: number | null;
+  /** Always complete from the current backend; optional so an older one that omits it reads as all-on. */
+  types?: NotificationTypePrefs;
 };
+
+export type NotificationPrefsUpdate = Partial<{
+  emailEnabled: boolean;
+  pushEnabled: boolean;
+  radiusMiles: number;
+  lat: number;
+  lng: number;
+  types: { [K in NotificationTypeKey]?: Partial<Record<NotificationChannel, boolean>> };
+}>;
 
 export async function fetchNotifications(): Promise<{ notifications: ApiNotification[]; unread: number }> {
   const res = await apiFetch('/api/notifications');
@@ -894,7 +910,7 @@ export async function fetchNotificationPrefs(): Promise<ApiNotificationPrefs | n
 }
 
 export async function updateNotificationPrefs(
-  partial: Partial<{ emailEnabled: boolean; pushEnabled: boolean; radiusMiles: number; lat: number; lng: number }>,
+  partial: NotificationPrefsUpdate,
 ): Promise<ApiNotificationPrefs> {
   const res = await apiFetch('/api/notifications/prefs', {
     method: 'PUT',
