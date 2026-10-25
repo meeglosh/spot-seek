@@ -238,7 +238,7 @@ async function guardedAction(c: Ctx, run: (db: Db) => Promise<boolean>, done: st
 }
 
 adminPageRouter.post('/moderation/events/:id/restore', (c) =>
-  guardedAction(c, async (db) => (await restoreEvent(db, c.req.param('id'))).ok, 'restored'),
+  guardedAction(c, async (db) => (await restoreEvent(db, c.req.param('id'), c.env.RESEND_API_KEY)).ok, 'restored'),
 );
 adminPageRouter.post('/moderation/events/:id/remove', (c) =>
   guardedAction(c, async (db) => (await removeEvent(c.env, db, c.req.param('id'))).ok, 'removed'),

@@ -7,7 +7,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as schema from '../schema';
-import { notify } from '../notifications';
+import { notify, fanoutFavoriteNearby } from '../notifications';
 import { sendEmail } from '../reminders';
 import { publicBaseUrl } from '../email';
 import { utcDay } from '../email-guard';
@@ -99,9 +99,30 @@ export type ModerationActionResult =
   | { ok: true; event: typeof schema.events.$inferSelect }
   | { ok: false };
 
-/** Puts an event back to moderation 'ok'. Shared by the API and the admin web page. */
-export async function restoreEvent(db: Db, id: string): Promise<ModerationActionResult> {
+/**
+ * Puts an event back to moderation 'ok'. Shared by the API and the admin web page.
+ * When the event was HIDDEN by a soft-rule hold (latest hide/remove/restore log row
+ * has reason 'blocklist_rule'), the host is told it is live. Other restores
+ * (report auto-hides, flagged events) are silent, as before.
+ */
+export async function restoreEvent(db: Db, id: string, resendApiKey?: string): Promise<ModerationActionResult> {
   if (!UUID_RE.test(id)) return { ok: false };
+  const before = await db.query.events.findFirst({ where: eq(schema.events.id, id) });
+  let wasHeld = false;
+  if (before?.moderationStatus === 'hidden') {
+    const [last] = await db
+      .select({ action: schema.moderationEvents.action, reason: schema.moderationEvents.reason })
+      .from(schema.moderationEvents)
+      .where(
+        and(
+          eq(schema.moderationEvents.eventId, id),
+          inArray(schema.moderationEvents.action, ['auto_hidden', 'removed', 'restored']),
+        ),
+      )
+      .orderBy(desc(schema.moderationEvents.createdAt))
+      .limit(1);
+    wasHeld = last?.action === 'auto_hidden' && last.reason === 'blocklist_rule';
+  }
   const [event] = await db
     .update(schema.events)
     .set({ moderationStatus: 'ok' })
@@ -109,6 +130,30 @@ export async function restoreEvent(db: Db, id: string): Promise<ModerationAction
     .returning();
   if (!event) return { ok: false };
   await logModeration(db, { eventId: id, action: 'restored', actor: 'admin', detail: { hostId: event.hostId } });
+  if (wasHeld) {
+    // Reuses 'event_under_review': the shipped app has no "live" type and renders this one with the host-dashboard route.
+    await notify(db, resendApiKey, {
+      userId: event.hostId,
+      type: 'event_under_review',
+      title: 'Your party is live',
+      body: `"${event.title}" passed review and now shows in Discover. Have a great party!`,
+      eventId: id,
+    }).catch((err) => console.error('[moderation] restore notify failed:', err));
+    // The hold suppressed the favorite_nearby fan-out; do it now, once (skipped if fans were ever notified).
+    const upcoming = !event.startsAt || event.startsAt > new Date();
+    if (event.status === 'published' && upcoming) {
+      const [sent] = await db
+        .select({ id: schema.notifications.id })
+        .from(schema.notifications)
+        .where(and(eq(schema.notifications.eventId, id), eq(schema.notifications.type, 'favorite_nearby')))
+        .limit(1);
+      if (!sent) {
+        await fanoutFavoriteNearby(db, resendApiKey, event).catch((err) =>
+          console.error('[moderation] favorite_nearby fanout failed:', err),
+        );
+      }
+    }
+  }
   return { ok: true, event };
 }
 
@@ -143,7 +188,7 @@ export async function removeEvent(env: Env, db: Db, id: string): Promise<Moderat
 
 moderationAdminRouter.post('/events/:id/restore', async (c) => {
   const db = drizzle(neon(c.env.DATABASE_URL), { schema });
-  const r = await restoreEvent(db, c.req.param('id'));
+  const r = await restoreEvent(db, c.req.param('id'), c.env.RESEND_API_KEY);
   if (!r.ok) return c.json({ error: 'Not found' }, 404);
   return c.json({ event: r.event });
 });

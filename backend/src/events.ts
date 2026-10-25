@@ -8,7 +8,8 @@ import { parseRRule, generateOccurrences } from './recurrence';
 import { notify, fanoutFavoriteNearby } from './notifications';
 import { lookupVenueTimezone } from './timezone';
 import { promoteFromWaitlist } from './waitlist';
-import { screenEventContent, logModeration, isPublishingPaused, REJECT_MESSAGE } from './moderation/screen';
+import { screenEventContent, logModeration, flagReason, isPublishingPaused, REJECT_MESSAGE } from './moderation/screen';
+import { announceHold } from './moderation/hold';
 import { canViewEvent, isModerationHidden } from './moderation/visibility';
 import { checkAdminBearer } from './admin';
 import { tooManyRequests } from './ratelimit';
@@ -47,6 +48,7 @@ eventsRouter.post('/', async (c) => {
   // Moderation gate: only when the event is being published. Drafts always
   // save; publishing is screened again when the draft is published.
   let flaggedCategories: string[] | null = null;
+  let heldCategories: string[] | null = null;
   if (body.status === 'published') {
     if (await isPublishingPaused(db, hostId)) return c.json({ error: 'publishing_paused' }, 403);
     const screen = await screenEventContent(c.env, {
@@ -67,6 +69,7 @@ eventsRouter.post('/', async (c) => {
       return c.json({ error: 'content_rejected', message: REJECT_MESSAGE }, 422);
     }
     if (screen.verdict === 'flag') flaggedCategories = screen.categories;
+    if (screen.verdict === 'hold') heldCategories = screen.categories;
   }
 
   const [event] = await db
@@ -94,21 +97,24 @@ eventsRouter.post('/', async (c) => {
       venueTimezone: lookupVenueTimezone(venueLat, venueLng),
       isPrivateLocation: body.isPrivateLocation === true,
       recurrenceRule: typeof body.recurrenceRule === 'string' ? body.recurrenceRule : null,
-      moderationStatus: flaggedCategories ? 'flagged' : 'ok',
+      moderationStatus: heldCategories ? 'hidden' : flaggedCategories ? 'flagged' : 'ok',
     })
     .returning();
 
-  if (flaggedCategories) {
+  if (heldCategories) {
+    await announceHold(c.env, db, event, heldCategories, 'create');
+  } else if (flaggedCategories) {
     await logModeration(db, {
       eventId: event.id,
       action: 'auto_flagged',
-      reason: 'classifier',
+      reason: flagReason(flaggedCategories),
       actor: 'system',
       detail: { categories: flaggedCategories, hostId, stage: 'create' },
     });
   }
 
-  if (event.status === 'published') {
+  // A rule-held (hidden) party is not announced to fans; admin restore does that.
+  if (event.status === 'published' && !isModerationHidden(event)) {
     await fanoutFavoriteNearby(db, c.env.RESEND_API_KEY, event).catch((err) =>
       console.error('[events] favorite_nearby fanout failed:', err),
     );
@@ -222,6 +228,7 @@ eventsRouter.patch('/:id', async (c) => {
   // Moderation gate: runs when the result is a published event and either it is
   // being published now or a screened field (title/description/venue/subject) changed.
   let flaggedCategories: string[] | null = null;
+  let heldCategories: string[] | null = null;
   const nextStatus = patch.status ?? existing.status;
   const publishingNow = existing.status !== 'published' && nextStatus === 'published';
   const screenedChanged =
@@ -250,8 +257,14 @@ eventsRouter.patch('/:id', async (c) => {
       return c.json({ error: 'content_rejected', message: REJECT_MESSAGE }, 422);
     }
     if (screen.verdict === 'flag') flaggedCategories = screen.categories;
+    if (screen.verdict === 'hold') heldCategories = screen.categories;
   }
-  if (flaggedCategories && existing.moderationStatus === 'ok') patch.moderationStatus = 'flagged';
+  // Hold wins over flag. Never un-hide, never touch 'removed', never downgrade hidden.
+  if (heldCategories && (existing.moderationStatus === 'ok' || existing.moderationStatus === 'flagged')) {
+    patch.moderationStatus = 'hidden';
+  } else if (flaggedCategories && !heldCategories && existing.moderationStatus === 'ok') {
+    patch.moderationStatus = 'flagged';
+  }
 
   const [updated] = await db
     .update(schema.events)
@@ -259,11 +272,13 @@ eventsRouter.patch('/:id', async (c) => {
     .where(eq(schema.events.id, id))
     .returning();
 
-  if (patch.moderationStatus === 'flagged') {
+  if (patch.moderationStatus === 'hidden' && heldCategories) {
+    await announceHold(c.env, db, updated, heldCategories, 'update');
+  } else if (patch.moderationStatus === 'flagged') {
     await logModeration(db, {
       eventId: id,
       action: 'auto_flagged',
-      reason: 'classifier',
+      reason: flagReason(flaggedCategories ?? []),
       actor: 'system',
       detail: { categories: flaggedCategories, hostId: callerId, stage: 'update' },
     });
@@ -382,7 +397,7 @@ eventsRouter.patch('/:id', async (c) => {
   }
 
   const becamePublished = existing.status !== 'published' && updated.status === 'published';
-  if (becamePublished) {
+  if (becamePublished && !isModerationHidden(updated)) {
     await fanoutFavoriteNearby(db, c.env.RESEND_API_KEY, updated).catch((err) =>
       console.error('[events] favorite_nearby fanout failed:', err),
     );

@@ -345,3 +345,11 @@ It does not touch Better Auth config, sessions, CORS or app auth, but CLAUDE.md 
 - It is additive and idempotent (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS`), no backfill needed, safe to re-run.
 - Run it BEFORE deploying the Worker: the new code reads `type_prefs` in every notify(), so without the column notification sends would fail on the live DB.
 - Tests do not need it on live: `npm test` applies the script to its ephemeral Neon branch (`BRANCH_MIGRATIONS` in `backend/scripts/test-branch.mjs`). Remove that entry once live has the column.
+
+## Moderation hardening: owner decisions and a rollout step
+
+- Branch `moderation-hardening` (unmerged, not deployed). OWNER DECISION (resolved, no open question): soft-rule hits (group-vs-group violence, "religion war") are HIDDEN pending admin review (`moderation_status = 'hidden'`, visible to host and admin only). The host gets an `event_under_review` notice ("Your party is in review") and an admin gets one immediate email ("New party held for review", with the /admin/moderation link). Admin restore of a held party tells the host it is live. Classifier flags (non-reject unsafe categories) and classifier outages stay `flagged` (live + admin queue). A rule hit wins over a classifier flag. Known cost: legitimate rivalry parties (Utah/BYU "Holy War") are hidden until an admin looks.
+- Classifier outage behaviour changed from fail-open (ok) to flagged + logged (reason `classifier_unavailable`). Expect an admin-queue/digest spike during any AI outage. A missing `AI` binding now counts as an outage unless `MODERATION_AI=off`.
+- Re-screen of existing events was NOT run against the live DB. When ready: `cd backend && npx tsx scripts/rescreen-events.ts` (dry run, DATABASE_URL from .dev.vars is LIVE; read-only) and review the report before any `--apply`. Set CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID to include the classifier. `--apply` hides rejects and rule hits and flags classifier flags, writing moderation_events rows (actor system); it does not notify hosts or email admins.
+- Report path (`moderation/routes.ts`) still re-screens with blocklist + classifier only, not the new soft rules. Left as is (out of scope).
+
