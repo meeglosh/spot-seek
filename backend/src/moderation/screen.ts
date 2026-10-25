@@ -5,8 +5,8 @@
 import { and, eq, sql } from 'drizzle-orm';
 import type { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../schema';
-import { matchBlocklistFields } from './blocklist';
-import { classifyText, REJECT_CATEGORIES } from './classifier';
+import { matchBlocklistFields, matchFlagRules } from './blocklist';
+import { classifierEnabled, classifyText, REJECT_CATEGORIES } from './classifier';
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 
@@ -36,16 +36,42 @@ function joinFields(f: ScreenFields): string {
     .join('\n');
 }
 
-/** Blocklist first (fail closed), then the classifier (fail open). */
+export const CLASSIFIER_UNAVAILABLE = 'classifier_unavailable';
+const RULE_PREFIX = 'rule:';
+
+/** Moderation-log `reason` for a flag verdict, derived from its categories. */
+export function flagReason(categories: string[]): string {
+  if (categories.includes(CLASSIFIER_UNAVAILABLE)) return CLASSIFIER_UNAVAILABLE;
+  if (categories.some((c) => c.startsWith(RULE_PREFIX))) return 'blocklist_rule';
+  return 'classifier';
+}
+
+/**
+ * 1. Hard blocklist: reject (fail closed).
+ * 2. Classifier: a reject category rejects; other unsafe categories flag.
+ * 3. Soft rules (group-vs-group violence, "religion war"): flag.
+ * 4. Classifier outage (null while enabled): flag, so the event is published but
+ *    lands in the admin queue instead of silently passing. Flagged stays live.
+ */
 export async function screenEventContent(env: Env, f: ScreenFields): Promise<ScreenResult> {
-  const hit = matchBlocklistFields([f.title, f.description, f.venueName, f.venueAddress, f.broadcastSubject]);
+  const fields = [f.title, f.description, f.venueName, f.venueAddress, f.broadcastSubject];
+  const hit = matchBlocklistFields(fields);
   if (hit) return { verdict: 'reject', source: 'blocklist', detail: hit };
 
-  const res = await classifyText(env, joinFields(f));
-  if (!res || res.safe) return { verdict: 'ok' };
-  const bad = res.categories.filter((c) => REJECT_CATEGORIES.has(c));
-  if (bad.length > 0) return { verdict: 'reject', source: 'classifier', detail: bad.join(',') };
-  return { verdict: 'flag', categories: res.categories };
+  const rule = matchFlagRules(fields);
+  const text = joinFields(f);
+  const res = await classifyText(env, text);
+  if (res && !res.safe) {
+    const bad = res.categories.filter((c) => REJECT_CATEGORIES.has(c));
+    if (bad.length > 0) return { verdict: 'reject', source: 'classifier', detail: bad.join(',') };
+    return { verdict: 'flag', categories: rule ? [...res.categories, RULE_PREFIX + rule] : res.categories };
+  }
+  if (rule) return { verdict: 'flag', categories: [RULE_PREFIX + rule] };
+  if (!res && text.trim() && classifierEnabled(env)) {
+    console.error('[moderation] classifier unavailable at screening, holding event for review');
+    return { verdict: 'flag', categories: [CLASSIFIER_UNAVAILABLE] };
+  }
+  return { verdict: 'ok' };
 }
 
 export async function logModeration(

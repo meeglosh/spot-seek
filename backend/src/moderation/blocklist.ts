@@ -138,3 +138,66 @@ export function matchBlocklistFields(fields: (string | null | undefined)[]): str
   }
   return null;
 }
+
+// ─── Soft rules: held for admin review, never a hard reject ─────────────────────
+//
+// The hard list above rejects unambiguous slurs. These rules catch "group versus
+// group" violence framing ("Jews vs Muslims : public brawl", "Religion War") that
+// has no slur in it. Precision is uncertain (the Utah/BYU rivalry really is called
+// "Holy War"), so a hit only FLAGS: the event publishes and enters the admin queue.
+// The classifier can still reject it outright.
+
+// Plural / demonym identity terms only. Singular colour words ("black", "white") and
+// ambiguous names ("indians", "celtics") are left out on purpose: too many innocent
+// uses. Country names ("france", "brazil") are never identity terms.
+const GROUPS = new Set([
+  'jews', 'jewish', 'muslims', 'muslim', 'christians', 'christian', 'catholics', 'protestants',
+  'hindus', 'sikhs', 'buddhists', 'atheists', 'mormons',
+  'blacks', 'whites', 'asians', 'arabs', 'latinos', 'hispanics', 'gypsies', 'roma',
+  'israelis', 'palestinians',
+]);
+
+const VERSUS = new Set(['vs', 'versus', 'v', 'against']);
+
+const VIOLENCE = new Set([
+  'brawl', 'war', 'wars', 'warfare', 'fight', 'fights', 'fighting', 'battle', 'battles', 'riot',
+  'rumble', 'clash', 'kill', 'killing', 'murder', 'massacre', 'slaughter', 'attack', 'lynch',
+  'genocide', 'bloodbath',
+]);
+
+// Topic-style phrases that frame a group conflict on their own.
+const WAR_PHRASES = [
+  /(^| )religio(n|ns|us) +wars?( |$)/,
+  /(^| )holy +wars?( |$)/,
+  /(^| )ethnic +(wars?|cleansing)( |$)/,
+];
+
+const VS_WINDOW = 3;
+
+/**
+ * Returns a rule name ("religion_war" | "group_vs_group_violence") or null.
+ * group_vs_group_violence needs identity terms on BOTH sides of a vs/versus/
+ * against (within 3 words) plus a violence word anywhere in the same text.
+ */
+export function matchFlagRules(fields: (string | null | undefined)[]): string | null {
+  const text = fields.filter(Boolean).join('\n');
+  if (!text) return null;
+  // Two readings: leetspeak as written ("J3ws"), and with !|$@ as punctuation
+  // rather than letters, because "Brawl!" must not become "brawli".
+  return flagRulesOn(text) ?? flagRulesOn(text.replace(/[!|$@]/g, ' '));
+}
+
+function flagRulesOn(text: string): string | null {
+  const ws = words(normalizeForModeration(text));
+  const stream = ws.join(' ');
+  for (const re of WAR_PHRASES) if (re.test(stream)) return 'religion_war';
+
+  if (!ws.some((w) => VIOLENCE.has(w))) return null;
+  for (let i = 0; i < ws.length; i++) {
+    if (!VERSUS.has(ws[i])) continue;
+    const before = ws.slice(Math.max(0, i - VS_WINDOW), i).some((w) => GROUPS.has(w));
+    const after = ws.slice(i + 1, i + 1 + VS_WINDOW).some((w) => GROUPS.has(w));
+    if (before && after) return 'group_vs_group_violence';
+  }
+  return null;
+}

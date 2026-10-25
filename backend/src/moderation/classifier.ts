@@ -5,9 +5,11 @@
  *   output: { response: { safe: boolean, categories?: string[] }, usage }
  *           (older/raw shape: a string "safe" or "unsafe\nS10,S1")
  *
- * Fails OPEN: a missing binding, timeout, error or unparseable answer returns
- * null (logged) and the caller treats the text as not flagged. The blocklist
- * (blocklist.ts) is the fail-closed layer.
+ * A missing binding, timeout, error or unparseable answer returns null (logged).
+ * screenEventContent turns null into a `flagged` verdict (published, held for admin
+ * review) unless MODERATION_AI=off; see classifierEnabled. Other callers (the
+ * report path) still treat null as not flagged. The blocklist (blocklist.ts) is
+ * the fail-closed layer.
  */
 
 export const LLAMA_GUARD_MODEL = '@cf/meta/llama-guard-3-8b';
@@ -49,6 +51,16 @@ export function parseGuardOutput(raw: unknown): ClassifierResult | null {
     }
   }
   return null;
+}
+
+/**
+ * False only when the classifier is deliberately switched off (MODERATION_AI=off,
+ * used by tests and local dev). A null result while this is true is an outage, not
+ * a choice, and screenEventContent holds the event for review instead of passing it.
+ */
+export function classifierEnabled(env: Env): boolean {
+  if (override) return true;
+  return (env as Env & { MODERATION_AI?: string }).MODERATION_AI !== 'off';
 }
 
 export async function classifyText(env: Env, text: string): Promise<ClassifierResult | null> {

@@ -10,7 +10,9 @@ import { neon } from '@neondatabase/serverless';
 import worker from '../src/index';
 import { __setEmailGuardTestHooks } from '../src/email-guard';
 import { __setClassifierForTests, parseGuardOutput } from '../src/moderation/classifier';
-import { matchBlocklist } from '../src/moderation/blocklist';
+import { matchBlocklist, matchBlocklistFields, matchFlagRules } from '../src/moderation/blocklist';
+import { screenEventContent } from '../src/moderation/screen';
+import { rescreenEvents } from '../scripts/rescreen-events';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../src/schema';
 import { loadQueue, runModerationDigest } from '../src/moderation/admin';
@@ -122,6 +124,36 @@ describe('blocklist', () => {
     expect(matchBlocklist(t)).toBeNull();
   });
 
+  it('does not hard-reject the "Jews vs Muslims" party text (soft rule only), but the rule flags it', () => {
+    const fields = ['Jews vs Muslims : public brawl', 'A heated battle between rival states. Everything you need in life!', 'Religion War'];
+    expect(matchBlocklistFields(fields)).toBeNull();
+    expect(matchFlagRules(fields)).not.toBeNull();
+  });
+
+  it.each([
+    [['Jews vs Muslims : public brawl'], 'group_vs_group_violence'],
+    [['Muslims versus Christians', 'a fight to the finish'], 'group_vs_group_violence'],
+    [['Whites v Blacks: riot night'], 'group_vs_group_violence'],
+    [['Palestinians vs Israelis battle'], 'group_vs_group_violence'],
+    [['Hindus against Muslims. Brawl!'], 'group_vs_group_violence'],
+    [['Fun night', 'Religion War'], 'religion_war'],
+    [['Holy war watch party'], 'religion_war'],
+    [['Religious wars: a screening'], 'religion_war'],
+    [['J3ws vs MUSL1MS fight'], 'group_vs_group_violence'],
+  ])('flag rule matches %j', (fields, rule) => {
+    expect(matchFlagRules(fields)).toBe(rule);
+  });
+
+  it.each([
+    ['France vs Brazil'], ['Celtic vs Rangers: derby day'], ['Yankees vs Red Sox rivalry night'],
+    ['Fight night: UFC 320 watch party'], ['Battle of the bands'], ['Niger vs Ghana', 'World Cup qualifier'],
+    ['Israel vs Iran: football friendly'], ['Jews and Muslims potluck'], ['Muslims vs Christians trivia night'],
+    ['Cavaliers vs Lakers', 'a war of attrition'], ['Civil War: Oregon vs Oregon State'], ['Christians against hunger: food drive'],
+    ['Black Friday vs Cyber Monday deals'], ['Arsenal v Spurs', 'North London war'], ['Interfaith dinner: Jews, Muslims and Christians'],
+  ])('flag rule leaves %j alone', (...fields: string[]) => {
+    expect(matchFlagRules(fields)).toBeNull();
+  });
+
   it('parses both Llama Guard output shapes', () => {
     expect(parseGuardOutput({ response: { safe: false, categories: ['S10', 's1'] } })).toEqual({ safe: false, categories: ['S10', 'S1'] });
     expect(parseGuardOutput({ response: { safe: true } })).toEqual({ safe: true, categories: [] });
@@ -188,12 +220,93 @@ describe('pre-publish screening', () => {
     expect(await feedIds(r.body.event!.title)).toContain(r.body.event!.id);
   });
 
-  it('fails open when the classifier errors, but the blocklist still fails closed', async () => {
+  it('on a classifier outage still publishes but holds the event as flagged and logs it; the blocklist still fails closed', async () => {
     __setClassifierForTests(async () => { throw new Error('AI down'); });
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const host = await signIn('scr-open');
-    expect((await createEvent(host)).res.status).toBe(201);
+    const r = await createEvent(host);
+    expect(r.res.status).toBe(201);
+    expect(r.body.event!.moderationStatus).toBe('flagged');
+    expect(await logActions(r.body.event!.id)).toEqual(['auto_flagged']);
+    const log = (await sql()`SELECT reason FROM moderation_events WHERE event_id = ${r.body.event!.id}`) as { reason: string }[];
+    expect(log[0].reason).toBe('classifier_unavailable');
+    // Flagged is live: publishing is not blocked during an outage.
+    expect((await getEvent(r.body.event!.id)).status).toBe(200);
+    expect(await feedIds(r.body.event!.title)).toContain(r.body.event!.id);
     expect((await createEvent(host, { title: 'faggot night' })).res.status).toBe(422);
+  });
+
+  it('a deliberately disabled classifier (MODERATION_AI=off) is not an outage', async () => {
+    __setClassifierForTests(null);
+    const off = { ...env, MODERATION_AI: 'off' } as unknown as Env;
+    expect(await screenEventContent(off, { title: 'Quiet night in' })).toEqual({ verdict: 'ok' });
+    const on = { ...env, MODERATION_AI: undefined, AI: undefined } as unknown as Env;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(await screenEventContent(on, { title: 'Quiet night in' })).toEqual({ verdict: 'flag', categories: ['classifier_unavailable'] });
+  });
+
+  it('the Jews-vs-Muslims party text publishes as flagged by the rule when the classifier is down, and is rejected when it says S10', async () => {
+    const f = { title: 'Jews vs Muslims : public brawl', broadcastSubject: 'Religion War', description: 'A heated battle between rival states. Everything you need in life!' };
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    __setClassifierForTests(async () => null);
+    expect(await screenEventContent(env as unknown as Env, f)).toEqual({ verdict: 'flag', categories: ['rule:religion_war'] });
+    __setClassifierForTests(async () => ({ safe: false, categories: ['S10'] }));
+    expect(await screenEventContent(env as unknown as Env, f)).toMatchObject({ verdict: 'reject', source: 'classifier' });
+    __setClassifierForTests(async () => ({ safe: true, categories: [] }));
+    expect(await screenEventContent(env as unknown as Env, { title: 'Celtic vs Rangers: derby day' })).toEqual({ verdict: 'ok' });
+  });
+
+  it('publishing a rule-matched event flags it with reason blocklist_rule', async () => {
+    const host = await signIn('scr-rule');
+    const r = await createEvent(host, { title: `Muslims vs Christians: brawl ${TS}` });
+    expect(r.res.status).toBe(201);
+    expect(r.body.event!.moderationStatus).toBe('flagged');
+    const log = (await sql()`SELECT reason FROM moderation_events WHERE event_id = ${r.body.event!.id}`) as { reason: string }[];
+    expect(log.map((l) => l.reason)).toEqual(['blocklist_rule']);
+    const ok = await createEvent(host, { title: `France vs Brazil ${TS}` });
+    expect(ok.body.event!.moderationStatus).toBe('ok');
+  });
+});
+
+// ─── Re-screen script ─────────────────────────────────────────────────────────
+
+describe('rescreen-events script', () => {
+  it('dry run writes nothing; --apply hides rejects, flags rule hits, logs both, skips removed', async () => {
+    const host = await signIn('rescreen');
+    const good = await mk(host, { title: `France vs Brazil ${TS}` });
+    const insert = async (title: string, mod = 'ok') =>
+      ((await sql()`INSERT INTO events (host_id, title, broadcast_subject, status, moderation_status, starts_at)
+        VALUES (${host.id}, ${title}, 'Misc', 'published', ${mod}, now() + interval '1 day') RETURNING id`) as { id: string }[])[0].id;
+    const slur = await insert(`n1gg3r night ${TS}`);
+    const rule = await insert(`Jews vs Muslims : public brawl ${TS}`);
+    const removed = await insert(`n1gg3r removed ${TS}`, 'removed');
+    const db = drizzle(neon(env.DATABASE_URL), { schema });
+    const e = env as unknown as Env;
+
+    const dry = await rescreenEvents(db, e, { apply: false, days: 30, hostId: host.id });
+    const by = (rows: typeof dry, id: string) => rows.find((r) => r.id === id);
+    expect(by(dry, good.id)!.verdict).toBe('ok');
+    expect(by(dry, slur)!.verdict).toBe('reject');
+    expect(by(dry, rule)!.verdict).toBe('flag');
+    expect(by(dry, removed)).toBeUndefined();
+    expect(dry.every((r) => !r.applied)).toBe(true);
+    expect(await modStatus(slur)).toBe('ok');
+    expect(await logActions(slur)).toEqual([]);
+
+    const applied = await rescreenEvents(db, e, { apply: true, days: 30, hostId: host.id });
+    expect(by(applied, slur)!.applied).toBe(true);
+    expect(await modStatus(slur)).toBe('hidden');
+    expect(await logActions(slur)).toEqual(['auto_hidden']);
+    expect(await modStatus(rule)).toBe('flagged');
+    expect(await logActions(rule)).toEqual(['auto_flagged']);
+    expect(await modStatus(good.id)).toBe('ok');
+    expect(await modStatus(removed)).toBe('removed');
+    const actors = (await sql()`SELECT DISTINCT actor FROM moderation_events WHERE event_id IN (${slur}, ${rule})`) as { actor: string }[];
+    expect(actors).toEqual([{ actor: 'system' }]);
+
+    // Idempotent: a second apply changes nothing (hidden is out of scope, flagged is not re-flagged).
+    const again = await rescreenEvents(db, e, { apply: true, days: 30, hostId: host.id });
+    expect(again.some((r) => r.applied)).toBe(false);
   });
 });
 

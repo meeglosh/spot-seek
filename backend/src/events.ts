@@ -8,7 +8,7 @@ import { parseRRule, generateOccurrences } from './recurrence';
 import { notify, fanoutFavoriteNearby } from './notifications';
 import { lookupVenueTimezone } from './timezone';
 import { promoteFromWaitlist } from './waitlist';
-import { screenEventContent, logModeration, isPublishingPaused, REJECT_MESSAGE } from './moderation/screen';
+import { screenEventContent, logModeration, flagReason, isPublishingPaused, REJECT_MESSAGE } from './moderation/screen';
 import { canViewEvent, isModerationHidden } from './moderation/visibility';
 import { checkAdminBearer } from './admin';
 import { tooManyRequests } from './ratelimit';
@@ -102,7 +102,7 @@ eventsRouter.post('/', async (c) => {
     await logModeration(db, {
       eventId: event.id,
       action: 'auto_flagged',
-      reason: 'classifier',
+      reason: flagReason(flaggedCategories),
       actor: 'system',
       detail: { categories: flaggedCategories, hostId, stage: 'create' },
     });
@@ -263,7 +263,7 @@ eventsRouter.patch('/:id', async (c) => {
     await logModeration(db, {
       eventId: id,
       action: 'auto_flagged',
-      reason: 'classifier',
+      reason: flagReason(flaggedCategories ?? []),
       actor: 'system',
       detail: { categories: flaggedCategories, hostId: callerId, stage: 'update' },
     });
