@@ -1,7 +1,7 @@
 import { isSponsorshipEnabled } from '../lib/features';
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Pressable, StyleSheet, Modal, Animated, Dimensions,
+  View, Pressable, StyleSheet, Modal, Animated, useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,7 +15,10 @@ import { sidePadding } from '../lib/safeArea';
 import { fetchNotifications } from '../lib/api';
 import { useAuthGate, type GateIntent } from './AuthGate';
 
-const DRAWER_WIDTH = Math.min(Dimensions.get('window').width * 0.78, 320);
+/** Drawer width for a window of `width`: 78% of it, capped at 320pt. */
+export function drawerWidthFor(width: number): number {
+  return Math.min(width * 0.78, 320);
+}
 
 export type MenuItem = { icon: IconName; label: string; onPress?: () => void; soon?: boolean };
 
@@ -44,15 +47,18 @@ function DrawerMenu({
   // Aliased to `tr` because `t` is already the theme.type import used
   // throughout this file (t.headlineSm, t.labelSm, …).
   const { t: tr } = useTranslation('common');
-  const slide = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  // Reactive: follows rotation, folding and iPad window resizes.
+  const { width: windowWidth } = useWindowDimensions();
+  const drawerWidth = drawerWidthFor(windowWidth);
+  const slide = useRef(new Animated.Value(-drawerWidth)).current;
 
   useEffect(() => {
     Animated.timing(slide, {
-      toValue: open ? 0 : -DRAWER_WIDTH,
+      toValue: open ? 0 : -drawerWidth,
       duration: 220,
       useNativeDriver: true,
     }).start();
-  }, [open, slide]);
+  }, [open, slide, drawerWidth]);
 
   const go = (path: string) => {
     onClose();
@@ -81,7 +87,7 @@ function DrawerMenu({
       <Animated.View
         style={[
           s.drawer,
-          { paddingTop: insets.top + spacing.lg, transform: [{ translateX: slide }] },
+          { width: drawerWidth, paddingTop: insets.top + spacing.lg, transform: [{ translateX: slide }] },
         ]}
       >
         <View style={s.drawerProfile}>
@@ -324,7 +330,6 @@ const s = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: DRAWER_WIDTH,
     ...elevation(3),
     borderTopRightRadius: radius.sheet,
     borderBottomRightRadius: radius.sheet,

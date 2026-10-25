@@ -25,6 +25,7 @@ import { GuestGate } from '../components/AuthGate';
 import { SUPPORTED_LOCALES, setAppLocale } from '../lib/i18n';
 import { enablePush, disablePush } from '../lib/push';
 import { openGuidelines, openTerms, openPrivacy } from '../lib/moderation';
+import { withReadable } from '../components/Readable';
 
 // Typed (case-sensitive) to re-confirm account deletion; sent to the server too.
 const DELETE_WORD = 'DELETE';
@@ -52,7 +53,7 @@ function SettingsRow({
   return <ListRow title={label} subtitle={sub} trailing={right} />;
 }
 
-export default function SettingsScreen() {
+function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
@@ -563,3 +564,5 @@ const s = StyleSheet.create({
   linkRowSoon: { opacity: 0.7 },
   versionText: { color: colors.textTertiary, textAlign: 'center', marginTop: spacing.lg },
 });
+
+export default withReadable(SettingsScreen);

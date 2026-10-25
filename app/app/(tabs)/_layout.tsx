@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import {
   Pressable, View, StyleSheet, Animated,
+  useWindowDimensions,
   type LayoutChangeEvent,
 } from 'react-native';
 import { Text } from '../../components/Text';
@@ -10,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '../../components/icons';
 import { colors, radius, spacing, type as t } from '../../lib/theme';
 import { useAuthGate } from '../../components/AuthGate';
+import { tabBarLayout } from '../../lib/readableWidth';
 
 // Tab icons come from the SpotSeek SVG icon set (components/icons), not an
 // icon font (an icon-font link crash once shipped) and not raster PNGs.
@@ -43,6 +45,8 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
   const pillX = useRef(new Animated.Value(0)).current;
   const pillWidth = useRef(new Animated.Value(0)).current;
   const hasPositioned = useRef(false);
+  const { width, height } = useWindowDimensions();
+  const bar = tabBarLayout(width, height, spacing.lg, spacing.lg);
   // Guests tapping My parties / Profile get the sign-up sheet over the tab
   // they're on instead of landing on a locked screen.
   const { requireAuth, gateSheet } = useAuthGate();
@@ -76,7 +80,7 @@ function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarPr
     // into — otherwise the pill's top/bottom-anchored positioning resolves
     // against the padded total height instead of the icon+label content.
     <View style={[s.tabBarOuter, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
-      <View style={s.tabBarRow}>
+      <View style={[s.tabBarRow, { maxWidth: bar.maxWidth, alignSelf: bar.align }]}>
         <Animated.View
           pointerEvents="none"
           style={[s.pill, { transform: [{ translateX: pillX }], width: pillWidth }]}
@@ -196,6 +200,7 @@ const s = StyleSheet.create({
   // The capsule: an OPAQUE flat surface (no border, no shadow).
   tabBarRow: {
     flexDirection: 'row',
+    width: '100%',
     position: 'relative',
     padding: 6,
     borderRadius: radius.pill,

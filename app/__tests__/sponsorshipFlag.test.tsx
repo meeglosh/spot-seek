@@ -30,6 +30,11 @@ jest.mock('expo-router', () => {
     useRouter: () => ({ push: jest.fn() }),
   };
 });
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  SafeAreaInsetsContext: require('react').createContext(null),
+}));
 jest.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
   useTranslation: () => ({

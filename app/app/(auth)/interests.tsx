@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { SPORTS, searchTeams, type Sport } from '../../lib/sports-data';
 import { saveFavouritesBulk } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
+import { sidePadding } from '../../lib/safeArea';
 import { safeRedirect } from '../../lib/safeRedirect';
 import { setGuestInterests } from '../../lib/guestState';
 import { colors, radius, spacing, TAP, type as t } from '../../lib/theme';
@@ -82,7 +83,7 @@ export default function InterestsScreen() {
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={s.header}>
+      <View style={[s.header, sidePadding(spacing.xl, insets)]}>
         <View style={s.headerText}>
           <Text style={[t.displayXl, s.title]}>{tr('interests.title')}</Text>
           <Text style={[t.bodySm, s.subtitle]}>

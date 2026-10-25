@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { View, Modal, Pressable, StyleSheet } from 'react-native';
+import { readableMargin } from '../lib/readableWidth';
+import { View, Modal, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from './Text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -126,6 +127,7 @@ export function AuthGateSheet({
 }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { t: tr } = useTranslation('common');
 
   const go = (mode: 'sign-in' | 'sign-up') => {
@@ -137,7 +139,7 @@ export function AuthGateSheet({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={s.scrim} onPress={onClose} />
-      <View style={[s.sheet, { paddingBottom: insets.bottom + spacing.xl }]}>
+      <View style={[s.sheet, { paddingBottom: insets.bottom + spacing.xl, marginHorizontal: readableMargin(width) }]}>
         <Text style={[t.headlineMd, s.gateTitle]}>{title ?? tr('guestGate.joinTheAction')}</Text>
         <Text style={[t.bodyMd, s.gateBody]}>{message}</Text>
         <View style={s.gateActions}>

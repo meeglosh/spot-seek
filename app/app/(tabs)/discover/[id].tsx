@@ -30,6 +30,7 @@ import { ReportSheet } from '../../../components/ReportSheet';
 import { ModerationBanner } from '../../../components/ModerationBanner';
 import { useBlockHost } from '../../../lib/useBlockHost';
 import { hostBannerKind, isRsvpForbidden } from '../../../lib/moderation';
+import { withReadable } from '../../../components/Readable';
 
 
 function startsToday(startsAt?: string | null): boolean {
@@ -43,7 +44,7 @@ function startsToday(startsAt?: string | null): boolean {
   );
 }
 
-export default function EventDetailScreen() {
+function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -781,3 +782,5 @@ const s = StyleSheet.create({
   },
   reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });
+
+export default withReadable(EventDetailScreen);

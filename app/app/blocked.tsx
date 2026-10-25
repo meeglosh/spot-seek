@@ -15,6 +15,7 @@ import { colors, radius, spacing, type as t } from '../lib/theme';
 import { AppHeader } from '../components/AppHeader';
 import { Btn, RowSkeleton, EmptyState, ErrorState } from '../components/ui';
 import { GuestGate } from '../components/AuthGate';
+import { withReadable } from '../components/Readable';
 
 export function BlockedRow({
   person, busy, onUnblock,
@@ -48,7 +49,7 @@ export function BlockedRow({
   );
 }
 
-export default function BlockedPeopleScreen() {
+function BlockedPeopleScreen() {
   const insets = useSafeAreaInsets();
   const auth = useAuth();
   const { t: tr } = useTranslation('moderation');
@@ -157,3 +158,5 @@ const s = StyleSheet.create({
   avatarFallback: { alignItems: 'center', justifyContent: 'center' },
   name: { flex: 1, color: colors.textPrimary },
 });
+
+export default withReadable(BlockedPeopleScreen);

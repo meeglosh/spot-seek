@@ -14,11 +14,23 @@ const mockPush = jest.fn();
 jest.mock('expo-router', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const R = require('react');
+  const LinkTrigger = ({ children, __href, __onPress }: { children: React.ReactElement; __href?: unknown; __onPress?: (e: unknown) => void }) =>
+    R.cloneElement(children, {
+      onPress: () => {
+        const e = { defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+        __onPress?.(e);
+        if (!e.defaultPrevented) mockPush(__href);
+      },
+    });
   return {
+    // Mirrors expo-router's Link asChild: its onPress runs first, then it
+    // navigates unless the handler called preventDefault().
     Link: Object.assign(
-      ({ children }: { children?: React.ReactNode }) => R.createElement(R.Fragment, null, children),
+      ({ children, href, onPress }: { children?: React.ReactNode; href?: unknown; onPress?: (e: unknown) => void }) =>
+        R.createElement(R.Fragment, null, R.Children.map(children, (c: React.ReactElement) =>
+          c && c.type === LinkTrigger ? R.cloneElement(c, { __href: href, __onPress: onPress }) : c)),
       {
-        Trigger: ({ children }: { children?: React.ReactNode }) => R.createElement(R.Fragment, null, children),
+        Trigger: LinkTrigger,
         Menu: () => null,
         MenuAction: () => null,
       },
@@ -31,7 +43,11 @@ jest.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
   useTranslation: () => ({ t: (key: string) => key }),
 }));
-jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  SafeAreaInsetsContext: require('react').createContext(null),
+}));
 jest.mock('../lib/auth', () => ({ useAuth: () => ({ status: 'unauthenticated' }) }));
 jest.mock('../components/AuthGate', () => ({ useAuthGate: () => ({ requireAuth: () => true, gateSheet: null }) }));
 jest.mock('../components/ReportSheet', () => ({ ReportSheet: () => null }));
@@ -60,11 +76,13 @@ jest.mock('expo-location', () => ({
 }));
 
 const mockAnimateCamera = jest.fn();
+const mockFit = jest.fn();
 jest.mock('react-native-maps', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const R = require('react');
-  const MapView = R.forwardRef(({ children }: { children?: React.ReactNode }, ref: React.Ref<unknown>) => {
-    R.useImperativeHandle(ref, () => ({ animateCamera: mockAnimateCamera, animateToRegion: jest.fn(), fitToCoordinates: jest.fn() }));
+  const MapView = R.forwardRef(({ children, onMapReady }: { children?: React.ReactNode; onMapReady?: () => void }, ref: React.Ref<unknown>) => {
+    R.useImperativeHandle(ref, () => ({ animateCamera: mockAnimateCamera, animateToRegion: jest.fn(), fitToCoordinates: mockFit }));
+    R.useEffect(() => { onMapReady?.(); }, [onMapReady]);
     return R.createElement('MapView', null, children);
   });
   return { __esModule: true, default: MapView, Marker: 'Marker', PROVIDER_DEFAULT: null };
@@ -166,6 +184,18 @@ describe('Discover split layout', () => {
     mockWindow = { width: 951, height: 669 };
     await act(async () => { t.update(<DiscoverScreen />); });
     expect(byLabel(t, 'Beta')[0].props.accessibilityState).toEqual({ selected: true });
+  });
+
+  it('first load with no selection frames every pin; a later selection does not refit', async () => {
+    mockWindow = { width: 951, height: 669 };
+    const t = await mount();
+    expect(mockFit).toHaveBeenCalledTimes(1);
+    expect(mockFit.mock.calls[0][0]).toEqual([
+      { latitude: 51.5, longitude: -0.1 },
+      { latitude: 51.6, longitude: -0.2 },
+    ]);
+    await act(async () => { byLabel(t, 'Beta')[0].props.onPress!(); });
+    expect(mockFit).toHaveBeenCalledTimes(1);
   });
 
   it('asks for location only when Near me is tapped', async () => {

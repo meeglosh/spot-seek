@@ -19,6 +19,7 @@ import { StarRating } from '../../../components/Stars';
 import { SPORTS } from '../../../lib/sports-data';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 import { hasEnded, newestFirst } from '../../../lib/eventTime';
+import { withReadable } from '../../../components/Readable';
 
 type ProfileData = {
   profile: ApiProfile | null;
@@ -59,7 +60,7 @@ function fmtEventDate(
   return `${dateStr} · ${timeStr}`;
 }
 
-export default function ProfileScreen() {
+function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
@@ -478,3 +479,5 @@ const s = StyleSheet.create({
   },
   reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });
+
+export default withReadable(ProfileScreen);

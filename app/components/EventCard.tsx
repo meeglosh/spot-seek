@@ -134,10 +134,14 @@ export function EventCard({ event, compact = false, selected = false, onSelect }
   // context menu (Share, Get directions) and a tap navigates through the Link.
   // The Link supplies onPress, so the card carries none of its own there.
   // Elsewhere the card is a plain Press.
-  // Selecting needs a plain tap handler, so the split layout skips the
-  // Link wrapper (and with it the long-press menu) rather than fight its tap.
+  // Split layout: the Link stays (so the long-press menu survives) and its
+  // onPress intercepts the tap: preventDefault() cancels the navigation and
+  // selects the card instead; tapping the already-selected card navigates.
   const selectable = !!onSelect;
-  const native = Platform.OS === 'ios' && !selectable;
+  const native = Platform.OS === 'ios';
+  const linkPress = selectable && !selected
+    ? (e: { preventDefault?: () => void }) => { e.preventDefault?.(); onSelect!(event); }
+    : undefined;
 
   const card = (
     // Outer view: opaque surface + soft shadow. Inner view: clips the cover to
@@ -235,7 +239,7 @@ export function EventCard({ event, compact = false, selected = false, onSelect }
   if (!native) return <>{card}{safety}</>;
   return (
     <>
-    <Link href={{ pathname: '/(tabs)/discover/[id]', params: { id: event.id } }} asChild>
+    <Link href={{ pathname: '/(tabs)/discover/[id]', params: { id: event.id } }} asChild onPress={linkPress}>
       <Link.Trigger>{card}</Link.Trigger>
       <Link.Menu>
         <Link.MenuAction icon="square.and.arrow.up" onPress={shareEvent}>{tr('card.menu.share')}</Link.MenuAction>

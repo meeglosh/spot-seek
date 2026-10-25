@@ -6,7 +6,11 @@ const { act } = TestRenderer;
 import React from 'react';
 import { Switch } from 'react-native';
 
-jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  SafeAreaInsetsContext: require('react').createContext(null),
+}));
 jest.mock('expo-router', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const R = require('react');

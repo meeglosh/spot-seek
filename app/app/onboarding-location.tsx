@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '../components/Text';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
@@ -8,14 +8,18 @@ import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
 import { Btn, Press } from '../components/ui';
 import { Icon } from '../components/icons';
+import { withReadable } from '../components/Readable';
+import { isFoldedSplit } from '../lib/readableWidth';
+import { trailingOffset } from '../lib/safeArea';
 
 // Step 2 of the first-run flow. Explain first, ask second: the OS permission
 // prompt only appears when the person taps the button, never on cold start.
 // Either choice (and any failure) moves on to interests; location is never a
 // gate. Discover picks the permission up on its own if it was granted here.
-export default function OnboardingLocationScreen() {
+function OnboardingLocationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const { t: tr } = useTranslation('onboarding');
   const [asking, setAsking] = useState(false);
 
@@ -33,16 +37,16 @@ export default function OnboardingLocationScreen() {
     next();
   };
 
-  return (
-    <View style={[s.container, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}>
-      <View style={s.hero}>
+  const hero = (
+    <View style={s.hero}>
         <View style={s.iconWrap}>
           <Icon name="locate" size={44} color={colors.action} />
         </View>
         <Text style={[t.headlineLg, s.title]}>{tr('location.title')}</Text>
         <Text style={[t.bodyLg, s.body]}>{tr('location.body')}</Text>
       </View>
-
+  );
+  const footer = (
       <View style={s.footer}>
         <Btn label={tr('location.allow')} onPress={allow} disabled={asking} />
         <Press onPress={next} hitSlop={8} style={s.link} accessibilityRole="button" disabled={asking}>
@@ -50,6 +54,23 @@ export default function OnboardingLocationScreen() {
         </Press>
         <Text style={[t.bodySm, s.note]}>{tr('location.note')}</Text>
       </View>
+  );
+
+  const pad = { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl };
+  // iPhone Duo inner display in landscape: story left of the fold, actions right.
+  if (isFoldedSplit(width, height)) {
+    return (
+      <View style={[s.container, s.foldedRow, pad]}>
+        <View style={s.foldedPane}>{hero}</View>
+        <View style={[s.foldedPane, s.foldedActions, { paddingRight: trailingOffset(0, insets) }]}>{footer}</View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[s.container, pad]}>
+      {hero}
+      {footer}
     </View>
   );
 }
@@ -68,7 +89,12 @@ const s = StyleSheet.create({
   },
   title: { color: colors.textPrimary, textAlign: 'center' },
   body: { color: colors.textSecondary, textAlign: 'center', maxWidth: 320 },
+  foldedRow: { flexDirection: 'row', gap: spacing.xl },
+  foldedPane: { flex: 1 },
+  foldedActions: { justifyContent: 'center' },
   footer: { gap: spacing.sm },
   link: { alignItems: 'center', justifyContent: 'center', minHeight: TAP },
   note: { color: colors.textTertiary, textAlign: 'center' },
 });
+
+export default withReadable(OnboardingLocationScreen, { unlessFolded: true });

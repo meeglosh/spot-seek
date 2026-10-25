@@ -92,6 +92,10 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
   const slideAnim = useRef(new Animated.Value(200)).current;
   const mapRef = useRef<MapView>(null);
   const prevUserLocation = useRef(userLocation);
+  const [mapReady, setMapReady] = useState(false);
+  // Split mode: set once the map has framed the pins, so later feed reloads
+  // and location updates don't yank the view away from where the person is.
+  const didFit = useRef(false);
 
   // The map only reads `initialRegion` at mount, so when the permission
   // prompt resolves *after* the map has already mounted (the common case —
@@ -104,7 +108,7 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
   useEffect(() => {
     const had = prevUserLocation.current;
     prevUserLocation.current = userLocation;
-    if (!had && userLocation && !selected) {
+    if (!had && userLocation && !selected && !(controlled && didFit.current)) {
       mapRef.current?.animateToRegion({
         latitude: userLocation.latitude,
         longitude: userLocation.longitude,
@@ -112,7 +116,7 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
         longitudeDelta: 0.05,
       }, 350);
     }
-  }, [userLocation, selected]);
+  }, [userLocation, selected, controlled]);
 
   // Controlled mode: pan to whichever event the parent selected (a pin tap or
   // a card tap). Keeps the current zoom; also runs on mount so rotating into
@@ -192,6 +196,17 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
     );
   }
 
+  // Split layout, first load with nothing selected: open framed on every pin
+  // instead of the default region (London) or an unrelated user location.
+  // Waits for the map to be ready and for pins to exist; runs once.
+  const pinKey = mappable.map((e) => e.id).join(',');
+  useEffect(() => {
+    if (!controlled || !mapReady || didFit.current || selectedId || pinKey === '') return;
+    didFit.current = true;
+    animateToMatches(mappable);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controlled, mapReady, selectedId, pinKey]);
+
   function selectEvent(event: EventItem) {
     if (controlled) { onSelectEvent!(event); return; }
     setSelected(event);
@@ -226,6 +241,7 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
         style={s.map}
         provider={PROVIDER_DEFAULT}
         initialRegion={region}
+        onMapReady={() => setMapReady(true)}
         // PROVIDER_DEFAULT is Apple Maps on iOS (no Google Maps SDK linked),
         // where this JSON style array is already documented as a no-op —
         // don't even send it through the native bridge there.

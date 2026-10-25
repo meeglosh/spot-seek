@@ -21,6 +21,7 @@ import { routeFor, iconFor } from '../lib/notificationRoutes';
 import { Icon } from '../components/icons';
 import { AppHeader } from '../components/AppHeader';
 import { GuestGate } from '../components/AuthGate';
+import { withReadable } from '../components/Readable';
 
 // No new deps: a small relative-time formatter matching the compact style
 // used elsewhere in the app ("2h ago", "3d ago"). Takes the notifications-
@@ -47,7 +48,7 @@ function timeAgo(iso: string, tr: TFunction<'notifications'>): string {
   return tr('timeAgo.years', { count: year });
 }
 
-export default function NotificationsScreen() {
+function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const auth = useAuth();
@@ -180,3 +181,5 @@ const s = StyleSheet.create({
   rowBody: { color: colors.textSecondary },
   rowTime: { color: colors.textTertiary, marginTop: spacing.xs },
 });
+
+export default withReadable(NotificationsScreen);

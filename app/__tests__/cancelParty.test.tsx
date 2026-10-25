@@ -12,7 +12,11 @@ jest.mock('expo-secure-store', () => ({
 }));
 jest.mock('expo-image-picker', () => ({}));
 jest.mock('react-native-maps', () => ({ __esModule: true, default: () => null, Marker: () => null }));
-jest.mock('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) }));
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  SafeAreaInsetsContext: require('react').createContext(null),
+}));
 jest.mock('expo-router', () => {
   const router = { replace: jest.fn(), dismissTo: jest.fn(), canDismiss: () => false, push: jest.fn() };
   const params = { eventId: 'e1' };

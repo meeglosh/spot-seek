@@ -18,6 +18,7 @@ import { getGuestInterests } from '../../../lib/guestState';
 import { eventPhase } from '../../../lib/eventTime';
 import { useSplitLayout } from '../../../lib/splitLayout';
 import { useDiscoverFilters, activeFilterCount, clearFiltersGlobal } from '../../../lib/discover-filters';
+import { withReadable } from '../../../components/Readable';
 
 // 'This week' first — it's the default; 'All' last since it's the least-used option.
 const FILTERS = ['This week', 'Today', 'Near me', 'All'] as const;
@@ -77,7 +78,7 @@ const FILTER_LABEL_KEYS: Record<Filter, string> = {
   All: 'feed.filterAll',
 };
 
-export default function DiscoverScreen() {
+function DiscoverScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t: tr } = useTranslation('discover');
@@ -464,3 +465,5 @@ const s = StyleSheet.create({
   // States
   mapSkeleton: { flex: 1 },
 });
+
+export default withReadable(DiscoverScreen, { unlessSplit: true });
