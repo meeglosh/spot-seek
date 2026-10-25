@@ -9,13 +9,14 @@
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { and, desc, eq, gte, inArray, isNull, lt, or } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, lt, notInArray, or } from 'drizzle-orm';
 import * as schema from './schema';
 import type { Event, Notification } from './schema';
 import { createAuth } from './auth';
 import { sendEmail } from './reminders';
 import { formatEventDateTime } from './timezone';
 import { requireAdmin } from './admin';
+import { MOD_HIDDEN, isModerationHidden } from './moderation/visibility';
 import { pushToUser, schedulePush } from './apns';
 import { mergeTypePrefs, parseTypePrefsPatch, resolveTypePrefs, typeAllows } from './notification-prefs';
 
@@ -114,6 +115,8 @@ export async function fanoutFavoriteNearby(
   event: Event,
 ): Promise<void> {
   if (event.venueLat == null || event.venueLng == null) return;
+  // Never announce a hidden/removed party (rule hold, report hide).
+  if (isModerationHidden(event)) return;
 
   const favourites = await db.query.userFavourites.findMany({
     where: eq(schema.userFavourites.value, event.broadcastSubject),
@@ -180,6 +183,7 @@ async function fireReminderWindow(
     // load every published event just to filter in JS (Neon egress).
     where: and(
       eq(schema.events.status, 'published'),
+      notInArray(schema.events.moderationStatus, [...MOD_HIDDEN]),
       gte(schema.events.startsAt, windowStart),
       lt(schema.events.startsAt, windowEnd),
     ),
@@ -244,6 +248,7 @@ export async function runReviewSweep(
   const candidates = await db.query.events.findMany({
     where: and(
       eq(schema.events.status, 'published'),
+      notInArray(schema.events.moderationStatus, [...MOD_HIDDEN]),
       or(
         and(
           gte(schema.events.endsAt, new Date(windowStart - 2 * HOUR)),

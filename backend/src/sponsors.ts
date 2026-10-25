@@ -9,6 +9,7 @@
  *   - Payment processing is stubbed — see BLOCKED.md for Stripe integration.
  */
 import { eventPhase } from './eventTime';
+import { isModerationHidden } from './moderation/visibility';
 import { Hono } from 'hono';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
@@ -181,7 +182,7 @@ sponsorsRouter.post('/bids', async (c) => {
   }
 
   const event = await db.query.events.findFirst({ where: eq(schema.events.id, eventId) });
-  if (!event || event.status !== 'published') return c.json({ error: 'Event not found or not published' }, 404);
+  if (!event || event.status !== 'published' || isModerationHidden(event)) return c.json({ error: 'Event not found or not published' }, 404);
   if (eventPhase(event) === 'ended') return c.json({ error: 'event_ended' }, 409);
 
   const platformFeeCents = Math.round(amountCents * PLATFORM_FEE_RATE);
