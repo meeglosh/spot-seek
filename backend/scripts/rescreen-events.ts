@@ -12,11 +12,11 @@
  *   DATABASE_URL=... npx tsx scripts/rescreen-events.ts                 # DRY RUN: prints a report, writes nothing
  *   DATABASE_URL=... npx tsx scripts/rescreen-events.ts --days 90       # widen the "recent" window
  *   DATABASE_URL=... npx tsx scripts/rescreen-events.ts --host <userId>  # only one host's events (dry run or --apply)
- *   DATABASE_URL=... npx tsx scripts/rescreen-events.ts --apply         # ALSO write: reject -> 'hidden', flag -> 'flagged'
+ *   DATABASE_URL=... npx tsx scripts/rescreen-events.ts --apply         # ALSO write: reject -> 'hidden', flag -> 'flagged', rule hit (hold) -> 'hidden'
  *
  * --apply sets moderation_status and writes a moderation_events row per change
  * (actor 'system', stage 'rescreen'). It never touches removed events and never
- * downgrades a hidden one. Hosts are not notified and no repeat-offender strike is
+ * downgrades a hidden one. Hosts are NOT notified and admins are NOT emailed by this script (unlike a live create/edit hold), and no repeat-offender strike is
  * recorded (only 'removed' counts toward the publishing pause).
  *
  * Classifier: Workers AI is not reachable from Node. If CLOUDFLARE_API_TOKEN and
@@ -43,7 +43,7 @@ export type RescreenRow = {
   title: string;
   hostId: string;
   currentStatus: string;
-  verdict: 'ok' | 'reject' | 'flag' | 'error';
+  verdict: 'ok' | 'reject' | 'flag' | 'hold' | 'error';
   source: string;
   applied: boolean;
 };
@@ -84,6 +84,7 @@ export async function rescreenEvents(db: Db, env: Env, opts: RescreenOptions): P
       applied: false,
     };
     if (res.verdict === 'reject') row.source = `${res.source}:${res.detail}`;
+    else if (res.verdict === 'hold') row.source = res.categories.join(',');
     else if (res.verdict === 'flag') {
       if (res.categories.includes(CLASSIFIER_UNAVAILABLE)) {
         row.verdict = 'error';
@@ -91,7 +92,7 @@ export async function rescreenEvents(db: Db, env: Env, opts: RescreenOptions): P
       } else row.source = res.categories.join(',');
     }
 
-    if (opts.apply && row.verdict === 'reject') {
+    if (opts.apply && (row.verdict === 'reject' || row.verdict === 'hold')) {
       const changed = await db
         .update(schema.events)
         .set({ moderationStatus: 'hidden' })
@@ -102,9 +103,9 @@ export async function rescreenEvents(db: Db, env: Env, opts: RescreenOptions): P
         await logModeration(db, {
           eventId: e.id,
           action: 'auto_hidden',
-          reason: res.verdict === 'reject' ? res.source : null,
+          reason: res.verdict === 'reject' ? res.source : 'blocklist_rule',
           actor: 'system',
-          detail: { stage: 'rescreen', hostId: e.hostId, match: row.source },
+          detail: { stage: 'rescreen', hostId: e.hostId, ...(res.verdict === 'hold' ? { categories: res.categories } : { match: row.source }) },
         });
       }
     } else if (opts.apply && row.verdict === 'flag') {
@@ -135,7 +136,7 @@ export function formatReport(rows: RescreenRow[], apply: boolean): string {
     );
   }
   const count = (v: string) => rows.filter((r) => r.verdict === v).length;
-  lines.push(`ok=${count('ok')} flag=${count('flag')} reject=${count('reject')} error=${count('error')}`);
+  lines.push(`ok=${count('ok')} flag=${count('flag')} hold=${count('hold')} reject=${count('reject')} error=${count('error')}`);
   return lines.join('\n');
 }
 

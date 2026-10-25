@@ -19,8 +19,7 @@ import { classifyText } from './classifier';
 import { logModeration, markFlagged } from './screen';
 import { matchBlocklistFields } from './blocklist';
 import { canViewEvent } from './visibility';
-import { DIGEST_TO } from './admin';
-import { sendEmail } from '../reminders';
+import { alertAdmin } from './alerts';
 import { publicBaseUrl } from '../email';
 
 type AppEnv = { Bindings: Env; Variables: { userId: string } };
@@ -187,16 +186,13 @@ export async function evaluateReports(
 
 /** One immediate admin email for a hate-flagged event. Never throws. */
 async function alertAdminHateReport(env: Env, event: schema.Event, resendApiKey: string | undefined): Promise<void> {
-  const subject = 'Hate report: event flagged for review';
-  const body =
+  await alertAdmin(
+    resendApiKey,
+    'Hate report: event flagged for review',
     `"${event.title}" was reported for hate and flagged. It stays live until a second reporter or an admin acts.\n\n` +
-    `Review, restore or remove: ${publicBaseUrl(env)}/admin/moderation\nEvent id ${event.id}`;
-  try {
-    if (!resendApiKey) console.log(`[DEV MODERATION ALERT] ${subject} ${event.id}`);
-    else await sendEmail(DIGEST_TO, subject, body, resendApiKey, { type: 'moderation_alert', eventId: event.id });
-  } catch (err) {
-    console.error('[moderation] admin alert failed:', err);
-  }
+      `Review, restore or remove: ${publicBaseUrl(env)}/admin/moderation\nEvent id ${event.id}`,
+    event.id,
+  );
 }
 
 // ─── Blocking ─────────────────────────────────────────────────────────────────

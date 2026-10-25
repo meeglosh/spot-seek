@@ -23,7 +23,9 @@ export type ScreenFields = {
 export type ScreenResult =
   | { verdict: 'ok' }
   | { verdict: 'reject'; source: 'blocklist' | 'classifier'; detail: string }
-  | { verdict: 'flag'; categories: string[] };
+  | { verdict: 'flag'; categories: string[] }
+  // Soft-rule hit: the event is created/kept HIDDEN until an admin reviews it. Wins over 'flag'.
+  | { verdict: 'hold'; categories: string[] };
 
 function joinFields(f: ScreenFields): string {
   return [
@@ -39,7 +41,7 @@ function joinFields(f: ScreenFields): string {
 export const CLASSIFIER_UNAVAILABLE = 'classifier_unavailable';
 const RULE_PREFIX = 'rule:';
 
-/** Moderation-log `reason` for a flag verdict, derived from its categories. */
+/** Moderation-log `reason` for a flag/hold verdict, derived from its categories. */
 export function flagReason(categories: string[]): string {
   if (categories.includes(CLASSIFIER_UNAVAILABLE)) return CLASSIFIER_UNAVAILABLE;
   if (categories.some((c) => c.startsWith(RULE_PREFIX))) return 'blocklist_rule';
@@ -49,7 +51,8 @@ export function flagReason(categories: string[]): string {
 /**
  * 1. Hard blocklist: reject (fail closed).
  * 2. Classifier: a reject category rejects; other unsafe categories flag.
- * 3. Soft rules (group-vs-group violence, "religion war"): flag.
+ * 3. Soft rules (group-vs-group violence, "religion war"): hold (hidden pending
+ *    review). A rule hit wins over a classifier flag.
  * 4. Classifier outage (null while enabled): flag, so the event is published but
  *    lands in the admin queue instead of silently passing. Flagged stays live.
  */
@@ -64,9 +67,11 @@ export async function screenEventContent(env: Env, f: ScreenFields): Promise<Scr
   if (res && !res.safe) {
     const bad = res.categories.filter((c) => REJECT_CATEGORIES.has(c));
     if (bad.length > 0) return { verdict: 'reject', source: 'classifier', detail: bad.join(',') };
-    return { verdict: 'flag', categories: rule ? [...res.categories, RULE_PREFIX + rule] : res.categories };
+    return rule
+      ? { verdict: 'hold', categories: [...res.categories, RULE_PREFIX + rule] }
+      : { verdict: 'flag', categories: res.categories };
   }
-  if (rule) return { verdict: 'flag', categories: [RULE_PREFIX + rule] };
+  if (rule) return { verdict: 'hold', categories: [RULE_PREFIX + rule] };
   if (!res && text.trim() && classifierEnabled(env)) {
     console.error('[moderation] classifier unavailable at screening, holding event for review');
     return { verdict: 'flag', categories: [CLASSIFIER_UNAVAILABLE] };
