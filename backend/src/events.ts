@@ -113,7 +113,8 @@ eventsRouter.post('/', async (c) => {
     });
   }
 
-  if (event.status === 'published') {
+  // A rule-held (hidden) party is not announced to fans; admin restore does that.
+  if (event.status === 'published' && !isModerationHidden(event)) {
     await fanoutFavoriteNearby(db, c.env.RESEND_API_KEY, event).catch((err) =>
       console.error('[events] favorite_nearby fanout failed:', err),
     );
@@ -396,7 +397,7 @@ eventsRouter.patch('/:id', async (c) => {
   }
 
   const becamePublished = existing.status !== 'published' && updated.status === 'published';
-  if (becamePublished) {
+  if (becamePublished && !isModerationHidden(updated)) {
     await fanoutFavoriteNearby(db, c.env.RESEND_API_KEY, updated).catch((err) =>
       console.error('[events] favorite_nearby fanout failed:', err),
     );

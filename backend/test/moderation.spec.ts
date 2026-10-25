@@ -378,6 +378,48 @@ describe('soft-rule hold', () => {
     expect(await modStatus(gone.id)).toBe('removed');
   });
 
+  it('favorite_nearby: a normal publish notifies a nearby fan; a rule-held create does not; restore notifies once', async () => {
+    const host = await signIn('hold-fan-host');
+    const fan = await signIn('hold-fan');
+    const subject = `FanSport ${TS}`;
+    await sql()`UPDATE users SET last_lat = 51.5, last_lng = -0.1 WHERE id = ${fan.id}`;
+    await sql()`INSERT INTO user_favourites (user_id, type, value) VALUES (${fan.id}, 'team', ${subject})`;
+    const fanNotes = async (id: string) =>
+      ((await sql()`SELECT id FROM notifications WHERE user_id = ${fan.id} AND event_id = ${id} AND type = 'favorite_nearby'`) as unknown[]).length;
+    const geo = { broadcastSubject: subject, venueLat: 51.5, venueLng: -0.1, venueName: 'The Pub' };
+
+    const normal = await createK(host, geo);
+    expect(normal.event.moderationStatus).toBe('ok');
+    expect(await fanNotes(normal.event.id)).toBe(1);
+
+    const held = await createK(host, { ...geo, title: ruleTitle() });
+    expect(held.event.moderationStatus).toBe('hidden');
+    expect(await fanNotes(held.event.id)).toBe(0);
+
+    const restore = () =>
+      app(`/api/admin/moderation/events/${held.event.id}/restore`, { method: 'POST', headers: { ...ADMIN, 'cf-connecting-ip': '10.77.0.3' } }, KEY);
+    expect((await restore()).status).toBe(200);
+    expect(await fanNotes(held.event.id)).toBe(1);
+    await sql()`UPDATE events SET moderation_status = 'hidden' WHERE id = ${held.event.id}`;
+    await sql()`INSERT INTO moderation_events (event_id, action, reason, actor) VALUES (${held.event.id}, 'auto_hidden', 'blocklist_rule', 'system')`;
+    await restore();
+    expect(await fanNotes(held.event.id)).toBe(1);
+  });
+
+  it('publishing a draft whose text hits the rule does not notify fans; the held party is hidden', async () => {
+    const host = await signIn('hold-draft-host');
+    const fan = await signIn('hold-draft-fan');
+    const subject = `DraftSport ${TS}`;
+    await sql()`UPDATE users SET last_lat = 51.5, last_lng = -0.1 WHERE id = ${fan.id}`;
+    await sql()`INSERT INTO user_favourites (user_id, type, value) VALUES (${fan.id}, 'team', ${subject})`;
+    const { event } = await createK(host, { status: 'draft', title: ruleTitle(), broadcastSubject: subject, venueLat: 51.5, venueLng: -0.1 });
+    const r = await patchK(host, event.id, { status: 'published' });
+    expect(r.status).toBe(200);
+    expect(await modStatus(event.id)).toBe('hidden');
+    const n = (await sql()`SELECT id FROM notifications WHERE user_id = ${fan.id} AND event_id = ${event.id}`) as unknown[];
+    expect(n.length).toBe(0);
+  });
+
   it('admin restore of a held party notifies the host it is live; other restores are silent', async () => {
     const host = await signIn('hold-restore');
     const title = ruleTitle();

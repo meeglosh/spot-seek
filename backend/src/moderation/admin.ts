@@ -7,7 +7,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as schema from '../schema';
-import { notify } from '../notifications';
+import { notify, fanoutFavoriteNearby } from '../notifications';
 import { sendEmail } from '../reminders';
 import { publicBaseUrl } from '../email';
 import { utcDay } from '../email-guard';
@@ -139,6 +139,20 @@ export async function restoreEvent(db: Db, id: string, resendApiKey?: string): P
       body: `"${event.title}" passed review and now shows in Discover. Have a great party!`,
       eventId: id,
     }).catch((err) => console.error('[moderation] restore notify failed:', err));
+    // The hold suppressed the favorite_nearby fan-out; do it now, once (skipped if fans were ever notified).
+    const upcoming = !event.startsAt || event.startsAt > new Date();
+    if (event.status === 'published' && upcoming) {
+      const [sent] = await db
+        .select({ id: schema.notifications.id })
+        .from(schema.notifications)
+        .where(and(eq(schema.notifications.eventId, id), eq(schema.notifications.type, 'favorite_nearby')))
+        .limit(1);
+      if (!sent) {
+        await fanoutFavoriteNearby(db, resendApiKey, event).catch((err) =>
+          console.error('[moderation] favorite_nearby fanout failed:', err),
+        );
+      }
+    }
   }
   return { ok: true, event };
 }
