@@ -98,7 +98,7 @@ export default function CreateEventScreen() {
   // Terminal state: replaces the form with a success screen once the
   // publish/draft/delete round-trip has actually completed.
   const [outcome, setOutcome] = useState<{
-    kind: 'published' | 'draft' | 'deleted' | 'cancelled';
+    kind: 'published' | 'in_review' | 'draft' | 'deleted' | 'cancelled';
     savedEventId?: string;
     coverError?: string;
   } | null>(null);
@@ -235,7 +235,10 @@ export default function CreateEventScreen() {
         }
       }
 
-      setOutcome({ kind: status, savedEventId: savedEvent.id, coverError });
+      // A soft moderation rule can hold a fresh publish for review: the server
+      // saves it hidden, so say so instead of claiming it is live.
+      const kind = status === 'published' && savedEvent.moderationStatus === 'hidden' ? 'in_review' : status;
+      setOutcome({ kind, savedEventId: savedEvent.id, coverError });
     } catch (err) {
       const msg = (err as Error).message;
       const found = publishProblem(err);
@@ -339,6 +342,10 @@ export default function CreateEventScreen() {
         title: tr('create.outcome.published.title'),
         body: tr('create.outcome.published.body'),
       },
+      in_review: {
+        title: tr('create.outcome.inReview.title'),
+        body: tr('create.outcome.inReview.body'),
+      },
       draft: {
         title: tr('create.outcome.draft.title'),
         body: tr('create.outcome.draft.body'),
@@ -358,7 +365,11 @@ export default function CreateEventScreen() {
         <AppHeader back onBack={leaveCreate} />
         <View style={s.centerFill}>
           <View style={s.successGlyphBox}>
-            <Icon name="check" size={40} color={colors.confirmed} />
+            <Icon
+              name={outcome.kind === 'in_review' ? 'shield' : 'check'}
+              size={40}
+              color={outcome.kind === 'in_review' ? colors.live : colors.confirmed}
+            />
           </View>
           <Text style={[t.headlineLg, s.successTitle]}>{copy.title}</Text>
           <Text style={[t.bodyMd, s.successBody]}>{copy.body}</Text>
@@ -373,7 +384,7 @@ export default function CreateEventScreen() {
           )}
 
           <View style={s.successActions}>
-            {outcome.kind === 'published' && outcome.savedEventId && (
+            {(outcome.kind === 'published' || outcome.kind === 'in_review') && outcome.savedEventId && (
               <Btn
                 label={tr('create.outcome.viewParty')}
                 onPress={() => {
@@ -403,7 +414,7 @@ export default function CreateEventScreen() {
             )}
             <Btn
               label={tr('create.outcome.done')}
-              variant={outcome.kind === 'published' ? 'secondary' : 'primary'}
+              variant={outcome.kind === 'published' || outcome.kind === 'in_review' ? 'secondary' : 'primary'}
               onPress={leaveCreate}
             />
           </View>

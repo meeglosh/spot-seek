@@ -102,6 +102,10 @@
         "title": "Brouillon enregistré",
         "body": "Reprenez-le quand vous voulez depuis vos brouillons."
       },
+      "inReview": {
+        "title": "Votre soirée est en cours de vérification",
+        "body": "Merci d'organiser ! Nous la vérifions rapidement avant de la rendre publique. Pour l'instant, vous seul pouvez la voir, et nous vous préviendrons dès qu'elle sera en ligne."
+      },
       "deleted": {
         "title": "Soirée supprimée",
         "body": "La soirée et ses réservations ont disparu."

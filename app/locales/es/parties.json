@@ -102,6 +102,10 @@
         "title": "Borrador guardado",
         "body": "Retómalo desde tus borradores cuando quieras."
       },
+      "inReview": {
+        "title": "Tu fiesta está en revisión",
+        "body": "¡Gracias por organizar! Estamos haciendo una revisión rápida antes de publicarla. Por ahora solo tú puedes verla y te avisaremos en cuanto esté en directo."
+      },
       "deleted": {
         "title": "Fiesta eliminada",
         "body": "La fiesta y sus asistencias han desaparecido."

@@ -102,6 +102,10 @@
         "title": "Draft saved",
         "body": "Pick it back up from your drafts any time."
       },
+      "inReview": {
+        "title": "Your party is in review",
+        "body": "Thanks for hosting! We're giving it a quick check before it goes public. Only you can see it for now, and we'll let you know as soon as it's live."
+      },
       "deleted": {
         "title": "Party deleted",
         "body": "The party and its RSVPs are gone."

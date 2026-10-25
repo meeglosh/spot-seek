@@ -102,6 +102,10 @@
         "title": "Rascunho guardado",
         "body": "Retoma-o a partir dos teus rascunhos quando quiseres."
       },
+      "inReview": {
+        "title": "A sua festa está em análise",
+        "body": "Obrigado por organizar! Estamos a fazer uma verificação rápida antes de a tornar pública. Por agora só você a pode ver e avisaremos assim que estiver no ar."
+      },
       "deleted": {
         "title": "Festa eliminada",
         "body": "A festa e as confirmações desapareceram."

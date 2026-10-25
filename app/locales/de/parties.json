@@ -102,6 +102,10 @@
         "title": "Entwurf gespeichert",
         "body": "Mach jederzeit in deinen Entwürfen weiter."
       },
+      "inReview": {
+        "title": "Deine Party wird geprüft",
+        "body": "Danke fürs Hosten! Wir werfen noch einen kurzen Blick darauf, bevor sie öffentlich wird. Vorerst kannst nur du sie sehen, und wir melden uns, sobald sie live ist."
+      },
       "deleted": {
         "title": "Party gelöscht",
         "body": "Die Party und ihre Zusagen sind weg."
