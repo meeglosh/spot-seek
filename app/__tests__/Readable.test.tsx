@@ -27,7 +27,7 @@ function Probe({ report }: { report: (right: number) => void }) {
   report(useSafeAreaInsets().right);
   return null;
 }
-function render(opts: { disabled?: boolean } = {}) {
+function render(opts: { disabled?: boolean; leftPaneWhenFolded?: boolean } = {}) {
   const out: { right?: number } = {};
   let t: { toJSON: () => unknown } | undefined;
   act(() => { t = TestRenderer.create(<Readable {...opts}><Probe report={(r) => { out.right = r; }} /></Readable>); });
@@ -52,6 +52,25 @@ describe('Readable', () => {
     const { out, t } = render({ disabled: true });
     expect(out.right).toBe(84);
     expect(JSON.stringify(t.toJSON())).not.toContain('640');
+  });
+});
+
+describe('Readable leftPaneWhenFolded', () => {
+  it('pins the column to the left half in folded landscape', () => {
+    mockWindow = { width: 951, height: 669 };
+    const { out, t } = render({ leftPaneWhenFolded: true });
+    const json = JSON.stringify(t.toJSON());
+    expect(json).toContain('459.5');
+    expect(json).toContain('flex-start');
+    expect(json).not.toContain('"width":640');
+    expect(out.right).toBe(0);
+  });
+  it('is unchanged outside folded landscape (centred 640 cap in inner portrait)', () => {
+    mockWindow = { width: 669, height: 951 };
+    const { t } = render({ leftPaneWhenFolded: true });
+    const json = JSON.stringify(t.toJSON());
+    expect(json).toContain('640');
+    expect(json).not.toContain('flex-start');
   });
 });
 

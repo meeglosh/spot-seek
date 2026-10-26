@@ -1,6 +1,6 @@
 import { isSponsorshipEnabled } from '../../../lib/features';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, ScrollView, StyleSheet, Image, Platform, Share, Alert, TextInput, ActionSheetIOS } from 'react-native';
+import { View, ScrollView, useWindowDimensions, StyleSheet, Image, Platform, Share, Alert, TextInput, ActionSheetIOS } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import {
 import { useOpenDirections } from '../../../lib/directions';
 import { eventShareUrl } from '../../../lib/shareLinks';
 import { trailingOffset } from '../../../lib/safeArea';
+import { clearHorizontalFold, isFoldedPortrait } from '../../../lib/readableWidth';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 import { eventPhase, presentationFor, canLeaveReview } from '../../../lib/eventTime';
 import { EventRsvpArea } from '../../../components/EventRsvpArea';
@@ -48,6 +49,18 @@ function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: winW, height: winH } = useWindowDimensions();
+  // Duo inner portrait: the fold is horizontal across the window's centre. Keep
+  // the Date/Status pair from straddling it by pushing the row just below the
+  // fold when (at scroll 0) it would land on it. The offset is measured from
+  // the scroll view's top, the content block's y and the row's own y.
+  const [scrollTop, setScrollTop] = useState(0);
+  const [contentY, setContentY] = useState(0);
+  const [tileAnchorY, setTileAnchorY] = useState(0);
+  const [tileH, setTileH] = useState(0);
+  const foldClear = isFoldedPortrait(winW, winH)
+    ? clearHorizontalFold(scrollTop + contentY + tileAnchorY, tileH, winH)
+    : 0;
   const auth = useAuth();
   const { t: tr } = useTranslation('discover');
   const { t: trCommon } = useTranslation('common');
@@ -426,7 +439,7 @@ function EventDetailScreen() {
     <View style={s.container}>
       <AppHeader back onBack={leaveDetail} />
 
-      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + (ended ? 220 : 140) }}>
+      <ScrollView ref={scrollRef} onLayout={(e) => setScrollTop(e.nativeEvent.layout.y)} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + (ended ? 220 : 140) }}>
         {/* Hero — cover photo, dimmed with the media scrim for legibility */}
         <View style={s.hero}>
           {coverSrc && (
@@ -472,7 +485,7 @@ function EventDetailScreen() {
           </View>
         </View>
 
-        <View style={s.content} onLayout={(e) => { reviewY.current.content = e.nativeEvent.layout.y; }}>
+        <View style={s.content} onLayout={(e) => { reviewY.current.content = e.nativeEvent.layout.y; setContentY(e.nativeEvent.layout.y); }}>
           {isHost && hostBannerKind(event.moderationStatus) && (
             <ModerationBanner kind={hostBannerKind(event.moderationStatus)!} />
           )}
@@ -488,7 +501,11 @@ function EventDetailScreen() {
           )}
 
           {/* Meta tile grid */}
-          <View style={s.tileRow}>
+          <View onLayout={(e) => setTileAnchorY(e.nativeEvent.layout.y)}>
+          <View
+            style={[s.tileRow, { marginTop: foldClear }]}
+            onLayout={(e) => setTileH(e.nativeEvent.layout.height)}
+          >
             <View style={s.tile}>
               <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('detail.dateTime')}</Text>
               <Text style={[t.monoData, s.tileValue]}>
@@ -504,6 +521,7 @@ function EventDetailScreen() {
                 </Text>
               </View>
             )}
+          </View>
           </View>
 
           {/* Venue card */}
@@ -783,4 +801,6 @@ const s = StyleSheet.create({
   reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });
 
-export default withReadable(EventDetailScreen);
+// In the Duo's folded landscape the column sits in the left half, so neither the
+// content nor the sticky RSVP bar crosses the vertical fold.
+export default withReadable(EventDetailScreen, { leftPaneWhenFolded: true });

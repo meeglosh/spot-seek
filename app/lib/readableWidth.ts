@@ -64,3 +64,48 @@ export function tabBarLayout(
   }
   return { maxWidth: READABLE_MAX_WIDTH, align: 'center' };
 }
+
+/** Clearance kept on each side of the fold, in points. */
+export const FOLD_GUTTER = 16;
+
+/**
+ * Left-pane column for a screen in the folded split: the readable cap, but
+ * never wider than the left half minus the gutter, so nothing (content or a
+ * sticky bar) crosses the vertical fold at the window's centre.
+ */
+export function paneColumnWidth(width: number, gutter: number = FOLD_GUTTER, max: number = READABLE_MAX_WIDTH): number {
+  return Math.min(max, foldPane(width, gutter));
+}
+
+/** Side insets for a column of `colWidth` pinned to the left edge. */
+export function insetsWithinLeftPane(insets: SideInsets, width: number, colWidth: number): SideInsets {
+  return { left: insets.left, right: Math.max(0, insets.right - (width - colWidth)) };
+}
+
+/** Smallest window width treated as a foldable's inner display in portrait. */
+export const FOLDED_PORTRAIT_MIN_WIDTH = 600;
+
+/**
+ * iPhone Duo inner display in portrait: the fold is horizontal, across the
+ * window's vertical centre (the hinge notches sit mid-height on the side
+ * edges). No iPhone is this wide in portrait; iPad is excluded by idiom. Same
+ * size heuristic as isFoldedSplit: RN can't read the real fold.
+ */
+export function isFoldedPortrait(width: number, height: number, isPad: boolean = isPadDevice()): boolean {
+  return !isPad && width >= FOLDED_PORTRAIT_MIN_WIDTH && height > width;
+}
+
+/**
+ * Extra top margin that moves a block (at window-relative `top`, `blockHeight`
+ * tall) clear of a horizontal fold at the window's vertical centre. Blocks that
+ * already sit wholly above or below the fold zone get 0. Only valid at the
+ * scroll origin: scrolled content moves under the fold regardless.
+ */
+export function clearHorizontalFold(
+  top: number, blockHeight: number, windowHeight: number, gutter: number = FOLD_GUTTER,
+): number {
+  const foldTop = windowHeight / 2 - gutter;
+  const foldBottom = windowHeight / 2 + gutter;
+  if (blockHeight <= 0 || top + blockHeight <= foldTop || top >= foldBottom) return 0;
+  return foldBottom - top;
+}
