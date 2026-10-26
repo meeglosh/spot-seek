@@ -4,7 +4,7 @@ import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area
 import { colors } from '../lib/theme';
 import { isSplitLayout } from '../lib/splitLayout';
 import {
-  READABLE_MAX_WIDTH, insetsWithinColumn, insetsWithinLeftPane, isFoldedSplit, paneColumnWidth, readableWidth,
+  READABLE_MAX_WIDTH, insetsWithinColumn, isFoldedSplit, readableWidth,
 } from '../lib/readableWidth';
 
 /**
@@ -19,10 +19,10 @@ import {
  * clears the strip.
  */
 export function Readable({
-  children, disabled = false, unlessSplit = false, unlessFolded = false, leftPaneWhenFolded = false, max = READABLE_MAX_WIDTH,
+  children, disabled = false, unlessSplit = false, unlessFolded = false, max = READABLE_MAX_WIDTH,
 }: {
   children: React.ReactNode; disabled?: boolean; unlessSplit?: boolean; unlessFolded?: boolean;
-  leftPaneWhenFolded?: boolean; max?: number;
+  max?: number;
 }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -31,22 +31,10 @@ export function Readable({
     || (unlessSplit && isSplitLayout(width, height))
     || (unlessFolded && isFoldedSplit(width, height))
     || width <= max;
-  // Folded landscape: the column sits in the left half so it (and any sticky
-  // bar inside it) clears the vertical fold instead of straddling it.
-  const pane = !uncapped && leftPaneWhenFolded && isFoldedSplit(width, height);
-  const paneWidth = pane ? paneColumnWidth(width, undefined, max) : 0;
-  const inner = uncapped
-    ? insets
-    : pane
-      ? { ...insets, ...insetsWithinLeftPane(insets, width, paneWidth) }
-      : { ...insets, ...insetsWithinColumn(insets, width, max) };
+  const inner = uncapped ? insets : { ...insets, ...insetsWithinColumn(insets, width, max) };
   return (
     <View style={s.outer}>
-      <View style={[
-        s.column,
-        !uncapped && { width: pane ? paneWidth : readableWidth(width, max) },
-        pane && { alignSelf: 'flex-start' as const },
-      ]}>
+      <View style={[s.column, !uncapped && { width: readableWidth(width, max) }]}>
         <SafeAreaInsetsContext.Provider value={inner}>
           {children}
         </SafeAreaInsetsContext.Provider>
@@ -58,11 +46,11 @@ export function Readable({
 /** Wrap a screen component so it renders inside <Readable>. */
 export function withReadable<P extends object>(
   Screen: React.ComponentType<P>,
-  opts: { unlessSplit?: boolean; unlessFolded?: boolean; leftPaneWhenFolded?: boolean } = {},
+  opts: { unlessSplit?: boolean; unlessFolded?: boolean } = {},
 ) {
   function ReadableScreen(props: P) {
     return (
-      <Readable unlessSplit={opts.unlessSplit} unlessFolded={opts.unlessFolded} leftPaneWhenFolded={opts.leftPaneWhenFolded}><Screen {...props} />
+      <Readable unlessSplit={opts.unlessSplit} unlessFolded={opts.unlessFolded}><Screen {...props} />
       </Readable>
     );
   }

@@ -65,6 +65,9 @@ type Props = {
   // the card instead).
   selectedId?: string | null;
   onSelectEvent?: (event: EventItem) => void;
+  // Bare map for embedding (event detail's right pane): pins only, without the
+  // filter chips, count badge or locate-me button.
+  minimal?: boolean;
 };
 
 const DEFAULT_REGION = {
@@ -76,7 +79,7 @@ const DEFAULT_REGION = {
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export function EventMapView({ events, userLocation, initialRegion, selectedId, onSelectEvent }: Props) {
+export function EventMapView({ events, userLocation, initialRegion, selectedId, onSelectEvent, minimal = false }: Props) {
   const controlled = !!onSelectEvent;
   const router = useRouter();
   const { t: tr } = useTranslation('discover');
@@ -299,6 +302,7 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
       </MapView>
 
       {/* Filter chips — LIVE NOW + sport chips over the map */}
+      {!minimal && (
       <View style={s.chipBar} pointerEvents="box-none">
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipRow}>
           <MapChip
@@ -326,9 +330,10 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
           ))}
         </ScrollView>
       </View>
+      )}
 
       {/* No-coordinates notice */}
-      {mappable.length === 0 && (
+      {!minimal && mappable.length === 0 && (
         <View style={s.emptyOverlay}>
           <Text style={[t.bodySm, s.emptyText]}>
             {tr('map.noEventsText')}
@@ -338,6 +343,7 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
 
       {/* Locate-me control — bottom-right, lifted clear of the bottom card
           while it's open so the two never overlap. */}
+      {!minimal && (
       <Pressable
         style={[
           s.locateBtn,
@@ -351,9 +357,10 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
       >
         <Icon name="locate" size={22} color={colors.textPrimary} />
       </Pressable>
+      )}
 
       {/* Event count badge */}
-      {mappable.length > 0 && (
+      {!minimal && mappable.length > 0 && (
         <View style={s.countBadge}>
           <Text style={[t.labelSm, { color: colors.textSecondary }]}>
             {tr('map.countBadge', { shown: shown.length, total: mappable.length })}

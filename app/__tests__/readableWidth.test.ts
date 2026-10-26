@@ -1,6 +1,6 @@
 import {
   readableWidth, readableMargin, insetsWithinColumn, isFoldedSplit, foldPane, READABLE_MAX_WIDTH,
-  paneColumnWidth, insetsWithinLeftPane, isFoldedPortrait, clearHorizontalFold, FOLD_GUTTER,
+  insetsWithinLeftPane, isFoldedPortrait, clearHorizontalFold, FOLD_GUTTER,
 } from '../lib/readableWidth';
 
 describe('readableWidth', () => {
@@ -36,20 +36,14 @@ describe('fold heuristics', () => {
   });
 });
 
-describe('left pane column (folded landscape)', () => {
-  it('stays inside the left half, clear of the fold', () => {
-    expect(paneColumnWidth(951)).toBe(951 / 2 - FOLD_GUTTER);
-    expect(paneColumnWidth(951) + FOLD_GUTTER).toBeLessThanOrEqual(951 / 2);
-  });
-
-  it('never exceeds the readable cap', () => {
-    expect(paneColumnWidth(1600)).toBe(READABLE_MAX_WIDTH);
-  });
-
+describe('left pane insets (folded landscape)', () => {
   it('drops the right status-strip inset once the pane clears it', () => {
-    const col = paneColumnWidth(951);
+    const col = foldPane(951, FOLD_GUTTER);
     expect(insetsWithinLeftPane({ left: 0, right: 84 }, 951, col)).toEqual({ left: 0, right: 0 });
     expect(insetsWithinLeftPane({ left: 12, right: 84 }, 951, col).left).toBe(12);
+  });
+  it('keeps the inset when the pane would still reach the strip', () => {
+    expect(insetsWithinLeftPane({ left: 0, right: 84 }, 951, 900).right).toBe(33);
   });
 });
 

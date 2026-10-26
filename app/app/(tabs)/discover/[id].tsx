@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, ScrollView, useWindowDimensions, StyleSheet, Image, Platform, Share, Alert, TextInput, ActionSheetIOS } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../lib/auth';
 import {
@@ -13,10 +13,13 @@ import {
 import { useOpenDirections } from '../../../lib/directions';
 import { eventShareUrl } from '../../../lib/shareLinks';
 import { trailingOffset } from '../../../lib/safeArea';
-import { clearHorizontalFold, isFoldedPortrait } from '../../../lib/readableWidth';
+import {
+  FOLD_GUTTER, clearHorizontalFold, foldPane, insetsWithinLeftPane, isFoldedPortrait, isFoldedSplit,
+} from '../../../lib/readableWidth';
 import { formatEventDateTime } from '../../../lib/dateFormat';
 import { eventPhase, presentationFor, canLeaveReview } from '../../../lib/eventTime';
 import { EventRsvpArea } from '../../../components/EventRsvpArea';
+import { EventMapView } from '../../../components/EventMapView';
 import { colors, radius, spacing, TAP, type as t } from '../../../lib/theme';
 import { Icon } from '../../../components/icons';
 import { AppHeader } from '../../../components/AppHeader';
@@ -53,8 +56,11 @@ function EventDetailScreen() {
   // Duo inner portrait: the fold is horizontal across the window's centre. Keep
   // the Date/Status pair from straddling it by pushing the row just below the
   // fold when (at scroll 0) it would land on it. The offset is measured from
-  // the scroll view's top, the content block's y and the row's own y.
+  // the screen body's top (below the header), the content block's y and the
+  // row's own y.
   const [scrollTop, setScrollTop] = useState(0);
+  // Duo inner landscape: two panes either side of the vertical fold.
+  const split = isFoldedSplit(winW, winH);
   const [contentY, setContentY] = useState(0);
   const [tileAnchorY, setTileAnchorY] = useState(0);
   const [tileH, setTileH] = useState(0);
@@ -435,11 +441,64 @@ function EventDetailScreen() {
       .catch(() => {});
   }
 
+  const venueCard = event.venueName && (
+      <View style={s.venueCard}>
+        <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('detail.venue')}</Text>
+        <Text style={[t.bodyLg, { color: colors.textPrimary }]}>{event.venueName}</Text>
+        {venueDetail && (
+          <Text style={[t.monoData, { color: colors.textSecondary }]}>{venueDetail}</Text>
+        )}
+        {venueRatingLabel && <StarRating value={reviewsCtx.venue!.avg} size={13} label={venueRatingLabel} />}
+        {canShowDirections && (
+          <Press
+            style={({ pressed }) => [s.directionsBtn, pressed && s.pressed]}
+            onPress={openDirections}
+            accessibilityRole="button"
+          >
+            <Text style={[t.label, { color: colors.action }]}>{tr('detail.getDirections')}</Text>
+          </Press>
+        )}
+      </View>
+    );
+
+  const mapEvent = {
+    id: event.id, title: event.title, broadcastSubject: event.broadcastSubject, status: event.status,
+    startsAt: event.startsAt, endsAt: event.endsAt, venueName: event.venueName, venueAddress: event.venueAddress,
+    isPrivateLocation: event.isPrivateLocation, venueLat: event.venueLat, venueLng: event.venueLng,
+    venueTimezone: event.venueTimezone,
+  };
+  const hasMap = split && event.venueLat != null && event.venueLng != null
+    && (!event.isPrivateLocation || isActive);
+  const leftPaneWidth = foldPane(winW, FOLD_GUTTER);
+  // Insets as seen from inside the left pane: the status strip is past its edge.
+  const paneInsets = split ? { ...insets, ...insetsWithinLeftPane(insets, winW, leftPaneWidth) } : insets;
+  const rsvpArea = (
+    <EventRsvpArea
+      phase={phase}
+      rsvpLabel={rsvpLabel}
+      rsvpColor={rsvpBg}
+      rsvpLoading={rsvpLoading}
+      rsvpError={rsvpError}
+      isActive={isActive}
+      onRsvp={() => handleRsvp()}
+      hostAction={isHost ? { label: trParties('myParties.manage'), onPress: () => router.push('/(tabs)/parties/dashboard' as never) } : undefined}
+      dateLabel={dateStr}
+      canReview={canReview}
+      hasReview={!!reviewsCtx.myReview}
+      onReview={() => scrollRef.current?.scrollTo({ y: Math.max(0, reviewY.current.content + reviewY.current.section - spacing.lg), animated: true })}
+      bottomInset={split ? 0 : insets.bottom}
+      inline={split}
+    />
+  );
+
   return (
     <View style={s.container}>
       <AppHeader back onBack={leaveDetail} />
 
-      <ScrollView ref={scrollRef} onLayout={(e) => setScrollTop(e.nativeEvent.layout.y)} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + (ended ? 220 : 140) }}>
+      <View style={split ? s.splitRow : s.flex} onLayout={(e) => setScrollTop(e.nativeEvent.layout.y)}>
+      <View style={split ? [s.leftPane, { width: leftPaneWidth }] : s.flex}>
+      <SafeAreaInsetsContext.Provider value={paneInsets}>
+      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + (split ? 120 : ended ? 220 : 140) }}>
         {/* Hero — cover photo, dimmed with the media scrim for legibility */}
         <View style={s.hero}>
           {coverSrc && (
@@ -458,7 +517,7 @@ function EventDetailScreen() {
               onPress={openMoreMenu}
               style={({ pressed }) => [
                 s.shareBtn, s.moreBtn,
-                { right: trailingOffset(spacing.md + TAP + spacing.sm, insets) },
+                { right: trailingOffset(spacing.md + TAP + spacing.sm, paneInsets) },
                 pressed && s.pressed,
               ]}
               accessibilityRole="button"
@@ -469,7 +528,7 @@ function EventDetailScreen() {
           )}
           <Press
             onPress={handleShare}
-            style={({ pressed }) => [s.shareBtn, { right: trailingOffset(spacing.md, insets) }, pressed && s.pressed]}
+            style={({ pressed }) => [s.shareBtn, { right: trailingOffset(spacing.md, paneInsets) }, pressed && s.pressed]}
             accessibilityRole="button"
             accessibilityLabel={tr('detail.shareEvent')}
           >
@@ -524,26 +583,8 @@ function EventDetailScreen() {
           </View>
           </View>
 
-          {/* Venue card */}
-          {event.venueName && (
-            <View style={s.venueCard}>
-              <Text style={[t.labelSm, { color: colors.textSecondary }]}>{tr('detail.venue')}</Text>
-              <Text style={[t.bodyLg, { color: colors.textPrimary }]}>{event.venueName}</Text>
-              {venueDetail && (
-                <Text style={[t.monoData, { color: colors.textSecondary }]}>{venueDetail}</Text>
-              )}
-              {venueRatingLabel && <StarRating value={reviewsCtx.venue!.avg} size={13} label={venueRatingLabel} />}
-              {canShowDirections && (
-                <Press
-                  style={({ pressed }) => [s.directionsBtn, pressed && s.pressed]}
-                  onPress={openDirections}
-                  accessibilityRole="button"
-                >
-                  <Text style={[t.label, { color: colors.action }]}>{tr('detail.getDirections')}</Text>
-                </Press>
-              )}
-            </View>
-          )}
+          {/* Venue card (right pane in the Duo's two-pane layout) */}
+          {!split && venueCard}
 
           {/* Presented by — active sponsors, biggest bid first (array order) */}
           {isSponsorshipEnabled() && event.sponsors != null && event.sponsors.length > 0 && (
@@ -654,22 +695,29 @@ function EventDetailScreen() {
         </View>
       </ScrollView>
 
+      </SafeAreaInsetsContext.Provider>
+      </View>
+
+      {split && (
+        <View style={[s.rightPane, { marginLeft: FOLD_GUTTER * 2, paddingRight: trailingOffset(spacing.lg, insets) }]}>
+          {hasMap && (
+            <View style={s.paneMap} testID="detail-map">
+              <EventMapView
+                minimal
+                events={[mapEvent]}
+                selectedId={event.id}
+                onSelectEvent={() => {}}
+              />
+            </View>
+          )}
+          {venueCard}
+          {rsvpArea}
+        </View>
+      )}
+      </View>
+
       {/* RSVP bar while the party is upcoming or on; a calm "ended" panel after */}
-      <EventRsvpArea
-        phase={phase}
-        rsvpLabel={rsvpLabel}
-        rsvpColor={rsvpBg}
-        rsvpLoading={rsvpLoading}
-        rsvpError={rsvpError}
-        isActive={isActive}
-        onRsvp={() => handleRsvp()}
-        hostAction={isHost ? { label: trParties('myParties.manage'), onPress: () => router.push('/(tabs)/parties/dashboard' as never) } : undefined}
-        dateLabel={dateStr}
-        canReview={canReview}
-        hasReview={!!reviewsCtx.myReview}
-        onReview={() => scrollRef.current?.scrollTo({ y: Math.max(0, reviewY.current.content + reviewY.current.section - spacing.lg), animated: true })}
-        bottomInset={insets.bottom}
-      />
+      {!split && rsvpArea}
 
       {moment && (
         <YoureIn
@@ -699,6 +747,13 @@ function EventDetailScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.canvas },
+  flex: { flex: 1 },
+  // Duo inner landscape: panes keep FOLD_GUTTER clear of the window centre.
+  splitRow: { flex: 1, flexDirection: 'row' },
+  leftPane: { flexShrink: 0 },
+  // paddingRight is set inline: it adds the status-strip inset so the map clears it.
+  rightPane: { flex: 1, paddingBottom: spacing.lg, gap: spacing.md },
+  paneMap: { flex: 1, minHeight: 120, borderRadius: radius.card, overflow: 'hidden' },
   skeleton: { padding: spacing.lg, gap: spacing.md },
 
   // Hero
@@ -801,6 +856,6 @@ const s = StyleSheet.create({
   reviewHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });
 
-// In the Duo's folded landscape the column sits in the left half, so neither the
-// content nor the sticky RSVP bar crosses the vertical fold.
-export default withReadable(EventDetailScreen, { leftPaneWhenFolded: true });
+// Uncapped in the Duo's folded landscape: the screen lays out two panes itself,
+// either side of the fold (left: scrolling details; right: map, venue, RSVP).
+export default withReadable(EventDetailScreen, { unlessFolded: true });

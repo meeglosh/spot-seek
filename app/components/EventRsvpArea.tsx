@@ -28,19 +28,22 @@ type Props = {
   hasReview?: boolean;
   onReview?: () => void;
   bottomInset?: number;
+  /** Render in normal flow (a pane of the Duo's two-pane layout) instead of pinned to the screen bottom. */
+  inline?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
 export function EventRsvpArea({
   phase, rsvpLabel, rsvpColor, rsvpLoading = false, rsvpError, isActive = false, onRsvp, hostAction,
-  dateLabel, canReview = false, hasReview = false, onReview, bottomInset = 0, style,
+  dateLabel, canReview = false, hasReview = false, onReview, bottomInset = 0, inline = false, style,
 }: Props) {
   const { t: tr } = useTranslation('discover');
   const pres = presentationFor(phase);
+  const barStyle = [s.bar, inline && s.barInline, { paddingBottom: bottomInset + spacing.md }, style];
 
   if (pres.detailPanel === 'ended') {
     return (
-      <View style={[s.bar, { paddingBottom: bottomInset + spacing.md }, style]}>
+      <View style={barStyle}>
         <Text style={[t.headlineSm, { color: colors.textPrimary }]}>{tr('detail.ended.title')}</Text>
         {dateLabel ? (
           <Text style={[t.bodyMd, { color: colors.textSecondary }]}>{tr('detail.ended.date', { date: dateLabel })}</Text>
@@ -58,7 +61,7 @@ export function EventRsvpArea({
 
   if (hostAction) {
     return (
-      <View style={[s.bar, { paddingBottom: bottomInset + spacing.md }, style]}>
+      <View style={barStyle}>
         <Press
           style={[s.rsvpBtn, { backgroundColor: colors.action }]}
           onPress={hostAction.onPress}
@@ -71,7 +74,7 @@ export function EventRsvpArea({
   }
 
   return (
-    <View style={[s.bar, { paddingBottom: bottomInset + spacing.md }, style]}>
+    <View style={barStyle}>
       {rsvpError ? <Text style={[t.bodySm, s.rsvpError]}>{rsvpError}</Text> : null}
       <Press
         style={[s.rsvpBtn, { backgroundColor: rsvpColor }]}
@@ -103,6 +106,11 @@ const s = StyleSheet.create({
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
     gap: spacing.sm,
+  },
+  // In a pane: normal flow, no sheet corners or pinned edges.
+  barInline: {
+    position: 'relative', bottom: undefined, left: undefined, right: undefined,
+    paddingHorizontal: 0, paddingTop: 0, borderRadius: 0, shadowOpacity: 0, elevation: 0, backgroundColor: 'transparent',
   },
   rsvpBtn: { height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: radius.cta },
   rsvpError: { color: colors.danger, textAlign: 'center' },

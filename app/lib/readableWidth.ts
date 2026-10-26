@@ -68,15 +68,6 @@ export function tabBarLayout(
 /** Clearance kept on each side of the fold, in points. */
 export const FOLD_GUTTER = 16;
 
-/**
- * Left-pane column for a screen in the folded split: the readable cap, but
- * never wider than the left half minus the gutter, so nothing (content or a
- * sticky bar) crosses the vertical fold at the window's centre.
- */
-export function paneColumnWidth(width: number, gutter: number = FOLD_GUTTER, max: number = READABLE_MAX_WIDTH): number {
-  return Math.min(max, foldPane(width, gutter));
-}
-
 /** Side insets for a column of `colWidth` pinned to the left edge. */
 export function insetsWithinLeftPane(insets: SideInsets, width: number, colWidth: number): SideInsets {
   return { left: insets.left, right: Math.max(0, insets.right - (width - colWidth)) };
