@@ -1,6 +1,6 @@
 # SpotSeek — Session Handoff
 
-_Last updated: 2026-10-15. Read this first when resuming in a new session._
+_Last updated: 2026-10-27. Read this first when resuming in a new session._
 
 This is a running snapshot of where the project stands so work can continue
 without re-deriving context. For the immutable operating rules see `CLAUDE.md`;
@@ -22,6 +22,109 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
   feasible, with honest notes on what couldn't be exercised (e.g. taps —
   simulator tap automation is unavailable; use deep links, `simctl launch`
   for cold-start flows, and temporary code edits reverted after screenshots).
+
+---
+
+## 0d. RESUME HERE — status as of 2026-10-27
+
+**App Store**
+- 1.0 (build 45) was **rejected 2026-10-27** under Guideline 5.1.1(iv): the location
+  pre-permission screen had a "Share my location" button and a "Not now" defer.
+- The fix is on main as **build 47**: every message shown before a system permission
+  prompt has ONE "Continue" button that always proceeds to the prompt. There is no
+  defer, skip or swipe-back. After a denial the app keeps working, and Settings links
+  appear for Near me and the map locate button. The push-reminder card shows
+  "Continue" when permission is undetermined, is a normal toggle when granted, and is
+  hidden when denied. **Keep this rule for any future permission UI.**
+- **1.0 + build 47 resubmitted 2026-10-27, WAITING_FOR_REVIEW** (release
+  AFTER_APPROVAL). The fix summary is at the top of the App Review notes. The API
+  can't post Resolution Center messages.
+- How to resubmit via the ASC API after a rejection:
+  1. PATCH the appStoreVersion build relationship.
+  2. PATCH the rejected `reviewSubmissionItems/{id}` with `resolved: true`.
+  3. PATCH `reviewSubmissions/{id}` with `submitted: true`.
+- **Reviewer demo parties** were re-dated to Thu Oct 29 5pm and Sun Nov 1 6pm PT, so
+  they show under Discover's default "This week" (the next 7 days). Both now have
+  cover photos in R2.
+  - If review runs past Oct 29, re-date them again. A reviewer who sees an empty
+    "This week" may reject.
+  - Only `demo@spotseek.app` RSVPs to them.
+- Main is tagged **`v1.0-build47`**.
+
+**TestFlight**
+- Build 47: in Friends beta, beta review submitted, "What to test" filled in.
+- Build 46 (Duo): uploaded and in Friends beta, but NOT beta-submitted (intentionally
+  superseded by 47).
+
+**Branches (owner decision)**
+- `main` = build 47 = what's in App Review. Review-rejection fixes go on main.
+- `build-46-duo` = all iPhone Duo work, with main merged in. It ships as **build 48**
+  with the next version. Merge it into main only after 1.0 is approved. It contains:
+  - right safe-area inset helpers
+  - Discover list+map split on wide landscape
+  - 640pt readable width
+  - fold-aware event detail: two panes in inner landscape, and the Date/Status row
+    pushed below the fold in inner portrait
+  - no Sentry from simulators (`expo-device`)
+  - Expo patch updates
+  - the in-review success screen for held parties
+  - `tools/store-screenshots/`, the store screenshot composer and seed scripts
+- expo-router 57.0.29 is deliberately held back: it pulls in Reanimated, Gesture
+  Handler and Worklets as installed peers, which are new native modules.
+
+**iPhone Duo**
+- Simulator facts:
+  - The simulator UI is DeviceHub.app; poses are switched with the buttons at the
+    bottom of its window. Never use `simctl io ... screenConfig power`.
+  - Screenshot a display with `simctl io <udid> screenshot --display <id>`:
+    inner = `11C0E7E1-...`, outer = `574220EB-...`.
+  - Inner portrait has a horizontal fold at mid-height. Inner landscape has a
+    vertical fold.
+- Duo App Store screenshots (6 each at outer 1398x2034 and inner 2007x2853) were
+  rendered from `tools/store-screenshots`.
+  - They're required from April 2027 for iOS 27.1 SDK apps.
+  - Upload them with the build 48 version. They can't be added while 1.0 is in review.
+  - The earlier rendered PNGs were in a session scratchpad and may be gone; re-render
+    with `composer/render.sh`.
+
+**Moderation (backend deployed 2026-10-25)**
+- Soft-rule hits are held hidden pending review, the host gets an "in review"
+  notification, and the admin is emailed.
+- The daily digest emails hello@spotseek.app while anything is hidden or flagged.
+- The queue is empty as of 2026-10-27: the hateful party and the 2 email-test parties
+  are removed.
+
+**Sentry**
+- Simulator builds no longer report (build 48+).
+- The Oct 25 `topInsetsChange` "testflight" crash was our own Duo simulator
+  experiment, not a tester.
+- The valid upload token lives in the gitignored `app/.env.sentry-build-plugin`
+  (main checkout). An invalid `SENTRY_AUTH_TOKEN` export was removed from
+  `~/.zshenv`.
+- Worktrees lack that file: copy it in, or export the token from it, before
+  archiving there. Never print it.
+
+**Build gotchas this round**
+- Worktrees that symlink `node_modules` break native builds (version skew). Give a
+  build worktree its own `npm ci`.
+- `npx expo prebuild --platform ios --clean` before each archive.
+- Simulator Release builds need ad-hoc signing (`CODE_SIGN_IDENTITY=-`) or
+  SecureStore fails with a white screen.
+- The upload (`xcodebuild -exportArchive`) is blocked for agents; the owner runs it
+  with `!`.
+- Wrangler can get switched to another Cloudflare account by other sessions. Check
+  `npx wrangler whoami` shows hello@thegapco.com before deploys or R2 writes.
+
+**Next up**
+1. Watch 1.0 review. On approval: merge `build-46-duo` into main, bump to build 48,
+   archive, create version 1.1 (or 1.0.1) with the Duo screenshots, and ask the owner
+   before submitting.
+2. Owner: accept the Paid Applications Schedule and the latest Developer Program
+   License Agreement in ASC (Business).
+3. Optional Duo follow-ups:
+   - The tab bar sits only in the left half when fully open (a native UIHinge module
+     was deferred).
+   - Signed-in screens on the Duo were only checked via the screenshot seed data.
 
 ---
 
@@ -74,7 +177,7 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
 - Security work, deploy steps and remaining owner decisions: see BLOCKED.md entries
   dated 2026-10-18.
 
-## 0. RESUME HERE — status as of 2026-10-15
+## 0. Status as of 2026-10-15 (historical)
 
 **Build 42 is submitted for External TestFlight beta review** (state
 WAITING_FOR_REVIEW, submitted 2026-10-14 via the ASC API). External group
