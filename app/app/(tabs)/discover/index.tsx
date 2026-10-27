@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, FlatList, StyleSheet, RefreshControl } from 'react-native';
+import { View, FlatList, StyleSheet, RefreshControl, Linking } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { EventCard, type EventItem } from '../../../components/EventCard';
 import { EventMapView } from '../../../components/EventMapView';
 import { AppHeader } from '../../../components/AppHeader';
-import { Chip, SegmentedControl, SearchField, IconButton, Skeleton, EventCardSkeleton, EmptyState, ErrorState } from '../../../components/ui';
+import { Chip, SegmentedControl, SearchField, IconButton, Skeleton, EventCardSkeleton, EmptyState, ErrorState, Btn } from '../../../components/ui';
 import { colors, radius, spacing, type as t } from '../../../lib/theme';
 import { onBlocksChanged } from '../../../lib/moderation';
 import { fetchFeed, fetchFavourites, type ApiEvent, type ApiFavourite } from '../../../lib/api';
@@ -98,15 +98,21 @@ export default function DiscoverScreen() {
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
+  // Set when "Near me" was asked for but location isn't available (denied in
+  // the system dialog or earlier). Discover keeps working with the other
+  // filters and shows a short message with a Settings link instead.
+  const [locationDenied, setLocationDenied] = useState(false);
 
   async function requestLocation() {
     setLocationLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
+        setLocationDenied(true);
         setLocationLoading(false);
         return null;
       }
+      setLocationDenied(false);
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const coords = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
       setUserLocation(coords);
@@ -176,6 +182,7 @@ export default function DiscoverScreen() {
 
   async function handleFilterPress(f: Filter) {
     setFilter(f);
+    if (f !== 'Near me') setLocationDenied(false);
     if (f === 'Near me') {
       const coords = userLocation ?? await requestLocation();
       if (coords) loadFeed(coords);
@@ -333,7 +340,17 @@ export default function DiscoverScreen() {
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.action} />
             }
             ListHeaderComponent={
-              <Text style={[t.bodyMd, s.sectionLabel]}>
+              filter === 'Near me' && locationDenied && !userLocation ? (
+                <View style={s.denied} testID="near-me-denied">
+                  <Text style={[t.bodyMd, s.deniedText]}>{tr('feed.nearMeDenied')}</Text>
+                  <Btn
+                    label={tr('feed.openSettings')}
+                    variant="secondary"
+                    small
+                    onPress={() => { Linking.openSettings().catch(() => {}); }}
+                  />
+                </View>
+              ) : <Text style={[t.bodyMd, s.sectionLabel]}>
                 {displayed.length === 0
                   ? tr('feed.noEventsFound')
                   : comingUpCount === 0
@@ -412,6 +429,9 @@ const s = StyleSheet.create({
   // List
   list: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
   sectionLabel: { color: colors.textTertiary, marginBottom: spacing.md },
+
+  denied: { gap: spacing.sm, marginBottom: spacing.md, alignItems: 'flex-start' },
+  deniedText: { color: colors.textSecondary },
 
   // States
   mapSkeleton: { flex: 1 },

@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from '../components/Text';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
-import { Btn, Press } from '../components/ui';
+import { colors, radius, spacing, type as t } from '../lib/theme';
+import { Btn } from '../components/ui';
 import { Icon } from '../components/icons';
 
-// Step 2 of the first-run flow. Explain first, ask second: the OS permission
-// prompt only appears when the person taps the button, never on cold start.
-// Either choice (and any failure) moves on to interests; location is never a
-// gate. Discover picks the permission up on its own if it was granted here.
+// Step 2 of the first-run flow. A short neutral explanation, then exactly one
+// action: "Continue", which always goes straight to the OS permission prompt
+// (App Review 5.1.1(iv): no defer/skip/close path around the request, and no
+// swipe-back out of this screen). Whatever the answer, and on any failure, the
+// flow moves on to interests; location is never a gate. Discover picks the
+// permission up on its own if it was granted here, and falls back to the
+// non-location filters if not.
 export default function OnboardingLocationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -35,6 +38,8 @@ export default function OnboardingLocationScreen() {
 
   return (
     <View style={[s.container, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.xl }]}>
+      {/* No swipe-back: the only way forward is Continue -> system prompt. */}
+      <Stack.Screen options={{ gestureEnabled: false }} />
       <View style={s.hero}>
         <View style={s.iconWrap}>
           <Icon name="locate" size={44} color={colors.action} />
@@ -45,9 +50,6 @@ export default function OnboardingLocationScreen() {
 
       <View style={s.footer}>
         <Btn label={tr('location.allow')} onPress={allow} disabled={asking} />
-        <Press onPress={next} hitSlop={8} style={s.link} accessibilityRole="button" disabled={asking}>
-          <Text style={[t.label, { color: colors.textSecondary }]}>{tr('location.skip')}</Text>
-        </Press>
         <Text style={[t.bodySm, s.note]}>{tr('location.note')}</Text>
       </View>
     </View>
@@ -69,6 +71,5 @@ const s = StyleSheet.create({
   title: { color: colors.textPrimary, textAlign: 'center' },
   body: { color: colors.textSecondary, textAlign: 'center', maxWidth: 320 },
   footer: { gap: spacing.sm },
-  link: { alignItems: 'center', justifyContent: 'center', minHeight: TAP },
   note: { color: colors.textTertiary, textAlign: 'center' },
 });

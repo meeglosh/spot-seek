@@ -29,7 +29,9 @@
     "clearFilters": "Limpar filtros",
     "emptyDefaultTitle": "Ainda não há nada",
     "hostOne": "Organizar festa",
-    "nothingUpcoming": "Nada a caminho"
+    "nothingUpcoming": "Nada a caminho",
+    "nearMeDenied": "A localização está desligada, por isso «Perto de mim» não consegue ordenar por distância. Ativa-a nas Definições ou usa os outros filtros.",
+    "openSettings": "Abrir Definições"
   },
   "card": {
     "today": "Hoje",

@@ -34,6 +34,7 @@
     "pushPromptBody": "Te avisamos el día antes y una hora antes.",
     "pushPromptLater": "Ahora no",
     "pushPromptEnable": "Activar",
+    "pushPromptContinue": "Continuar",
     "typesTitle": "Qué enviarte",
     "typesNote": "Las notificaciones dentro de la app siempre aparecen en tu centro de notificaciones.",
     "channelPush": "Push",

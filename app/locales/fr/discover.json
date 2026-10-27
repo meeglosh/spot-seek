@@ -29,7 +29,9 @@
     "clearFilters": "Effacer les filtres",
     "emptyDefaultTitle": "Rien à l'affiche",
     "hostOne": "Organiser une soirée",
-    "nothingUpcoming": "Rien à venir"
+    "nothingUpcoming": "Rien à venir",
+    "nearMeDenied": "La localisation est désactivée, donc « Près de moi » ne peut pas trier par distance. Activez-la dans les Réglages ou utilisez les autres filtres.",
+    "openSettings": "Ouvrir les Réglages"
   },
   "card": {
     "today": "Aujourd'hui",

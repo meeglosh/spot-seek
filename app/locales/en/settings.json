@@ -34,6 +34,7 @@
     "pushPromptBody": "We'll ping you the day before and an hour before.",
     "pushPromptLater": "Not now",
     "pushPromptEnable": "Turn on",
+    "pushPromptContinue": "Continue",
     "typesTitle": "What to send",
     "typesNote": "In-app notifications always appear in your notification centre.",
     "channelPush": "Push",

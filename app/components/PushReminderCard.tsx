@@ -4,21 +4,28 @@ import { useTranslation } from 'react-i18next';
 import { Text } from './Text';
 import { Press } from './ui';
 import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
-import { enablePush, shouldOfferPushReminder, dismissPushReminderOffer } from '../lib/push';
+import { enablePush, getPushReminderOffer, dismissPushReminderOffer, type PushReminderOffer } from '../lib/push';
 
-// Inline card under the "You're in." confirmation. Asks for push at the moment
-// it makes sense. Renders nothing unless every condition in
-// shouldOfferPushReminder holds; "Not now" is remembered for good, a denied OS
-// prompt hides the card quietly.
+// Inline card under the "You're in." confirmation. Renders nothing unless
+// getPushReminderOffer says so.
+//  - 'ask' (OS permission undetermined): this is a message shown before a
+//    system permission prompt, so it has ONE button, "Continue", which always
+//    goes to the system prompt. No "Not now"; ignoring the card dismisses it.
+//  - 'toggle' (OS permission already granted): a plain feature choice, so it
+//    keeps "Not now" / "Turn on"; "Not now" is remembered for good.
+// A denied OS prompt hides the card quietly (Settings has the link).
 type Phase = 'hidden' | 'offer' | 'busy' | 'done';
 
 export function PushReminderCard({ signedIn }: { signedIn: boolean }) {
   const { t: tr } = useTranslation('settings');
   const [phase, setPhase] = useState<Phase>('hidden');
+  const [mode, setMode] = useState<PushReminderOffer>('none');
 
   useEffect(() => {
     let live = true;
-    shouldOfferPushReminder(signedIn).then((ok) => { if (live && ok) setPhase('offer'); });
+    getPushReminderOffer(signedIn).then((offer) => {
+      if (live && offer !== 'none') { setMode(offer); setPhase('offer'); }
+    });
     return () => { live = false; };
   }, [signedIn]);
 
@@ -48,9 +55,11 @@ export function PushReminderCard({ signedIn }: { signedIn: boolean }) {
       <Text style={[t.bodyLg, s.title]}>{tr('notifications.pushPromptTitle')}</Text>
       <Text style={[t.bodySm, s.body]}>{tr('notifications.pushPromptBody')}</Text>
       <View style={s.actions}>
-        <Press style={s.ghost} onPress={notNow} disabled={phase === 'busy'} accessibilityRole="button">
-          <Text style={[t.button, { color: colors.textSecondary }]}>{tr('notifications.pushPromptLater')}</Text>
-        </Press>
+        {mode === 'toggle' && (
+          <Press style={s.ghost} onPress={notNow} disabled={phase === 'busy'} accessibilityRole="button">
+            <Text style={[t.button, { color: colors.textSecondary }]}>{tr('notifications.pushPromptLater')}</Text>
+          </Press>
+        )}
         <Press
           style={s.primary}
           onPress={turnOn}
@@ -58,7 +67,7 @@ export function PushReminderCard({ signedIn }: { signedIn: boolean }) {
           restOpacity={phase === 'busy' ? 0.6 : 1}
           accessibilityRole="button"
         >
-          <Text style={[t.button, { color: colors.textOnFill }]}>{tr('notifications.pushPromptEnable')}</Text>
+          <Text style={[t.button, { color: colors.textOnFill }]}>{tr(mode === 'ask' ? 'notifications.pushPromptContinue' : 'notifications.pushPromptEnable')}</Text>
         </Press>
       </View>
     </View>

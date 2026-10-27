@@ -29,7 +29,9 @@
     "clearFilters": "Clear filters",
     "emptyDefaultTitle": "Nothing on yet",
     "hostOne": "Host a party",
-    "nothingUpcoming": "Nothing coming up"
+    "nothingUpcoming": "Nothing coming up",
+    "nearMeDenied": "Location is off, so Near me can't sort by distance. Turn it on in Settings, or use the other filters.",
+    "openSettings": "Open Settings"
   },
   "card": {
     "today": "Today",

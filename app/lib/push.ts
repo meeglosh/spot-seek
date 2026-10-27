@@ -73,25 +73,36 @@ export async function refreshPushRegistration(): Promise<void> {
 
 const OFFER_DISMISSED_KEY = 'spotseek_push_offer_dismissed';
 
+export type PushReminderOffer = 'none' | 'ask' | 'toggle';
+
 /**
- * Whether the post-RSVP "Want a reminder?" card should show: signed in, iOS,
- * push not already on, OS permission not denied, and "Not now" never tapped.
+ * What the post-RSVP "Want a reminder?" card should be: signed in, iOS, push
+ * not already on, and "Not now" (toggle mode only) never tapped.
+ *  - 'ask': OS permission still undetermined. The card's single action leads
+ *    straight to the system prompt (no defer button: App Review 5.1.1(iv)).
+ *  - 'toggle': OS permission already granted, so it is a plain feature choice
+ *    and may keep both options.
+ *  - 'none': hidden. Includes OS-denied: we never re-show a pre-prompt there;
+ *    Settings carries the "Open Settings" link for that case.
  * Never prompts by itself; the OS dialog only appears from enablePush().
  */
-export async function shouldOfferPushReminder(signedIn: boolean): Promise<boolean> {
-  if (!signedIn || Platform.OS !== 'ios') return false;
+export async function getPushReminderOffer(signedIn: boolean): Promise<PushReminderOffer> {
+  if (!signedIn || Platform.OS !== 'ios') return 'none';
   try {
-    if (await SecureStore.getItemAsync(OFFER_DISMISSED_KEY)) return false;
     const perm = await Notifications.getPermissionsAsync();
-    if (perm.status === 'denied') return false;
+    if (perm.status === 'denied') return 'none';
     const prefs = await fetchNotificationPrefs();
-    return !!prefs && !prefs.pushEnabled;
+    if (!prefs || prefs.pushEnabled) return 'none';
+    if (perm.granted) {
+      return (await SecureStore.getItemAsync(OFFER_DISMISSED_KEY)) ? 'none' : 'toggle';
+    }
+    return 'ask';
   } catch {
-    return false;
+    return 'none';
   }
 }
 
-/** Remembers "Not now" so the card never comes back. */
+/** Remembers "Not now" (toggle mode only) so the card never comes back. */
 export async function dismissPushReminderOffer(): Promise<void> {
   try {
     await SecureStore.setItemAsync(OFFER_DISMISSED_KEY, '1');

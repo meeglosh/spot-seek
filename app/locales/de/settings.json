@@ -34,6 +34,7 @@
     "pushPromptBody": "Wir melden uns am Vortag und eine Stunde vorher.",
     "pushPromptLater": "Nicht jetzt",
     "pushPromptEnable": "Aktivieren",
+    "pushPromptContinue": "Weiter",
     "typesTitle": "Was wir dir schicken",
     "typesNote": "Mitteilungen in der App erscheinen immer in deiner Mitteilungszentrale.",
     "channelPush": "Push",

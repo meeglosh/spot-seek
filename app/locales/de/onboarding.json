@@ -12,9 +12,8 @@
   },
   "location": {
     "title": "Partys in deiner Nähe",
-    "body": "Teile deinen Standort und Entdecken zeigt dir zuerst die Räume in deiner Nähe. Wir nutzen ihn nur, während die App geöffnet ist.",
-    "allow": "Standort teilen",
-    "skip": "Jetzt nicht",
+    "body": "Entdecken nutzt deinen Standort, um zuerst die Räume in deiner Nähe zu zeigen. Er wird nur verwendet, während die App geöffnet ist.",
+    "allow": "Weiter",
     "note": "Du kannst das jederzeit in den Einstellungen ändern."
   }
 }
