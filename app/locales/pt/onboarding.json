@@ -12,9 +12,8 @@
   },
   "location": {
     "title": "Festas perto de ti",
-    "body": "Partilha a tua localização e o Descobrir mostra primeiro as salas mais próximas. Só a usamos enquanto a app está aberta.",
-    "allow": "Partilhar a minha localização",
-    "skip": "Agora não",
+    "body": "O Descobrir usa a tua localização para mostrar primeiro as salas mais próximas. Só é usada enquanto a app está aberta.",
+    "allow": "Continuar",
     "note": "Podes mudar isto quando quiseres nas Definições."
   }
 }

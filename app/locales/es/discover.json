@@ -29,7 +29,9 @@
     "clearFilters": "Borrar filtros",
     "emptyDefaultTitle": "Aún no hay nada",
     "hostOne": "Organizar una fiesta",
-    "nothingUpcoming": "Nada próximo"
+    "nothingUpcoming": "Nada próximo",
+    "nearMeDenied": "La ubicación está desactivada, así que «Cerca de mí» no puede ordenar por distancia. Actívala en Ajustes o usa los otros filtros.",
+    "openSettings": "Abrir Ajustes"
   },
   "card": {
     "selectHint": "La muestra en el mapa",

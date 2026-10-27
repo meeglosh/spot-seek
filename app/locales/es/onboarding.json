@@ -12,9 +12,8 @@
   },
   "location": {
     "title": "Fiestas cerca de ti",
-    "body": "Comparte tu ubicación y Descubrir empieza por los sitios más cercanos. Solo la usamos mientras la app está abierta.",
-    "allow": "Compartir mi ubicación",
-    "skip": "Ahora no",
+    "body": "Descubrir usa tu ubicación para empezar por los sitios más cercanos. Solo se usa mientras la app está abierta.",
+    "allow": "Continuar",
     "note": "Puedes cambiarlo cuando quieras en Ajustes."
   }
 }

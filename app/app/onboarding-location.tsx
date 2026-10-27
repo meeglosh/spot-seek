@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '../components/Text';
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, TAP, type as t } from '../lib/theme';
-import { Btn, Press } from '../components/ui';
+import { colors, radius, spacing, type as t } from '../lib/theme';
+import { Btn } from '../components/ui';
 import { Icon } from '../components/icons';
 import { withReadable } from '../components/Readable';
 import { isFoldedSplit } from '../lib/readableWidth';
 import { trailingOffset } from '../lib/safeArea';
 
-// Step 2 of the first-run flow. Explain first, ask second: the OS permission
-// prompt only appears when the person taps the button, never on cold start.
-// Either choice (and any failure) moves on to interests; location is never a
-// gate. Discover picks the permission up on its own if it was granted here.
+// Step 2 of the first-run flow. A short neutral explanation, then exactly one
+// action: "Continue", which always goes straight to the OS permission prompt
+// (App Review 5.1.1(iv): no defer/skip/close path around the request, and no
+// swipe-back out of this screen). Whatever the answer, and on any failure, the
+// flow moves on to interests; location is never a gate. Discover picks the
+// permission up on its own if it was granted here, and falls back to the
+// non-location filters if not.
 function OnboardingLocationScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -49,9 +52,6 @@ function OnboardingLocationScreen() {
   const footer = (
       <View style={s.footer}>
         <Btn label={tr('location.allow')} onPress={allow} disabled={asking} />
-        <Press onPress={next} hitSlop={8} style={s.link} accessibilityRole="button" disabled={asking}>
-          <Text style={[t.label, { color: colors.textSecondary }]}>{tr('location.skip')}</Text>
-        </Press>
         <Text style={[t.bodySm, s.note]}>{tr('location.note')}</Text>
       </View>
   );
@@ -61,6 +61,8 @@ function OnboardingLocationScreen() {
   if (isFoldedSplit(width, height)) {
     return (
       <View style={[s.container, s.foldedRow, pad]}>
+        {/* No swipe-back: the only way forward is Continue -> system prompt. */}
+        <Stack.Screen options={{ gestureEnabled: false }} />
         <View style={s.foldedPane}>{hero}</View>
         <View style={[s.foldedPane, s.foldedActions, { paddingRight: trailingOffset(0, insets) }]}>{footer}</View>
       </View>
@@ -69,6 +71,8 @@ function OnboardingLocationScreen() {
 
   return (
     <View style={[s.container, pad]}>
+      {/* No swipe-back: the only way forward is Continue -> system prompt. */}
+      <Stack.Screen options={{ gestureEnabled: false }} />
       {hero}
       {footer}
     </View>
@@ -93,7 +97,6 @@ const s = StyleSheet.create({
   foldedPane: { flex: 1 },
   foldedActions: { justifyContent: 'center' },
   footer: { gap: spacing.sm },
-  link: { alignItems: 'center', justifyContent: 'center', minHeight: TAP },
   note: { color: colors.textTertiary, textAlign: 'center' },
 });
 

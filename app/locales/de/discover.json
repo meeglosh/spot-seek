@@ -29,7 +29,9 @@
     "clearFilters": "Filter löschen",
     "emptyDefaultTitle": "Noch nichts los",
     "hostOne": "Party planen",
-    "nothingUpcoming": "Nichts in Sicht"
+    "nothingUpcoming": "Nichts in Sicht",
+    "nearMeDenied": "Der Standort ist aus, daher kann „In der Nähe“ nicht nach Entfernung sortieren. Aktiviere ihn in den Einstellungen oder nutze die anderen Filter.",
+    "openSettings": "Einstellungen öffnen"
   },
   "card": {
     "selectHint": "Zeigt sie auf der Karte",

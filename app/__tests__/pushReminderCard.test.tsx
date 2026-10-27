@@ -1,4 +1,5 @@
-// Post-RSVP "Want a reminder before it starts?" card.
+// Post-RSVP "Want a reminder before it starts?" card (App Review 5.1.1(iv): when the OS
+// permission is undetermined the card has a single Continue button).
 // react-test-renderer ships no types in this repo; it is only used here.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const TestRenderer = require('react-test-renderer');
@@ -75,31 +76,64 @@ beforeEach(() => {
   jest.spyOn(console, 'error').mockImplementation(() => {});
 });
 
-describe('PushReminderCard', () => {
-  it('shows when signed in, push is off, permission is not denied and Not now was never tapped', async () => {
+function labels(r: Mounted) {
+  return r.root.findAllByType(Press).map((p) => p.props.children);
+}
+
+describe('PushReminderCard, permission undetermined (pre-prompt)', () => {
+  it('shows when signed in, push is off and permission is undetermined', async () => {
     const r = await mount();
     expect(text(r.toJSON())).toContain('notifications.pushPromptTitle');
   });
 
-  it('shows when the OS permission is granted but push is not enabled for the user', async () => {
-    mockGetPerms.mockResolvedValue({ status: 'granted', granted: true, canAskAgain: true });
+  it('the only button is Continue; there is no defer button', async () => {
     const r = await mount();
-    expect(text(r.toJSON())).toContain('notifications.pushPromptTitle');
+    expect(r.root.findAllByType(Press)).toHaveLength(1);
+    expect(text(r.toJSON())).toContain('notifications.pushPromptContinue');
+    expect(text(r.toJSON())).not.toContain('notifications.pushPromptLater');
+    expect(text(r.toJSON())).not.toContain('notifications.pushPromptEnable');
   });
 
-  it.each([
-    ['guest', async () => mount(false)],
-    ['push already enabled', async () => { mockFetchPrefs.mockResolvedValue({ pushEnabled: true }); return mount(); }],
-    ['OS permission denied', async () => { mockGetPerms.mockResolvedValue({ status: 'denied', granted: false, canAskAgain: false }); return mount(); }],
-    ['Not now tapped before', async () => { store.spotseek_push_offer_dismissed = '1'; return mount(); }],
-    ['prefs unavailable', async () => { mockFetchPrefs.mockResolvedValue(null); return mount(); }],
-    ['not iOS', async () => { Platform.OS = 'android'; return mount(); }],
-  ])('stays hidden: %s', async (_name, run) => {
-    const r = await run();
+  it('Continue calls the system permission request, then saves the preference', async () => {
+    const r = await mount();
+    expect(mockRequestPerms).not.toHaveBeenCalled();
+    await tap(r, 0);
+    expect(mockRequestPerms).toHaveBeenCalledTimes(1);
+    expect(mockUpdatePrefs).toHaveBeenCalledWith({ pushEnabled: true });
+    expect(text(r.toJSON())).toContain('notifications.pushPromptDone');
+  });
+
+  it('hides quietly when the OS prompt is denied, without saving the preference', async () => {
+    mockRequestPerms.mockResolvedValue({ status: 'denied', granted: false, canAskAgain: false });
+    const r = await mount();
+    await tap(r, 0);
+    expect(mockRequestPerms).toHaveBeenCalledTimes(1);
     expect(text(r.toJSON())).toBe('');
+    expect(mockUpdatePrefs).not.toHaveBeenCalled();
+    expect(store.spotseek_push_offer_dismissed).toBeUndefined();
+  });
+});
+
+describe('PushReminderCard, permission already granted (feature toggle)', () => {
+  beforeEach(() => {
+    mockGetPerms.mockResolvedValue({ status: 'granted', granted: true, canAskAgain: true });
   });
 
-  it('"Not now" hides the card and persists so it never returns', async () => {
+  it('shows both choices', async () => {
+    const r = await mount();
+    expect(r.root.findAllByType(Press)).toHaveLength(2);
+    expect(text(r.toJSON())).toContain('notifications.pushPromptEnable');
+    expect(labels(r)).toHaveLength(2);
+  });
+
+  it('Turn on enables reminders and swaps to a confirmation', async () => {
+    const r = await mount();
+    await tap(r, 1);
+    expect(mockUpdatePrefs).toHaveBeenCalledWith({ pushEnabled: true });
+    expect(text(r.toJSON())).toContain('notifications.pushPromptDone');
+  });
+
+  it('declining the feature persists so the card never returns', async () => {
     const r = await mount();
     await tap(r, 0);
     expect(text(r.toJSON())).toBe('');
@@ -107,22 +141,18 @@ describe('PushReminderCard', () => {
     const again = await mount();
     expect(text(again.toJSON())).toBe('');
   });
+});
 
-  it('"Turn on" runs the enable flow and swaps to a confirmation', async () => {
-    const r = await mount();
-    await tap(r, 1);
-    expect(mockRequestPerms).toHaveBeenCalled();
-    expect(mockUpdatePrefs).toHaveBeenCalledWith({ pushEnabled: true });
-    expect(text(r.toJSON())).toContain('notifications.pushPromptDone');
-    expect(text(r.toJSON())).not.toContain('notifications.pushPromptEnable');
-  });
-
-  it('hides quietly when the OS prompt is denied, without remembering a dismissal', async () => {
-    mockRequestPerms.mockResolvedValue({ status: 'denied', granted: false, canAskAgain: false });
-    const r = await mount();
-    await tap(r, 1);
+describe('PushReminderCard stays hidden', () => {
+  it.each([
+    ['guest', async () => mount(false)],
+    ['push already enabled', async () => { mockFetchPrefs.mockResolvedValue({ pushEnabled: true }); return mount(); }],
+    ['OS permission denied (never re-show a pre-prompt; Settings has the link)', async () => { mockGetPerms.mockResolvedValue({ status: 'denied', granted: false, canAskAgain: false }); return mount(); }],
+    ['prefs unavailable', async () => { mockFetchPrefs.mockResolvedValue(null); return mount(); }],
+    ['not iOS', async () => { Platform.OS = 'android'; return mount(); }],
+  ])('%s', async (_name, run) => {
+    const r = await run();
     expect(text(r.toJSON())).toBe('');
-    expect(mockUpdatePrefs).not.toHaveBeenCalled();
-    expect(store.spotseek_push_offer_dismissed).toBeUndefined();
+    expect(mockRequestPerms).not.toHaveBeenCalled();
   });
 });

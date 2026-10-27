@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Pressable, StyleSheet, Animated, ScrollView, Platform, Alert,
+  View, Pressable, StyleSheet, Animated, ScrollView, Platform, Alert, Linking,
 } from 'react-native';
 import { Text } from './Text';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
@@ -140,7 +140,11 @@ export function EventMapView({ events, userLocation, initialRegion, selectedId, 
         ({ status } = await Location.requestForegroundPermissionsAsync());
       }
       if (status !== 'granted') {
-        Alert.alert(tr('map.locationPermission'));
+        // Denied in the system dialog (or earlier): say what's missing and link to Settings.
+        Alert.alert(tr('map.locationPermission'), undefined, [
+          { text: trCommon('cancel'), style: 'cancel' },
+          { text: tr('feed.openSettings'), onPress: () => { Linking.openSettings().catch(() => {}); } },
+        ]);
         return;
       }
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });

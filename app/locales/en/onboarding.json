@@ -12,9 +12,8 @@
   },
   "location": {
     "title": "See parties near you",
-    "body": "Share your location and Discover leads with the rooms closest to you. We only use it while the app is open.",
-    "allow": "Share my location",
-    "skip": "Not now",
+    "body": "Discover uses your location to lead with the rooms closest to you. It's only used while the app is open.",
+    "allow": "Continue",
     "note": "You can change this any time in Settings."
   }
 }

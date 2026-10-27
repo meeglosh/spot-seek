@@ -34,6 +34,7 @@
     "pushPromptBody": "On vous prévient la veille et une heure avant.",
     "pushPromptLater": "Pas maintenant",
     "pushPromptEnable": "Activer",
+    "pushPromptContinue": "Continuer",
     "typesTitle": "Ce que l'on vous envoie",
     "typesNote": "Les notifications dans l'app apparaissent toujours dans votre centre de notifications.",
     "channelPush": "Push",

@@ -12,9 +12,8 @@
   },
   "location": {
     "title": "Des soirées près de chez vous",
-    "body": "Partagez votre position et Découvrir met en avant les salles les plus proches. Nous ne l'utilisons que lorsque l'app est ouverte.",
-    "allow": "Partager ma position",
-    "skip": "Plus tard",
+    "body": "Découvrir utilise votre position pour mettre en avant les salles les plus proches. Elle n'est utilisée que lorsque l'app est ouverte.",
+    "allow": "Continuer",
     "note": "Vous pouvez changer cela à tout moment dans les Réglages."
   }
 }
