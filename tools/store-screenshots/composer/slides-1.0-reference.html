@@ -1,0 +1,88 @@
+<!doctype html><html><head><meta charset="utf-8"><title>SpotSeek slides</title>
+<style>
+@font-face{font-family:Anton;src:url(fonts/Anton_400Regular.ttf)}
+@font-face{font-family:SG;font-weight:500;src:url(fonts/SpaceGrotesk_500Medium.ttf)}
+@font-face{font-family:SG;font-weight:600;src:url(fonts/SpaceGrotesk_600SemiBold.ttf)}
+@font-face{font-family:SG;font-weight:700;src:url(fonts/SpaceGrotesk_700Bold.ttf)}
+:root{--ink:#0f0f12;--l1:#1c1c1c;--l2:#242424;--l3:#2c2c2c;--paper:#f2f1ec;--cyan:#00e5ff;--orange:#ff5e07;--lime:#b4e100;--white:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);overflow:hidden;width:100%;height:100%}
+.slide{position:relative;overflow:hidden;contain:paint;background:var(--bg,var(--ink));color:var(--fg,#fff)}
+.abs{position:absolute}
+.h{position:absolute;font-family:Anton;text-transform:uppercase;line-height:.95;white-space:nowrap;letter-spacing:.005em;z-index:5}
+.sub{position:absolute;font-family:SG;font-weight:700;text-transform:uppercase;letter-spacing:.16em;z-index:5}
+.dev{position:absolute;width:1000px;transform-origin:0 0;background:#000;border:2px solid #34343a;box-shadow:0 0 0 10px #17171b}
+.dev .screen{position:absolute;overflow:hidden;background:var(--ink)}
+.dev .screen img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.dev .isl{display:none;position:absolute;left:50%;background:#000;border-radius:99px}
+.phone{height:2121px;border-radius:150px}
+.phone .screen{inset:22px;border-radius:128px}
+.phone .isl{width:290px;height:84px;top:44px;margin-left:-145px}
+.ipad{height:1313px;border-radius:76px}
+.ipad .screen{inset:30px;border-radius:50px}
+.ipad .isl{display:none}
+.ov{position:absolute;z-index:8}
+.pill{display:inline-flex;align-items:center;font-family:Anton;text-transform:uppercase;white-space:nowrap}
+.sg{font-family:SG}
+</style></head><body>
+<div id="root"></div>
+<script src="config.js"></script>
+<script>
+const q=new URLSearchParams(location.search);const S=+q.get('s')||1, D=q.get('d')||'iphone';
+const T=D==='iphone'?{W:1320,H:2868,hs:310,ht:120,hx:80,sub:46,sc:1.0,dx:160,dy:860,photoH:1150,pad:80}
+                    :{W:2064,H:2752,hs:380,ht:150,hx:130,sub:58,sc:1.5,dx:282,dy:1040,photoH:1000,pad:130};
+const sh=slot=>{const l=window.SHOTS[D][slot];window._l=window._l||{};window._l[slot]=l;
+ return `<img src="${l[0]}" data-slot="${slot}" data-i="0" onerror="var l=window._l[this.dataset.slot],i=+this.dataset.i+1;if(l[i]){this.dataset.i=i;this.src=l[i]}">`};
+const dev=(slot,o)=>`<div class="dev ${D==='iphone'?'phone':'ipad'}" style="left:${o.x??T.dx}px;top:${o.y??T.dy}px;transform:rotate(${o.rot||0}deg) scale(${o.sc??T.sc})"><div class="screen">${sh(slot)}</div><div class="isl"></div>${D==='iphone'?(o.ov||''):`<div style="position:absolute;left:0;top:0;width:${1000/(o.ovs||.7)}px;height:1px;transform:scale(${o.ovs||.7});transform-origin:0 0">${o.ovi||o.ov||''}</div>`}</div>`;
+const head=(lines,o={})=>`<div class="h" style="left:${T.hx}px;top:${o.top??T.ht}px;font-size:${o.fs??T.hs}px;color:${o.c||'inherit'}">${lines.join('<br>')}</div>`;
+const sub=(t,top,o={})=>`<div class="sub" style="left:${T.hx}px;top:${top}px;font-size:${T.sub}px;color:${o.c||'var(--cyan)'}">${t}</div>`;
+const pin=(c,s)=>`<svg width="${s}" height="${s*1.3}" viewBox="0 0 40 52"><path d="M20 2C10 2 2 10 2 20c0 13 18 30 18 30s18-17 18-30C38 10 30 2 20 2z" fill="${c}" stroke="#0f0f12" stroke-width="3"/><circle cx="20" cy="20" r="7" fill="#0f0f12"/></svg>`;
+const av=(t,c,fg='#0f0f12')=>`<span style="display:inline-flex;width:112px;height:112px;border-radius:99px;background:${c};color:${fg};border:6px solid #0f0f12;align-items:center;justify-content:center;font:700 52px SG;margin-right:-22px">${t}</span>`;
+const hostScale=D==='iphone'?1:1; 
+const slides={
+1:()=>`<div class="abs" style="left:0;top:0;width:${T.W}px;height:${T.photoH}px;background:#0f0f12 url(${PHOTOS.crowd}) 50% 35%/cover"></div>
+ <div class="abs" style="left:0;top:0;width:${T.W}px;height:${T.photoH}px;background:rgba(15,15,18,.52)"></div>
+ ${head(['NEVER WATCH','ALONE.'],{top:T.ht,fs:T.hs})}
+ <div class="sub" style="left:${T.hx}px;top:0;font-size:${T.sub}px;background:var(--cyan);color:#0f0f12;padding:20px 30px;letter-spacing:.12em;border-radius:99px">Find watch parties near you</div>
+ ${dev('discover',{y:T.photoH-(D==='iphone'?60:0)})}`,
+2:()=>`${head(['FIND YOUR','CROWD.'])}${sub('Parties near you, tonight',0)}
+ ${dev('map',{ov:`
+  <div class="ov pill" style="right:-120px;top:300px;background:var(--orange);color:#0f0f12;font-size:170px;padding:14px 56px 8px 44px;border-radius:40px;transform:rotate(7deg);box-shadow:0 0 0 12px var(--ink)"><i style="width:56px;height:56px;border-radius:99px;background:#0f0f12;margin-right:30px;display:inline-block"></i>ON NOW</div>
+  <div class="ov" style="left:-90px;top:980px;transform:rotate(-8deg)">${pin('#00e5ff',260)}</div>
+  <div class="ov" style="right:-60px;top:1240px;transform:rotate(9deg)">${pin('#ff5e07',230)}</div>
+  <div class="ov" style="left:${D==='iphone'?80:420}px;top:${D==='iphone'?1500:1130}px;transform:rotate(-5deg)">${pin('#b4e100',190)}</div>`})}`,
+3:()=>`${head(['RSVP IN','ONE TAP.'])}${sub('One tap. You\'re on the list.',0)}
+ ${dev('rsvp',{ov:`
+  <div class="ov" style="left:-110px;right:-110px;top:270px;background:var(--lime);color:#0f0f12;border-radius:90px;padding:70px 90px 64px;transform:rotate(-4deg);box-shadow:0 0 0 14px var(--ink)">
+   <div style="display:flex;align-items:center"><span style="width:170px;height:170px;flex:none;border-radius:99px;background:#0f0f12;display:inline-flex;align-items:center;justify-content:center"><svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#b4e100" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg></span>
+   <span style="font:400 215px/0.9 Anton;margin-left:44px;white-space:nowrap;text-transform:uppercase">You're in.</span></div>
+   <div class="sg" style="font-weight:700;font-size:62px;margin-top:44px;letter-spacing:.02em">Finals night rooftop</div>
+   <div class="sg" style="font-weight:600;font-size:54px;margin-top:8px">Sun, Oct 18 at 6:30 PM PDT</div>
+  </div>`})}`,
+4:()=>`${head(['HOST THE','PARTY.'])}${sub('Bar, couch or rooftop. Your call.',0,{c:'#0f0f12'})}
+ ${dev('host',{ovs:.5,ovi:`
+  <div class="ov pill" style="right:-20px;top:215px;background:#0f0f12;color:#fff;font-size:160px;padding:20px 70px 10px;border-radius:120px;transform:rotate(4deg)">Bar</div>
+  <div class="ov pill" style="right:-30px;top:495px;background:var(--lime);color:#0f0f12;font-size:160px;padding:20px 70px 10px;border-radius:120px;transform:rotate(-3deg);box-shadow:0 0 0 12px #0f0f12">Living room</div>
+  <div class="ov pill" style="right:-10px;top:775px;background:#0f0f12;color:#fff;font-size:160px;padding:20px 70px 10px;border-radius:120px;transform:rotate(3deg)">Rooftop</div>`,ov:`
+  <div class="ov pill" style="right:-130px;top:355px;background:#0f0f12;color:#fff;font-size:160px;padding:20px 70px 10px;border-radius:120px;transform:rotate(-5deg)">Bar</div>
+  <div class="ov pill" style="left:-110px;top:640px;background:var(--lime);color:#0f0f12;font-size:160px;padding:20px 70px 10px;border-radius:120px;transform:rotate(4deg);box-shadow:0 0 0 12px #0f0f12">Living room</div>
+  <div class="ov pill" style="right:-110px;top:850px;background:#0f0f12;color:#fff;font-size:160px;padding:20px 70px 10px;border-radius:120px;transform:rotate(-3deg)">Rooftop</div>`})}`,
+5:()=>`${head(['NEVER MISS','THE MOMENT.'])}${sub('Reminders before the party starts',0,{c:'#0f0f12'})}
+ ${dev('notifs',{ov:`
+  ${[['Happening now','Derby day at Golden Hour is on now. Grab your seat.','33m ago',(D==='iphone'?310:165),-110,-3],['You\'re in','Your spot at Sunday kickoff + tacos is confirmed.','3h ago',(D==='iphone'?755:600),-80,2.5],['New party near you','Finals night rooftop is happening nearby tonight.','5h ago',(D==='iphone'?1200:1035),-110,-2]].map(n=>`<div class="ov sg" style="left:${n[4]}px;width:1060px;top:${n[3]}px;background:var(--paper);color:#0f0f12;border-radius:70px;padding:56px 70px;transform:rotate(${n[5]}deg);box-shadow:0 0 0 12px #0f0f12"><div style="font-weight:700;font-size:76px">${n[0]}</div><div style="font-weight:500;font-size:58px;line-height:1.18;margin-top:12px;color:#2c2c2c">${n[1]}</div><div style="font-weight:600;font-size:46px;margin-top:16px;color:#6a6a70">${n[2]}</div></div>`).join('')}`})}`,
+6:()=>`<div class="abs" style="left:0;top:0;width:${T.W}px;height:${T.photoH}px;background:#0f0f12 url(${PHOTOS.smile}) 50% 30%/cover"></div>
+ <div class="abs" style="left:0;top:${T.photoH-12}px;width:${T.W}px;height:24px;background:var(--lime)"></div>
+ <div class="abs" style="left:${T.hx}px;right:${T.hx}px;top:${T.photoH+(D==='iphone'?50:60)}px;bottom:${D==='iphone'?80:70}px;display:flex;flex-direction:column;justify-content:space-between">
+ <div class="h" style="position:static;font-size:${D==='iphone'?T.hs*1.02:T.hs*0.9}px">${D==='iphone'?'FREE TO<br>JOIN.':'FREE TO JOIN.'}</div>
+ <div style="display:grid;gap:${D==='iphone'?44:34}px">
+ ${['Host-confirmed parties','Directions to the door','Report & block built in','Host at a bar, couch or rooftop'].map((t,i)=>`<div class="sg" style="display:flex;align-items:center;gap:36px;font-weight:700;font-size:${T.sub*1.2}px"><span style="flex:none;width:${T.sub*1.9}px;height:${T.sub*1.9}px;border-radius:99px;background:${['#b4e100','#00e5ff','#ff5e07','#b4e100'][i]};display:inline-flex;align-items:center;justify-content:center"><svg width="55%" height="55%" viewBox="0 0 24 24" fill="none" stroke="#0f0f12" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg></span>${t}</div>`).join('')}</div>
+ <div style="display:flex;align-items:center;gap:36px"><img src="icon.png" style="width:${T.sub*2.6}px;height:${T.sub*2.6}px;border-radius:${T.sub*.6}px"><span style="font:400 ${T.sub*2.4}px Anton;letter-spacing:.02em">SPOT SEEK</span></div></div>`
+};
+const bgs={1:'var(--ink)',2:'var(--ink)',3:'var(--ink)',4:'var(--cyan)',5:'var(--orange)',6:'var(--ink)'};
+const fgs={4:'#0f0f12',5:'#0f0f12'};
+const el=document.createElement('div');el.className='slide';el.style.cssText=`width:${T.W}px;height:${T.H}px;--bg:${bgs[S]};--fg:${fgs[S]||'#fff'}`;
+el.innerHTML=slides[S]();document.getElementById('root').appendChild(el);
+const fit=()=>{const hh=el.querySelector('.h');if(hh){const maxW=T.W-2*T.hx;let f=parseFloat(hh.style.fontSize);while(hh.scrollWidth>maxW&&f>100){f-=4;hh.style.fontSize=f+'px'}
+ const sb=el.querySelector('.sub');if(sb&&S!==6){sb.style.top=(hh.offsetTop+hh.offsetHeight+T.sub*.55)+'px'}}
+};
+document.fonts.ready.then(()=>{fit();document.body.dataset.ready=1});</script></body></html>
