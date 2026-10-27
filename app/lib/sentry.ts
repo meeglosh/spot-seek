@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
+import * as Device from 'expo-device';
 import { scrubEvent, scrubBreadcrumb } from './sentryScrub';
 
 // Public ingest DSN (safe to commit). Crash and error reporting for the beta.
@@ -9,14 +10,29 @@ const SENTRY_DSN =
 const version = Constants.expoConfig?.version ?? '0.0.0';
 const buildNumber = Constants.expoConfig?.ios?.buildNumber ?? '0';
 
-/** Sending is off in dev unless EXPO_PUBLIC_SENTRY_DEV=1. */
-export const sentryEnabled = !__DEV__ || process.env.EXPO_PUBLIC_SENTRY_DEV === '1';
+const devOverride = process.env.EXPO_PUBLIC_SENTRY_DEV === '1';
+
+/**
+ * Real-device release builds report. Simulators/emulators and dev builds do not,
+ * unless EXPO_PUBLIC_SENTRY_DEV=1 deliberately turns it on (then environment is
+ * 'simulator' / 'development', never 'testflight').
+ */
+export const sentryEnabled = (Device.isDevice && !__DEV__) || devOverride;
+
+export const sentryEnvironment = !Device.isDevice
+  ? 'simulator'
+  : __DEV__
+    ? 'development'
+    : 'testflight';
 
 export function initSentry(): void {
+  // Skip init entirely when disabled so the native crash handler is never
+  // installed either. Sentry.wrap/ErrorBoundary/setUser are safe without init.
+  if (!sentryEnabled) return;
   Sentry.init({
     dsn: SENTRY_DSN,
-    enabled: sentryEnabled,
-    environment: __DEV__ ? 'development' : 'testflight',
+    enabled: true,
+    environment: sentryEnvironment,
     release: `com.spotseek.app@${version}+${buildNumber}`,
     dist: buildNumber,
     sendDefaultPii: false,
