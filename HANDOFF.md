@@ -1,6 +1,6 @@
 # SpotSeek — Session Handoff
 
-_Last updated: 2026-10-27. Read this first when resuming in a new session._
+_Last updated: 2026-11-05. Read this first when resuming in a new session._
 
 This is a running snapshot of where the project stands so work can continue
 without re-deriving context. For the immutable operating rules see `CLAUDE.md`;
@@ -25,9 +25,13 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
 
 ---
 
-## 0d. RESUME HERE — status as of 2026-10-27
+## 0d. RESUME HERE — status as of 2026-11-05 (mostly unchanged since 2026-10-27)
 
 **App Store**
+- **Still WAITING_FOR_REVIEW on 2026-11-05** (checked via the ASC API), 9 days after
+  the resubmission, which is unusually long. Owner to confirm the agreements in
+  "Next up" item 2 are accepted (not verified as the cause) and otherwise consider
+  contacting Apple.
 - 1.0 (build 45) was **rejected 2026-10-27** under Guideline 5.1.1(iv): the location
   pre-permission screen had a "Share my location" button and a "Not now" defer.
 - The fix is on main as **build 47**: every message shown before a system permission
@@ -43,12 +47,35 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
   1. PATCH the appStoreVersion build relationship.
   2. PATCH the rejected `reviewSubmissionItems/{id}` with `resolved: true`.
   3. PATCH `reviewSubmissions/{id}` with `submitted: true`.
-- **Reviewer demo parties** were re-dated to Thu Oct 29 5pm and Sun Nov 1 6pm PT, so
-  they show under Discover's default "This week" (the next 7 days). Both now have
-  cover photos in R2.
-  - If review runs past Oct 29, re-date them again. A reviewer who sees an empty
-    "This week" may reject.
-  - Only `demo@spotseek.app` RSVPs to them.
+- **Reviewer demo parties** were re-dated on 2026-11-04 so they show under Discover's
+  default "This week" (the next 7 days). They were the only parties in the live feed,
+  so without them "This week" is empty:
+  - "Demo watch party: big game night" (`1f06897c-...`, hosted by `demo@`): Sun Nov 8,
+    5-8pm PT. Cover in R2.
+  - "Season finale night" (`c2b1b0e9-...`, hosted by `demo-host@`, `demo@` is going):
+    Tue Nov 10, 6-9:30pm PT. Cover in R2.
+  - "Awards night on the roof" (`fc11e414-babb-418e-a159-7c04e2aa7bc5`, hosted by
+    `demo-host@`, no RSVPs): Tue Nov 10, 7-10pm PT. NEW on 2026-11-04, so the review
+    notes' "open any upcoming party you're not going to and tap RSVP" works for the
+    demo account. Its cover is the landing-page asset
+    `/site/rooftop-1536.e43efa47.webp`, not R2, so renaming that file breaks the
+    cover. The photo shows an Oscar-like statuette on screen; swap it for the bar or
+    living-room asset if that's a concern.
+  - **If review runs past Nov 8, re-date again; after Nov 10 "This week" is empty.** A
+    reviewer who sees an empty "This week" may reject.
+  - How to re-date: guarded `UPDATE events` on Neon branch `production`
+    (`br-dark-term-att297p4`). Pass that branch explicitly: the Neon default branch is
+    `root-empty`. Direct SQL sends no update notifications. Create demo parties with
+    SQL too, since the API can fan out favourite-nearby notifications to real users.
+  - Reminder and review-request dedupe is per user+event+type, so after a re-date old
+    notifications block new ones and go stale. The 3 stale Season finale notifications
+    for `demo@` were deleted on 2026-11-04, so reminders fire again around Nov 9-10
+    (email to `demo@spotseek.app`) and a review request follows the party. Check
+    `demo@`'s inbox after any later re-date.
+  - `demo@spotseek.app` is the only `going` RSVP. (`meeglosh+2@gmail.com` has a
+    cancelled RSVP on game night.)
+  - These parties are public. 1.0 releases automatically on approval, so remove or
+    hide them soon after.
 - Main is tagged **`v1.0-build47`**.
 
 **TestFlight**
@@ -114,11 +141,14 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
   with `!`.
 - Wrangler can get switched to another Cloudflare account by other sessions. Check
   `npx wrangler whoami` shows hello@thegapco.com before deploys or R2 writes.
+  **As of 2026-11-04 it was on info@silverplatteraudio.com**: the owner needs to run
+  `npx wrangler login` as hello@thegapco.com before the next deploy or R2 write.
 
 **Next up**
-1. Watch 1.0 review. On approval: merge `build-46-duo` into main, bump to build 48,
-   archive, create version 1.1 (or 1.0.1) with the Duo screenshots, and ask the owner
-   before submitting.
+1. Watch 1.0 review and keep the demo parties in date (see App Store above). On
+   approval: remove or hide the demo parties, merge `build-46-duo` into main, bump to
+   build 48, archive, create version 1.1 (or 1.0.1) with the Duo screenshots, and ask
+   the owner before submitting.
 2. Owner: accept the Paid Applications Schedule and the latest Developer Program
    License Agreement in ASC (Business).
 3. Optional Duo follow-ups:
