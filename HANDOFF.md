@@ -28,10 +28,11 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
 ## 0d. RESUME HERE — status as of 2026-11-05 (mostly unchanged since 2026-10-27)
 
 **App Store**
-- **Still WAITING_FOR_REVIEW on 2026-11-05** (checked via the ASC API), 9 days after
-  the resubmission, which is unusually long. Owner to confirm the agreements in
-  "Next up" item 2 are accepted (not verified as the cause) and otherwise consider
-  contacting Apple.
+- **Still WAITING_FOR_REVIEW on 2026-11-07** (checked via the ASC API), 11 days after
+  the resubmission, which is unusually long. The Developer Program License Agreement
+  had not been accepted; the owner accepted it on 2026-11-07. Not confirmed as the
+  cause of the wait. If nothing moves within a day or two, contact Apple with submission
+  ID `7ec76f3e-f5da-4c38-bacf-964b13cd52c7`. Don't cancel and resubmit.
 - 1.0 (build 45) was **rejected 2026-10-27** under Guideline 5.1.1(iv): the location
   pre-permission screen had a "Share my location" button and a "Not now" defer.
 - The fix is on main as **build 47**: every message shown before a system permission
@@ -149,8 +150,9 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
    approval: remove or hide the demo parties, merge `build-46-duo` into main, bump to
    build 48, archive, create version 1.1 (or 1.0.1) with the Duo screenshots, and ask
    the owner before submitting.
-2. Owner: accept the Paid Applications Schedule and the latest Developer Program
-   License Agreement in ASC (Business).
+2. ~~Owner: accept the Paid Applications Schedule and the latest Developer Program
+   License Agreement in ASC (Business).~~ DONE: Paid Apps Agreement active since
+   2026-10-27; license agreement accepted 2026-11-07.
 3. Optional Duo follow-ups:
    - The tab bar sits only in the left half when fully open (a native UIHinge module
      was deferred).
