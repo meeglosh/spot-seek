@@ -1,6 +1,6 @@
 # SpotSeek — Session Handoff
 
-_Last updated: 2026-11-05. Read this first when resuming in a new session._
+_Last updated: 2026-11-08. Read this first when resuming in a new session._
 
 This is a running snapshot of where the project stands so work can continue
 without re-deriving context. For the immutable operating rules see `CLAUDE.md`;
@@ -25,14 +25,28 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
 
 ---
 
-## 0d. RESUME HERE — status as of 2026-11-05 (mostly unchanged since 2026-10-27)
+## 0d. RESUME HERE — status as of 2026-11-08
 
 **App Store**
-- **Still WAITING_FOR_REVIEW on 2026-11-07** (checked via the ASC API), 11 days after
-  the resubmission, which is unusually long. The Developer Program License Agreement
-  had not been accepted; the owner accepted it on 2026-11-07. Not confirmed as the
-  cause of the wait. If nothing moves within a day or two, contact Apple with submission
-  ID `7ec76f3e-f5da-4c38-bacf-964b13cd52c7`. Don't cancel and resubmit.
+- **Rejected again 2026-11-08 under Guideline 2.3.7** (Accurate Metadata), on build 47
+  reviewed on an iPad Air 11-inch (M4). 5.1.1(iv) was not raised again.
+  - Apple said the subtitle mentions pricing. It doesn't ("Never watch the big game
+    alone"). The only pricing outside the description was screenshot 6, "FREE TO JOIN.",
+    in both the iPhone and iPad sets.
+  - Fix (2026-11-08, via the ASC API): deleted screenshot 6 from both sets, so each now
+    has 5, and added a 2.3.7 paragraph to the start of the review notes. Full-resolution
+    copies of the removed slides were saved to the session scratchpad, which may be gone.
+  - "Free to join" stays in the description; Apple says pricing belongs there.
+  - **Resubmitted 2026-11-08 4:18pm PT (2026-11-09 00:18 UTC)**, same submission ID,
+    build 47, now WAITING_FOR_REVIEW. The owner was given a Resolution Center reply to
+    post explaining the fix; the API can't post it.
+  - **Never put pricing ("free", "$", "no fees") in the name, subtitle, screenshots or
+    previews.** The Duo template `tools/store-screenshots/composer/slides.html` on
+    `build-46-duo` still has the "FREE TO JOIN." slide; change it before the build 48
+    screenshots are uploaded.
+  - Before this, the review sat in WAITING_FOR_REVIEW for 12 days. The Developer Program
+    License Agreement was found unaccepted and accepted on 2026-11-07, the day before the
+    review happened.
 - 1.0 (build 45) was **rejected 2026-10-27** under Guideline 5.1.1(iv): the location
   pre-permission screen had a "Share my location" button and a "Not now" defer.
 - The fix is on main as **build 47**: every message shown before a system permission
@@ -41,28 +55,33 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
   appear for Near me and the map locate button. The push-reminder card shows
   "Continue" when permission is undetermined, is a normal toggle when granted, and is
   hidden when denied. **Keep this rule for any future permission UI.**
-- **1.0 + build 47 resubmitted 2026-10-27, WAITING_FOR_REVIEW** (release
-  AFTER_APPROVAL). The fix summary is at the top of the App Review notes. The API
+- **1.0 + build 47 resubmitted 2026-10-27** (release AFTER_APPROVAL), then rejected
+  2026-11-08 under 2.3.7 (see below). The fix summary is at the top of the App Review notes. The API
   can't post Resolution Center messages.
 - How to resubmit via the ASC API after a rejection:
   1. PATCH the appStoreVersion build relationship.
   2. PATCH the rejected `reviewSubmissionItems/{id}` with `resolved: true`.
   3. PATCH `reviewSubmissions/{id}` with `submitted: true`.
-- **Reviewer demo parties** were re-dated on 2026-11-04 so they show under Discover's
+- **Reviewer demo parties** were re-dated on 2026-11-08 so they show under Discover's
   default "This week" (the next 7 days). They were the only parties in the live feed,
   so without them "This week" is empty:
-  - "Demo watch party: big game night" (`1f06897c-...`, hosted by `demo@`): Sun Nov 8,
+  - "Demo watch party: big game night" (`1f06897c-...`, hosted by `demo@`): Sat Nov 14,
     5-8pm PT. Cover in R2.
+    - It was deleted in-app by someone signed in as `demo@`, on 2026-11-08 at or before
+      4:07pm PT. The only surviving login that day was build 47 on iOS 27.2; who it was is
+      unknown. It was restored on 2026-11-08 with the same ID, fields and R2 cover. Its old
+      RSVPs (one cancelled, from the owner's test account) were not restored.
+    - Re-check that all three exist before every re-date or resubmission.
   - "Season finale night" (`c2b1b0e9-...`, hosted by `demo-host@`, `demo@` is going):
-    Tue Nov 10, 6-9:30pm PT. Cover in R2.
+    Sat Nov 14, 6-9:30pm PT. Cover in R2.
   - "Awards night on the roof" (`fc11e414-babb-418e-a159-7c04e2aa7bc5`, hosted by
-    `demo-host@`, no RSVPs): Tue Nov 10, 7-10pm PT. NEW on 2026-11-04, so the review
+    `demo-host@`, no RSVPs): Sun Nov 15, 3-6pm PT. NEW on 2026-11-04, so the review
     notes' "open any upcoming party you're not going to and tap RSVP" works for the
     demo account. Its cover is the landing-page asset
     `/site/rooftop-1536.e43efa47.webp`, not R2, so renaming that file breaks the
     cover. The photo shows an Oscar-like statuette on screen; swap it for the bar or
     living-room asset if that's a concern.
-  - **If review runs past Nov 8, re-date again; after Nov 10 "This week" is empty.** A
+  - **If review runs past Nov 13, re-date again; after Nov 15 "This week" is empty.** A
     reviewer who sees an empty "This week" may reject.
   - How to re-date: guarded `UPDATE events` on Neon branch `production`
     (`br-dark-term-att297p4`). Pass that branch explicitly: the Neon default branch is
@@ -70,7 +89,7 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
     SQL too, since the API can fan out favourite-nearby notifications to real users.
   - Reminder and review-request dedupe is per user+event+type, so after a re-date old
     notifications block new ones and go stale. The 3 stale Season finale notifications
-    for `demo@` were deleted on 2026-11-04, so reminders fire again around Nov 9-10
+    for `demo@` were deleted on 2026-11-04, so reminders fire again around Nov 13-14
     (email to `demo@spotseek.app`) and a review request follows the party. Check
     `demo@`'s inbox after any later re-date.
   - `demo@spotseek.app` is the only `going` RSVP. (`meeglosh+2@gmail.com` has a
