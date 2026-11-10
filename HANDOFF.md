@@ -36,8 +36,11 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
   territories except **Afghanistan** were enabled via the ASC API (PATCH
   `/v1/territoryAvailabilities/{id}` `available:true`, 172 calls, 0 failures). 174 of 175 are
   available; Afghanistan is excluded because of the alcohol/tobacco/drugs content
-  rating. 49 were still `PROCESSING_TO_AVAILABLE` right after; re-check
-  `contentStatuses` and the store pages (gb, ca, au, de, jp, in) if a country 404s.
+  rating. 49 were `PROCESSING_TO_AVAILABLE` at first. By later on 2026-11-10 all 174 were
+  `AVAILABLE`, and the UK store page
+  (https://apps.apple.com/gb/app/spotseek-watch-parties/id6796828749) loads. The
+  iTunes lookup API (`itunes.apple.com/lookup?id=6796828749&country=gb`) still
+  returned 0 results then; store search indexing lags the listing by a few hours.
   "Available in new territories" (appAvailabilityV2 `availableInNewTerritories`) is
   still **false**, so new App Store countries won't get the app automatically.
   Turn it on in ASC → Pricing and Availability if wanted. It wasn't changed by API.
@@ -59,23 +62,31 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
   section, closing, footer) link to the store, the meta/og copy says "Now on the App
   Store", and the mailto "Notify me" CTAs are gone. `APP_STORE_URL` is set in
   `wrangler.jsonc`, so `/e/:id`, the RSVP status page and claim pages show "Get the SpotSeek app".
-- Follow-up commit (**not deployed yet; the owner runs `cd backend && npm run deploy`**):
+- Follow-up commit `4de9571` (**deployed by the owner 2026-11-10 and verified live**):
   - Safari Smart App Banner (`<meta name="apple-itunes-app" content="app-id=6796828749">`)
     on the landing page and every `renderPage` page (`SMART_APP_BANNER` in `webpage.ts`).
   - The "Draft ... Not yet reviewed by counsel" banner was removed from /privacy and
     /terms; they now show "Last updated 2026-10-14". The owner approved the text as is.
   - Tests assert the store links, the banner and the absence of the draft text.
-- Wrangler: the owner logged in again for the 2026-11-10 deploy. Still check
+- **Other sites (2026-11-10):** on thegapco.com (`~/gapco`, GitHub Pages, push to
+  `main` deploys) the SpotSeek row lost its "iOS Beta" badge, links to the App Store
+  ("Download on the App Store" plus an "App Store" button, matching Liminal Generator),
+  and is now row 01 at the top of the ventures list (`e036cf9`, `d735234`, both live).
+  flat7.design (`~/flat7-design`) doesn't feature SpotSeek. Adding it would be a new
+  portfolio tile in all six themes plus a scroll-craft case study (interview first, per
+  that repo's HANDOFF), so it was left for the owner to decide.
+- Wrangler: the owner logged in again for the 2026-11-10 deploys. Still check
   `npx wrangler whoami` = hello@thegapco.com before any deploy or R2 write.
 
 **Next up**
-1. Owner: deploy the follow-up commit (banner + legal pages), then verify spotseek.app on
-   an iPhone shows the banner.
-2. Check that the store is live in other countries (re-check `PROCESSING_TO_AVAILABLE`).
-3. Merge `build-46-duo` into main, then build 48 with version 1.0.1/1.1 and the Duo screenshots.
+1. Optional: check the Smart App Banner on a real iPhone in Safari (the meta tag is
+   verified live; the banner itself only renders on device).
+2. Optional: turn on "Make available in new countries" in ASC → Pricing and Availability.
+3. Optional: a SpotSeek case study on flat7.design (owner's call).
+4. Merge `build-46-duo` into main, then build 48 with version 1.0.1/1.1 and the Duo screenshots.
    Fix the Duo template's "FREE TO JOIN." slide first (no pricing in screenshots, 2.3.7).
    Recreate demo parties for that review. Ask the owner before submitting.
-4. Legal follow-ups from the 2026-11-08 audit (not started): DMCA agent and copyright
+5. Legal follow-ups from the 2026-11-08 audit (not started): DMCA agent and copyright
    policy, self-host Google Fonts (web pages and email), postal address and unsubscribe
    link in emails, and an age gate at signup.
 
