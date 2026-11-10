@@ -1,10 +1,10 @@
 /**
- * GET /privacy and GET /terms: DRAFT legal pages for the owner's review.
+ * GET /privacy and GET /terms: the published legal pages (owner approved the
+ * text for launch on 2026-11-10; the draft banner was removed then).
  * Same shell as /guidelines. Every statement in the privacy policy is traced
  * to code (see docs/app-store-privacy.md for the data-flow map). Owner
  * decisions are filled in; no bracketed placeholders remain (a test asserts it).
- * Plain, short copy. No em dashes. Never claims legal review (the draft banner
- * stays until counsel has reviewed).
+ * Plain, short copy. No em dashes. Never claims legal review.
  *
  * Retention sources (checked 2026-10-14):
  * - Cloudflare Workers Logs: 3 days on Workers Free, 7 days on Workers Paid.
@@ -38,8 +38,8 @@ const LEGAL_CSS = `<style>
 /** Compact copy of the footer styles, for pages that do not load LEGAL_CSS. */
 export const LEGAL_FOOT_CSS = `<style>.legal-foot{margin:28px 16px 0;padding-top:14px;border-top:2px solid var(--line);font-size:14px;color:var(--muted)}.legal-foot a{margin-right:14px}</style>`;
 
-export function draftBanner(): string {
-  return `<div class="banner" role="note">Draft, last updated ${LEGAL_LAST_UPDATED}. Not yet reviewed by counsel.</div>`;
+export function lastUpdatedNote(): string {
+  return `<p class="fine">Last updated ${LEGAL_LAST_UPDATED}.</p>`;
 }
 
 /** Footer shared by /privacy, /terms and /guidelines: links between all three. */
@@ -60,10 +60,10 @@ function shell(opts: {
   intro: string;
   sections: string;
 }): string {
-  const body = `${draftBanner()}
-  <div class="content legal">
+  const body = `<div class="content legal">
     <div class="label">${escapeHtml(opts.label)}</div>
     <h1>${escapeHtml(opts.heading)}</h1>
+    ${lastUpdatedNote()}
     <p class="meta">${escapeHtml(opts.intro)}</p>
     ${opts.sections}
   </div>

@@ -55,6 +55,12 @@ a { color:var(--cyan); }
 .link-btn { background:none; border:0; padding:0; color:var(--muted); text-decoration:underline; font:inherit; font-size:14px; cursor:pointer; }
 `;
 
+/** App Store id of the live listing; drives the Safari Smart App Banner. */
+export const APP_STORE_ID = '6796828749';
+
+/** Safari Smart App Banner (iOS shows Get/Open for the SpotSeek app). */
+export const SMART_APP_BANNER = `<meta name="apple-itunes-app" content="app-id=${APP_STORE_ID}">`;
+
 export interface PageOpts {
   title: string;
   /** Extra <head> markup (already escaped / trusted). */
@@ -69,7 +75,8 @@ export function renderPage(o: PageOpts): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(o.title)}</title>${o.noindex ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
+<title>${escapeHtml(o.title)}</title>
+${SMART_APP_BANNER}${o.noindex ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
 <link href="${FONTS}" rel="stylesheet">${o.head ? `\n${o.head}` : ''}
 <style>${PAGE_CSS}</style>
 </head>

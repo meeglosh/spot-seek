@@ -6,19 +6,21 @@ function get(path: string) {
   return worker.fetch(new Request(`https://spotseek.app${path}`), env as Env, createExecutionContext());
 }
 
-const BANNER = /Draft, last updated \d{4}-\d{2}-\d{2}\. Not yet reviewed by counsel\./;
+const UPDATED = /Last updated \d{4}-\d{2}-\d{2}\./;
 
 describe('legal pages', () => {
   for (const [path, heading] of [
     ['/privacy', 'Privacy policy'],
     ['/terms', 'Terms of service'],
   ] as const) {
-    it(`${path} serves HTML with the draft banner and cross links`, async () => {
+    it(`${path} serves HTML with the last-updated date and cross links`, async () => {
       const res = await get(path);
       expect(res.status).toBe(200);
       expect(res.headers.get('content-type')).toContain('text/html');
       const html = await res.text();
-      expect(html).toMatch(BANNER);
+      expect(html).toMatch(UPDATED);
+      expect(html).not.toMatch(/Draft, last updated|Not yet reviewed by counsel/);
+      expect(html).toContain('name="apple-itunes-app" content="app-id=6796828749"');
       expect(html).toContain(heading);
       expect(html).toContain('hello@spotseek.app');
       expect(html).toContain('GAPCO Limited Liability Company');

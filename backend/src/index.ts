@@ -195,7 +195,7 @@ app.get('/support', (c) =>
   }),
 );
 
-// Draft legal pages (owner review before launch). Needed for TestFlight external testing.
+// Legal pages (published at the 1.0 launch, 2026-11-10).
 app.get('/privacy', (c) =>
   c.html(renderPrivacyPage({ baseUrl: publicBaseUrl(c.env) }), 200, {
     'Content-Type': 'text/html; charset=utf-8',

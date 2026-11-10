@@ -1,6 +1,6 @@
 # SpotSeek — Session Handoff
 
-_Last updated: 2026-11-08. Read this first when resuming in a new session._
+_Last updated: 2026-11-10. Read this first when resuming in a new session._
 
 This is a running snapshot of where the project stands so work can continue
 without re-deriving context. For the immutable operating rules see `CLAUDE.md`;
@@ -25,7 +25,63 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
 
 ---
 
-## 0d. RESUME HERE — status as of 2026-11-08
+## 0e. RESUME HERE — 1.0 is LIVE (status as of 2026-11-10)
+
+**App Store**
+- **1.0 (build 47) approved and released 2026-11-10**, state READY_FOR_SALE. Listing:
+  "SpotSeek: Watch Parties", https://apps.apple.com/app/id6796828749 (region-neutral;
+  Apple redirects to the visitor's storefront). Main is tagged `v1.0-build47`.
+- **Territories:** at release only the USA was enabled (173 of 175 countries were
+  "cannot sell", and "available in new territories" was off). On 2026-11-10 all
+  territories except **Afghanistan** were enabled via the ASC API (PATCH
+  `/v1/territoryAvailabilities/{id}` `available:true`, 172 calls, 0 failures). 174 of 175 are
+  available; Afghanistan is excluded because of the alcohol/tobacco/drugs content
+  rating. 49 were still `PROCESSING_TO_AVAILABLE` right after; re-check
+  `contentStatuses` and the store pages (gb, ca, au, de, jp, in) if a country 404s.
+  "Available in new territories" (appAvailabilityV2 `availableInNewTerritories`) is
+  still **false**, so new App Store countries won't get the app automatically.
+  Turn it on in ASC → Pricing and Availability if wanted. It wasn't changed by API.
+- **Share card:** sharing from the App Store shows an iPad screenshot (slide 1 of the
+  iPad 13" set) rather than the iPhone slide 1. Apple generates that card; there is no
+  API or ASC setting to pick its image, and the listing page's own `og:image` is just the
+  app icon. Screenshots on a live version are locked. Revisit with the next version
+  (1.0.1 or 1.1): try a different iPad slide 1 that still shows the iPad UI (Guideline
+  2.3.3), then re-check the shared card.
+- **Demo parties deleted 2026-11-10** (production DB): "Demo watch party: big game
+  night", "Season finale night" and "Awards night on the roof". RSVPs were deleted first
+  (only `demo@`'s), and everything else cascaded. The live feed now has only real parties. The
+  `demo@` and `demo-host@` accounts are kept: the App Review notes use `demo@` and the
+  next review needs it. For the next submission, recreate dated demo parties
+  with SQL (see 0d), keep them within "This week", and delete them after approval.
+
+**Website (`spotseek.app`)**
+- `e3b3259` (deployed by the owner 2026-11-10): the 5 landing CTAs (header, hero, host
+  section, closing, footer) link to the store, the meta/og copy says "Now on the App
+  Store", and the mailto "Notify me" CTAs are gone. `APP_STORE_URL` is set in
+  `wrangler.jsonc`, so `/e/:id`, the RSVP status page and claim pages show "Get the SpotSeek app".
+- Follow-up commit (**not deployed yet; the owner runs `cd backend && npm run deploy`**):
+  - Safari Smart App Banner (`<meta name="apple-itunes-app" content="app-id=6796828749">`)
+    on the landing page and every `renderPage` page (`SMART_APP_BANNER` in `webpage.ts`).
+  - The "Draft ... Not yet reviewed by counsel" banner was removed from /privacy and
+    /terms; they now show "Last updated 2026-10-14". The owner approved the text as is.
+  - Tests assert the store links, the banner and the absence of the draft text.
+- Wrangler: the owner logged in again for the 2026-11-10 deploy. Still check
+  `npx wrangler whoami` = hello@thegapco.com before any deploy or R2 write.
+
+**Next up**
+1. Owner: deploy the follow-up commit (banner + legal pages), then verify spotseek.app on
+   an iPhone shows the banner.
+2. Check that the store is live in other countries (re-check `PROCESSING_TO_AVAILABLE`).
+3. Merge `build-46-duo` into main, then build 48 with version 1.0.1/1.1 and the Duo screenshots.
+   Fix the Duo template's "FREE TO JOIN." slide first (no pricing in screenshots, 2.3.7).
+   Recreate demo parties for that review. Ask the owner before submitting.
+4. Legal follow-ups from the 2026-11-08 audit (not started): DMCA agent and copyright
+   policy, self-host Google Fonts (web pages and email), postal address and unsubscribe
+   link in emails, and an age gate at signup.
+
+---
+
+## 0d. Status as of 2026-11-08 (historical; superseded by 0e)
 
 **App Store**
 - **Rejected again 2026-11-08 under Guideline 2.3.7** (Accurate Metadata), on build 47
@@ -165,8 +221,8 @@ for payments design see `PAYMENTS.md`; for human-decisions-pending see
   `npx wrangler login` as hello@thegapco.com before the next deploy or R2 write.
 
 **Next up**
-1. Watch 1.0 review and keep the demo parties in date (see App Store above). On
-   approval: remove or hide the demo parties, merge `build-46-duo` into main, bump to
+1. ~~Watch 1.0 review~~ APPROVED 2026-11-10, demo parties deleted (see 0e). Still to do from the
+   approval list: remove or hide the demo parties, merge `build-46-duo` into main, bump to
    build 48, archive, create version 1.1 (or 1.0.1) with the Duo screenshots, and ask
    the owner before submitting.
 2. ~~Owner: accept the Paid Applications Schedule and the latest Developer Program

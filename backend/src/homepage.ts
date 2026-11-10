@@ -1,7 +1,7 @@
 // Landing page for GET / (spotseek.app). Approved static design; do not change copy here
 // without owner sign-off. Images live in backend/public/site/ (Workers Static Assets) with
 // content-hashed filenames; see HANDOFF.md ("Landing page") for how to update them.
-import { safeJson } from './webpage';
+import { safeJson, APP_STORE_ID, SMART_APP_BANNER } from './webpage';
 import { buildCalendar, type CalRow } from './landing-calendar';
 
 const HOME_CSS = `
@@ -318,7 +318,7 @@ const SX_NEXT_CSS = `
 `;
 
 /** Region-neutral App Store listing: Apple redirects to the visitor's own storefront. */
-export const APP_STORE_URL = 'https://apps.apple.com/app/id6796828749';
+export const APP_STORE_URL = `https://apps.apple.com/app/id${APP_STORE_ID}`;
 
 export interface HomeOpts {
   baseUrl: string;
@@ -377,6 +377,7 @@ export function renderHomePage(o: HomeOpts): string {
 <title>SpotSeek | Never watch alone. Find and host watch parties</title>
 <meta name="description" content="SpotSeek is a host-centric app for creating, discovering and RSVPing to watch parties for games, award shows, finales and election nights. Host-confirmed parties, real people going. Now on the App Store.">
 <meta name="theme-color" content="#0F0F12">
+${SMART_APP_BANNER}
 <link rel="canonical" href="${base}/">
 <link rel="icon" type="image/png" href="/site/icon-96.8680fb9b.png">
 <meta property="og:type" content="website">

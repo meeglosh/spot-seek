@@ -147,4 +147,11 @@ describe('landing calendar', () => {
     expect(early).toContain('<span class="fx__tag">NEXT UP</span>');
     expect(early).toContain('NFL SUNDAYS');
   });
+
+  it('links every install CTA to the live App Store listing and shows the Smart App Banner', () => {
+    const html = renderHomePage({ baseUrl: 'https://spotseek.app' });
+    expect(html).toContain('<meta name="apple-itunes-app" content="app-id=6796828749">');
+    expect((html.match(/href="https:\/\/apps\.apple\.com\/app\/id6796828749"/g) ?? []).length).toBe(5);
+    expect(html).not.toMatch(/coming soon|notify me/i);
+  });
 });
