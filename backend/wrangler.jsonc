@@ -32,8 +32,11 @@
 		"APNS_TOPIC": "com.spotseek.app",
 		// OWNER REVIEW: public origin used for share links, og:url, canonical,
 		// sitemap, email CTAs and Stripe onboarding return URLs.
-		// Optional: "APP_STORE_URL" (leave unset until the listing exists).
 		"PUBLIC_BASE_URL": "https://spotseek.app",
+		// Live App Store listing (1.0 approved 2026-11-10). Region-neutral: Apple
+		// redirects to the visitor's storefront. Drives "Get the SpotSeek app" on
+		// web event/RSVP pages and the landing page CTAs.
+		"APP_STORE_URL": "https://apps.apple.com/app/id6796828749",
 		// OWNER REVIEW: Resend quota guard (src/email-guard.ts). Max real emails per
 		// UTC day (plan allows 100; 80 leaves headroom for the owner's own use).
 		// Mail to .test/.example/.invalid/.localhost and example.com/.org/.net is

@@ -129,7 +129,7 @@ describe('guest RSVP flow', () => {
     const { page } = await guestJoin(ev.id, 'Gale Going', email);
     expect(page).toContain('You&#39;re going');
     expect(page).toContain(`/rsvp/${ev.id}/event.ics`);
-    expect(page).toContain('App Store coming soon'); // App Store placeholder, unchanged
+    expect(page).toContain('<a class="btn" href="https://apps.apple.com/app/id6796828749">Get the SpotSeek app</a>'); // live App Store listing (APP_STORE_URL)
     expect(page).not.toContain(email);
 
     const res = await app('/api/dashboard', { headers: { Cookie: host } });
@@ -298,7 +298,7 @@ describe('public event page', () => {
     expect(html).toContain('Hosted by');
     expect(html).toContain("I'm going");
     expect(html).toContain('name="website"'); // honeypot field
-    expect(html).toContain('App Store coming soon');
+    expect(html).toContain('<a class="btn" href="https://apps.apple.com/app/id6796828749">Get the SpotSeek app</a>');
 
     const m = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
     expect(m).not.toBeNull();

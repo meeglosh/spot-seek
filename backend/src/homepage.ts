@@ -317,8 +317,13 @@ const SX_NEXT_CSS = `
 .fx__tag{display:inline-block;margin-left:10px;padding:3px 6px;background:var(--orange);color:var(--ink);font:700 11px/1 var(--label);letter-spacing:.12em;vertical-align:1px}
 `;
 
+/** Region-neutral App Store listing: Apple redirects to the visitor's own storefront. */
+export const APP_STORE_URL = 'https://apps.apple.com/app/id6796828749';
+
 export interface HomeOpts {
   baseUrl: string;
+  /** App Store listing (APP_STORE_URL env override); defaults to the live listing. */
+  appStoreUrl?: string;
   /** Injectable clock (tests); defaults to the current time. */
   now?: Date;
 }
@@ -345,6 +350,7 @@ function calendarHtml(rows: CalRow[]): string {
 /** Landing page HTML. baseUrl (PUBLIC_BASE_URL, no trailing slash) anchors canonical/og URLs. */
 export function renderHomePage(o: HomeOpts): string {
   const base = o.baseUrl.replace(/\/+$/, '');
+  const store = esc(o.appStoreUrl || APP_STORE_URL);
   const now = o.now ?? new Date();
   const rows = buildCalendar(now);
   const jsonLd = [
@@ -369,7 +375,7 @@ export function renderHomePage(o: HomeOpts): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SpotSeek | Never watch alone. Find and host watch parties</title>
-<meta name="description" content="SpotSeek is a host-centric app for creating, discovering and RSVPing to watch parties for games, award shows, finales and election nights. Host-confirmed parties, real people going. Coming soon to the App Store.">
+<meta name="description" content="SpotSeek is a host-centric app for creating, discovering and RSVPing to watch parties for games, award shows, finales and election nights. Host-confirmed parties, real people going. Now on the App Store.">
 <meta name="theme-color" content="#0F0F12">
 <link rel="canonical" href="${base}/">
 <link rel="icon" type="image/png" href="/site/icon-96.8680fb9b.png">
@@ -377,14 +383,14 @@ export function renderHomePage(o: HomeOpts): string {
 <meta property="og:site_name" content="SpotSeek">
 <meta property="og:url" content="${base}/">
 <meta property="og:title" content="SpotSeek | Never watch alone.">
-<meta property="og:description" content="Find host-confirmed watch parties nearby for the game, the finale, the big night, with real people going. Or host your own. Coming soon to the App Store.">
+<meta property="og:description" content="Find host-confirmed watch parties nearby for the game, the finale, the big night, with real people going. Or host your own. Now on the App Store.">
 <meta property="og:image" content="${base}/site/og.c847f29a.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Friends cheering with fists in the air on a living room couch as a player in a blue number 10 shirt celebrates on the TV, with popcorn and drinks on the coffee table">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="SpotSeek | Never watch alone.">
-<meta name="twitter:description" content="Find host-confirmed watch parties nearby for the game, the finale, the big night, with real people going. Or host your own. Coming soon to the App Store.">
+<meta name="twitter:description" content="Find host-confirmed watch parties nearby for the game, the finale, the big night, with real people going. Or host your own. Now on the App Store.">
 <meta name="twitter:image" content="${base}/site/og.c847f29a.jpg">
 <meta name="twitter:image:alt" content="Friends cheering with fists in the air on a living room couch as a player in a blue number 10 shirt celebrates on the TV, with popcorn and drinks on the coffee table">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -403,7 +409,7 @@ ${HOME_CSS}${SX_NEXT_CSS}${SX_CSS}
     <img src="/site/pin.36450ac1.webp" width="26" height="33" alt="">
     <span>SPOTSEEK</span>
   </a>
-  <a class="top__cta" href="#notify">Notify me</a>
+  <a class="top__cta" href="${store}">Get the app</a>
 </header>
 
 <main id="main">
@@ -414,9 +420,9 @@ ${HOME_CSS}${SX_NEXT_CSS}${SX_CSS}
     <h1>NEVER WATCH<br>ALONE.</h1>
     <p class="hero__sub">Games, award shows, season finales, election nights. Find host-confirmed watch parties near you, with real people going. Or host your own.</p>
     <div class="hero__actions">
-      <a class="btn btn--primary" href="mailto:hello@spotseek.app?subject=Notify%20me%20when%20SpotSeek%20launches">
-        <span class="btn__small">Coming soon to the App Store</span>
-        <span class="btn__big">Notify me</span>
+      <a class="btn btn--primary" href="${store}">
+        <span class="btn__small">Download on the App Store</span>
+        <span class="btn__big">Get the app</span>
       </a>
       <a class="btn btn--ghost" href="#host">Host a watch party</a>
     </div>
@@ -487,8 +493,8 @@ ${calendarHtml(rows)}
   <div class="host__copy">
     <h2 id="host-h" class="h2">YOU HOST.<br>THE ROOM IS OPTIONAL.</h2>
     <p>A party belongs to its host, not to a venue. Start with the show and the people. Add a bar, your living room or a rooftop when you know where, and change it with one edit.</p>
-    <a class="btn btn--primary btn--sm" href="mailto:hello@spotseek.app?subject=I%20want%20to%20host%20a%20watch%20party">
-      <span class="btn__small">Coming soon to the App Store</span>
+    <a class="btn btn--primary btn--sm" href="${store}">
+      <span class="btn__small">Download on the App Store</span>
       <span class="btn__big">Host a watch party</span>
     </a>
   </div>
@@ -527,15 +533,15 @@ ${calendarHtml(rows)}
   <p>Brands and local businesses can sponsor a party. <a href="mailto:hello@spotseek.app?subject=Sponsoring%20a%20party">Say hello</a> and we'll tell you how it will work.</p>
 </section>
 
-<section class="close" id="notify" aria-labelledby="close-h">
+<section class="close" id="get" aria-labelledby="close-h">
   <div class="wrap close__in">
     <img src="/site/pin.36450ac1.webp" width="72" height="90" alt="" class="close__pin">
     <h2 id="close-h" class="close__h"><span class="close__a">NEVER WATCH</span><br><span class="close__b">ALONE.</span></h2>
-    <a class="btn btn--primary btn--lg" href="mailto:hello@spotseek.app?subject=Notify%20me%20when%20SpotSeek%20launches">
-      <span class="btn__small">Coming soon to the App Store</span>
-      <span class="btn__big">Notify me</span>
+    <a class="btn btn--primary btn--lg" href="${store}">
+      <span class="btn__small">Download on the App Store</span>
+      <span class="btn__big">Get the app</span>
     </a>
-    <p class="close__honest">Notify me opens your email app with a message to hello@spotseek.app. This page has no form and stores nothing: no sign-up list, no cookies. We only have your address if you send the email.</p>
+    <p class="close__honest">SpotSeek is on the App Store for iPhone and iPad. Questions or ideas? Write to <a href="mailto:hello@spotseek.app">hello@spotseek.app</a>.</p>
   </div>
 </section>
 
@@ -548,7 +554,7 @@ ${calendarHtml(rows)}
   <a href="/terms">Terms</a>
   <a href="/privacy">Privacy</a>
   <a href="/support">Support</a>
-  <span>Coming soon to the App Store</span>
+  <a href="${store}">Get it on the App Store</a>
 </footer>
 <script>${SX_JS}</script>
 </body>

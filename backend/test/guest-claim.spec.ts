@@ -326,7 +326,7 @@ describe('GET /e/:id/claim/:token web fallback', () => {
     const html = await res.text();
     expect(html).toContain('noindex');
     expect(html).toContain('Open SpotSeek to add this RSVP to your account');
-    expect(html).toContain('App Store coming soon');
+    expect(html).toContain('<a class="btn" href="https://apps.apple.com/app/id6796828749">Get the SpotSeek app</a>');
     expect(html).toContain(`href="spotseek://e/${ev.id}/claim/${token}"`);
     expect(html).toContain(`https://spotseek.app/rsvp/${ev.id}/${token}`);
     // The plain event page still resolves separately.
